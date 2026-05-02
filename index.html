@@ -12511,16 +12511,30 @@ async function initSupabase() {
 
   // Pasang listener DULU agar SIGNED_IN dari OAuth redirect tidak terlewat
   _supa.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-      if (session?.user && (!currentUser || currentUser.id !== session.user.id)) {
+    console.log('[Auth]', event, session?.user?.email);
+    if (event === 'SIGNED_IN') {
+      // SIGNED_IN = login baru (email/password, Google OAuth, dll)
+      // Selalu proses, tidak peduli currentUser
+      currentUser = session.user;
+      isGuestMode = false;
+      _afterLoginRunning = false; // Reset agar afterLogin() pasti jalan
+      const gb = document.getElementById('guest-banner');
+      if (gb) gb.remove();
+      hideAuthModal();
+      await afterLogin();
+    } else if (event === 'INITIAL_SESSION') {
+      // INITIAL_SESSION = session restored (refresh halaman / tab baru)
+      if (session?.user && !currentCompany) {
         currentUser = session.user;
         isGuestMode = false;
-        _afterLoginRunning = false; // Reset flag agar afterLogin() selalu bisa jalan setelah SIGNED_IN
-        hideAuthModal();
-        // Hapus guest banner jika ada
+        _afterLoginRunning = false;
         const gb = document.getElementById('guest-banner');
         if (gb) gb.remove();
+        hideAuthModal();
         await afterLogin();
+      } else if (!session) {
+        // Tidak ada session → guest mode
+        if (!currentUser) enterGuestMode();
       }
     } else if (event === 'TOKEN_REFRESHED') {
       currentUser = session?.user || currentUser;
@@ -12533,17 +12547,15 @@ async function initSupabase() {
     }
   });
 
-  // Cek session existing (refresh halaman / sudah login sebelumnya)
-  const { data: { session } } = await _supa.auth.getSession();
-  if (session && !currentUser) {
-    currentUser = session.user;
-    isGuestMode = false;
-    _afterLoginRunning = false; // Pastikan flag bersih
-    await afterLogin();
-  } else if (!session && !currentUser) {
-    setTimeout(() => { if (!currentUser) enterGuestMode(); }, 800);
-  }
+  // onAuthStateChange dengan INITIAL_SESSION sudah menangani session existing.
+  // Kita hanya perlu fallback timeout jika tidak ada session sama sekali.
   _authReady = true;
+  // Fallback: jika setelah 2 detik tidak ada user (tidak ada session & tidak ada OAuth redirect)
+  setTimeout(() => {
+    if (!currentUser && !_afterLoginRunning) {
+      enterGuestMode();
+    }
+  }, 2000);
 }
 
 // =====================================================================
@@ -13100,14 +13112,17 @@ function renderCompanyList(companies) {
 async function getMyCompanies() {
   if (!currentUser) return [];
   try {
-    const session = (await _supa.auth.getSession()).data.session;
-    const token = session?.access_token || SUPABASE_ANON_KEY;
-    const res = await fetch(
-      SUPABASE_URL + '/rest/v1/companies?user_id=eq.' + currentUser.id + '&order=created_at',
-      { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token } }
-    );
-    const json = await res.json();
-    return Array.isArray(json) ? json : [];
+    // Pastikan session valid - penting setelah OAuth redirect
+    const { data: { session } } = await _supa.auth.getSession();
+    if (!session) return [];
+    // Gunakan Supabase client (bukan raw fetch) agar RLS & token OAuth baru langsung valid
+    const { data, error } = await _supa
+      .from('companies')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at');
+    if (error) { console.error('getMyCompanies error:', error); return []; }
+    return Array.isArray(data) ? data : [];
   } catch(e) {
     console.error('getMyCompanies error:', e);
     return [];
