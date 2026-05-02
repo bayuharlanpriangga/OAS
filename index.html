@@ -12511,11 +12511,15 @@ async function initSupabase() {
 
   // Pasang listener DULU agar SIGNED_IN dari OAuth redirect tidak terlewat
   _supa.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN') {
-      if (!currentUser || currentUser.id !== session?.user?.id) {
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      if (session?.user && (!currentUser || currentUser.id !== session.user.id)) {
         currentUser = session.user;
         isGuestMode = false;
+        _afterLoginRunning = false; // Reset flag agar afterLogin() selalu bisa jalan setelah SIGNED_IN
         hideAuthModal();
+        // Hapus guest banner jika ada
+        const gb = document.getElementById('guest-banner');
+        if (gb) gb.remove();
         await afterLogin();
       }
     } else if (event === 'TOKEN_REFRESHED') {
@@ -12534,6 +12538,7 @@ async function initSupabase() {
   if (session && !currentUser) {
     currentUser = session.user;
     isGuestMode = false;
+    _afterLoginRunning = false; // Pastikan flag bersih
     await afterLogin();
   } else if (!session && !currentUser) {
     setTimeout(() => { if (!currentUser) enterGuestMode(); }, 800);
@@ -12984,6 +12989,7 @@ async function afterLogin() {
   if (_afterLoginRunning) return;
   _afterLoginRunning = true;
 
+  isGuestMode = false; // Pastikan guest mode dimatikan segera
   hideAuthModal();
   // Hapus banner guest
   const guestBanner = document.getElementById('guest-banner');
@@ -12993,7 +12999,18 @@ async function afterLogin() {
   const chipAvatar = document.getElementById('chip-avatar');
   const chipName   = document.getElementById('chip-company-name');
   const chipSub    = document.getElementById('chip-sub');
-  if (chipAvatar) { chipAvatar.textContent = '⏳'; chipAvatar.style.background = 'var(--surface2)'; }
+  const chip       = document.getElementById('user-company-chip');
+  // Update chip segera agar tidak stuck di "Mode Tamu"
+  if (chip) {
+    chip.style.display = 'flex';
+    chip.onclick = () => showCompanyPicker();
+    chip.title = 'Ganti bisnis';
+  }
+  if (chipAvatar) {
+    const initial = (currentUser.user_metadata?.full_name || currentUser.email || '?').charAt(0).toUpperCase();
+    chipAvatar.textContent = initial;
+    chipAvatar.style.background = 'linear-gradient(135deg,var(--accent2),var(--accent))';
+  }
   if (chipName)   chipName.textContent = 'Memuat bisnis...';
   if (chipSub)    chipSub.textContent  = currentUser?.email || '';
 
