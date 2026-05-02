@@ -12508,22 +12508,11 @@ async function initSupabase() {
   if (chipName) chipName.textContent = 'Menghubungkan...';
   if (chipSub)  chipSub.textContent  = 'Memeriksa akun';
 
-  // Check existing session DULU sebelum pasang listener
-  // Ini menghindari race condition antara getSession dan onAuthStateChange
-  const { data: { session } } = await _supa.auth.getSession();
-  if (session) {
-    currentUser = session.user;
-    isGuestMode = false;
-    await afterLogin();
-  } else {
-    enterGuestMode();
-  }
-  _authReady = true;
-
-  // Pasang listener SETELAH getSession selesai agar tidak double-fire
+  // PASANG LISTENER DULU — agar SIGNED_IN event dari Google OAuth redirect
+  // tidak terlewat sebelum getSession() selesai dijalankan
   _supa.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN') {
-      // Hanya proses jika belum login (misal dari modal login atau Google OAuth redirect)
+      // Hanya proses jika belum login atau user berbeda (dari modal login / Google OAuth redirect)
       if (!currentUser || currentUser.id !== session?.user?.id) {
         currentUser = session.user;
         isGuestMode = false;
@@ -12541,6 +12530,23 @@ async function initSupabase() {
       enterGuestMode();
     }
   });
+
+  // Cek session existing SETELAH listener aktif
+  // Kalau balik dari Google OAuth, Supabase akan fire SIGNED_IN lewat listener di atas
+  const { data: { session } } = await _supa.auth.getSession();
+  if (session) {
+    // Session sudah ada (misal refresh halaman saat sudah login)
+    // Cek apakah listener sudah handle ini, kalau belum proses di sini
+    if (!currentUser) {
+      currentUser = session.user;
+      isGuestMode = false;
+      await afterLogin();
+    }
+  } else if (!currentUser) {
+    // Tidak ada session dan listener belum set currentUser → masuk guest mode
+    enterGuestMode();
+  }
+  _authReady = true;
 }
 
 // =====================================================================
