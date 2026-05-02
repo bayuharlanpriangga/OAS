@@ -12485,10 +12485,10 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    detectSessionInUrl: true,   // wajib untuk tangkap token dari URL setelah OAuth redirect
-    persistSession: true,        // simpan session di localStorage
+    detectSessionInUrl: true,  // tangkap token dari URL setelah OAuth redirect
+    persistSession: true,
     autoRefreshToken: true,
-    flowType: 'pkce',            // PKCE flow — lebih aman & kompatibel dengan GitHub Pages
+    // flowType tidak diset → pakai default 'implicit' yang kompatibel
   }
 });
 
@@ -12514,9 +12514,7 @@ async function initSupabase() {
   if (chipName) chipName.textContent = 'Menghubungkan...';
   if (chipSub)  chipSub.textContent  = 'Memeriksa akun';
 
-  // PASANG LISTENER DULU — supaya SIGNED_IN event dari Google OAuth redirect
-  // tidak terlewat. Dengan flowType 'pkce', Supabase akan otomatis exchange
-  // code dari URL dan fire SIGNED_IN lewat listener ini.
+  // Pasang listener DULU agar SIGNED_IN event dari OAuth redirect tidak terlewat
   _supa.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN') {
       if (!currentUser || currentUser.id !== session?.user?.id) {
@@ -12536,20 +12534,15 @@ async function initSupabase() {
     }
   });
 
-  // Cek session existing (untuk user yang sudah login sebelumnya / refresh halaman)
+  // Cek session existing (refresh halaman / sudah login sebelumnya)
   const { data: { session } } = await _supa.auth.getSession();
   if (session && !currentUser) {
-    // Session ada tapi listener belum sempat set currentUser
     currentUser = session.user;
     isGuestMode = false;
     await afterLogin();
   } else if (!session && !currentUser) {
-    // Tidak ada session sama sekali → guest mode
-    // Tapi tunggu sebentar dulu, beri kesempatan SIGNED_IN event muncul
-    // (kalau baru balik dari OAuth redirect)
-    setTimeout(() => {
-      if (!currentUser) enterGuestMode();
-    }, 1500);
+    // Beri jeda 800ms buat SIGNED_IN event muncul kalau baru balik dari OAuth
+    setTimeout(() => { if (!currentUser) enterGuestMode(); }, 800);
   }
   _authReady = true;
 }
