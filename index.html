@@ -12483,7 +12483,14 @@ function resolveCustomConfirm() {
 const SUPABASE_URL = 'https://bcaxdjlyijyfzskbshcz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjYXhkamx5aWp5Znpza2JzaGN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MTY5MjYsImV4cCI6MjA5MzI5MjkyNn0.9vJCqtnE9k33BD6oe0AwZW_xvvZa2Dak1BzA-P9FfzE';
 
-const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    detectSessionInUrl: true,   // wajib untuk tangkap token dari URL setelah OAuth redirect
+    persistSession: true,        // simpan session di localStorage
+    autoRefreshToken: true,
+    flowType: 'pkce',            // PKCE flow — lebih aman & kompatibel dengan GitHub Pages
+  }
+});
 
 // =====================================================================
 // STATE GLOBAL
@@ -12502,17 +12509,16 @@ let _afterLoginRunning = false; // Cegah double-call
 // INIT — dipanggil saat app pertama kali load
 // =====================================================================
 async function initSupabase() {
-  // Set chip ke "Menghubungkan..." saat cek session
   const chipName = document.getElementById('chip-company-name');
   const chipSub  = document.getElementById('chip-sub');
   if (chipName) chipName.textContent = 'Menghubungkan...';
   if (chipSub)  chipSub.textContent  = 'Memeriksa akun';
 
-  // PASANG LISTENER DULU — agar SIGNED_IN event dari Google OAuth redirect
-  // tidak terlewat sebelum getSession() selesai dijalankan
+  // PASANG LISTENER DULU — supaya SIGNED_IN event dari Google OAuth redirect
+  // tidak terlewat. Dengan flowType 'pkce', Supabase akan otomatis exchange
+  // code dari URL dan fire SIGNED_IN lewat listener ini.
   _supa.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN') {
-      // Hanya proses jika belum login atau user berbeda (dari modal login / Google OAuth redirect)
       if (!currentUser || currentUser.id !== session?.user?.id) {
         currentUser = session.user;
         isGuestMode = false;
@@ -12520,7 +12526,6 @@ async function initSupabase() {
         await afterLogin();
       }
     } else if (event === 'TOKEN_REFRESHED') {
-      // Update user tapi jangan re-run afterLogin
       currentUser = session?.user || currentUser;
     } else if (event === 'SIGNED_OUT') {
       currentUser = null;
@@ -12531,20 +12536,20 @@ async function initSupabase() {
     }
   });
 
-  // Cek session existing SETELAH listener aktif
-  // Kalau balik dari Google OAuth, Supabase akan fire SIGNED_IN lewat listener di atas
+  // Cek session existing (untuk user yang sudah login sebelumnya / refresh halaman)
   const { data: { session } } = await _supa.auth.getSession();
-  if (session) {
-    // Session sudah ada (misal refresh halaman saat sudah login)
-    // Cek apakah listener sudah handle ini, kalau belum proses di sini
-    if (!currentUser) {
-      currentUser = session.user;
-      isGuestMode = false;
-      await afterLogin();
-    }
-  } else if (!currentUser) {
-    // Tidak ada session dan listener belum set currentUser → masuk guest mode
-    enterGuestMode();
+  if (session && !currentUser) {
+    // Session ada tapi listener belum sempat set currentUser
+    currentUser = session.user;
+    isGuestMode = false;
+    await afterLogin();
+  } else if (!session && !currentUser) {
+    // Tidak ada session sama sekali → guest mode
+    // Tapi tunggu sebentar dulu, beri kesempatan SIGNED_IN event muncul
+    // (kalau baru balik dari OAuth redirect)
+    setTimeout(() => {
+      if (!currentUser) enterGuestMode();
+    }, 1500);
   }
   _authReady = true;
 }
