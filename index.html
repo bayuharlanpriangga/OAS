@@ -12484,11 +12484,7 @@ const SUPABASE_URL = 'https://bcaxdjlyijyfzskbshcz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjYXhkamx5aWp5Znpza2JzaGN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MTY5MjYsImV4cCI6MjA5MzI5MjkyNn0.9vJCqtnE9k33BD6oe0AwZW_xvvZa2Dak1BzA-P9FfzE';
 
 const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    detectSessionInUrl: true,
-    persistSession: true,
-    autoRefreshToken: true,
-  }
+  auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
 });
 
 // =====================================================================
@@ -12533,7 +12529,7 @@ async function initSupabase() {
     }
   });
 
-  // Baru cek session existing (untuk refresh halaman / sudah login sebelumnya)
+  // Cek session existing (refresh halaman / sudah login sebelumnya)
   const { data: { session } } = await _supa.auth.getSession();
   if (session && !currentUser) {
     currentUser = session.user;
@@ -13086,12 +13082,19 @@ function renderCompanyList(companies) {
 
 async function getMyCompanies() {
   if (!currentUser) return [];
-  const { data, error } = await _supa
-    .from('companies')
-    .select('*')
-    .eq('user_id', currentUser.id)
-    .order('created_at');
-  return data || [];
+  try {
+    const session = (await _supa.auth.getSession()).data.session;
+    const token = session?.access_token || SUPABASE_ANON_KEY;
+    const res = await fetch(
+      SUPABASE_URL + '/rest/v1/companies?user_id=eq.' + currentUser.id + '&order=created_at',
+      { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token } }
+    );
+    const json = await res.json();
+    return Array.isArray(json) ? json : [];
+  } catch(e) {
+    console.error('getMyCompanies error:', e);
+    return [];
+  }
 }
 
 async function createCompany() {
