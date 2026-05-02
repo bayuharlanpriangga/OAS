@@ -12485,10 +12485,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    detectSessionInUrl: true,  // tangkap token dari URL setelah OAuth redirect
+    detectSessionInUrl: true,
     persistSession: true,
     autoRefreshToken: true,
-    // flowType tidak diset → pakai default 'implicit' yang kompatibel
   }
 });
 
@@ -12514,7 +12513,7 @@ async function initSupabase() {
   if (chipName) chipName.textContent = 'Menghubungkan...';
   if (chipSub)  chipSub.textContent  = 'Memeriksa akun';
 
-  // Pasang listener DULU agar SIGNED_IN event dari OAuth redirect tidak terlewat
+  // Pasang listener DULU agar SIGNED_IN dari OAuth redirect tidak terlewat
   _supa.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN') {
       if (!currentUser || currentUser.id !== session?.user?.id) {
@@ -12534,14 +12533,13 @@ async function initSupabase() {
     }
   });
 
-  // Cek session existing (refresh halaman / sudah login sebelumnya)
+  // Baru cek session existing (untuk refresh halaman / sudah login sebelumnya)
   const { data: { session } } = await _supa.auth.getSession();
   if (session && !currentUser) {
     currentUser = session.user;
     isGuestMode = false;
     await afterLogin();
   } else if (!session && !currentUser) {
-    // Beri jeda 800ms buat SIGNED_IN event muncul kalau baru balik dari OAuth
     setTimeout(() => { if (!currentUser) enterGuestMode(); }, 800);
   }
   _authReady = true;
