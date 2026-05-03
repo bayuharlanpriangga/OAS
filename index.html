@@ -60,6 +60,35 @@ body.light-mode .tut-card { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
 body.light-mode .ai-bubble { border-color: var(--border); }
 body.light-mode .ai-msg-user .ai-bubble { background: rgba(22,163,74,0.08); }
 
+/* ===== PPh 21 TOGGLE BUTTONS ===== */
+.p21-toggle-btn {
+  flex: 1; min-width: 180px; display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; background: var(--surface2); border: 2px solid var(--border);
+  border-radius: 12px; cursor: pointer; text-align: left; font-family: var(--sans);
+  color: var(--muted); transition: all 0.2s; font-size: 13px;
+}
+.p21-toggle-btn:hover { border-color: var(--accent2); color: var(--text); background: rgba(34,211,238,0.05); }
+.p21-toggle-btn.active {
+  border-color: var(--accent2); color: var(--text);
+  background: rgba(34,211,238,0.08);
+  box-shadow: 0 0 0 1px rgba(34,211,238,0.2) inset;
+}
+.p21-toggle-btn b { font-size: 13.5px; display: block; }
+.p21-kat-btn {
+  padding: 8px 18px; border-radius: 20px; border: 2px solid var(--border);
+  background: var(--surface2); cursor: pointer; font-size: 13px; font-weight: 600;
+  color: var(--muted); font-family: var(--sans); transition: all 0.2s;
+}
+.p21-kat-btn:hover { border-color: var(--accent); color: var(--text); }
+.p21-kat-btn.active {
+  background: rgba(74,222,128,0.1); border-color: var(--accent);
+  color: var(--accent);
+}
+body.light-mode .p21-toggle-btn { background: #f8fafc; }
+body.light-mode .p21-toggle-btn.active { background: rgba(8,145,178,0.07); }
+body.light-mode .p21-kat-btn { background: #f8fafc; }
+body.light-mode .p21-kat-btn.active { background: rgba(22,163,74,0.08); }
+
 /* Theme toggle switch */
 .theme-toggle {
   position: relative; width: 44px; height: 24px; flex-shrink: 0;
@@ -2307,31 +2336,110 @@ body.light-mode .opt-picker-item.selected {
   </div>
 
   <div id="pajak-pph21" style="display:none">
+    <!-- Metode Perhitungan Toggle -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      <button id="p21-toggle-ter" class="p21-toggle-btn active" onclick="switchP21Metode('ter')">
+        <span style="font-size:14px;">📅</span>
+        <span>
+          <b>Metode TER (Bulanan)</b>
+          <small style="display:block;font-weight:400;opacity:0.75;">PMK 168/2023 — Tarif Efektif Rata-rata</small>
+        </span>
+      </button>
+      <button id="p21-toggle-ps17" class="p21-toggle-btn" onclick="switchP21Metode('ps17')">
+        <span style="font-size:14px;">📆</span>
+        <span>
+          <b>Metode Pasal 17 (Tahunan/Des)</b>
+          <small style="display:block;font-weight:400;opacity:0.75;">Progresif — Rekonsiliasi akhir tahun</small>
+        </span>
+      </button>
+    </div>
+
+    <!-- Kategori Pegawai -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      <button id="p21-kat-tetap" class="p21-kat-btn active" onclick="switchP21Kategori('tetap')">👔 Pegawai Tetap</button>
+      <button id="p21-kat-tidak-tetap" class="p21-kat-btn" onclick="switchP21Kategori('tidak-tetap')">🧾 Pegawai Tidak Tetap</button>
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="kalk-grid">
-      <div class="table-card"><div class="table-header"><div class="table-title">PPh Pasal 21 — Karyawan</div></div>
+      <div class="table-card">
+        <div class="table-header">
+          <div>
+            <div class="table-title" id="p21-card-title">PPh Pasal 21 — Pegawai Tetap</div>
+            <div id="p21-card-sub" style="font-size:11px;color:var(--accent2);margin-top:2px;">📅 Metode TER · PMK 168 Tahun 2023</div>
+          </div>
+        </div>
         <div class="modal-body">
-          <div class="form-row"><div class="form-group"><label>Gaji Pokok / Bulan (Rp)</label><input type="number" id="p21-gaji" placeholder="10000000" oninput="hitungPPh21()"></div>
-          <div class="form-group"><label>Tunjangan / Bulan (Rp)</label><input type="number" id="p21-tunjangan" placeholder="0" oninput="hitungPPh21()"></div></div>
-          <div class="form-row"><div class="form-group"><label>Status PTKP</label>
-            <select id="p21-ptkp" onchange="hitungPPh21()">
-              <option value="TK0">TK/0 — Tidak Kawin, 0 tanggungan</option>
-              <option value="TK1">TK/1 — Tidak Kawin, 1 tanggungan</option>
-              <option value="TK2">TK/2 — Tidak Kawin, 2 tanggungan</option>
-              <option value="TK3">TK/3 — Tidak Kawin, 3 tanggungan</option>
-              <option value="K0">K/0 — Kawin, 0 tanggungan</option>
-              <option value="K1">K/1 — Kawin, 1 tanggungan</option>
-              <option value="K2">K/2 — Kawin, 2 tanggungan</option>
-              <option value="K3">K/3 — Kawin, 3 tanggungan</option>
-            </select></div>
-          <div class="form-group"><label>Bonus / THR (Rp)</label><input type="number" id="p21-bonus" placeholder="0" oninput="hitungPPh21()"></div></div>
-          <div class="form-row"><div class="form-group"><label>Iuran JHT (4.24% pekerja)</label><input type="number" id="p21-jht" placeholder="0" oninput="hitungPPh21()"></div>
-          <div class="form-group"><label>Iuran BPJS Kesehatan (1%)</label><input type="number" id="p21-bpjs" placeholder="0" oninput="hitungPPh21()"></div></div>
-          <div class="form-row full"><div class="form-group"><label>Metode Pemotongan</label>
-            <select id="p21-metode" onchange="hitungPPh21()">
-              <option value="netto">Netto (dipotong dari karyawan)</option>
-              <option value="gross">Gross (ditanggung pemberi kerja)</option>
-              <option value="gross-up">Gross Up (tunjangan pajak)</option>
-            </select></div></div>
+
+          <!-- Bagian Pegawai Tetap -->
+          <div id="p21-section-tetap">
+            <div class="form-row">
+              <div class="form-group"><label>Gaji Pokok / Bulan (Rp)</label><input type="number" id="p21-gaji" placeholder="10000000" oninput="hitungPPh21()"></div>
+              <div class="form-group"><label>Tunjangan Tetap / Bulan (Rp)</label><input type="number" id="p21-tunjangan" placeholder="0" oninput="hitungPPh21()"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Status PTKP</label>
+                <select id="p21-ptkp" onchange="hitungPPh21()">
+                  <option value="TK0">TK/0 — Tidak Kawin, 0 tanggungan</option>
+                  <option value="TK1">TK/1 — Tidak Kawin, 1 tanggungan</option>
+                  <option value="TK2">TK/2 — Tidak Kawin, 2 tanggungan</option>
+                  <option value="TK3">TK/3 — Tidak Kawin, 3 tanggungan</option>
+                  <option value="K0">K/0 — Kawin, 0 tanggungan</option>
+                  <option value="K1">K/1 — Kawin, 1 tanggungan</option>
+                  <option value="K2">K/2 — Kawin, 2 tanggungan</option>
+                  <option value="K3">K/3 — Kawin, 3 tanggungan</option>
+                  <option value="KI0">K/I/0 — Kawin+Istri kerja, 0 tanggungan</option>
+                  <option value="KI1">K/I/1 — Kawin+Istri kerja, 1 tanggungan</option>
+                  <option value="KI2">K/I/2 — Kawin+Istri kerja, 2 tanggungan</option>
+                  <option value="KI3">K/I/3 — Kawin+Istri kerja, 3 tanggungan</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Bonus / THR (Rp)</label><input type="number" id="p21-bonus" placeholder="0" oninput="hitungPPh21()"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Iuran JHT Pekerja (2%)</label><input type="number" id="p21-jht" placeholder="0" oninput="hitungPPh21()"></div>
+              <div class="form-group"><label>BPJS Kesehatan (1%)</label><input type="number" id="p21-bpjs" placeholder="0" oninput="hitungPPh21()"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>JP (Jaminan Pensiun, 1%)</label><input type="number" id="p21-jp" placeholder="0" oninput="hitungPPh21()"></div>
+              <div class="form-group"><label>Bulan ke- (1–12)</label><input type="number" id="p21-bulan" placeholder="1" min="1" max="12" oninput="hitungPPh21()"></div>
+            </div>
+            <div class="form-row full"><div class="form-group"><label>Metode Pemotongan</label>
+              <select id="p21-metode" onchange="hitungPPh21()">
+                <option value="netto">Netto (dipotong dari karyawan)</option>
+                <option value="gross">Gross (ditanggung pemberi kerja)</option>
+                <option value="gross-up">Gross Up (tunjangan pajak)</option>
+              </select></div></div>
+          </div>
+
+          <!-- Bagian Pegawai Tidak Tetap -->
+          <div id="p21-section-tidak-tetap" style="display:none">
+            <div class="form-row">
+              <div class="form-group"><label>Upah Harian / Per Kedatangan (Rp)</label><input type="number" id="p21-upah-harian" placeholder="500000" oninput="hitungPPh21TidakTetap()"></div>
+              <div class="form-group"><label>Jumlah Hari Kerja Bulan Ini</label><input type="number" id="p21-hari-kerja" placeholder="20" oninput="hitungPPh21TidakTetap()"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Status PTKP</label>
+                <select id="p21-ptkp-tt" onchange="hitungPPh21TidakTetap()">
+                  <option value="TK0">TK/0 — Tidak Kawin, 0 tanggungan</option>
+                  <option value="TK1">TK/1 — Tidak Kawin, 1 tanggungan</option>
+                  <option value="K0">K/0 — Kawin, 0 tanggungan</option>
+                  <option value="K1">K/1 — Kawin, 1 tanggungan</option>
+                  <option value="K2">K/2 — Kawin, 2 tanggungan</option>
+                  <option value="K3">K/3 — Kawin, 3 tanggungan</option>
+                </select>
+              </div>
+              <div class="form-group"><label>NPWP?</label>
+                <select id="p21-npwp-tt" onchange="hitungPPh21TidakTetap()">
+                  <option value="ya">Ya (tarif normal)</option>
+                  <option value="tidak">Tidak (+20% tarif)</option>
+                </select>
+              </div>
+            </div>
+            <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:11px 14px;font-size:12px;color:var(--accent3);margin-bottom:12px;">
+              ⚠️ <b>PMK 168/2023:</b> Upah kumulatif ≤ Rp500rb/hari tidak dipotong. Rp500rb–Rp2,5jt dipotong 2.5% dari selisih. Di atas batas berlaku tarif TER harian.
+            </div>
+          </div>
+
         </div>
       </div>
       <div class="table-card"><div class="table-header"><div class="table-title">Hasil PPh 21</div></div>
@@ -2339,9 +2447,14 @@ body.light-mode .opt-picker-item.selected {
       </div>
     </div>
     <div class="table-card" id="p21-tabel-wrap" style="display:none">
-      <div class="table-header"><div class="table-title">Lapisan Tarif Progresif PPh 21</div></div>
-      <div class="table-scroll"><table><thead><tr><th>PKP Lapisan</th><th>Tarif</th><th>Pajak Lapisan</th></tr></thead>
+      <div class="table-header"><div class="table-title" id="p21-tabel-title">Lapisan Tarif Progresif PPh 21</div></div>
+      <div class="table-scroll"><table><thead><tr><th id="p21-th1">PKP Lapisan</th><th>Tarif</th><th>Pajak Lapisan</th></tr></thead>
       <tbody id="p21-tabel-body"></tbody></table></div>
+    </div>
+    <!-- Info PMK 168 -->
+    <div id="p21-pmk-info" style="background:rgba(34,211,238,0.06);border:1px solid rgba(34,211,238,0.2);border-radius:10px;padding:14px 16px;margin-top:12px;font-size:12.5px;color:var(--muted);display:none">
+      <div style="font-weight:700;color:var(--accent2);margin-bottom:8px;">📋 Info PMK 168 Tahun 2023 — Metode TER</div>
+      <div style="line-height:1.8;" id="p21-pmk-info-text"></div>
     </div>
   </div>
 
@@ -9726,6 +9839,8 @@ function switchPajakTab(id, el) {
   document.getElementById('pajak-'+id).style.display='block';
   document.querySelectorAll('#pajak-tabs .tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
+  // Upgrade pickers after tab switch
+  setTimeout(upgradePajakPickers, 100);
 }
 
 document.getElementById('ppn-tarif').addEventListener('change', function() {
@@ -9761,71 +9876,276 @@ function hitungPPN() {
   setTimeout(addInputBtnToPPN, 80);
 }
 
+// ===== PPh 21 — State & Switchers =====
+let _p21MetodeCalc = 'ter';   // 'ter' | 'ps17'
+let _p21KategoriCalc = 'tetap'; // 'tetap' | 'tidak-tetap'
+
+function switchP21Metode(m) {
+  _p21MetodeCalc = m;
+  document.getElementById('p21-toggle-ter').classList.toggle('active', m==='ter');
+  document.getElementById('p21-toggle-ps17').classList.toggle('active', m==='ps17');
+  const sub = document.getElementById('p21-card-sub');
+  if(sub) sub.textContent = m==='ter'
+    ? '📅 Metode TER · PMK 168 Tahun 2023'
+    : '📆 Metode Pasal 17 · Tarif Progresif Tahunan';
+  hitungPPh21();
+}
+function switchP21Kategori(k) {
+  _p21KategoriCalc = k;
+  document.getElementById('p21-kat-tetap').classList.toggle('active', k==='tetap');
+  document.getElementById('p21-kat-tidak-tetap').classList.toggle('active', k==='tidak-tetap');
+  document.getElementById('p21-section-tetap').style.display = k==='tetap'?'block':'none';
+  document.getElementById('p21-section-tidak-tetap').style.display = k==='tidak-tetap'?'block':'none';
+  const title = document.getElementById('p21-card-title');
+  if(title) title.textContent = k==='tetap'
+    ? 'PPh Pasal 21 — Pegawai Tetap'
+    : 'PPh Pasal 21 — Pegawai Tidak Tetap';
+  document.getElementById('pph21-hasil').innerHTML = '<span style="color:var(--muted);font-size:13px">Isi parameter.</span>';
+  document.getElementById('p21-tabel-wrap').style.display = 'none';
+  document.getElementById('p21-pmk-info').style.display = 'none';
+  // Re-run upgrade for new selects
+  setTimeout(upgradePajakPickers, 80);
+}
+
+// ===== Tabel TER Bulanan (PMK 168/2023) =====
+// Tarif Efektif Rata-rata Bulanan — A (TK), B (K/0 atau TK+tanggungan), C (K/1+ atau lebih)
+const TER_A = [ // TK/0, TK/1
+  [5400000,0],[6200000,0.0025],[7100000,0.005],[8050000,0.0075],[9650000,0.01],
+  [10050000,0.0125],[10350000,0.015],[10700000,0.0175],[11050000,0.02],[11600000,0.0225],
+  [12500000,0.025],[12950000,0.03],[13150000,0.035],[14050000,0.04],[14400000,0.045],
+  [14950000,0.05],[15550000,0.055],[16400000,0.06],[17050000,0.065],[17550000,0.07],
+  [17850000,0.075],[18000000,0.08],[18800000,0.085],[19750000,0.09],[20212500,0.095],
+  [Infinity,0.1]
+];
+const TER_B = [ // TK/2, TK/3, K/0
+  [6200000,0],[7500000,0.0025],[8550000,0.005],[9650000,0.0075],[10050000,0.01],
+  [10350000,0.0125],[10700000,0.015],[11050000,0.0175],[11600000,0.02],[12500000,0.0225],
+  [12950000,0.025],[13150000,0.03],[14050000,0.035],[14400000,0.04],[14950000,0.045],
+  [15550000,0.05],[16400000,0.055],[17050000,0.06],[17550000,0.065],[17850000,0.07],
+  [18000000,0.075],[18800000,0.08],[19750000,0.085],[20212500,0.09],[21550000,0.095],
+  [Infinity,0.1]
+];
+const TER_C = [ // K/1, K/2, K/3, KI/x
+  [6600000,0],[7700000,0.0025],[8850000,0.005],[9800000,0.0075],[10350000,0.01],
+  [10700000,0.0125],[11050000,0.015],[11600000,0.0175],[12500000,0.02],[12950000,0.0225],
+  [13150000,0.025],[14050000,0.03],[14400000,0.035],[14950000,0.04],[15550000,0.045],
+  [16400000,0.05],[17050000,0.055],[17550000,0.06],[17850000,0.065],[18000000,0.07],
+  [18800000,0.075],[19750000,0.08],[20212500,0.085],[21550000,0.09],[22425000,0.095],
+  [Infinity,0.1]
+];
+function getTERKategori(ptkpKode) {
+  if(['TK0','TK1'].includes(ptkpKode)) return 'A';
+  if(['TK2','TK3','K0'].includes(ptkpKode)) return 'B';
+  return 'C';
+}
+function getTERTable(ptkpKode) {
+  if(['TK0','TK1'].includes(ptkpKode)) return TER_A;
+  if(['TK2','TK3','K0'].includes(ptkpKode)) return TER_B;
+  return TER_C; // K1, K2, K3, KI0, KI1, KI2, KI3
+}
+function getTERTarif(penghasilanBrutoBulan, ptkpKode) {
+  const tbl = getTERTable(ptkpKode);
+  for(const [batas, rate] of tbl) {
+    if(penghasilanBrutoBulan <= batas) return rate;
+  }
+  return 0.1;
+}
+
 function hitungPPh21() {
+  if(_p21KategoriCalc === 'tidak-tetap') { hitungPPh21TidakTetap(); return; }
+
   const gaji = parseFloat(document.getElementById('p21-gaji').value)||0;
   const tunjangan = parseFloat(document.getElementById('p21-tunjangan').value)||0;
   const bonus = parseFloat(document.getElementById('p21-bonus').value)||0;
   const jhtIn = parseFloat(document.getElementById('p21-jht').value)||0;
   const bpjsIn = parseFloat(document.getElementById('p21-bpjs').value)||0;
+  const jpIn = parseFloat(document.getElementById('p21-jp').value)||0;
   const ptkpKode = document.getElementById('p21-ptkp').value;
-  const metode = document.getElementById('p21-metode').value;
+  const metodePot = document.getElementById('p21-metode').value;
+  const bulan = parseInt(document.getElementById('p21-bulan').value)||1;
+  if(!gaji) return;
 
-  const ptkpTbl = {TK0:54000000,TK1:58500000,TK2:63000000,TK3:67500000,K0:58500000,K1:63000000,K2:67500000,K3:72000000};
+  const ptkpTbl = {
+    TK0:54000000, TK1:58500000, TK2:63000000, TK3:67500000,
+    K0:58500000, K1:63000000, K2:67500000, K3:72000000,
+    KI0:63000000, KI1:67500000, KI2:72000000, KI3:76500000
+  };
   const ptkp = ptkpTbl[ptkpKode]||54000000;
-
-  const penghasilanBrutoSetahun = (gaji+tunjangan)*12 + bonus;
-  const jhtSetahun = jhtIn ? jhtIn*12 : gaji*0.02*12; // JHT pekerja 2%
-  const bpjsSetahun = bpjsIn ? bpjsIn*12 : Math.min(gaji*0.01*12, 480000);
-  const biayaJabatan = Math.min(penghasilanBrutoSetahun*0.05, 6000000);
-  const penghasilanNeto = penghasilanBrutoSetahun - biayaJabatan - jhtSetahun - bpjsSetahun;
-  const pkp = Math.max(0, penghasilanNeto - ptkp);
-  const pkpBulat = Math.floor(pkp/1000)*1000;
-
-  // Tarif progresif PPh 21 2024
-  const lapisanTarif = [
-    {batas:60000000, tarif:0.05},
-    {batas:250000000, tarif:0.15},
-    {batas:500000000, tarif:0.25},
-    {batas:5000000000, tarif:0.30},
-    {batas:Infinity, tarif:0.35},
-  ];
-  let pkpSisa = pkpBulat, pajakSetahun = 0, lapisanRows = [];
-  let batasAwal = 0;
-  for(const l of lapisanTarif) {
-    if(pkpSisa <= 0) break;
-    const kena = Math.min(pkpSisa, l.batas - batasAwal);
-    const pajak = kena * l.tarif;
-    pajakSetahun += pajak;
-    lapisanRows.push(`<tr><td>${rp(batasAwal)} — ${l.batas===Infinity?'~':rp(l.batas)}</td><td>${pct(l.tarif*100)}</td><td class="kredit">${rp(pajak)}</td></tr>`);
-    pkpSisa -= kena;
-    batasAwal = l.batas;
-  }
-  const pajakBulan = pajakSetahun/12;
-  let pajakAktual = pajakBulan;
-  if(metode === 'gross') {
-    // employer bears tax, so net = gaji - 0
-    pajakAktual = pajakBulan;
-  } else if(metode === 'gross-up') {
-    // gross-up: tunjangan pajak
-  }
-  const take_home = gaji + tunjangan - (metode==='netto'?pajakBulan:0) - (jhtIn||gaji*0.02) - (bpjsIn||Math.min(gaji*0.01,40000));
+  const penghasilanBrutoBulan = gaji + tunjangan;
+  const jhtBulan = jhtIn || gaji * 0.02;
+  const bpjsBulan = bpjsIn || Math.min(gaji * 0.01, 40000);
+  const jpBulan = jpIn || Math.min(gaji * 0.01, 99000);
 
   const el = document.getElementById('pph21-hasil');
-  el.innerHTML = resRow('Penghasilan Bruto/Tahun', rp(penghasilanBrutoSetahun))
-    + resRow('Biaya Jabatan (max 6jt)', rp(biayaJabatan))
-    + resRow('Iuran JHT+BPJS', rp(jhtSetahun+bpjsSetahun))
-    + resRow('Penghasilan Neto', rp(penghasilanNeto))
-    + resRow('PTKP ('+ptkpKode+')', rp(ptkp))
-    + resRow('PKP (Dibulatkan)', rp(pkpBulat))
-    + resRow('PPh 21 Setahun', rp(pajakSetahun))
-    + resRow('PPh 21 / Bulan', `<span style="color:var(--red);font-size:18px">${rp(pajakBulan)}</span>`)
-    + resRow('Take Home Pay', rp(take_home));
-
   const tw = document.getElementById('p21-tabel-wrap');
-  tw.style.display = 'block';
-  document.getElementById('p21-tabel-body').innerHTML = lapisanRows.join('');
+  const pmkEl = document.getElementById('p21-pmk-info');
 
-  // Auto-add input button
+  if(_p21MetodeCalc === 'ter') {
+    // ===== METODE TER (PMK 168/2023) =====
+    const tarif = getTERTarif(penghasilanBrutoBulan, ptkpKode);
+    const pphBulan = Math.round(penghasilanBrutoBulan * tarif);
+
+    // Rekonsiliasi bulan Desember (bulan 12) pakai Ps. 17
+    let rekonsiliasi = '';
+    if(bulan === 12) {
+      const brutoSetahun = penghasilanBrutoBulan * 12 + bonus;
+      const jhtSetahun = jhtBulan * 12;
+      const bpjsSetahun = bpjsBulan * 12;
+      const jpSetahun = jpBulan * 12;
+      const biayaJabatan = Math.min(brutoSetahun * 0.05, 6000000);
+      const netoSetahun = brutoSetahun - biayaJabatan - jhtSetahun - bpjsSetahun - jpSetahun;
+      const pkp = Math.max(0, Math.floor((netoSetahun - ptkp)/1000)*1000);
+      const pajTahunan = hitungTarifProgresif(pkp);
+      const pphJanNov = pphBulan * 11;
+      const pphDes = Math.max(0, pajTahunan - pphJanNov);
+      rekonsiliasi = `<div style="margin-top:10px;padding:10px;background:rgba(245,158,11,0.08);border-radius:8px;border:1px solid rgba(245,158,11,0.2);">
+        <div style="font-weight:700;color:var(--accent3);font-size:12px;margin-bottom:6px;">📆 Rekonsiliasi Desember (Ps.17)</div>`
+        + resRow('PPh Jan–Nov (TER)', rp(pphJanNov))
+        + resRow('PPh Tahunan (Ps.17)', rp(pajTahunan))
+        + resRow('PPh Desember', `<b style="color:var(--red)">${rp(pphDes)}</b>`)
+        + '</div>';
+    }
+
+    const tarifPct = (tarif*100).toFixed(2);
+    el.innerHTML = resRow('Penghasilan Bruto/Bulan', rp(penghasilanBrutoBulan))
+      + resRow('Tarif TER ('+ptkpKode+')', `${tarifPct}%`)
+      + resRow('PPh 21 Bulan ini (TER)', `<span class="kredit" style="font-size:18px">${rp(pphBulan)}</span>`)
+      + '<div style="height:1px;background:var(--border);margin:10px 0;"></div>'
+      + resRow('Potongan JHT+BPJS+JP', rp(jhtBulan+bpjsBulan+jpBulan))
+      + resRow('Take Home Pay', rp(penghasilanBrutoBulan - (metodePot==='netto'?pphBulan:0) - jhtBulan - bpjsBulan - jpBulan))
+      + (bonus ? resRow('Bonus/THR (dipotong terpisah)', rp(bonus * getTERTarif(bonus, ptkpKode))) : '')
+      + rekonsiliasi;
+
+    tw.style.display = 'block';
+    document.getElementById('p21-tabel-title').textContent = 'Tabel TER Bulan ke-' + bulan + ' (' + ptkpKode + ')';
+    document.getElementById('p21-th1').textContent = 'Penghasilan Bruto Bulanan ≤';
+    const tbl = getTERTable(ptkpKode);
+    document.getElementById('p21-tabel-body').innerHTML = tbl.slice(0,10).map(([batas,rate]) =>
+      `<tr ${batas >= penghasilanBrutoBulan && (!tbl[tbl.indexOf([batas,rate])-1] || tbl[tbl.indexOf([batas,rate])-1][0] < penghasilanBrutoBulan) ? 'style="background:rgba(74,222,128,0.08);font-weight:600"' : ''}>
+        <td>${batas===Infinity ? '> 22 juta' : rp(batas)}</td>
+        <td>${(rate*100).toFixed(2)}%</td>
+        <td class="kredit">${rp(penghasilanBrutoBulan * rate)}</td>
+      </tr>`
+    ).join('') + `<tr><td colspan="3" style="text-align:center;color:var(--muted);font-size:11px;padding:8px;">Baris aktif = tarif yang berlaku untuk penghasilan ini</td></tr>`;
+
+    if(pmkEl) {
+      pmkEl.style.display = 'block';
+      document.getElementById('p21-pmk-info-text').innerHTML = `
+        ✅ <b>Tarif TER diterapkan tiap bulan</b> Jan–Nov. Desember dilakukan rekonsiliasi menggunakan tarif Pasal 17.<br>
+        ✅ Tarif TER dipilih berdasarkan <b>penghasilan bruto bulanan</b> & status PTKP.<br>
+        ✅ Berlaku mulai <b>1 Januari 2024</b> sesuai PMK 168 Tahun 2023.<br>
+        ✅ Tabel TER Kategori: <b>${getTERKategori(ptkpKode)}</b> (${ptkpKode})
+      `;
+    }
+  } else {
+    // ===== METODE PASAL 17 (Tahunan) =====
+    const brutoSetahun = penghasilanBrutoBulan * 12 + bonus;
+    const jhtSetahun = jhtBulan * 12;
+    const bpjsSetahun = bpjsBulan * 12;
+    const jpSetahun = jpBulan * 12;
+    const biayaJabatan = Math.min(brutoSetahun * 0.05, 6000000);
+    const netoSetahun = brutoSetahun - biayaJabatan - jhtSetahun - bpjsSetahun - jpSetahun;
+    const pkp = Math.max(0, Math.floor((netoSetahun - ptkp)/1000)*1000);
+
+    const {pajak: pajakSetahun, rows: lapisanRows} = hitungTarifProgresifDetail(pkp);
+    const pajakBulan = pajakSetahun/12;
+    const take_home = penghasilanBrutoBulan - (metodePot==='netto'?pajakBulan:0) - jhtBulan - bpjsBulan - jpBulan;
+
+    el.innerHTML = resRow('Penghasilan Bruto/Tahun', rp(brutoSetahun))
+      + resRow('Biaya Jabatan (max 6jt)', rp(biayaJabatan))
+      + resRow('Iuran JHT+BPJS+JP/Tahun', rp(jhtSetahun+bpjsSetahun+jpSetahun))
+      + resRow('Penghasilan Neto', rp(netoSetahun))
+      + resRow('PTKP ('+ptkpKode+')', rp(ptkp))
+      + resRow('PKP (Dibulatkan)', rp(pkp))
+      + resRow('PPh 21 Setahun (Ps.17)', rp(pajakSetahun))
+      + resRow('PPh 21 / Bulan', `<span class="kredit" style="font-size:18px">${rp(pajakBulan)}</span>`)
+      + resRow('Take Home Pay', rp(take_home));
+
+    tw.style.display = 'block';
+    document.getElementById('p21-tabel-title').textContent = 'Lapisan Tarif Progresif PPh 21 (Pasal 17)';
+    document.getElementById('p21-th1').textContent = 'PKP Lapisan';
+    document.getElementById('p21-tabel-body').innerHTML = lapisanRows.join('');
+    if(pmkEl) pmkEl.style.display = 'none';
+  }
+  setTimeout(addInputBtnToPPH21, 80);
+}
+
+function hitungTarifProgresif(pkp) {
+  const tiers = [{b:60000000,r:0.05},{b:250000000,r:0.15},{b:500000000,r:0.25},{b:5000000000,r:0.30},{b:Infinity,r:0.35}];
+  let sisa = pkp, total = 0, prev = 0;
+  for(const t of tiers) {
+    if(sisa<=0) break;
+    const kena = Math.min(sisa, t.b - prev);
+    total += kena * t.r;
+    sisa -= kena; prev = t.b;
+  }
+  return total;
+}
+function hitungTarifProgresifDetail(pkp) {
+  const tiers = [{b:60000000,r:0.05},{b:250000000,r:0.15},{b:500000000,r:0.25},{b:5000000000,r:0.30},{b:Infinity,r:0.35}];
+  let sisa = pkp, total = 0, prev = 0, rows = [];
+  for(const t of tiers) {
+    if(sisa<=0) break;
+    const kena = Math.min(sisa, t.b - prev);
+    const pajak = kena * t.r;
+    total += pajak;
+    rows.push(`<tr><td>${rp(prev)} — ${t.b===Infinity?'~':rp(t.b)}</td><td>${pct(t.r*100)}</td><td class="kredit">${rp(pajak)}</td></tr>`);
+    sisa -= kena; prev = t.b;
+  }
+  return {pajak: total, rows};
+}
+
+function hitungPPh21TidakTetap() {
+  const upahHarian = parseFloat(document.getElementById('p21-upah-harian').value)||0;
+  const hariKerja = parseFloat(document.getElementById('p21-hari-kerja').value)||0;
+  const ptkpKode = document.getElementById('p21-ptkp-tt').value;
+  const npwp = document.getElementById('p21-npwp-tt').value;
+  const el = document.getElementById('pph21-hasil');
+  const tw = document.getElementById('p21-tabel-wrap');
+  if(!upahHarian || !hariKerja) return;
+
+  const ptkpHarian = {TK0:54000000,TK1:58500000,K0:58500000,K1:63000000,K2:67500000,K3:72000000}[ptkpKode]||54000000;
+  const upahBulan = upahHarian * hariKerja;
+
+  // PMK 168/2023: aturan pemotongan upah harian
+  let pajakHarian = 0, catatan = '';
+  if(upahHarian <= 500000) {
+    pajakHarian = 0;
+    catatan = 'Upah ≤ Rp500.000/hari — tidak dipotong PPh 21';
+  } else if(upahHarian <= 2500000) {
+    pajakHarian = (upahHarian - 500000) * 0.025;
+    catatan = 'Upah > 500rb s.d. 2,5jt — dipotong 2,5% dari selisih atas Rp500.000';
+  } else {
+    // Pakai TER harian
+    const upahNeto = upahHarian - (ptkpHarian/360);
+    pajakHarian = Math.max(0, upahNeto) * getTERTarif(upahBulan, ptkpKode);
+    catatan = 'Upah > Rp2,5jt — dipotong berdasarkan TER harian';
+  }
+  const pajakBulan = pajakHarian * hariKerja;
+  const multiplier = npwp === 'tidak' ? 1.2 : 1;
+  const pajakFinal = pajakBulan * multiplier;
+
+  el.innerHTML = resRow('Upah Harian', rp(upahHarian))
+    + resRow('Hari Kerja', hariKerja + ' hari')
+    + resRow('Upah Bulanan', rp(upahBulan))
+    + resRow('Aturan PMK 168', `<span style="color:var(--accent2);font-size:12px">${catatan}</span>`)
+    + resRow('PPh 21/Hari', rp(pajakHarian))
+    + (npwp==='tidak' ? resRow('Koreksi Non-NPWP (+20%)', '+20%') : '')
+    + resRow('PPh 21 Bulan Ini', `<span class="kredit" style="font-size:18px">${rp(pajakFinal)}</span>`)
+    + resRow('Take Home Pay', rp(upahBulan - pajakFinal));
+
+  tw.style.display = 'none';
+  const pmkEl = document.getElementById('p21-pmk-info');
+  if(pmkEl) {
+    pmkEl.style.display = 'block';
+    document.getElementById('p21-pmk-info-text').innerHTML = `
+      ✅ Perhitungan berdasarkan <b>PMK 168 Tahun 2023</b> untuk pegawai tidak tetap.<br>
+      ✅ Upah kumulatif ≤ Rp500rb/hari: <b>tidak dipotong</b>.<br>
+      ✅ Upah Rp500rb–Rp2,5jt: dipotong <b>2,5%</b> dari selisih di atas Rp500rb.<br>
+      ✅ Upah > Rp2,5jt: berlaku <b>tarif TER harian</b>.<br>
+      ${npwp==='tidak' ? '⚠️ Tanpa NPWP: tarif ditambah <b>20%</b> dari nilai pajak.' : ''}
+    `;
+  }
   setTimeout(addInputBtnToPPH21, 80);
 }
 
@@ -12644,6 +12964,100 @@ function upgradeFormPickers() {
     title: 'Metode Penyusutan',
     iconMap: { 'garis-lurus': '📉', 'saldo-menurun': '📊', 'satuan-produksi': '⚙️' }
   });
+
+  // Upgrade pajak pickers juga
+  upgradePajakPickers();
+}
+
+// ===== UPGRADE PAJAK PICKERS (PPN & PPh) =====
+function upgradePajakPickers() {
+  // PPN Mode
+  const ppnMode = document.getElementById('ppn-mode');
+  if (ppnMode && !ppnMode.dataset.upgraded) upgradeSelectToOptPicker(ppnMode, {
+    title: '🧮 Mode Perhitungan PPN',
+    iconMap: { eksklusif: '➕', inklusif: '🔁', dpp: '📐' },
+    subMap: {
+      eksklusif: 'DPP sudah diketahui → hitung PPN yang harus dibayar',
+      inklusif: 'Harga sudah termasuk PPN → pisahkan DPP & PPN-nya',
+      dpp: 'Harga inklusif → hitung kembali nilai DPP-nya'
+    }
+  });
+
+  // PPN Tarif
+  const ppnTarif = document.getElementById('ppn-tarif');
+  if (ppnTarif && !ppnTarif.dataset.upgraded) upgradeSelectToOptPicker(ppnTarif, {
+    title: '📊 Tarif PPN',
+    iconMap: { '12': '🇮🇩', '11': '📋', '0': '🌍', 'custom': '✏️' },
+    subMap: {
+      '12': 'Berlaku mulai 1 Jan 2025 — tarif umum',
+      '11': 'Tarif PPN sebelum 2025',
+      '0': 'Ekspor BKP/JKP atau fasilitas tertentu',
+      'custom': 'Masukkan tarif sendiri'
+    }
+  });
+
+  // PPh 21 PTKP
+  const p21ptkp = document.getElementById('p21-ptkp');
+  if (p21ptkp && !p21ptkp.dataset.upgraded) upgradeSelectToOptPicker(p21ptkp, {
+    title: '👤 Status PTKP',
+    iconMap: {
+      TK0:'🧑', TK1:'🧑‍👦', TK2:'🧑‍👦‍👦', TK3:'👨‍👩‍👦‍👦',
+      K0:'💑', K1:'👪', K2:'👨‍👩‍👦‍👦', K3:'👨‍👩‍👧‍👦‍👦',
+      KI0:'👫', KI1:'👫👦', KI2:'👫👦👦', KI3:'👫👦👦👦'
+    },
+    subMap: {
+      TK0:'PTKP Rp54.000.000/th', TK1:'PTKP Rp58.500.000/th',
+      TK2:'PTKP Rp63.000.000/th', TK3:'PTKP Rp67.500.000/th',
+      K0:'PTKP Rp58.500.000/th', K1:'PTKP Rp63.000.000/th',
+      K2:'PTKP Rp67.500.000/th', K3:'PTKP Rp72.000.000/th',
+      KI0:'PTKP Rp63.000.000/th', KI1:'PTKP Rp67.500.000/th',
+      KI2:'PTKP Rp72.000.000/th', KI3:'PTKP Rp76.500.000/th',
+    }
+  });
+
+  // PPh 21 Metode Pemotongan
+  const p21met = document.getElementById('p21-metode');
+  if (p21met && !p21met.dataset.upgraded) upgradeSelectToOptPicker(p21met, {
+    title: '⚖️ Metode Pemotongan PPh 21',
+    iconMap: { netto: '✂️', gross: '🏢', 'gross-up': '🔼' },
+    subMap: {
+      netto: 'Pajak dipotong dari gaji karyawan',
+      gross: 'Pajak ditanggung sepenuhnya oleh perusahaan',
+      'gross-up': 'Perusahaan beri tunjangan pajak agar net gaji utuh'
+    }
+  });
+
+  // PPh 21 PTKP Tidak Tetap
+  const p21ptkpTT = document.getElementById('p21-ptkp-tt');
+  if (p21ptkpTT && !p21ptkpTT.dataset.upgraded) upgradeSelectToOptPicker(p21ptkpTT, {
+    title: '👤 Status PTKP',
+    iconMap: { TK0:'🧑', TK1:'🧑‍👦', K0:'💑', K1:'👪', K2:'👨‍👩‍👦‍👦', K3:'👨‍👩‍👧‍👦' },
+    subMap: { TK0:'Rp54jt/th', TK1:'Rp58,5jt/th', K0:'Rp58,5jt/th', K1:'Rp63jt/th', K2:'Rp67,5jt/th', K3:'Rp72jt/th' }
+  });
+
+  // PPh 21 NPWP Tidak Tetap
+  const p21npwpTT = document.getElementById('p21-npwp-tt');
+  if (p21npwpTT && !p21npwpTT.dataset.upgraded) upgradeSelectToOptPicker(p21npwpTT, {
+    title: '🪪 Kepemilikan NPWP',
+    iconMap: { ya: '✅', tidak: '❌' },
+    subMap: { ya: 'Tarif normal sesuai ketentuan', tidak: 'Tarif +20% lebih tinggi (tanpa NPWP)' }
+  });
+
+  // PPh 23 jenis
+  const p23jenis = document.getElementById('p23-jenis');
+  if (p23jenis && !p23jenis.dataset.upgraded) upgradeSelectToOptPicker(p23jenis, {
+    title: '💼 Jenis Penghasilan PPh 23',
+    iconMap: { dividen:'💰', bunga:'🏦', royalti:'©️', hadiah:'🎁', sewa:'🏠', jasa:'⚙️', 'jasa-lain':'📋', custom:'✏️' },
+    subMap: { dividen:'Tarif 15%', bunga:'Tarif 15%', royalti:'Tarif 15%', hadiah:'Tarif 15%', sewa:'Tarif 2%', jasa:'Tarif 2%', 'jasa-lain':'Tarif 2%', custom:'Isi tarif manual' }
+  });
+
+  // PPh 23 NPWP
+  const p23npwp = document.getElementById('p23-npwp');
+  if (p23npwp && !p23npwp.dataset.upgraded) upgradeSelectToOptPicker(p23npwp, {
+    title: '🪪 Kepemilikan NPWP',
+    iconMap: { ya: '✅', tidak: '❌' },
+    subMap: { ya: 'Tarif normal', tidak: '+100% tarif (2x lipat)' }
+  });
 }
 
 // ===== INIT =====
@@ -12655,7 +13069,7 @@ window.addEventListener('load', () => {
     const _origSP = showPage;
     window.showPage = function(id) {
       _origSP.apply(this, arguments);
-      setTimeout(() => { upgradeAllPeriodPickers(); upgradeFormPickers(); }, 150);
+      setTimeout(() => { upgradeAllPeriodPickers(); upgradeFormPickers(); upgradePajakPickers(); }, 150);
     };
     window.showPage._patched = true;
   }
@@ -12667,6 +13081,8 @@ window.addEventListener('load', () => {
     };
     window.addPeriodFilterToReports._patched = true;
   }
+  // Initial upgrade for pajak pickers
+  setTimeout(upgradePajakPickers, 500);
 });
 </script>
 
