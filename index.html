@@ -9593,7 +9593,7 @@ function hitungRasio() {
   setCalc('rs-laba-kotor', labaKotor);
   setCalc('rs-total-liab', totalLiab);
   setCalc('rs-total-aset', totalAset);
-  if (labaBersihFinal > 0 && labaBersih === 0) setCalc('rs-laba-bersih', labaBersihFinal);
+  if (labaBersihFinal > 0 && _labaBersihManual === 0) setCalc('rs-laba-bersih', labaBersihFinal);
 
   const r = (a,b) => b ? a/b : 0;
 
