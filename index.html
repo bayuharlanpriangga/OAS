@@ -13116,55 +13116,64 @@ async function afterLogin() {
   if (chipName)   chipName.textContent = 'Memuat bisnis...';
   if (chipSub)    chipSub.textContent  = currentUser?.email || '';
 
-  // Retry helper — Google OAuth butuh beberapa saat agar token aktif di Supabase backend
-  async function getMyCompaniesWithRetry(maxTries = 5, delayMs = 1000) {
-    // Jika ini OAuth redirect, tunggu sebentar dulu sebelum percobaan pertama
-    const isOAuth = !!(window.__initialOAuthRedirect);
-    if (isOAuth) {
-      if (chipName) chipName.textContent = 'Memuat bisnis...';
-      await new Promise(r => setTimeout(r, 600));
-    }
-
-    let lastErr;
-    for (let i = 0; i < maxTries; i++) {
-      try {
-        const result = await getMyCompanies();
-        return result;
-      } catch(e) {
-        lastErr = e;
-        console.warn(`[afterLogin] getMyCompanies gagal (percobaan ${i+1}/${maxTries}):`, e.message);
-        if (i < maxTries - 1) {
-          const waitSec = Math.round(delayMs * (i + 1) / 1000 * 10) / 10;
-          if (chipName) chipName.textContent = `Memuat... (${i+2}/${maxTries})`;
-          await new Promise(r => setTimeout(r, delayMs * (i + 1)));
-        }
-      }
-    }
-    throw lastErr;
-  }
+  console.log('[afterLogin] Mulai, user:', currentUser?.email);
 
   try {
-    const companies = await getMyCompaniesWithRetry();
-    if (companies.length === 0) {
-      showCompanyPickerScreen(companies);
-    } else if (companies.length === 1) {
-      await selectCompany(companies[0]);
-      // Pastikan chip terupdate setelah selectCompany selesai
+    // Step 1: verifikasi token via getUser()
+    if (chipName) chipName.textContent = 'Verifikasi akun...';
+    console.log('[afterLogin] Step 1: getUser()');
+    const { data: { user }, error: userErr } = await _supa.auth.getUser();
+    console.log('[afterLogin] getUser result:', user?.email, 'error:', userErr?.message);
+    if (userErr || !user) throw new Error('Token tidak valid: ' + (userErr?.message || 'user null'));
+    currentUser = user;
+
+    // Step 2: query companies
+    if (chipName) chipName.textContent = 'Memuat bisnis...';
+    console.log('[afterLogin] Step 2: query companies untuk user_id:', currentUser.id);
+    const { data: companies, error: compErr } = await _supa
+      .from('companies')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at');
+    console.log('[afterLogin] companies result:', companies, 'error:', compErr?.message, 'code:', compErr?.code);
+
+    if (compErr) {
+      const msg = compErr.message || '';
+      if (msg.includes('relation') || msg.includes('does not exist') || compErr.code === '42P01') {
+        throw new Error('Tabel "companies" belum dibuat di Supabase. Buka Setup Supabase.');
+      }
+      if (compErr.code === '42501' || msg.includes('policy') || msg.includes('permission')) {
+        throw new Error('RLS Policy belum diatur di Supabase. Buka Setup Supabase.');
+      }
+      throw new Error('Query gagal: ' + msg + ' (code: ' + compErr.code + ')');
+    }
+
+    const list = Array.isArray(companies) ? companies : [];
+    console.log('[afterLogin] Jumlah bisnis:', list.length);
+
+    if (list.length === 0) {
+      console.log('[afterLogin] Belum ada bisnis, tampilkan company picker');
+      showCompanyPickerScreen(list);
+    } else if (list.length === 1) {
+      console.log('[afterLogin] 1 bisnis ditemukan, auto-select:', list[0].name);
+      await selectCompany(list[0]);
       updateUserChip();
       await offerGuestDataMigration();
     } else {
-      showCompanyPickerScreen(companies);
+      console.log('[afterLogin] Beberapa bisnis ditemukan, tampilkan picker');
+      showCompanyPickerScreen(list);
     }
+
   } catch(e) {
-    console.error('afterLogin error:', e);
-    // Tampilkan error yang informatif di chip
-    if (chipName) chipName.textContent = '⚠️ Error - tap untuk info';
-    if (chipSub) chipSub.textContent = e.message || 'Cek console';
-    showAlert('❌ Gagal memuat data bisnis:\n' + (e.message || e) + '\n\nCoba refresh halaman. Jika masalah berlanjut, pastikan tabel Supabase sudah dibuat (⚙️ Setup Supabase).');
-    // Fallback ke guest mode jika gagal
+    console.error('[afterLogin] ERROR:', e.message, e);
+    if (chipName) chipName.textContent = '⚠️ Gagal memuat';
+    if (chipSub) chipSub.textContent = 'Tap untuk detail';
+    if (chip) chip.onclick = () => showAlert('❌ Error:\n' + e.message + '\n\nCoba:\n1. Refresh halaman\n2. Clear cache browser\n3. Pastikan tabel Supabase sudah dibuat');
+    showAlert('❌ Gagal memuat data bisnis:\n' + e.message + '\n\nJika baru pertama login Google, coba refresh halaman sekali.');
     enterGuestMode();
   } finally {
     _afterLoginRunning = false;
+    console.log('[afterLogin] Selesai');
   }
 }
 
@@ -13239,26 +13248,11 @@ function renderCompanyList(companies) {
 
 async function getMyCompanies() {
   if (!currentUser) throw new Error('Belum login');
-
-  // Verifikasi user masih valid via getUser() — lebih reliable dari getSession() setelah OAuth redirect
-  try {
-    const { data: { user }, error: userErr } = await _supa.auth.getUser();
-    if (userErr || !user) {
-      throw new Error('Token tidak valid: ' + (userErr?.message || 'user null'));
-    }
-    // Update currentUser dengan data terbaru
-    currentUser = user;
-  } catch(e) {
-    console.warn('getMyCompanies: verifikasi user gagal:', e.message);
-    throw e;
-  }
-
   const { data, error } = await _supa
     .from('companies')
     .select('*')
     .eq('user_id', currentUser.id)
     .order('created_at');
-
   if (error) {
     console.error('getMyCompanies error:', error);
     throw new Error(error.message || 'Gagal mengambil data bisnis');
