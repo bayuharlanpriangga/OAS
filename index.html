@@ -12566,7 +12566,7 @@ const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     detectSessionInUrl: true,
     persistSession: true,
     autoRefreshToken: true,
-    flowType: 'implicit',
+    flowType: 'pkce',
     storageKey: 'bhp_oas_auth',
     storage: _authStorage, // pakai storage dengan fallback
   }
@@ -12595,26 +12595,44 @@ async function initSupabase() {
   if (chipSub)  chipSub.textContent  = 'Memeriksa akun';
 
   // Bersihkan refresh token yang corrupt/expired dari sesi lama
-  // Ini mencegah "Invalid Refresh Token" error yang menyebabkan auto-logout
   try {
-    const storedAuth = localStorage.getItem('bhp_oas_auth');
-    if (storedAuth) {
-      const parsed = JSON.parse(storedAuth);
-      // Jika ada refresh_token tapi access_token sudah expired sangat lama, hapus
+    const stored = _authStorage.getItem('bhp_oas_auth');
+    if (stored) {
+      const parsed = JSON.parse(stored);
       if (parsed && !parsed.access_token && parsed.refresh_token) {
         console.log('[Auth] Membersihkan refresh token lama yang tidak valid');
-        localStorage.removeItem('bhp_oas_auth');
+        _authStorage.removeItem('bhp_oas_auth');
       }
     }
   } catch(e) {}
 
-  // Deteksi OAuth params SEBELUM SDK menghapusnya dari URL
-  const hasOAuthParams = window.location.hash.includes('access_token') ||
-                         window.location.search.includes('code=') ||
-                         window.location.hash.includes('error=');
+  // Deteksi OAuth PKCE code dari URL SEBELUM SDK memprosesnya
+  const hasOAuthCode = window.location.search.includes('code=');
+  const hasOAuthHash = window.location.hash.includes('access_token') || window.location.hash.includes('error=');
+  const hasOAuthParams = hasOAuthCode || hasOAuthHash;
   if (hasOAuthParams) {
     window.__oauthRedirect = true;
     window.__initialOAuthRedirect = true;
+    console.log('[Auth] OAuth redirect terdeteksi, code:', hasOAuthCode, 'hash:', hasOAuthHash);
+  }
+
+  // Untuk PKCE flow: jika ada ?code= di URL, exchange secara eksplisit
+  // Ini memastikan SDK berhasil tukar code → session meski storage terbatas
+  if (hasOAuthCode) {
+    console.log('[Auth] Memproses PKCE code exchange...');
+    try {
+      const { data, error } = await _supa.auth.exchangeCodeForSession(window.location.search);
+      if (error) {
+        console.error('[Auth] exchangeCodeForSession error:', error.message);
+      } else {
+        console.log('[Auth] exchangeCodeForSession sukses:', data.session?.user?.email);
+      }
+    } catch(e) {
+      console.error('[Auth] exchangeCodeForSession exception:', e.message);
+    }
+    // Bersihkan ?code= dari URL tanpa reload
+    const cleanUrl = window.location.pathname + window.location.hash;
+    history.replaceState(null, '', cleanUrl);
   }
 
   // Pasang listener DULU agar SIGNED_IN dari OAuth redirect tidak terlewat
