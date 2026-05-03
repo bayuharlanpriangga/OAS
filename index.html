@@ -11798,6 +11798,62 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
+<!-- ===== COMPANY ACTION BOTTOM SHEET ===== -->
+<div id="cp-action-sheet-backdrop" onclick="if(event.target===this)closeCompanyActionSheet()">
+  <div id="cp-action-sheet">
+    <div class="cp-action-handle"></div>
+    <div class="cp-action-header">
+      <div class="cp-action-biz-icon" id="cp-action-biz-icon">🏢</div>
+      <div>
+        <div class="cp-action-biz-name" id="cp-action-biz-name">Bisnis</div>
+        <div class="cp-action-biz-type" id="cp-action-biz-type">Umum</div>
+      </div>
+    </div>
+    <div class="cp-action-btns">
+      <button class="cp-action-btn open-btn" onclick="cpActionOpen()">
+        <div class="cp-action-btn-icon">🚀</div>
+        <div>
+          <div>Buka Bisnis Ini</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:2px;">Masuk ke dashboard bisnis</div>
+        </div>
+      </button>
+      <button class="cp-action-btn delete-btn" onclick="cpActionDelete()">
+        <div class="cp-action-btn-icon">🗑️</div>
+        <div>
+          <div>Hapus Bisnis</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:2px;">Hapus permanen beserta semua datanya</div>
+        </div>
+      </button>
+    </div>
+    <button class="cp-action-cancel" onclick="closeCompanyActionSheet()">Batal</button>
+  </div>
+</div>
+
+<!-- ===== BEAUTIFUL DELETE CONFIRM ===== -->
+<div id="cp-delete-confirm-backdrop" onclick="if(event.target===this)closeDeleteCompanyConfirm()">
+  <div id="cp-delete-confirm-dialog">
+    <div style="text-align:center;">
+      <div class="cp-del-icon-wrap">🗑️</div>
+    </div>
+    <div class="cp-del-body">
+      <div class="cp-del-title">Hapus Bisnis?</div>
+      <div class="cp-del-desc">
+        Kamu akan menghapus bisnis
+        <div class="cp-del-biz-name" id="cp-del-biz-name">Nama Bisnis</div>
+      </div>
+      <div class="cp-del-warning">
+        <span style="flex-shrink:0;font-size:15px;">⚠️</span>
+        <span id="cp-del-journal-warn">Semua jurnal & transaksi akan dihapus permanen.</span>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--muted);">Tindakan ini <strong style="color:var(--red)">tidak bisa dibatalkan</strong>.</div>
+    </div>
+    <div class="cp-del-footer">
+      <button class="cp-del-btn-cancel" onclick="closeDeleteCompanyConfirm()">Batal</button>
+      <button class="cp-del-btn-ok" id="cp-del-btn-ok" onclick="confirmDeleteCompany()">🗑️ Hapus Permanen</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== LOADING SCREEN ===== -->
 <div id="app-loading" style="
   position:fixed;inset:0;z-index:9999;
@@ -11965,11 +12021,155 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 /* Company Picker */
 .cp-company-card {
   background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-  padding: 16px 18px; cursor: pointer; transition: all 0.2s;
-  display: flex; align-items: center; gap: 14px;
+  cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
+  display: flex; align-items: center;
   animation: authCardIn 0.35s ease both;
+  overflow: hidden; position: relative; user-select: none; -webkit-user-select: none;
 }
-.cp-company-card:hover { border-color: var(--accent); background: rgba(74,222,128,0.04); transform: translateY(-1px); }
+.cp-company-card:active { transform: scale(0.985); }
+.cp-company-card.long-pressing {
+  border-color: var(--red) !important;
+  box-shadow: 0 0 0 2px rgba(248,113,113,0.25);
+  background: rgba(248,113,113,0.04) !important;
+}
+/* Long press ripple effect */
+.cp-card-inner {
+  flex: 1; display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px; min-width: 0;
+}
+/* Progress bar for long press */
+.cp-press-bar {
+  position: absolute; bottom: 0; left: 0; height: 2.5px;
+  background: linear-gradient(90deg, var(--red), rgba(248,113,113,0.5));
+  width: 0%; transition: none; border-radius: 0 2px 0 0;
+  opacity: 0;
+}
+.cp-press-bar.animating {
+  opacity: 1;
+  transition: width 0.6s linear;
+}
+
+/* ===== COMPANY ACTION BOTTOM SHEET ===== */
+#cp-action-sheet-backdrop {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+  z-index: 99998; align-items: flex-end; justify-content: center;
+}
+#cp-action-sheet-backdrop.open { display: flex; }
+#cp-action-sheet {
+  background: var(--surface); width: 100%; max-width: 480px;
+  border-radius: 24px 24px 0 0; padding-bottom: env(safe-area-inset-bottom, 16px);
+  box-shadow: 0 -12px 48px rgba(0,0,0,0.5);
+  animation: slideUpSheet 0.28s cubic-bezier(0.34,1.2,0.64,1);
+}
+.cp-action-handle {
+  width: 38px; height: 4px; border-radius: 2px;
+  background: var(--border); margin: 12px auto 0;
+}
+.cp-action-header {
+  padding: 16px 20px 12px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+}
+.cp-action-biz-icon {
+  width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+  background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(34,211,238,0.1));
+  border: 1px solid rgba(74,222,128,0.2);
+}
+.cp-action-biz-name { font-size: 15px; font-weight: 700; }
+.cp-action-biz-type { font-size: 12px; color: var(--muted); text-transform: capitalize; margin-top:2px; }
+.cp-action-btns { padding: 10px 12px 8px; display: flex; flex-direction: column; gap: 6px; }
+.cp-action-btn {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+  border-radius: 12px; border: none; background: none; cursor: pointer;
+  font-family: var(--sans); font-size: 14px; font-weight: 600; width: 100%;
+  text-align: left; transition: background 0.15s, transform 0.1s; color: var(--text);
+}
+.cp-action-btn:active { transform: scale(0.98); }
+.cp-action-btn-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0;
+}
+.cp-action-btn.open-btn .cp-action-btn-icon { background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.2); }
+.cp-action-btn.open-btn:hover { background: rgba(74,222,128,0.07); }
+.cp-action-btn.delete-btn { color: var(--red); }
+.cp-action-btn.delete-btn .cp-action-btn-icon { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.2); }
+.cp-action-btn.delete-btn:hover { background: rgba(248,113,113,0.07); }
+.cp-action-cancel {
+  margin: 0 12px 12px; padding: 14px; border-radius: 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--muted); font-size: 14px; font-weight: 600;
+  cursor: pointer; font-family: var(--sans); width: calc(100% - 24px);
+  transition: all 0.15s;
+}
+.cp-action-cancel:hover { color: var(--text); border-color: var(--muted); }
+
+/* ===== BEAUTIFUL DELETE CONFIRM DIALOG — REDESIGNED ===== */
+#cp-delete-confirm-backdrop {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.72); backdrop-filter: blur(10px);
+  z-index: 99999; align-items: center; justify-content: center; padding: 24px;
+}
+#cp-delete-confirm-backdrop.open { display: flex; }
+#cp-delete-confirm-dialog {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 24px; width: 100%; max-width: 360px;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.05);
+  animation: cpDeletePop 0.3s cubic-bezier(0.34,1.4,0.64,1);
+  overflow: hidden;
+}
+@keyframes cpDeletePop {
+  from { transform: scale(0.82) translateY(20px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+.cp-del-icon-wrap {
+  margin: 32px auto 0;
+  width: 72px; height: 72px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(248,113,113,0.2) 0%, rgba(248,113,113,0.06) 100%);
+  border: 1.5px solid rgba(248,113,113,0.35);
+  display: flex; align-items: center; justify-content: center; font-size: 32px;
+  animation: cpDelIconIn 0.35s cubic-bezier(0.34,1.7,0.64,1) 0.1s both;
+}
+@keyframes cpDelIconIn {
+  from { transform: scale(0.5) rotate(-20deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0); opacity: 1; }
+}
+.cp-del-body { padding: 20px 24px 28px; text-align: center; }
+.cp-del-title { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 10px; font-family: var(--sans); }
+.cp-del-desc { font-size: 13px; color: var(--muted); line-height: 1.7; }
+.cp-del-biz-name {
+  display: inline-block; margin: 8px 0 4px;
+  padding: 5px 14px; background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.25); border-radius: 8px;
+  font-size: 14px; font-weight: 700; color: var(--red);
+  font-family: var(--mono);
+}
+.cp-del-warning {
+  margin-top: 12px; padding: 10px 14px;
+  background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 10px; font-size: 12px; color: var(--accent3);
+  display: flex; align-items: flex-start; gap: 8px; text-align: left;
+}
+.cp-del-footer {
+  border-top: 1px solid var(--border);
+  display: grid; grid-template-columns: 1fr 1fr;
+}
+.cp-del-footer button {
+  padding: 17px; background: none; border: none;
+  font-size: 14px; font-weight: 700; cursor: pointer; font-family: var(--sans);
+  transition: background 0.15s;
+}
+.cp-del-btn-cancel {
+  color: var(--muted); border-right: 1px solid var(--border) !important;
+  border-radius: 0 0 0 24px;
+}
+.cp-del-btn-cancel:hover { background: var(--surface2) !important; color: var(--text) !important; }
+.cp-del-btn-ok {
+  color: var(--red); border-radius: 0 0 24px 0;
+}
+.cp-del-btn-ok:hover { background: rgba(248,113,113,0.1) !important; }
+.cp-del-btn-ok.loading { opacity: 0.6; pointer-events: none; }
+
 .cp-company-icon {
   width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center; font-size: 22px;
@@ -13312,54 +13512,172 @@ function renderCompanyList(companies) {
   }
   const icons = { umum:'🏢', dagang:'🏪', jasa:'💼', manufaktur:'🏭', properti:'🏠' };
   list.innerHTML = companies.map((c, i) => `
-    <div class="cp-company-card" style="animation-delay:${i*60}ms;display:flex;align-items:center;gap:0;">
-      <div style="flex:1;display:flex;align-items:center;gap:12px;cursor:pointer;padding:0;" onclick="selectCompany(${JSON.stringify(c).replace(/"/g,'&quot;')})">
+    <div class="cp-company-card" data-company-id="${c.id}" style="animation-delay:${i*60}ms;">
+      <div class="cp-card-inner">
         <div class="cp-company-icon">${icons[c.type] || '🏢'}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.name}</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px;text-transform:capitalize;">${c.type || 'Umum'}</div>
         </div>
-        <div style="color:var(--muted);font-size:18px;padding-right:4px;">›</div>
+        <div style="color:var(--muted);font-size:12px;font-family:var(--mono);opacity:0.55;margin-left:4px;flex-shrink:0;">tahan ☰</div>
       </div>
-      <button onclick="event.stopPropagation();deleteCompany(${JSON.stringify(c).replace(/"/g,'&quot;')})"
-        title="Hapus bisnis ini"
-        style="flex-shrink:0;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:8px;
-        color:var(--red);font-size:13px;padding:6px 10px;cursor:pointer;font-family:var(--sans);transition:all 0.15s;margin-left:6px;"
-        onmouseover="this.style.background='rgba(248,113,113,0.2)'"
-        onmouseout="this.style.background='rgba(248,113,113,0.1)'">
-        🗑️
-      </button>
+      <div class="cp-press-bar" id="press-bar-${c.id}"></div>
     </div>
   `).join('');
+
+  // Pasang long-press handler setelah render
+  companies.forEach(c => {
+    const card = list.querySelector(`[data-company-id="${c.id}"]`);
+    if (card) attachCompanyCardHandlers(card, c);
+  });
 }
 
-async function deleteCompany(company) {
-  const confirmed = await showConfirm(
-    `Hapus bisnis "<b>${company.name}</b>"?`,
-    `Semua data jurnal & transaksi bisnis ini akan dihapus permanen dan <strong>tidak bisa dipulihkan</strong>.`,
-    'Hapus Permanen', 'danger'
-  );
-  if (!confirmed) return;
+// Long-press threshold (ms)
+const CP_LONG_PRESS_MS = 600;
+
+function attachCompanyCardHandlers(card, company) {
+  let pressTimer = null;
+  let isLongPress = false;
+  let startX = 0, startY = 0;
+  const bar = card.querySelector('.cp-press-bar');
+
+  function startPress(x, y) {
+    isLongPress = false;
+    startX = x; startY = y;
+    card.classList.add('long-pressing');
+    if (bar) { bar.style.width = '0%'; bar.style.transition = 'none'; bar.classList.add('animating'); }
+    pressTimer = setTimeout(() => {
+      isLongPress = true;
+      card.classList.remove('long-pressing');
+      if (bar) { bar.style.width = '0%'; bar.classList.remove('animating'); }
+      // Haptic feedback jika tersedia
+      if (navigator.vibrate) navigator.vibrate(40);
+      showCompanyActionSheet(company);
+    }, CP_LONG_PRESS_MS);
+    // Animate bar
+    requestAnimationFrame(() => {
+      if (bar) { bar.style.transition = `width ${CP_LONG_PRESS_MS}ms linear`; bar.style.width = '100%'; }
+    });
+  }
+
+  function cancelPress() {
+    clearTimeout(pressTimer);
+    card.classList.remove('long-pressing');
+    if (bar) { bar.style.width = '0%'; bar.classList.remove('animating'); bar.style.transition = 'none'; }
+  }
+
+  // Touch events
+  card.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    startPress(t.clientX, t.clientY);
+  }, { passive: true });
+
+  card.addEventListener('touchmove', e => {
+    const t = e.touches[0];
+    if (Math.abs(t.clientX - startX) > 8 || Math.abs(t.clientY - startY) > 8) cancelPress();
+  }, { passive: true });
+
+  card.addEventListener('touchend', e => {
+    if (!isLongPress) {
+      cancelPress();
+      // Tap normal → buka bisnis
+      selectCompany(company);
+    }
+    isLongPress = false;
+  });
+
+  card.addEventListener('touchcancel', () => { cancelPress(); isLongPress = false; });
+
+  // Mouse events (desktop)
+  card.addEventListener('mousedown', e => { startPress(e.clientX, e.clientY); });
+  card.addEventListener('mousemove', e => {
+    if (Math.abs(e.clientX - startX) > 8 || Math.abs(e.clientY - startY) > 8) cancelPress();
+  });
+  card.addEventListener('mouseup', e => {
+    if (!isLongPress) {
+      cancelPress();
+      selectCompany(company);
+    }
+    isLongPress = false;
+  });
+  card.addEventListener('mouseleave', () => { cancelPress(); });
+}
+
+// ===== COMPANY ACTION SHEET =====
+let _cpActionTarget = null;
+
+function showCompanyActionSheet(company) {
+  _cpActionTarget = company;
+  const icons = { umum:'🏢', dagang:'🏪', jasa:'💼', manufaktur:'🏭', properti:'🏠' };
+  document.getElementById('cp-action-biz-icon').textContent = icons[company.type] || '🏢';
+  document.getElementById('cp-action-biz-name').textContent = company.name;
+  document.getElementById('cp-action-biz-type').textContent = company.type || 'Umum';
+  document.getElementById('cp-action-sheet-backdrop').classList.add('open');
+}
+
+function closeCompanyActionSheet() {
+  document.getElementById('cp-action-sheet-backdrop').classList.remove('open');
+  _cpActionTarget = null;
+}
+
+function cpActionOpen() {
+  if (_cpActionTarget) {
+    closeCompanyActionSheet();
+    selectCompany(_cpActionTarget);
+  }
+}
+
+function cpActionDelete() {
+  if (!_cpActionTarget) return;
+  const company = _cpActionTarget;
+  closeCompanyActionSheet();
+  setTimeout(() => showDeleteCompanyConfirm(company), 120);
+}
+
+// ===== BEAUTIFUL DELETE CONFIRM =====
+let _cpDeleteTarget = null;
+
+function showDeleteCompanyConfirm(company) {
+  _cpDeleteTarget = company;
+  document.getElementById('cp-del-biz-name').textContent = company.name;
+  document.getElementById('cp-del-journal-warn').textContent =
+    'Semua jurnal & transaksi bisnis "' + company.name + '" akan dihapus permanen.';
+  document.getElementById('cp-delete-confirm-backdrop').classList.add('open');
+}
+
+function closeDeleteCompanyConfirm() {
+  document.getElementById('cp-delete-confirm-backdrop').classList.remove('open');
+  _cpDeleteTarget = null;
+}
+
+async function confirmDeleteCompany() {
+  if (!_cpDeleteTarget) return;
+  const company = _cpDeleteTarget;
+  const okBtn = document.getElementById('cp-del-btn-ok');
+  okBtn.classList.add('loading');
+  okBtn.textContent = '⏳ Menghapus...';
   try {
-    // Hapus semua entries jurnal dulu (foreign key)
     await _supa.from('journal_entries').delete().eq('company_id', company.id);
     const { error } = await _supa.from('companies').delete().eq('id', company.id).eq('user_id', currentUser.id);
     if (error) throw error;
-    // Jika bisnis yang dihapus adalah yang sedang aktif, reset
-    if (currentCompany?.id === company.id) {
-      currentCompany = null;
-    }
+    if (currentCompany?.id === company.id) currentCompany = null;
+    closeDeleteCompanyConfirm();
     showAlert('✅ Bisnis "' + company.name + '" berhasil dihapus.');
     const companies = await getMyCompanies();
     if (companies.length === 0) {
-      // Tidak ada bisnis lagi, reload picker
       showCompanyPickerScreen(companies);
     } else {
       renderCompanyList(companies);
     }
   } catch(e) {
+    okBtn.classList.remove('loading');
+    okBtn.textContent = '🗑️ Hapus Permanen';
     showAlert('❌ Gagal menghapus bisnis: ' + (e.message || e));
   }
+}
+
+async function deleteCompany(company) {
+  showDeleteCompanyConfirm(company);
 }
 
 async function getMyCompanies() {
