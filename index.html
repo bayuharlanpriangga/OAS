@@ -8090,7 +8090,7 @@ function renderNeracaSaldo() { renderNeracaSaldoFiltered('all'); setTimeout(()=>
 
 
 // ===================== CUSTOM CONFIRM DIALOG =====================
-function showCustomConfirm(jurnalActions, otherActions) {
+function showAIConfirm(jurnalActions, otherActions) {
   return new Promise((resolve) => {
     const backdrop = document.getElementById('custom-confirm-backdrop');
     const journalList = document.getElementById('confirm-journal-list');
@@ -10138,7 +10138,7 @@ ${getAppContext()}`;
         // Show confirmation only for journal actions
         let proceed = true;
         if(jurnalActions.length > 0) {
-          proceed = await showCustomConfirm(jurnalActions, otherActions);
+          proceed = await showAIConfirm(jurnalActions, otherActions);
         }
 
         if(!proceed) {
