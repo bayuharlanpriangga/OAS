@@ -9576,12 +9576,10 @@ function hitungRasio() {
     ? labaBersih
     : (ebit > 0 ? Math.max(0, ebit - bBunga) : 0);
 
-  // Update tampilan field kalkulasi otomatis
-  // BUGFIX: update .value (bukan hanya placeholder) agar fungsi g() bisa membaca nilai kalkulasi
+  // Update placeholder field kalkulasi otomatis (hanya placeholder, jangan ubah .value)
   const setCalc = (id, val) => {
     const el = document.getElementById(id);
     if (el && !(parseFloat(el.value) > 0)) {
-      el.value = val > 0 ? val : '';
       el.placeholder = val > 0 ? val.toLocaleString('id-ID') : '0';
     }
   };
@@ -9593,42 +9591,38 @@ function hitungRasio() {
 
   const r = (a,b) => b ? a/b : 0;
 
-  // BUGFIX: Re-read field kalkulasi otomatis setelah setCalc agar nilai terbaca dengan benar
-  const asetLFinal = parseFloat(document.getElementById('rs-aset-lancar').value) || asetL;
-  const labaKotorFinal = parseFloat(document.getElementById('rs-laba-kotor').value) || labaKotor;
-  const totalLiabFinal = parseFloat(document.getElementById('rs-total-liab').value) || totalLiab;
-  const totalAsetFinal = parseFloat(document.getElementById('rs-total-aset').value) || totalAset;
-  const labaBersihFinal2 = parseFloat(document.getElementById('rs-laba-bersih').value) || labaBersihFinal;
+  // Gunakan variabel yang sudah dihitung di atas — tidak perlu re-read dari DOM
+  // Fix: Quick Ratio tidak boleh negatif
+  const quickAsset = Math.max(0, asetL - pers);
 
-  // Likuiditas — quickAsset tidak boleh negatif
-  const quickAsset = Math.max(0, asetLFinal - pers);
+  // Likuiditas
   document.getElementById('rasio-likuiditas').innerHTML = [
-    rasioRow('Current Ratio', r(asetLFinal,utangL).toFixed(2), 'x', {ok:2,warn:1}, 'Baik ≥ 2x'),
+    rasioRow('Current Ratio', r(asetL,utangL).toFixed(2), 'x', {ok:2,warn:1}, 'Baik ≥ 2x'),
     rasioRow('Quick Ratio', r(quickAsset,utangL).toFixed(2), 'x', {ok:1,warn:0.5}, 'Baik ≥ 1x'),
     rasioRow('Cash Ratio', r(kas,utangL).toFixed(2), 'x', {ok:0.5,warn:0.2}, 'Baik ≥ 0.5x'),
-    rasioRow('Net Working Capital', rp(asetLFinal-utangL), '', null, 'Modal kerja bersih'),
+    rasioRow('Net Working Capital', rp(asetL-utangL), '', null, 'Modal kerja bersih'),
   ].join('');
 
   // Solvabilitas
-  const der = r(totalLiabFinal,ekuitas);
-  const dar = r(totalLiabFinal,totalAsetFinal);
+  const der = r(totalLiab,ekuitas);
+  const dar = r(totalLiab,totalAset);
   const ier = bBunga ? r(ebit,bBunga) : null;
   document.getElementById('rasio-solvabilitas').innerHTML = [
     rasioRow('Debt to Equity (DER)', der.toFixed(2), 'x', {ok:1,warn:2}, 'Baik ≤ 1x'),
     rasioRow('Debt to Assets (DAR)', pct(dar*100), '', {ok:0.5,warn:0.7}, 'Baik < 50%'),
-    rasioRow('Equity Multiplier', r(totalAsetFinal,ekuitas).toFixed(2), 'x', null, ''),
+    rasioRow('Equity Multiplier', r(totalAset,ekuitas).toFixed(2), 'x', null, ''),
     ier!==null ? rasioRow('Interest Coverage (ICR)', ier.toFixed(2), 'x', {ok:3,warn:1.5}, 'Baik ≥ 3x') : '',
     rasioRow('Long-term Debt Ratio', r(utangP, utangP+ekuitas).toFixed(2), 'x', null, 'Utang JP / (Utang JP + Ekuitas)'),
   ].join('');
 
   // Profitabilitas
   document.getElementById('rasio-profitabilitas').innerHTML = [
-    rasioRow('Gross Profit Margin', pct(r(labaKotorFinal,penjualan)*100), '', {ok:30,warn:15}, 'Baik ≥ 30%'),
-    rasioRow('Net Profit Margin (NPM)', pct(r(labaBersihFinal2,penjualan)*100), '', {ok:10,warn:5}, 'Baik ≥ 10%'),
-    rasioRow('Return on Assets (ROA)', pct(r(labaBersihFinal2,totalAsetFinal)*100), '', {ok:5,warn:2}, 'Baik ≥ 5%'),
-    rasioRow('Return on Equity (ROE)', pct(r(labaBersihFinal2,ekuitas)*100), '', {ok:15,warn:8}, 'Baik ≥ 15%'),
+    rasioRow('Gross Profit Margin', pct(r(labaKotor,penjualan)*100), '', {ok:30,warn:15}, 'Baik ≥ 30%'),
+    rasioRow('Net Profit Margin (NPM)', pct(r(labaBersihFinal,penjualan)*100), '', {ok:10,warn:5}, 'Baik ≥ 10%'),
+    rasioRow('Return on Assets (ROA)', pct(r(labaBersihFinal,totalAset)*100), '', {ok:5,warn:2}, 'Baik ≥ 5%'),
+    rasioRow('Return on Equity (ROE)', pct(r(labaBersihFinal,ekuitas)*100), '', {ok:15,warn:8}, 'Baik ≥ 15%'),
     rasioRow('EBIT Margin', pct(r(ebit,penjualan)*100), '', {ok:15,warn:8}, 'Laba operasi/penjualan'),
-    rasioRow('Return on Sales', pct(r(labaBersihFinal2,penjualan)*100), '', null, ''),
+    rasioRow('Return on Sales', pct(r(labaBersihFinal,penjualan)*100), '', null, ''),
   ].join('');
 
   // Aktivitas
@@ -9641,22 +9635,22 @@ function hitungRasio() {
     rasioRow('Days Sales Outstanding (DSO)', dso.toFixed(1), 'hari', {ok:45,warn:60}, 'Makin kecil makin baik'),
     rasioRow('Perputaran Persediaan', perputaranPers.toFixed(2), 'x', {ok:6,warn:3}, 'Makin tinggi makin baik'),
     rasioRow('Days of Inventory (DOH)', doh.toFixed(1), 'hari', null, 'Rata-rata lama simpan'),
-    rasioRow('Asset Turnover', r(penjualan,totalAsetFinal).toFixed(2), 'x', {ok:1,warn:0.5}, ''),
+    rasioRow('Asset Turnover', r(penjualan,totalAset).toFixed(2), 'x', {ok:1,warn:0.5}, ''),
     rasioRow('Fixed Asset Turnover', r(penjualan,asetT).toFixed(2), 'x', {ok:2,warn:1}, ''),
   ].join('');
 
-  // Pasar — EPS, BVPS, Market Cap selalu dihitung jika data tersedia
-  const eps = saham > 0 && labaBersihFinal2 > 0 ? labaBersihFinal2 / saham : null;
+  // Pasar — Fix: EPS dan BVPS selalu dihitung jika saham > 0
+  const eps = saham > 0 && labaBersihFinal > 0 ? labaBersihFinal / saham : null;
   const bvps = saham > 0 && ekuitas > 0 ? ekuitas / saham : null;
   const per = (eps !== null && hargaSaham > 0) ? hargaSaham / eps : null;
   const pbv = (bvps !== null && hargaSaham > 0) ? hargaSaham / bvps : null;
   const marketCap = saham > 0 && hargaSaham > 0 ? hargaSaham * saham : null;
-  const formatRpDecimal = v => v >= 1 ? rp(Math.round(v)) : 'Rp ' + v.toFixed(2);
+  const fmtRpVal = v => v >= 1 ? rp(Math.round(v)) : 'Rp ' + v.toFixed(4);
   document.getElementById('rasio-pasar').innerHTML = [
-    rasioRow('EPS (Earning per Share)', eps !== null ? formatRpDecimal(eps) : '—', '', null, 'Laba per lembar saham'),
+    rasioRow('EPS (Earning per Share)', eps !== null ? fmtRpVal(eps) : '—', '', null, 'Laba per lembar saham'),
     rasioRow('Price to Earning (PER)', per !== null ? per.toFixed(2) : '—', per !== null ? 'x' : '', {ok:15,warn:25}, 'Valuasi saham'),
     rasioRow('Price to Book Value (PBV)', pbv !== null ? pbv.toFixed(2) : '—', pbv !== null ? 'x' : '', {ok:1,warn:3}, 'Nilai pasar vs buku'),
-    rasioRow('Book Value per Share', bvps !== null ? formatRpDecimal(bvps) : '—', '', null, 'Nilai buku per saham'),
+    rasioRow('Book Value per Share', bvps !== null ? fmtRpVal(bvps) : '—', '', null, 'Nilai buku per saham'),
     rasioRow('Market Cap', marketCap !== null ? rp(marketCap) : '—', '', null, 'Kapitalisasi pasar'),
     rasioRow('Dividend per Share', '—', '', null, 'Isi manual jika ada'),
   ].join('');
