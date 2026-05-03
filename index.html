@@ -1276,7 +1276,7 @@ body.light-mode .opt-picker-item.selected {
 
   <!-- CHIP AKUN / BISNIS di dalam sidebar -->
   <div id="sidebar-account-area" style="padding:10px 12px 6px;border-bottom:1px solid var(--border);">
-    <div id="user-company-chip" onclick="isGuestMode ? showAuthModal() : showCompanyPicker()" title="Ganti bisnis / akun" style="width:100%;border-radius:10px;padding:8px 12px;justify-content:flex-start;gap:10px;max-width:100%;">
+    <div id="user-company-chip" onclick="handleChipClick()" title="Ganti bisnis / akun" style="width:100%;border-radius:10px;padding:8px 12px;justify-content:flex-start;gap:10px;max-width:100%;">
       <div class="chip-avatar" id="chip-avatar">?</div>
       <div style="flex:1;min-width:0;">
         <div class="chip-name" id="chip-company-name" style="font-size:13px;">Memuat...</div>
@@ -12535,14 +12535,40 @@ function resolveCustomConfirm() {
 const SUPABASE_URL = 'https://bcaxdjlyijyfzskbshcz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjYXhkamx5aWp5Znpza2JzaGN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MTY5MjYsImV4cCI6MjA5MzI5MjkyNn0.9vJCqtnE9k33BD6oe0AwZW_xvvZa2Dak1BzA-P9FfzE';
 
+// Storage fallback: Edge/Safari bisa blokir localStorage via Tracking Prevention
+// Gunakan sessionStorage atau memory sebagai fallback
+const _authStorage = (() => {
+  // Test apakah localStorage bisa diakses
+  try {
+    localStorage.setItem('_bhp_test', '1');
+    localStorage.removeItem('_bhp_test');
+    return localStorage; // localStorage OK
+  } catch(e) {}
+  // Fallback ke sessionStorage
+  try {
+    sessionStorage.setItem('_bhp_test', '1');
+    sessionStorage.removeItem('_bhp_test');
+    console.warn('[Auth] localStorage diblokir, pakai sessionStorage');
+    return sessionStorage;
+  } catch(e) {}
+  // Last resort: in-memory storage (session tidak persist antar tab)
+  console.warn('[Auth] sessionStorage juga diblokir, pakai memory storage');
+  const _mem = {};
+  return {
+    getItem: k => _mem[k] ?? null,
+    setItem: (k, v) => { _mem[k] = v; },
+    removeItem: k => { delete _mem[k]; }
+  };
+})();
+
 const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     detectSessionInUrl: true,
     persistSession: true,
     autoRefreshToken: true,
-    flowType: 'implicit',         // Lebih cocok untuk single-page HTML app (tanpa server-side code exchange)
-    storageKey: 'bhp_oas_auth',   // key tetap, tidak berubah walau URL berubah
-    storage: window.localStorage, // eksplisit pakai localStorage
+    flowType: 'implicit',
+    storageKey: 'bhp_oas_auth',
+    storage: _authStorage, // pakai storage dengan fallback
   }
 });
 
@@ -13100,6 +13126,18 @@ async function doForgotPassword() {
 async function doLogout() {
   await _supa.auth.signOut();
   // onAuthStateChange akan trigger enterGuestMode() lewat SIGNED_OUT event
+}
+
+// =====================================================================
+// CHIP CLICK HANDLER — safe handler yang cek state dulu
+// =====================================================================
+function handleChipClick() {
+  // Jika masih loading (afterLogin belum selesai), abaikan klik
+  if (_afterLoginRunning) return;
+  // Jika belum login sama sekali
+  if (!currentUser) { showAuthModal(); return; }
+  // Jika sudah login, tampilkan company picker
+  showCompanyPicker();
 }
 
 // =====================================================================
