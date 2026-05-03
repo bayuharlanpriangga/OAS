@@ -13124,8 +13124,9 @@ async function afterLogin() {
   // Update chip segera agar tidak stuck di "Mode Tamu"
   if (chip) {
     chip.style.display = 'flex';
-    chip.onclick = () => showCompanyPicker();
-    chip.title = 'Ganti bisnis';
+    chip.onclick = null; // Disable saat loading agar tidak trigger showCompanyPicker prematur
+    chip.style.pointerEvents = 'none';
+    chip.title = 'Memuat...';
   }
   if (chipAvatar) {
     const initial = (currentUser.user_metadata?.full_name || currentUser.email || '?').charAt(0).toUpperCase();
@@ -13175,6 +13176,7 @@ async function afterLogin() {
 
   } catch(e) {
     console.error('[afterLogin] ERROR:', e.message, e);
+    if (chip) chip.style.pointerEvents = '';
     if (chipName) chipName.textContent = '⚠️ Gagal memuat';
     if (chipSub) chipSub.textContent = e.message || 'Cek console';
     showAlert('❌ Gagal memuat data bisnis: ' + e.message);
@@ -13190,6 +13192,8 @@ async function afterLogin() {
 // =====================================================================
 let _companyPickerLoading = false;
 async function showCompanyPicker() {
+  // Jika belum login, tampilkan auth modal
+  if (!currentUser) { showAuthModal(); return; }
   if (_companyPickerLoading) return;
   _companyPickerLoading = true;
   const chip = document.getElementById('user-company-chip');
@@ -13207,6 +13211,8 @@ async function showCompanyPicker() {
 }
 
 function showCompanyPickerScreen(companies) {
+  const chip = document.getElementById('user-company-chip');
+  if (chip) chip.style.pointerEvents = ''; // Re-enable setelah loading
   const picker = document.getElementById('company-picker');
   picker.style.display = 'block';
   const isLight = document.body.classList.contains('light-mode');
@@ -13378,6 +13384,7 @@ function updateUserChip() {
   const chipSub = document.getElementById('chip-sub');
   if (chip) {
     chip.style.display = 'flex';
+    chip.style.pointerEvents = '';
     chip.onclick = () => showCompanyPicker();
     chip.title = 'Ganti bisnis / keluar';
   }
