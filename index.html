@@ -13104,8 +13104,27 @@ async function afterLogin() {
   if (chipName)   chipName.textContent = 'Memuat bisnis...';
   if (chipSub)    chipSub.textContent  = currentUser?.email || '';
 
+  // Retry helper — Google OAuth butuh beberapa saat agar token aktif di Supabase backend
+  async function getMyCompaniesWithRetry(maxTries = 4, delayMs = 800) {
+    let lastErr;
+    for (let i = 0; i < maxTries; i++) {
+      try {
+        const result = await getMyCompanies();
+        return result;
+      } catch(e) {
+        lastErr = e;
+        console.warn(`[afterLogin] getMyCompanies gagal (percobaan ${i+1}/${maxTries}):`, e.message);
+        if (i < maxTries - 1) {
+          if (chipName) chipName.textContent = `Memuat bisnis... (${i+2}/${maxTries})`;
+          await new Promise(r => setTimeout(r, delayMs * (i + 1)));
+        }
+      }
+    }
+    throw lastErr;
+  }
+
   try {
-    const companies = await getMyCompanies();
+    const companies = await getMyCompaniesWithRetry();
     if (companies.length === 0) {
       showCompanyPickerScreen(companies);
     } else if (companies.length === 1) {
@@ -13200,8 +13219,18 @@ function renderCompanyList(companies) {
 
 async function getMyCompanies() {
   if (!currentUser) return [];
-  // Tidak perlu getSession() — token sudah valid karena dipanggil setelah SIGNED_IN
-  // getSession() di sini justru berebut lock dengan proses auth yang sedang berjalan
+  // Pastikan session benar-benar aktif sebelum query
+  // Ini penting untuk Google OAuth yang butuh round-trip redirect
+  try {
+    const { data: sessionData } = await _supa.auth.getSession();
+    if (!sessionData?.session) {
+      // Session belum siap — lempar error agar afterLogin bisa retry
+      throw new Error('Session belum siap. Coba refresh halaman.');
+    }
+  } catch(sessErr) {
+    console.warn('getMyCompanies: gagal validasi session:', sessErr);
+    throw sessErr;
+  }
   try {
     const { data, error } = await _supa
       .from('companies')
@@ -13210,12 +13239,13 @@ async function getMyCompanies() {
       .order('created_at');
     if (error) {
       console.error('getMyCompanies error:', error);
-      return [];
+      // Lempar error agar afterLogin bisa tampilkan pesan jelas
+      throw new Error(error.message || 'Gagal mengambil data bisnis dari Supabase');
     }
     return Array.isArray(data) ? data : [];
   } catch(e) {
     console.error('getMyCompanies exception:', e);
-    return [];
+    throw e;
   }
 }
 
