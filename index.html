@@ -13162,8 +13162,7 @@ async function afterLogin() {
     console.error('[afterLogin] ERROR:', e.message, e);
     if (chipName) chipName.textContent = '⚠️ Gagal memuat';
     if (chipSub) chipSub.textContent = e.message || 'Cek console';
-    showAlert('❌ Gagal memuat data bisnis:
-' + e.message);
+    showAlert('❌ Gagal memuat data bisnis: ' + e.message);
     enterGuestMode();
   } finally {
     _afterLoginRunning = false;
