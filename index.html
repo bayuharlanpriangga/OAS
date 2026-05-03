@@ -12561,13 +12561,6 @@ async function initSupabase() {
   if (chipName) chipName.textContent = 'Menghubungkan...';
   if (chipSub)  chipSub.textContent  = 'Memeriksa akun';
 
-  // Deteksi OAuth params SEBELUM SDK menghapusnya dari URL (PKCE flow)
-  const hasOAuthParams = window.location.hash.includes('access_token') ||
-                         window.location.search.includes('code=') ||
-                         window.location.hash.includes('error=');
-  // Simpan di window agar tetap tersedia setelah URL dibersihkan SDK
-  if (hasOAuthParams) window.__oauthRedirect = true;
-
   // Pasang listener DULU agar SIGNED_IN dari OAuth redirect tidak terlewat
   _supa.auth.onAuthStateChange(async (event, session) => {
     console.log('[Auth]', event, session?.user?.email);
@@ -12577,7 +12570,6 @@ async function initSupabase() {
       currentUser = session.user;
       isGuestMode = false;
       _afterLoginRunning = false; // Reset agar afterLogin() pasti jalan
-      window.__oauthRedirect = false; // OAuth selesai, clear flag
       const gb = document.getElementById('guest-banner');
       if (gb) gb.remove();
       hideAuthModal();
@@ -12588,13 +12580,12 @@ async function initSupabase() {
         currentUser = session.user;
         isGuestMode = false;
         _afterLoginRunning = false;
-        window.__oauthRedirect = false; // OAuth selesai, clear flag
         const gb = document.getElementById('guest-banner');
         if (gb) gb.remove();
         hideAuthModal();
         await afterLogin();
-      } else if (!session && !window.__oauthRedirect) {
-        // Tidak ada session DAN bukan sedang proses OAuth → guest mode
+      } else if (!session) {
+        // Tidak ada session → guest mode
         if (!currentUser) enterGuestMode();
       }
     } else if (event === 'TOKEN_REFRESHED') {
@@ -12609,12 +12600,18 @@ async function initSupabase() {
   });
 
   // onAuthStateChange dengan INITIAL_SESSION sudah menangani session existing.
+  // Kita hanya perlu fallback timeout jika tidak ada session sama sekali.
   _authReady = true;
 
-  // Fallback: timeout lebih lama jika ada OAuth params (PKCE butuh round-trip ke Supabase)
-  const fallbackMs = (hasOAuthParams || window.__oauthRedirect) ? 15000 : 2500;
+  // Deteksi OAuth redirect dari hash URL (Supabase menyimpan token di #access_token=...)
+  const hasOAuthParams = window.location.hash.includes('access_token') ||
+                         window.location.search.includes('code=') ||
+                         window.location.hash.includes('error=');
+
+  // Fallback: timeout lebih lama jika ada OAuth params (butuh waktu exchange token)
+  const fallbackMs = hasOAuthParams ? 6000 : 2500;
   setTimeout(() => {
-    if (!currentUser && !_afterLoginRunning && !window.__oauthRedirect) {
+    if (!currentUser && !_afterLoginRunning) {
       console.warn('[Auth] Fallback → guest mode (timeout', fallbackMs, 'ms)');
       enterGuestMode();
     }
@@ -12625,12 +12622,10 @@ async function initSupabase() {
 // GUEST MODE — masuk app tanpa login, data ke localStorage
 // =====================================================================
 function enterGuestMode() {
-  // Jangan masuk guest mode jika OAuth redirect sedang diproses
-  // Pakai window.__oauthRedirect karena URL sudah dibersihkan SDK saat ini dipanggil
-  if (window.__oauthRedirect ||
-      window.location.hash.includes('access_token') ||
+  // Jangan masuk guest mode jika ada OAuth params di URL (sedang proses redirect)
+  if (window.location.hash.includes('access_token') ||
       window.location.search.includes('code=')) {
-    console.log('[Auth] Skipping guest mode — OAuth redirect sedang diproses');
+    console.log('[Auth] Skipping guest mode — OAuth redirect detected in URL');
     return;
   }
   isGuestMode = true;
@@ -13103,6 +13098,8 @@ async function afterLogin() {
       showCompanyPickerScreen(companies);
     } else if (companies.length === 1) {
       await selectCompany(companies[0]);
+      // Pastikan chip terupdate setelah selectCompany selesai
+      updateUserChip();
       await offerGuestDataMigration();
     } else {
       showCompanyPickerScreen(companies);
@@ -13308,11 +13305,14 @@ async function selectCompany(company) {
   isGuestMode = false;
   document.getElementById('company-picker').style.display = 'none';
 
-  // Update chip di topbar
+  // Update chip di topbar — pastikan currentCompany & currentUser sudah terisi
   updateUserChip();
 
   // Load data dari Supabase untuk company ini
   await loadDataFromSupabase();
+
+  // Update chip sekali lagi setelah load selesai (guard kalau render async mengubah chip)
+  updateUserChip();
 
   // Render app
   renderDashboard();
@@ -13890,8 +13890,18 @@ async function accsLoadProviders() {
   const container = document.getElementById('accs-providers-list');
   container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px;">⏳ Memuat koneksi...</div>';
   try {
-    const { data: { user }, error } = await _supa.auth.getUser();
-    if (error) throw error;
+    // Gunakan currentUser dari memori terlebih dulu (hindari hang pada fresh OAuth session)
+    // Refresh dari server dengan timeout 4 detik — jika timeout, tetap gunakan data lokal
+    let user = currentUser;
+    try {
+      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000));
+      const fresh = _supa.auth.getUser().then(r => r.data?.user);
+      const result = await Promise.race([fresh, timeout]);
+      if (result) user = result;
+    } catch(e) {
+      console.warn('[accsLoadProviders] getUser timeout/error, menggunakan cache:', e.message);
+    }
+    if (!user) throw new Error('Tidak ada sesi aktif. Silakan login ulang.');
     const identities = user?.identities || [];
     const linkedIds = identities.map(i => i.provider);
     const hasEmail = linkedIds.includes('email');
