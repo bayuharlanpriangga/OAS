@@ -1258,16 +1258,23 @@ body.light-mode .opt-picker-item.selected {
 .bhp-date-display.placeholder-text { color: var(--muted); }
 .bhp-date-wrapper.small .bhp-date-display { font-size: 12px; padding: 6px 30px 6px 10px; min-height: 32px; }
 .bhp-date-wrapper.small .bhp-cal-icon { right: 8px; font-size: 12px; }
-.bhp-cal-popup {
-  position: absolute; top: calc(100% + 6px); left: 0; z-index: 9999;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 14px; padding: 16px; min-width: 270px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.35); display: none;
-  animation: bhpCalFadeIn 0.18s ease;
+.bhp-cal-backdrop {
+  position: fixed; inset: 0; z-index: 9998;
+  background: rgba(0,0,0,0.45); display: none;
+  align-items: center; justify-content: center;
+  padding: 20px;
 }
-.bhp-cal-popup.open { display: block; }
-@keyframes bhpCalFadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
-body.light-mode .bhp-cal-popup { box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+.bhp-cal-backdrop.open { display: flex; }
+body.light-mode .bhp-cal-backdrop { background: rgba(0,0,0,0.22); }
+.bhp-cal-popup {
+  position: relative; z-index: 9999;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px; padding: 20px; width: 300px; max-width: calc(100vw - 40px);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+  animation: bhpCalFadeIn 0.2s cubic-bezier(.34,1.4,.64,1);
+}
+@keyframes bhpCalFadeIn { from { opacity:0; transform:scale(0.92); } to { opacity:1; transform:scale(1); } }
+body.light-mode .bhp-cal-popup { box-shadow: 0 12px 40px rgba(0,0,0,0.18); }
 .bhp-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .bhp-cal-nav {
   width: 30px; height: 30px; border-radius: 8px; background: var(--surface2);
@@ -13061,12 +13068,7 @@ function upgradePajakPickers() {
   // PPh 21 PTKP
   const p21ptkp = document.getElementById('p21-ptkp');
   if (p21ptkp && !p21ptkp.dataset.upgraded) upgradeSelectToOptPicker(p21ptkp, {
-    title: '👤 Status PTKP',
-    iconMap: {
-      TK0:'🧑', TK1:'🧑‍👦', TK2:'🧑‍👦‍👦', TK3:'👨‍👩‍👦‍👦',
-      K0:'💑', K1:'👪', K2:'👨‍👩‍👦‍👦', K3:'👨‍👩‍👧‍👦‍👦',
-      KI0:'👫', KI1:'👫👦', KI2:'👫👦👦', KI3:'👫👦👦👦'
-    },
+    title: 'Status PTKP',
     subMap: {
       TK0:'PTKP Rp54.000.000/th', TK1:'PTKP Rp58.500.000/th',
       TK2:'PTKP Rp63.000.000/th', TK3:'PTKP Rp67.500.000/th',
@@ -13092,8 +13094,7 @@ function upgradePajakPickers() {
   // PPh 21 PTKP Tidak Tetap
   const p21ptkpTT = document.getElementById('p21-ptkp-tt');
   if (p21ptkpTT && !p21ptkpTT.dataset.upgraded) upgradeSelectToOptPicker(p21ptkpTT, {
-    title: '👤 Status PTKP',
-    iconMap: { TK0:'🧑', TK1:'🧑‍👦', K0:'💑', K1:'👪', K2:'👨‍👩‍👦‍👦', K3:'👨‍👩‍👧‍👦' },
+    title: 'Status PTKP',
     subMap: { TK0:'Rp54jt/th', TK1:'Rp58,5jt/th', K0:'Rp58,5jt/th', K1:'Rp63jt/th', K2:'Rp67,5jt/th', K3:'Rp72jt/th' }
   });
 
@@ -15148,14 +15149,28 @@ document.addEventListener('DOMContentLoaded', () => {
     return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0');
   }
 
+  // Shared backdrop
+  var _backdrop = null;
+  function getBackdrop() {
+    if (!_backdrop) {
+      _backdrop = document.createElement('div');
+      _backdrop.className = 'bhp-cal-backdrop';
+      _backdrop.addEventListener('click', function() { closeAllPickers(); });
+      document.body.appendChild(_backdrop);
+    }
+    return _backdrop;
+  }
+
   function closeAllPickers() {
     document.querySelectorAll('.bhp-cal-popup.open').forEach(function(p) {
       p.classList.remove('open');
-      const w = p.closest('.bhp-date-wrapper');
-      if (w) w.querySelector('.bhp-date-display').classList.remove('open');
     });
+    const bd = getBackdrop();
+    bd.classList.remove('open');
+    bd.innerHTML = '';
+    document.querySelectorAll('.bhp-date-display.open').forEach(function(d) { d.classList.remove('open'); });
   }
-  document.addEventListener('click', closeAllPickers);
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeAllPickers(); });
 
   function createPicker(hiddenInput, opts) {
     opts = opts || {};
@@ -15174,11 +15189,11 @@ document.addEventListener('DOMContentLoaded', () => {
     display.appendChild(displayText);
     display.appendChild(calIcon);
 
+    // popup lives in backdrop (body-level), not in wrapper
     const popup = document.createElement('div');
     popup.className = 'bhp-cal-popup';
 
     wrapper.appendChild(display);
-    wrapper.appendChild(popup);
     hiddenInput.parentNode.insertBefore(wrapper, hiddenInput);
     wrapper.appendChild(hiddenInput);
 
@@ -15262,20 +15277,24 @@ document.addEventListener('DOMContentLoaded', () => {
       hiddenInput.value = ds;
       display.classList.toggle('placeholder-text', !ds);
       displayText.textContent = ds ? formatDisplay(ds) : (opts.placeholder || 'Pilih tanggal');
-      popup.classList.remove('open');
-      display.classList.remove('open');
+      closeAllPickers();
       hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
     display.addEventListener('click', function(e) {
       e.stopPropagation();
       if (popup.classList.contains('open')) {
-        popup.classList.remove('open'); display.classList.remove('open');
+        closeAllPickers();
       } else {
         closeAllPickers();
-        if (selectedDate) { var p = selectedDate.split('-'); curYear = parseInt(p[0]); curMonth = parseInt(p[1])-1; }
+        if (selectedDate) { var p2 = selectedDate.split('-'); curYear = parseInt(p2[0]); curMonth = parseInt(p2[1])-1; }
         renderDays();
-        popup.classList.add('open'); display.classList.add('open');
+        var bd = getBackdrop();
+        bd.innerHTML = '';
+        bd.appendChild(popup);
+        bd.classList.add('open');
+        popup.classList.add('open');
+        display.classList.add('open');
       }
     });
     popup.addEventListener('click', function(e) { e.stopPropagation(); });
