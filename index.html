@@ -140,6 +140,40 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
   box-shadow: 0 0 0 1px rgba(74,222,128,0.2) inset;
 }
 .nav-card.active .nav-card-icon { transform: scale(1.1); }
+/* ===== BUSINESS TYPE CARDS ===== */
+.cp-type-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 16px; cursor: pointer;
+  font-size: 14px; font-weight: 500; color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.cp-type-card:last-child { border-bottom: none; }
+.cp-type-card:active { background: rgba(74,222,128,0.06); }
+.cp-type-card.cp-type-selected { color: var(--text); background: rgba(74,222,128,0.07); }
+.cp-type-icon { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
+.cp-type-label { flex: 1; }
+.cp-type-radio {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid var(--border); display: flex;
+  align-items: center; justify-content: center;
+  flex-shrink: 0; transition: border-color 0.15s;
+}
+.cp-type-selected .cp-type-radio {
+  border-color: var(--accent);
+  background: rgba(74,222,128,0.15);
+}
+.cp-type-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent); display: block;
+}
+body.light-mode .cp-type-card { color: var(--muted); }
+body.light-mode .cp-type-card.cp-type-selected { color: var(--text); background: rgba(22,163,74,0.07); }
+body.light-mode .cp-type-selected .cp-type-radio { border-color: var(--accent); }
+body.light-mode .cp-type-dot { background: var(--accent); }
+
 body.light-mode .nav-card { background: #f8fafc; border-color: #e2e8f0; }
 body.light-mode .nav-card:hover { background: #f1f5f9; box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
 body.light-mode .nav-card.active { background: rgba(22,163,74,0.07); border-color: rgba(22,163,74,0.35); }
@@ -1238,7 +1272,7 @@ body.light-mode .opt-picker-item.selected {
 
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
-  <div class="logo">BHP<span style="color:var(--accent)"> Pro</span><button class="logo-close" onclick="closeSidebar()">✕</button></div>
+  <div class="logo">OAS<span style="color:var(--accent)"> Pro</span><button class="logo-close" onclick="closeSidebar()">✕</button></div>
 
   <!-- CHIP AKUN / BISNIS di dalam sidebar -->
   <div id="sidebar-account-area" style="padding:10px 12px 6px;border-bottom:1px solid var(--border);">
@@ -1546,7 +1580,7 @@ body.light-mode .opt-picker-item.selected {
           </div>
           <div class="form-group">
             <label>Jumlah (Rp)</label>
-            <input type="number" id="kas-jumlah" placeholder="0">
+            <input type="number" id="kas-jumlah" placeholder="0" inputmode="numeric" onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)">
           </div>
         </div>
         <div class="form-row full">
@@ -1587,13 +1621,13 @@ body.light-mode .opt-picker-item.selected {
           </div>
           <div class="form-group">
             <label>Jumlah Penjualan (Rp)</label>
-            <input type="number" id="jual-jumlah" placeholder="0">
+            <input type="number" id="jual-jumlah" placeholder="0" inputmode="numeric" onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>HPP / Harga Pokok (Rp)</label>
-            <input type="number" id="jual-hpp" placeholder="0 (opsional)">
+            <input type="number" id="jual-hpp" placeholder="0 (opsional)" inputmode="numeric" onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)">
           </div>
           <div class="form-group">
             <label>Keterangan</label>
@@ -1630,7 +1664,7 @@ body.light-mode .opt-picker-item.selected {
           </div>
           <div class="form-group">
             <label>Jumlah Pembelian (Rp)</label>
-            <input type="number" id="beli-jumlah" placeholder="0">
+            <input type="number" id="beli-jumlah" placeholder="0" inputmode="numeric" onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)">
           </div>
         </div>
         <div class="form-row">
@@ -1979,7 +2013,7 @@ body.light-mode .opt-picker-item.selected {
         </div>
         <div class="form-row">
           <div class="form-group"><label>Tanggal Perolehan</label><input type="date" id="py-tgl"></div>
-          <div class="form-group"><label>Tarif Pajak (untuk DDB)</label><input type="number" id="py-tarif" placeholder="2 (x lipat garis lurus)" value="2" oninput="hitungPenyusutan()"></div>
+          <div class="form-group" id="py-tarif-group"><label>Tarif Pajak (untuk DDB)</label><input type="number" id="py-tarif" placeholder="2 (x lipat garis lurus)" value="2" oninput="hitungPenyusutan()"></div>
         </div>
         <button class="btn btn-primary" onclick="hitungPenyusutan()" style="width:100%">Hitung & Generate Tabel</button>
       </div>
@@ -5343,7 +5377,7 @@ function exportCSV(nama, periode) {
   // and bundle them as a single multi-section CSV with separators
   const sections = [];
 
-  sections.push(`BHP Export — ${nama} — ${periode}\nDicetak: ${new Date().toLocaleDateString('id-ID')}\n`);
+  sections.push(`OAS Export — ${nama} — ${periode}\nDicetak: ${new Date().toLocaleDateString('id-ID')}\n`);
 
   // Jurnal Umum
   if(document.getElementById('exp-jurnal-umum').checked) {
@@ -9152,6 +9186,13 @@ function hitungPenyusutan() {
   const tarif = parseFloat(document.getElementById('py-tarif').value)||2;
   const unitRow = document.getElementById('py-unit-row');
   unitRow.style.display = metode==='unit-produksi' ? 'grid' : 'none';
+  // Disable tarif pajak DDB saat metode unit produksi atau garis lurus atau SYD
+  const tarifInput = document.getElementById('py-tarif');
+  const tarifGroup = document.getElementById('py-tarif-group');
+  const ddbMetode = metode === 'saldo-menurun' || metode === 'saldo-menurun-1x';
+  tarifInput.disabled = !ddbMetode;
+  tarifGroup.style.opacity = ddbMetode ? '1' : '0.4';
+  tarifGroup.title = ddbMetode ? '' : 'Tarif pajak hanya digunakan untuk metode Saldo Menurun (DDB)';
 
   if(!cost||!umur) return;
   if(sisa > cost) { document.getElementById('py-summary').innerHTML = '<span style="color:var(--red)">Nilai sisa tidak boleh melebihi harga perolehan.</span>'; return; }
@@ -11615,7 +11656,7 @@ function startTutorial() { showPage('tutorial'); }
       <!-- Logo -->
       <div style="text-align:center;margin-bottom:32px;">
         <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,rgba(74,222,128,0.2),rgba(34,211,238,0.15));border:1px solid rgba(74,222,128,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;box-shadow:0 8px 32px rgba(74,222,128,0.15);">⚖️</div>
-        <div style="font-size:22px;font-weight:800;font-family:var(--mono);letter-spacing:0.02em;">BHP<span style="color:var(--accent)"> Pro</span></div>
+        <div style="font-size:22px;font-weight:800;font-family:var(--mono);letter-spacing:0.02em;">OAS<span style="color:var(--accent)"> Pro</span></div>
         <div style="font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:0.08em;text-transform:uppercase;">Software Akuntansi Profesional</div>
       </div>
 
@@ -11712,13 +11753,34 @@ function startTutorial() { showPage('tutorial'); }
         </div>
         <div class="auth-field-group">
           <label class="auth-label">Jenis Usaha</label>
-          <select id="cp-new-type" class="auth-input" style="cursor:pointer;">
-            <option value="umum">Umum</option>
-            <option value="dagang">Dagang / Toko</option>
-            <option value="jasa">Jasa</option>
-            <option value="manufaktur">Manufaktur</option>
-            <option value="properti">Properti</option>
-          </select>
+          <input type="hidden" id="cp-new-type" value="umum">
+          <div id="cp-type-cards" style="display:flex;flex-direction:column;gap:0;background:var(--surface2);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+            <label class="cp-type-card cp-type-selected" data-val="umum" onclick="selectBizType(this)">
+              <span class="cp-type-icon">🏢</span>
+              <span class="cp-type-label">Umum</span>
+              <span class="cp-type-radio"><span class="cp-type-dot"></span></span>
+            </label>
+            <label class="cp-type-card" data-val="dagang" onclick="selectBizType(this)">
+              <span class="cp-type-icon">🛒</span>
+              <span class="cp-type-label">Dagang / Toko</span>
+              <span class="cp-type-radio"></span>
+            </label>
+            <label class="cp-type-card" data-val="jasa" onclick="selectBizType(this)">
+              <span class="cp-type-icon">🔧</span>
+              <span class="cp-type-label">Jasa</span>
+              <span class="cp-type-radio"></span>
+            </label>
+            <label class="cp-type-card" data-val="manufaktur" onclick="selectBizType(this)">
+              <span class="cp-type-icon">🏭</span>
+              <span class="cp-type-label">Manufaktur</span>
+              <span class="cp-type-radio"></span>
+            </label>
+            <label class="cp-type-card" data-val="properti" onclick="selectBizType(this)">
+              <span class="cp-type-icon">🏠</span>
+              <span class="cp-type-label">Properti</span>
+              <span class="cp-type-radio"></span>
+            </label>
+          </div>
         </div>
         <div style="display:flex;gap:8px;">
           <button class="auth-btn-primary" onclick="createCompany()" style="flex:1;" id="btn-create-co">
@@ -11771,8 +11833,8 @@ function startTutorial() { showPage('tutorial'); }
         <text x="58" y="37.5" text-anchor="middle" fill="#0d0f14" id="logo-eq-text" font-size="8" font-weight="bold" font-family="sans-serif">=</text>
       </svg>
     </div>
-    <div id="loading-company-name" style="font-size:22px;font-weight:800;letter-spacing:0.02em;">
-      Bayu Harlan <span id="loading-name-accent">Priangga</span>
+    <div id="loading-company-name" style="font-size:22px;font-weight:800;letter-spacing:0.02em;font-family:'IBM Plex Mono',monospace;">
+      OAS<span id="loading-name-accent"> Pro</span>
     </div>
     <div id="loading-subtitle" style="font-size:12px;margin-top:6px;letter-spacing:0.1em;text-transform:uppercase;">
       Software Akuntansi Profesional
@@ -12044,19 +12106,7 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
     setTimeout(runStep, delay);
   }
 
-  // Show company name from profil if available
-  try {
-    const p = JSON.parse(localStorage.getItem('bhp_profil_v1')||'{}');
-    if(p.nama) {
-      const el = document.getElementById('loading-company-name');
-      if(el) {
-        const parts = p.nama.trim().split(' ');
-        const first = parts[0];
-        const rest = parts.slice(1).join(' ');
-        el.innerHTML = `<span style="color:${textColor}">${first}</span>${rest?' <span style="color:'+accent+';">'+rest+'</span>':''}`;
-      }
-    }
-  } catch(e) {}
+  // Loading screen selalu tampil OAS Pro — tidak berubah mengikuti nama perusahaan user
 
   // Mulai langsung — tidak ada delay, langsung tampil sebelum konten lain terrender
   runStep();
@@ -12641,7 +12691,7 @@ function showAuthModal() {
         <!-- Logo kecil -->
         <div style="text-align:center;margin-bottom:20px;">
           <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,rgba(74,222,128,0.2),rgba(34,211,238,0.15));border:1px solid rgba(74,222,128,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px;">⚖️</div>
-          <div style="font-size:18px;font-weight:800;font-family:var(--mono);">BHP<span style="color:var(--accent)"> Pro</span></div>
+          <div style="font-size:18px;font-weight:800;font-family:var(--mono);">OAS<span style="color:var(--accent)"> Pro</span></div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px;">Login untuk simpan data ke cloud</div>
         </div>
 
@@ -13129,6 +13179,37 @@ async function getMyCompanies() {
   }
 }
 
+// Blokir karakter non-angka di input nominal (kecuali tombol kontrol)
+function blockNonNumeric(e) {
+  const allowed = ['Backspace','Delete','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Tab','Enter','Home','End'];
+  if (allowed.includes(e.key)) return;
+  // Izinkan Ctrl/Cmd + A/C/V/X
+  if ((e.ctrlKey || e.metaKey) && ['a','c','v','x'].includes(e.key.toLowerCase())) return;
+  // Izinkan satu titik desimal
+  if (e.key === '.' && !e.target.value.includes('.')) return;
+  // Izinkan minus di awal
+  if (e.key === '-' && e.target.selectionStart === 0 && !e.target.value.includes('-')) return;
+  // Blokir semua yang bukan digit
+  if (!/^\d$/.test(e.key)) e.preventDefault();
+}
+function sanitizePaste(e, el) {
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  const clean = text.replace(/[^0-9.\-]/g, '');
+  const num = parseFloat(clean);
+  if (!isNaN(num)) { el.value = num; el.dispatchEvent(new Event('input')); }
+}
+
+function selectBizType(el) {
+  document.querySelectorAll('.cp-type-card').forEach(c => {
+    c.classList.remove('cp-type-selected');
+    c.querySelector('.cp-type-radio').innerHTML = '';
+  });
+  el.classList.add('cp-type-selected');
+  el.querySelector('.cp-type-radio').innerHTML = '<span class="cp-type-dot"></span>';
+  document.getElementById('cp-new-type').value = el.dataset.val;
+}
+
 async function createCompany() {
   const name = document.getElementById('cp-new-name').value.trim();
   const type = document.getElementById('cp-new-type').value;
@@ -13503,7 +13584,7 @@ CREATE POLICY "Users can manage own profiles"
   p{color:#64748b;margin-bottom:16px;font-family:sans-serif;font-size:14px;}
   button{background:#4ade80;border:none;border-radius:8px;padding:10px 20px;font-weight:700;cursor:pointer;color:#0d0f14;}
   </style></head><body>
-  <h2>⚙️ Setup Supabase untuk BHP Pro</h2>
+  <h2>⚙️ Setup Supabase untuk OAS Pro</h2>
   <p>1. Buat project baru di <a href="https://supabase.com" style="color:#22d3ee">supabase.com</a><br>
   2. Pergi ke SQL Editor → New Query<br>
   3. Copy-paste SQL di bawah ini dan klik RUN<br>
@@ -13613,6 +13694,11 @@ function showDemoModeBanner() {
           <input type="text" id="accs-input-name" placeholder="Nama kamu">
         </div>
         <div class="accs-field">
+          <label>NAMA PERUSAHAAN</label>
+          <input type="text" id="accs-input-company" placeholder="Nama perusahaan / bisnis kamu">
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;">Tampil di laporan dan profil bisnis</div>
+        </div>
+        <div class="accs-field">
           <label>EMAIL (tidak bisa diubah langsung)</label>
           <input type="email" id="accs-input-email" disabled>
         </div>
@@ -13690,6 +13776,11 @@ async function accsLoadUserInfo() {
   document.getElementById('accs-uid-label').textContent = 'UID: ' + (user.id || '').substring(0, 16) + '...';
   const ni = document.getElementById('accs-input-name'); if (ni) ni.value = user.user_metadata?.full_name || user.user_metadata?.name || '';
   const ei = document.getElementById('accs-input-email'); if (ei) ei.value = user.email || '';
+  // Load nama perusahaan dari localStorage
+  const ci = document.getElementById('accs-input-company');
+  if (ci) {
+    try { const p = JSON.parse(localStorage.getItem('bhp_profil_v1')||'{}'); ci.value = p.nama || ''; } catch(e) {}
+  }
 }
 
 async function accsLoadProviders() {
@@ -13774,14 +13865,26 @@ async function accsUnlinkProvider(providerId) {
 async function accsUpdateProfile() {
   const name = document.getElementById('accs-input-name').value.trim();
   if (!name) { accsShowMsg('profile', '❌ Nama tidak boleh kosong.', 'error'); return; }
+  const companyName = (document.getElementById('accs-input-company')?.value || '').trim();
   const btn = document.getElementById('accs-btn-save-profile');
   btn.innerHTML = '<span class="accs-spinner"></span>Menyimpan...'; btn.disabled = true;
   try {
     const { error } = await _supa.auth.updateUser({ data: { full_name: name } });
     if (error) throw error;
     if (currentUser?.user_metadata) currentUser.user_metadata.full_name = name;
+    // Simpan nama perusahaan ke profil localStorage
+    if (companyName !== undefined) {
+      try {
+        const p = JSON.parse(localStorage.getItem('bhp_profil_v1')||'{}');
+        p.nama = companyName;
+        localStorage.setItem('bhp_profil_v1', JSON.stringify(p));
+        // Update exp-nama-perusahaan jika modal profil terbuka
+        const expEl = document.getElementById('exp-nama-perusahaan');
+        if (expEl && !expEl.value) expEl.value = companyName;
+      } catch(e2) {}
+    }
     await accsLoadUserInfo();
-    accsShowMsg('profile', '✅ Nama berhasil diperbarui!', 'success');
+    accsShowMsg('profile', '✅ Profil berhasil disimpan!', 'success');
   } catch(e) { accsShowMsg('profile', '❌ ' + e.message, 'error'); }
   finally { btn.innerHTML = '💾 Simpan Perubahan'; btn.disabled = false; }
 }
