@@ -1163,6 +1163,7 @@ body.light-mode .opt-picker-item.selected {
   font-size: 28px; font-weight: 700; color: #0d0f14;
   margin: 0 auto 6px; position: relative; flex-shrink: 0;
   box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--accent2);
+  overflow: hidden;
 }
 .accs-avatar-ring .accs-avatar-badge {
   position: absolute; bottom: 2px; right: 2px;
@@ -2200,7 +2201,7 @@ body.light-mode .opt-picker-item.selected {
           </div>
           <div class="form-row">
             <div class="form-group"><label>Beban Bunga</label><input type="number" id="rs-beban-bunga" placeholder="0" oninput="hitungRasio()"></div>
-            <div class="form-group"><label>Laba Bersih (EAT)</label><input type="number" id="rs-laba-bersih" placeholder="0" oninput="hitungRasio()"></div>
+            <div class="form-group"><label>Laba Bersih (EAT) <span style="color:var(--primary);font-size:11px">(otomatis jika EBIT diisi)</span></label><input type="number" id="rs-laba-bersih" placeholder="= EBIT - Beban Bunga" oninput="hitungRasio()" style="background:var(--surface2)"></div>
           </div>
           <div class="form-row">
             <div class="form-group"><label>Jml Saham Beredar</label><input type="number" id="rs-saham" placeholder="0" oninput="hitungRasio()"></div>
@@ -9570,6 +9571,10 @@ function hitungRasio() {
   const totalAset = (g('rs-total-aset') > 0)
     ? g('rs-total-aset')
     : asetL + asetT;
+  // Auto-hitung Laba Bersih dari EBIT - Beban Bunga jika tidak diisi
+  const labaBersihFinal = labaBersih > 0
+    ? labaBersih
+    : (ebit > 0 ? Math.max(0, ebit - bBunga) : 0);
 
   // Update tampilan field kalkulasi otomatis
   const setCalc = (id, val) => {
@@ -9582,6 +9587,7 @@ function hitungRasio() {
   setCalc('rs-laba-kotor', labaKotor);
   setCalc('rs-total-liab', totalLiab);
   setCalc('rs-total-aset', totalAset);
+  if (labaBersihFinal > 0 && labaBersih === 0) setCalc('rs-laba-bersih', labaBersihFinal);
 
   const r = (a,b) => b ? a/b : 0;
 
@@ -9608,11 +9614,11 @@ function hitungRasio() {
   // Profitabilitas
   document.getElementById('rasio-profitabilitas').innerHTML = [
     rasioRow('Gross Profit Margin', pct(r(labaKotor,penjualan)*100), '', {ok:30,warn:15}, 'Baik ≥ 30%'),
-    rasioRow('Net Profit Margin (NPM)', pct(r(labaBersih,penjualan)*100), '', {ok:10,warn:5}, 'Baik ≥ 10%'),
-    rasioRow('Return on Assets (ROA)', pct(r(labaBersih,totalAset)*100), '', {ok:5,warn:2}, 'Baik ≥ 5%'),
-    rasioRow('Return on Equity (ROE)', pct(r(labaBersih,ekuitas)*100), '', {ok:15,warn:8}, 'Baik ≥ 15%'),
+    rasioRow('Net Profit Margin (NPM)', pct(r(labaBersihFinal,penjualan)*100), '', {ok:10,warn:5}, 'Baik ≥ 10%'),
+    rasioRow('Return on Assets (ROA)', pct(r(labaBersihFinal,totalAset)*100), '', {ok:5,warn:2}, 'Baik ≥ 5%'),
+    rasioRow('Return on Equity (ROE)', pct(r(labaBersihFinal,ekuitas)*100), '', {ok:15,warn:8}, 'Baik ≥ 15%'),
     rasioRow('EBIT Margin', pct(r(ebit,penjualan)*100), '', {ok:15,warn:8}, 'Laba operasi/penjualan'),
-    rasioRow('Return on Sales', pct(r(labaBersih,penjualan)*100), '', null, ''),
+    rasioRow('Return on Sales', pct(r(labaBersihFinal,penjualan)*100), '', null, ''),
   ].join('');
 
   // Aktivitas
@@ -9630,10 +9636,10 @@ function hitungRasio() {
   ].join('');
 
   // Pasar
-  const eps = saham > 0 ? labaBersih / saham : null;
+  const eps = saham > 0 ? labaBersihFinal / saham : null;
   const bvps = saham > 0 ? ekuitas / saham : null;
-  const per = (eps && eps > 0 && hargaSaham > 0) ? hargaSaham / eps : null;
-  const pbv = (bvps && bvps > 0 && hargaSaham > 0) ? hargaSaham / bvps : null;
+  const per = (eps !== null && hargaSaham > 0 && eps > 0) ? hargaSaham / eps : null;
+  const pbv = (bvps !== null && hargaSaham > 0 && bvps > 0) ? hargaSaham / bvps : null;
   const marketCap = saham > 0 && hargaSaham > 0 ? hargaSaham * saham : null;
   document.getElementById('rasio-pasar').innerHTML = [
     rasioRow('EPS (Earning per Share)', eps !== null ? rp(eps) : '—', '', null, 'Laba per lembar saham'),
@@ -12181,7 +12187,7 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 .chip-avatar {
   width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg,var(--accent),var(--accent2));
   display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;
-  color: #0d0f14; flex-shrink: 0;
+  color: #0d0f14; flex-shrink: 0; overflow: hidden;
 }
 .chip-name {
   font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -14198,9 +14204,8 @@ function showDemoModeBanner() {
       <!-- Avatar & info -->
       <div id="accs-user-header" style="text-align:center;margin-bottom:20px;">
         <div style="position:relative;display:inline-block;">
-          <div class="accs-avatar-ring" id="accs-avatar">?
-            <div class="accs-avatar-badge">✓</div>
-          </div>
+          <div class="accs-avatar-ring" id="accs-avatar">?</div>
+          <div class="accs-avatar-badge" style="position:absolute;bottom:4px;right:4px;width:18px;height:18px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:9px;z-index:3;">✓</div>
           <!-- Tombol upload foto -->
           <label for="accs-photo-input" title="Ganti foto profil"
             style="position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;
@@ -14321,9 +14326,9 @@ async function accsLoadUserInfo() {
   const avatarEl = document.getElementById('accs-avatar');
   if (avatarEl) {
     if (photoURL) {
-      avatarEl.innerHTML = `<img src="${photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.innerHTML='${initial}<div class=\\"accs-avatar-badge\\">✓</div>'"><div class="accs-avatar-badge">✓</div>`;
+      avatarEl.innerHTML = `<img src="${photoURL}" style="width:72px;height:72px;object-fit:cover;display:block;" onerror="this.parentElement.innerHTML='${initial}'">`;
     } else {
-      avatarEl.innerHTML = initial + '<div class="accs-avatar-badge">✓</div>';
+      avatarEl.innerHTML = initial;
     }
   }
   document.getElementById('accs-display-name').textContent = user.user_metadata?.full_name || user.user_metadata?.name || '(Nama belum diatur)';
@@ -14367,7 +14372,7 @@ function handleProfilePhotoUpload(input) {
       const avatarEl = document.getElementById('accs-avatar');
       if (avatarEl) {
         const initial = (currentUser?.user_metadata?.full_name || currentUser?.email || '?').charAt(0).toUpperCase();
-        avatarEl.innerHTML = `<img src="${compressed}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.innerHTML='${initial}<div class=\\"accs-avatar-badge\\">✓</div>'"><div class="accs-avatar-badge">✓</div>`;
+        avatarEl.innerHTML = `<img src="${compressed}" style="width:72px;height:72px;object-fit:cover;display:block;" onerror="this.parentElement.innerHTML='${initial}'">`;
       }
       // Update chip di sidebar
       updateUserChip();
