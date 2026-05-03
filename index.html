@@ -12596,11 +12596,7 @@ async function initSupabase() {
     console.log('[Auth]', event, session?.user?.email);
 
     if (event === 'SIGNED_IN') {
-      // PENTING: Jangan reset _afterLoginRunning di sini!
-      // Biarkan afterLogin() sendiri yang mengaturnya.
-      // Hanya proses jika belum ada company (cegah double-call dari INITIAL_SESSION + SIGNED_IN)
       if (currentCompany) {
-        // Sudah login dan punya company — update user saja
         currentUser = session.user;
         return;
       }
@@ -12610,10 +12606,14 @@ async function initSupabase() {
       const gb = document.getElementById('guest-banner');
       if (gb) gb.remove();
       hideAuthModal();
-      // Tutup company-picker jika terbuka dari guest mode
       const picker = document.getElementById('company-picker');
       if (picker) picker.style.display = 'none';
-      await afterLogin();
+      // KRITIS: Jangan await afterLogin() di sini!
+      // Supabase menahan internal lock selama onAuthStateChange berjalan.
+      // Query database apapun akan hang sampai lock dilepas.
+      // setTimeout(0) memaksa afterLogin() berjalan SETELAH callback ini selesai
+      // dan lock sudah dilepas oleh Supabase SDK.
+      setTimeout(() => afterLogin(), 0);
 
     } else if (event === 'INITIAL_SESSION') {
       if (session?.user && !currentCompany) {
@@ -12623,9 +12623,8 @@ async function initSupabase() {
         const gb = document.getElementById('guest-banner');
         if (gb) gb.remove();
         hideAuthModal();
-        await afterLogin();
+        setTimeout(() => afterLogin(), 0);
       } else if (!session && !window.__oauthRedirect) {
-        // Tidak ada session DAN bukan proses OAuth → guest mode
         if (!currentUser) enterGuestMode();
       }
 
@@ -13138,10 +13137,6 @@ async function afterLogin() {
 
   console.log('[afterLogin] Mulai, user:', currentUser?.email, 'id:', currentUser?.id);
   if (chipName) chipName.textContent = 'Memuat bisnis...';
-
-  // Tunggu sebentar agar Supabase auth lock dilepas setelah onAuthStateChange selesai
-  // Tanpa ini, query database akan hang karena lock masih dipegang proses auth
-  await new Promise(r => setTimeout(r, 100));
 
   try {
     if (!currentUser?.id) throw new Error('User ID tidak tersedia');
