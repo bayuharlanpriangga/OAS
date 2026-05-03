@@ -333,8 +333,8 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 /* Form */
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
 .form-row.full { grid-template-columns: 1fr; }
+.form-group label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-group label { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
 .form-group input, .form-group select, .form-group textarea {
   background: var(--surface2); border: 1px solid var(--border);
   border-radius: 6px; padding: 9px 12px; color: var(--text);
@@ -1996,20 +1996,22 @@ body.light-mode .opt-picker-item.selected {
           <div class="form-group"><label>Nilai Sisa / Residu (Rp)</label><input type="number" id="py-sisa" placeholder="10000000" oninput="hitungPenyusutan()"></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>Umur Ekonomis (Tahun)</label><input type="number" id="py-umur" placeholder="5" oninput="hitungPenyusutan()"></div>
+          <div class="form-group"><label>Umur Ekonomis (Thn)</label><input type="number" id="py-umur" placeholder="5" oninput="hitungPenyusutan()"></div>
           <div class="form-group"><label>Metode</label>
             <select id="py-metode" onchange="hitungPenyusutan()">
-              <option value="garis-lurus">Garis Lurus (Straight-Line)</option>
-              <option value="saldo-menurun">Saldo Menurun (Double Declining)</option>
+              <option value="garis-lurus">Garis Lurus (SLM)</option>
+              <option value="saldo-menurun">Saldo Menurun (DDB)</option>
               <option value="saldo-menurun-1x">Saldo Menurun 1x (150%)</option>
               <option value="sum-of-years">Sum of Years Digits</option>
               <option value="unit-produksi">Unit Produksi</option>
             </select>
           </div>
         </div>
-        <div id="py-unit-row" class="form-row" style="display:none">
-          <div class="form-group"><label>Total Kapasitas Produksi</label><input type="number" id="py-total-unit" placeholder="100000" oninput="hitungPenyusutan()"></div>
-          <div class="form-group"><label>Unit Produksi / Tahun</label><input type="text" id="py-unit-per-tahun" placeholder="20000,25000,..." oninput="hitungPenyusutan()"></div>
+        <div id="py-unit-row" class="form-row full" style="display:none">
+          <div class="form-row" style="margin-bottom:0">
+            <div class="form-group"><label>Total Kapasitas Produksi</label><input type="number" id="py-total-unit" placeholder="100000" oninput="hitungPenyusutan()"></div>
+            <div class="form-group"><label>Unit Produksi / Tahun</label><input type="text" id="py-unit-per-tahun" placeholder="20000,25000,30000,..." oninput="hitungPenyusutan()"></div>
+          </div>
         </div>
         <div class="form-row">
           <div class="form-group"><label>Tanggal Perolehan</label><input type="date" id="py-tgl"></div>
@@ -9185,7 +9187,7 @@ function hitungPenyusutan() {
   const metode = document.getElementById('py-metode').value;
   const tarif = parseFloat(document.getElementById('py-tarif').value)||2;
   const unitRow = document.getElementById('py-unit-row');
-  unitRow.style.display = metode==='unit-produksi' ? 'grid' : 'none';
+  unitRow.style.display = metode==='unit-produksi' ? 'block' : 'none';
   // Disable tarif pajak DDB saat metode unit produksi atau garis lurus atau SYD
   const tarifInput = document.getElementById('py-tarif');
   const tarifGroup = document.getElementById('py-tarif-group');
@@ -13102,6 +13104,10 @@ async function afterLogin() {
     }
   } catch(e) {
     console.error('afterLogin error:', e);
+    // Tampilkan error yang informatif di chip
+    if (chipName) chipName.textContent = '⚠️ Error - tap untuk info';
+    if (chipSub) chipSub.textContent = e.message || 'Cek console';
+    showAlert('❌ Gagal memuat data bisnis:\n' + (e.message || e) + '\n\nCoba refresh halaman. Jika masalah berlanjut, pastikan tabel Supabase sudah dibuat (⚙️ Setup Supabase).');
     // Fallback ke guest mode jika gagal
     enterGuestMode();
   } finally {
@@ -13157,7 +13163,12 @@ function showCompanyPickerScreen(companies) {
 function renderCompanyList(companies) {
   const list = document.getElementById('cp-list');
   if (companies.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Belum ada bisnis.<br>Buat bisnis pertama kamu di bawah!</div>';
+    list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Belum ada bisnis.<br>Buat bisnis pertama kamu di bawah!</div>
+    <div style="text-align:center;margin-bottom:8px;">
+      <button onclick="diagnosSupabase()" style="font-size:11px;color:var(--muted);background:none;border:1px dashed var(--border);border-radius:8px;padding:6px 14px;cursor:pointer;">
+        🔍 Diagnosa koneksi Supabase
+      </button>
+    </div>`;
     return;
   }
   const icons = { umum:'🏢', dagang:'🏪', jasa:'💼', manufaktur:'🏭', properti:'🏠' };
@@ -13243,15 +13254,48 @@ async function createCompany() {
   const btnText = document.getElementById('btn-create-co-text');
   btn.disabled = true; btnText.textContent = 'Membuat...';
 
-  const { data, error } = await _supa.from('companies').insert({
-    user_id: currentUser.id,
-    name, type,
-    created_at: new Date().toISOString()
-  }).select().single();
+  try {
+    // Cek session dulu sebelum insert
+    const { data: { session } } = await _supa.auth.getSession();
+    if (!session) {
+      btn.disabled = false; btnText.textContent = 'Buat Bisnis';
+      showAlert('❌ Sesi login habis. Silakan login ulang.');
+      return;
+    }
 
-  btn.disabled = false; btnText.textContent = 'Buat Bisnis';
-  if (error) { showAlert('❌ Gagal membuat bisnis: ' + error.message); return; }
-  await selectCompany(data);
+    const { data, error } = await _supa.from('companies').insert({
+      user_id: currentUser.id,
+      name, type,
+      created_at: new Date().toISOString()
+    }).select().single();
+
+    btn.disabled = false; btnText.textContent = 'Buat Bisnis';
+
+    if (error) {
+      console.error('createCompany error:', error);
+      let msg = error.message || JSON.stringify(error);
+      // Tabel belum dibuat di Supabase
+      if (msg.includes('relation') || msg.includes('does not exist') || msg.includes('42P01')) {
+        showAlert('❌ Tabel "companies" belum ada di Supabase.\n\nSilakan buka menu ⚙️ Setup Supabase dan jalankan SQL schema-nya dulu di Supabase Dashboard → SQL Editor.');
+        showSupabaseSetup();
+        return;
+      }
+      // RLS policy block
+      if (msg.includes('row-level') || msg.includes('policy') || msg.includes('42501') || msg.includes('permission')) {
+        showAlert('❌ Akses ditolak Supabase (RLS).\n\nPastikan policy "Users can manage own companies" sudah dibuat di SQL Editor Supabase.');
+        showSupabaseSetup();
+        return;
+      }
+      showAlert('❌ Gagal membuat bisnis:\n' + msg);
+      return;
+    }
+
+    await selectCompany(data);
+  } catch(e) {
+    btn.disabled = false; btnText.textContent = 'Buat Bisnis';
+    console.error('createCompany exception:', e);
+    showAlert('❌ Error tidak terduga: ' + (e.message || e));
+  }
 }
 
 async function selectCompany(company) {
@@ -13541,6 +13585,36 @@ function handleAttachFile(input) {
 // =====================================================================
 // SUPABASE SCHEMA HELPER — tampilkan SQL yang perlu dijalankan
 // =====================================================================
+async function diagnosSupabase() {
+  let result = '🔍 Diagnosa Supabase:\n\n';
+  try {
+    // 1. Cek session
+    const { data: { session }, error: sessErr } = await _supa.auth.getSession();
+    result += session ? `✅ Session aktif (${session.user?.email})\n` : `❌ Tidak ada session\n`;
+    if (sessErr) result += `⚠️ Session error: ${sessErr.message}\n`;
+
+    // 2. Cek tabel companies
+    const { data, error } = await _supa.from('companies').select('count').limit(1);
+    if (error) {
+      if (error.message.includes('relation') || error.message.includes('does not exist') || error.code === '42P01') {
+        result += `❌ Tabel "companies" BELUM DIBUAT\n   → Jalankan SQL schema di Supabase Dashboard\n`;
+      } else if (error.code === '42501' || error.message.includes('permission') || error.message.includes('policy')) {
+        result += `❌ RLS Policy BELUM DIBUAT\n   → Tambahkan policy di Supabase Dashboard\n`;
+      } else {
+        result += `❌ Error tabel: ${error.message} (code: ${error.code})\n`;
+      }
+    } else {
+      result += `✅ Tabel "companies" ada dan bisa diakses\n`;
+    }
+  } catch(e) {
+    result += `❌ Exception: ${e.message}\n`;
+  }
+
+  result += `\nURL: ${SUPABASE_URL}\n`;
+  result += `\nJika ada ❌, buka ⚙️ Setup Supabase untuk panduan lengkap.`;
+  showAlert(result);
+}
+
 function showSupabaseSetup() {
   const sql = `-- Jalankan SQL ini di Supabase SQL Editor:
 
