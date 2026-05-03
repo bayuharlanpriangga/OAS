@@ -9549,16 +9549,19 @@ function hitungDiskonto() {
 // ===================== RASIO KEUANGAN =====================
 function hitungRasio() {
   const g = id => parseFloat(document.getElementById(id).value)||0;
+  // Helper: row dengan nilai format string (Rp, dll) — bypass parseFloat check di rasioRow
+  const rasioRowStr = (nama, nilaiStr, keterangan) =>
+    `<tr class="rasio-row"><td>${nama}</td><td>${nilaiStr}</td><td>${keterangan}</td></tr>`;
   const kas=g('rs-kas'), piutang=g('rs-piutang'), pers=g('rs-persediaan');
   const asetT=g('rs-aset-tetap');
   const utangL=g('rs-utang-lancar'), utangP=g('rs-utang-panjang');
   const ekuitas=g('rs-ekuitas');
   const penjualan=g('rs-penjualan'), hpp=g('rs-hpp');
   const ebit=g('rs-ebit');
-  const bBunga=g('rs-beban-bunga'), labaBersih=g('rs-laba-bersih');
+  const bBunga=g('rs-beban-bunga');
   const saham=g('rs-saham'), hargaSaham=g('rs-harga-saham');
 
-  // Auto-kalkulasi field turunan
+  // Auto-kalkulasi field turunan — JANGAN baca rs-laba-bersih dulu, hitung manual dulu
   const asetL = (g('rs-aset-lancar') > 0)
     ? g('rs-aset-lancar')
     : kas + piutang + pers;
@@ -9571,9 +9574,12 @@ function hitungRasio() {
   const totalAset = (g('rs-total-aset') > 0)
     ? g('rs-total-aset')
     : asetL + asetT;
-  // Auto-hitung Laba Bersih dari EBIT - Beban Bunga jika tidak diisi
-  const labaBersihFinal = labaBersih > 0
-    ? labaBersih
+  // BUGFIX: baca rs-laba-bersih hanya jika user isi manual (value > 0)
+  // Kalau tidak, hitung dari EBIT - Beban Bunga
+  // Field rs-laba-bersih adalah field otomatis (placeholder only) — g() selalu 0 kalau user tidak ketik
+  const _labaBersihManual = g('rs-laba-bersih'); // 0 jika tidak diisi manual
+  const labaBersihFinal = _labaBersihManual > 0
+    ? _labaBersihManual
     : (ebit > 0 ? Math.max(0, ebit - bBunga) : 0);
 
   // Update placeholder field kalkulasi otomatis (hanya placeholder, jangan ubah .value)
@@ -9600,7 +9606,7 @@ function hitungRasio() {
     rasioRow('Current Ratio', r(asetL,utangL).toFixed(2), 'x', {ok:2,warn:1}, 'Baik ≥ 2x'),
     rasioRow('Quick Ratio', r(quickAsset,utangL).toFixed(2), 'x', {ok:1,warn:0.5}, 'Baik ≥ 1x'),
     rasioRow('Cash Ratio', r(kas,utangL).toFixed(2), 'x', {ok:0.5,warn:0.2}, 'Baik ≥ 0.5x'),
-    rasioRow('Net Working Capital', rp(asetL-utangL), '', null, 'Modal kerja bersih'),
+    rasioRowStr('Net Working Capital', rp(asetL-utangL), 'Modal kerja bersih'),
   ].join('');
 
   // Solvabilitas
@@ -9645,14 +9651,16 @@ function hitungRasio() {
   const per = (eps !== null && hargaSaham > 0) ? hargaSaham / eps : null;
   const pbv = (bvps !== null && hargaSaham > 0) ? hargaSaham / bvps : null;
   const marketCap = saham > 0 && hargaSaham > 0 ? hargaSaham * saham : null;
-  const fmtRpVal = v => v >= 1 ? rp(Math.round(v)) : 'Rp ' + v.toFixed(4);
+
+  // BUGFIX: rasioRow pakai parseFloat(nilai) — nilai format Rp ditangani rasioRowStr (didefinisikan di atas)
+
   document.getElementById('rasio-pasar').innerHTML = [
-    rasioRow('EPS (Earning per Share)', eps !== null ? fmtRpVal(eps) : '—', '', null, 'Laba per lembar saham'),
+    rasioRowStr('EPS (Earning per Share)', eps !== null ? rp(eps) : '—', 'Laba per lembar saham'),
     rasioRow('Price to Earning (PER)', per !== null ? per.toFixed(2) : '—', per !== null ? 'x' : '', {ok:15,warn:25}, 'Valuasi saham'),
     rasioRow('Price to Book Value (PBV)', pbv !== null ? pbv.toFixed(2) : '—', pbv !== null ? 'x' : '', {ok:1,warn:3}, 'Nilai pasar vs buku'),
-    rasioRow('Book Value per Share', bvps !== null ? fmtRpVal(bvps) : '—', '', null, 'Nilai buku per saham'),
-    rasioRow('Market Cap', marketCap !== null ? rp(marketCap) : '—', '', null, 'Kapitalisasi pasar'),
-    rasioRow('Dividend per Share', '—', '', null, 'Isi manual jika ada'),
+    rasioRowStr('Book Value per Share', bvps !== null ? rp(bvps) : '—', 'Nilai buku per saham'),
+    rasioRowStr('Market Cap', marketCap !== null ? rp(marketCap) : '—', 'Kapitalisasi pasar'),
+    rasioRowStr('Dividend per Share', '—', 'Isi manual jika ada'),
   ].join('');
 }
 
