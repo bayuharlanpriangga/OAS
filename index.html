@@ -13132,8 +13132,9 @@ async function doLogout() {
 // CHIP CLICK HANDLER — safe handler yang cek state dulu
 // =====================================================================
 function handleChipClick() {
-  // Jika masih loading (afterLogin belum selesai), abaikan klik
+  // Abaikan klik jika sedang proses apapun
   if (_afterLoginRunning) return;
+  if (window.__oauthRedirect || window.__initialOAuthRedirect) return;
   // Jika belum login sama sekali
   if (!currentUser) { showAuthModal(); return; }
   // Jika sudah login, tampilkan company picker
@@ -13221,6 +13222,7 @@ async function afterLogin() {
     enterGuestMode();
   } finally {
     _afterLoginRunning = false;
+    window.__initialOAuthRedirect = false;
     console.log('[afterLogin] Selesai');
   }
 }
