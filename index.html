@@ -362,7 +362,7 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 /* Form */
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
 .form-row.full { grid-template-columns: 1fr; }
-.form-group label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.form-group label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 6px; white-space: normal; overflow: visible; }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-group input, .form-group select, .form-group textarea {
   background: var(--surface2); border: 1px solid var(--border);
@@ -1238,6 +1238,66 @@ body.light-mode .opt-picker-item.selected {
 .accs-danger-title { font-size:12px; font-weight:700; color:var(--red); margin-bottom:8px; letter-spacing:0.05em; }
 .accs-danger-desc { font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.5; }
 .accs-spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.2); border-top-color:currentColor; border-radius:50%; animation:spin 0.6s linear infinite; vertical-align:middle; margin-right:6px; }
+
+/* ===== CUSTOM DATE PICKER ===== */
+.bhp-date-wrapper { position: relative; display: inline-block; width: 100%; }
+.bhp-date-display {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 9px 36px 9px 12px; color: var(--text);
+  font-size: 13.5px; font-family: var(--sans); cursor: pointer;
+  user-select: none; transition: border 0.15s; width: 100%;
+  display: flex; align-items: center; gap: 8px; min-height: 40px;
+  position: relative;
+}
+.bhp-date-display:hover { border-color: var(--accent2); }
+.bhp-date-display.open { border-color: var(--accent); }
+.bhp-date-display .bhp-cal-icon {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); font-size: 14px; pointer-events: none;
+}
+.bhp-date-display.placeholder-text { color: var(--muted); }
+.bhp-date-wrapper.small .bhp-date-display { font-size: 12px; padding: 6px 30px 6px 10px; min-height: 32px; }
+.bhp-date-wrapper.small .bhp-cal-icon { right: 8px; font-size: 12px; }
+.bhp-cal-popup {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 9999;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px; min-width: 270px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35); display: none;
+  animation: bhpCalFadeIn 0.18s ease;
+}
+.bhp-cal-popup.open { display: block; }
+@keyframes bhpCalFadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+body.light-mode .bhp-cal-popup { box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+.bhp-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.bhp-cal-nav {
+  width: 30px; height: 30px; border-radius: 8px; background: var(--surface2);
+  border: 1px solid var(--border); cursor: pointer; font-size: 14px;
+  color: var(--text); display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; font-family: var(--sans);
+}
+.bhp-cal-nav:hover { background: var(--border); color: var(--accent); }
+.bhp-cal-month-year { font-size: 13px; font-weight: 700; color: var(--text); font-family: var(--sans); cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.15s; }
+.bhp-cal-month-year:hover { background: var(--surface2); }
+.bhp-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.bhp-cal-dow { text-align: center; font-size: 10px; font-weight: 700; color: var(--muted); padding: 4px 0 6px; font-family: var(--sans); letter-spacing: 0.05em; }
+.bhp-cal-day { text-align: center; font-size: 12.5px; font-family: var(--sans); padding: 7px 4px; border-radius: 8px; cursor: pointer; color: var(--text); transition: all 0.12s; font-weight: 500; }
+.bhp-cal-day:hover:not(.empty):not(.selected) { background: var(--surface2); color: var(--accent2); }
+.bhp-cal-day.empty { cursor: default; }
+.bhp-cal-day.other-month { color: var(--muted); opacity: 0.4; }
+.bhp-cal-day.today { color: var(--accent2); font-weight: 700; }
+.bhp-cal-day.selected { background: var(--accent); color: #0d0f14; font-weight: 700; box-shadow: 0 2px 8px rgba(74,222,128,0.35); }
+body.light-mode .bhp-cal-day.selected { color: #fff; }
+.bhp-cal-footer { display: flex; justify-content: space-between; margin-top: 12px; gap: 8px; }
+.bhp-cal-btn-clear { flex: 1; padding: 7px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--sans); transition: all 0.15s; }
+.bhp-cal-btn-clear:hover { border-color: var(--red); color: var(--red); }
+.bhp-cal-btn-today { flex: 1; padding: 7px; border-radius: 8px; border: 1px solid rgba(74,222,128,0.4); background: rgba(74,222,128,0.08); color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--sans); transition: all 0.15s; }
+.bhp-cal-btn-today:hover { background: rgba(74,222,128,0.15); }
+.bhp-cal-my-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 4px 0; }
+.bhp-cal-my-item { padding: 8px 4px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text); font-family: var(--sans); background: var(--surface2); border: 1px solid var(--border); transition: all 0.12s; }
+.bhp-cal-my-item:hover { border-color: var(--accent2); color: var(--accent2); }
+.bhp-cal-my-item.selected { background: rgba(74,222,128,0.12); border-color: var(--accent); color: var(--accent); }
+.bhp-cal-year-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.bhp-cal-year-label { font-size: 14px; font-weight: 700; color: var(--text); }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -9083,7 +9143,9 @@ function confirmResetAll() {
 // ===================== SALDO AWAL =====================
 function openModalSaldoAwal() {
   const tgl = new Date().toISOString().split('T')[0];
-  document.getElementById('saldo-awal-tgl').value = tgl;
+  const saldoTglInput = document.getElementById('saldo-awal-tgl');
+  if (saldoTglInput && saldoTglInput._bhpSetDate) saldoTglInput._bhpSetDate(tgl);
+  else if (saldoTglInput) saldoTglInput.value = tgl;
 
   // Populate rows: show Aset, Liabilitas, Ekuitas accounts
   const tbody = document.getElementById('saldo-awal-rows');
@@ -14631,9 +14693,9 @@ function showDemoModeBanner() {
           <div class="accs-avatar-badge" style="position:absolute;bottom:4px;right:4px;width:18px;height:18px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:9px;z-index:3;">✓</div>
           <!-- Tombol upload foto -->
           <label for="accs-photo-input" title="Ganti foto profil"
-            style="position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;
-            background:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;
-            font-size:11px;border:2px solid var(--bg);z-index:2;">📷</label>
+            style="position:absolute;bottom:0px;left:-2px;width:26px;height:26px;border-radius:50%;
+            background:var(--accent2);cursor:pointer;display:flex;align-items:center;justify-content:center;
+            font-size:12px;border:2px solid var(--bg);z-index:10;box-shadow:0 2px 6px rgba(0,0,0,0.3);">📷</label>
           <input type="file" id="accs-photo-input" accept="image/*" style="display:none"
             onchange="handleProfilePhotoUpload(this)">
         </div>
@@ -15067,3 +15129,194 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
+<script>
+// ===== CUSTOM DATE PICKER (BHP) =====
+(function() {
+  const MONTHS_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const DAYS_ID = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+
+  function formatDisplay(dateStr) {
+    if (!dateStr) return '';
+    const p = dateStr.split('-');
+    if (p.length < 3) return '';
+    return parseInt(p[2]) + ' ' + MONTHS_ID[parseInt(p[1])-1] + ' ' + p[0];
+  }
+
+  function todayStr() {
+    const n = new Date();
+    return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0');
+  }
+
+  function closeAllPickers() {
+    document.querySelectorAll('.bhp-cal-popup.open').forEach(function(p) {
+      p.classList.remove('open');
+      const w = p.closest('.bhp-date-wrapper');
+      if (w) w.querySelector('.bhp-date-display').classList.remove('open');
+    });
+  }
+  document.addEventListener('click', closeAllPickers);
+
+  function createPicker(hiddenInput, opts) {
+    opts = opts || {};
+    const wrapper = document.createElement('div');
+    wrapper.className = 'bhp-date-wrapper' + (opts.small ? ' small' : '');
+
+    const display = document.createElement('div');
+    const hasVal = !!hiddenInput.value;
+    display.className = 'bhp-date-display' + (hasVal ? '' : ' placeholder-text');
+    const displayText = document.createElement('span');
+    displayText.className = 'bhp-display-text';
+    displayText.textContent = hasVal ? formatDisplay(hiddenInput.value) : (opts.placeholder || 'Pilih tanggal');
+    const calIcon = document.createElement('span');
+    calIcon.className = 'bhp-cal-icon';
+    calIcon.textContent = '📅';
+    display.appendChild(displayText);
+    display.appendChild(calIcon);
+
+    const popup = document.createElement('div');
+    popup.className = 'bhp-cal-popup';
+
+    wrapper.appendChild(display);
+    wrapper.appendChild(popup);
+    hiddenInput.parentNode.insertBefore(wrapper, hiddenInput);
+    wrapper.appendChild(hiddenInput);
+
+    let curYear = new Date().getFullYear();
+    let curMonth = new Date().getMonth();
+    let selectedDate = hiddenInput.value || '';
+
+    if (selectedDate) {
+      const p = selectedDate.split('-');
+      curYear = parseInt(p[0]); curMonth = parseInt(p[1])-1;
+    }
+
+    function renderDays() {
+      const today = todayStr();
+      const firstDay = new Date(curYear, curMonth, 1).getDay();
+      const daysInMonth = new Date(curYear, curMonth+1, 0).getDate();
+
+      let html = '<div class="bhp-cal-header">'
+        + '<button class="bhp-cal-nav" data-nav="-1">&#8249;</button>'
+        + '<span class="bhp-cal-month-year" data-mode="months">' + MONTHS_ID[curMonth] + ' ' + curYear + '</span>'
+        + '<button class="bhp-cal-nav" data-nav="1">&#8250;</button>'
+        + '</div><div class="bhp-cal-grid">';
+
+      DAYS_ID.forEach(function(d) { html += '<div class="bhp-cal-dow">' + d + '</div>'; });
+      for (var i = 0; i < firstDay; i++) html += '<div class="bhp-cal-day empty"></div>';
+      for (var d = 1; d <= daysInMonth; d++) {
+        var ds = curYear + '-' + String(curMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        var cls = 'bhp-cal-day';
+        if (ds === today) cls += ' today';
+        if (ds === selectedDate) cls += ' selected';
+        html += '<div class="' + cls + '" data-date="' + ds + '">' + d + '</div>';
+      }
+      html += '</div><div class="bhp-cal-footer">'
+        + '<button class="bhp-cal-btn-clear">Hapus</button>'
+        + '<button class="bhp-cal-btn-today">Hari Ini</button>'
+        + '</div>';
+
+      popup.innerHTML = html;
+
+      popup.querySelectorAll('[data-nav]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          curMonth += parseInt(btn.dataset.nav);
+          if (curMonth < 0) { curMonth = 11; curYear--; }
+          else if (curMonth > 11) { curMonth = 0; curYear++; }
+          renderDays();
+        });
+      });
+      var myBtn = popup.querySelector('[data-mode="months"]');
+      if (myBtn) myBtn.addEventListener('click', function(e) { e.stopPropagation(); renderMonths(); });
+      popup.querySelectorAll('[data-date]').forEach(function(el) {
+        el.addEventListener('click', function(e) { e.stopPropagation(); selectDate(el.dataset.date); });
+      });
+      var clearBtn = popup.querySelector('.bhp-cal-btn-clear');
+      if (clearBtn) clearBtn.addEventListener('click', function(e) { e.stopPropagation(); selectDate(''); });
+      var todayBtn = popup.querySelector('.bhp-cal-btn-today');
+      if (todayBtn) todayBtn.addEventListener('click', function(e) { e.stopPropagation(); selectDate(todayStr()); });
+    }
+
+    function renderMonths() {
+      var html = '<div class="bhp-cal-year-nav">'
+        + '<button class="bhp-cal-nav" data-yn="-1">&#8249;</button>'
+        + '<span class="bhp-cal-year-label">' + curYear + '</span>'
+        + '<button class="bhp-cal-nav" data-yn="1">&#8250;</button>'
+        + '</div><div class="bhp-cal-my-grid">';
+      MONTHS_ID.forEach(function(m, i) {
+        html += '<div class="bhp-cal-my-item' + (i === curMonth ? ' selected' : '') + '" data-mi="' + i + '">' + m.substring(0,3) + '</div>';
+      });
+      html += '</div>';
+      popup.innerHTML = html;
+      popup.querySelectorAll('[data-yn]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) { e.stopPropagation(); curYear += parseInt(btn.dataset.yn); renderMonths(); });
+      });
+      popup.querySelectorAll('[data-mi]').forEach(function(el) {
+        el.addEventListener('click', function(e) { e.stopPropagation(); curMonth = parseInt(el.dataset.mi); renderDays(); });
+      });
+    }
+
+    function selectDate(ds) {
+      selectedDate = ds;
+      hiddenInput.value = ds;
+      display.classList.toggle('placeholder-text', !ds);
+      displayText.textContent = ds ? formatDisplay(ds) : (opts.placeholder || 'Pilih tanggal');
+      popup.classList.remove('open');
+      display.classList.remove('open');
+      hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    display.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (popup.classList.contains('open')) {
+        popup.classList.remove('open'); display.classList.remove('open');
+      } else {
+        closeAllPickers();
+        if (selectedDate) { var p = selectedDate.split('-'); curYear = parseInt(p[0]); curMonth = parseInt(p[1])-1; }
+        renderDays();
+        popup.classList.add('open'); display.classList.add('open');
+      }
+    });
+    popup.addEventListener('click', function(e) { e.stopPropagation(); });
+
+    hiddenInput._bhpSetDate = function(ds) {
+      selectedDate = ds; hiddenInput.value = ds;
+      display.classList.toggle('placeholder-text', !ds);
+      displayText.textContent = ds ? formatDisplay(ds) : (opts.placeholder || 'Pilih tanggal');
+    };
+    return wrapper;
+  }
+
+  function upgradeAllDateInputs() {
+    document.querySelectorAll('input[type="date"]:not([data-bhp-upgraded])').forEach(function(input) {
+      input.setAttribute('data-bhp-upgraded', '1');
+      const isSmall = !!(input.closest('.filter-bar') || input.closest('.dash-filter') || (input.getAttribute('style') || '').includes('font-size:12px'));
+      const origOnchange = input.getAttribute('onchange');
+      input.style.display = 'none';
+      input.setAttribute('type', 'text');
+      if (origOnchange) {
+        input.addEventListener('change', function() { try { (new Function(origOnchange))(); } catch(e) {} });
+        input.removeAttribute('onchange');
+      }
+      createPicker(input, { small: isSmall, placeholder: 'Pilih tanggal' });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', upgradeAllDateInputs);
+  } else {
+    upgradeAllDateInputs();
+  }
+
+  var observer = new MutationObserver(function(mutations) {
+    var found = false;
+    mutations.forEach(function(m) { if (m.addedNodes.length) found = true; });
+    if (found) setTimeout(upgradeAllDateInputs, 50);
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  window.bhpDatePicker = { upgrade: upgradeAllDateInputs, formatDisplay: formatDisplay, todayStr: todayStr };
+})();
+</script>
+</body></html>
