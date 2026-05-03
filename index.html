@@ -11742,7 +11742,7 @@ function startTutorial() { showPage('tutorial'); }
           <div style="font-size:20px;font-weight:800;font-family:var(--mono);">Pilih Bisnis</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="cp-user-email"></div>
         </div>
-        <button onclick="doLogout()" class="auth-btn-sm-ghost">Keluar</button>
+        
       </div>
       <!-- Company list -->
       <div id="cp-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
@@ -13142,8 +13142,13 @@ async function doForgotPassword() {
 }
 
 async function doLogout() {
-  await _supa.auth.signOut();
-  // onAuthStateChange akan trigger enterGuestMode() lewat SIGNED_OUT event
+  try {
+    await _supa.auth.signOut({ scope: 'global' });
+  } catch(e) {
+    try { await _supa.auth.signOut(); } catch(e2) {}
+  }
+  // Paksa reload halaman agar state bersih sepenuhnya
+  window.location.reload();
 }
 
 // =====================================================================
@@ -13307,15 +13312,54 @@ function renderCompanyList(companies) {
   }
   const icons = { umum:'🏢', dagang:'🏪', jasa:'💼', manufaktur:'🏭', properti:'🏠' };
   list.innerHTML = companies.map((c, i) => `
-    <div class="cp-company-card" onclick="selectCompany(${JSON.stringify(c).replace(/"/g,'&quot;')})" style="animation-delay:${i*60}ms">
-      <div class="cp-company-icon">${icons[c.type] || '🏢'}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.name}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;text-transform:capitalize;">${c.type || 'Umum'}</div>
+    <div class="cp-company-card" style="animation-delay:${i*60}ms;display:flex;align-items:center;gap:0;">
+      <div style="flex:1;display:flex;align-items:center;gap:12px;cursor:pointer;padding:0;" onclick="selectCompany(${JSON.stringify(c).replace(/"/g,'&quot;')})">
+        <div class="cp-company-icon">${icons[c.type] || '🏢'}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;text-transform:capitalize;">${c.type || 'Umum'}</div>
+        </div>
+        <div style="color:var(--muted);font-size:18px;padding-right:4px;">›</div>
       </div>
-      <div style="color:var(--muted);font-size:18px;">›</div>
+      <button onclick="event.stopPropagation();deleteCompany(${JSON.stringify(c).replace(/"/g,'&quot;')})"
+        title="Hapus bisnis ini"
+        style="flex-shrink:0;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:8px;
+        color:var(--red);font-size:13px;padding:6px 10px;cursor:pointer;font-family:var(--sans);transition:all 0.15s;margin-left:6px;"
+        onmouseover="this.style.background='rgba(248,113,113,0.2)'"
+        onmouseout="this.style.background='rgba(248,113,113,0.1)'">
+        🗑️
+      </button>
     </div>
   `).join('');
+}
+
+async function deleteCompany(company) {
+  const confirmed = await showConfirm(
+    `Hapus bisnis "<b>${company.name}</b>"?`,
+    `Semua data jurnal & transaksi bisnis ini akan dihapus permanen dan <strong>tidak bisa dipulihkan</strong>.`,
+    'Hapus Permanen', 'danger'
+  );
+  if (!confirmed) return;
+  try {
+    // Hapus semua entries jurnal dulu (foreign key)
+    await _supa.from('journal_entries').delete().eq('company_id', company.id);
+    const { error } = await _supa.from('companies').delete().eq('id', company.id).eq('user_id', currentUser.id);
+    if (error) throw error;
+    // Jika bisnis yang dihapus adalah yang sedang aktif, reset
+    if (currentCompany?.id === company.id) {
+      currentCompany = null;
+    }
+    showAlert('✅ Bisnis "' + company.name + '" berhasil dihapus.');
+    const companies = await getMyCompanies();
+    if (companies.length === 0) {
+      // Tidak ada bisnis lagi, reload picker
+      showCompanyPickerScreen(companies);
+    } else {
+      renderCompanyList(companies);
+    }
+  } catch(e) {
+    showAlert('❌ Gagal menghapus bisnis: ' + (e.message || e));
+  }
 }
 
 async function getMyCompanies() {
@@ -13953,8 +13997,11 @@ function showDemoModeBanner() {
         <div class="accs-danger-zone">
           <div class="accs-danger-title">⚠️ ZONA BERBAHAYA</div>
           <div class="accs-danger-desc">Logout dari semua perangkat. Data bisnis &amp; jurnal <strong>tidak</strong> akan terhapus.</div>
-          <button class="provider-action btn-unlink" onclick="accsLogoutAll()" style="width:100%;padding:10px;">
+          <button class="provider-action btn-unlink" onclick="accsLogoutAll()" style="width:100%;padding:10px;margin-bottom:8px;">
             🚪 Logout dari Semua Perangkat
+          </button>
+          <button class="provider-action btn-unlink" onclick="doLogout()" style="width:100%;padding:10px;background:rgba(248,113,113,0.08);">
+            🔓 Keluar dari Akun Ini
           </button>
         </div>
       </div>
@@ -14152,6 +14199,7 @@ async function accsUpdatePassword() {
 async function accsLogoutAll() {
   if (!confirm('Logout dari semua perangkat? Kamu harus login ulang setelahnya.')) return;
   try { await _supa.auth.signOut({ scope: 'global' }); } catch(e) { await _supa.auth.signOut(); }
+  window.location.reload();
 }
 
 function switchAccsTab(tab) {
@@ -14191,6 +14239,68 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }, 400);
     setTimeout(() => clearInterval(tryOpen), 12000);
+  }
+})();
+</script>
+
+<script>
+// ===== FIX: Input tidak tertutup keyboard di mobile =====
+// Saat input/textarea dapat fokus di dalam modal, scroll supaya input terlihat di atas keyboard
+(function() {
+  function scrollInputIntoView(el) {
+    // Tunggu sedikit agar keyboard muncul dulu
+    setTimeout(() => {
+      try {
+        // scrollIntoView dengan nearest agar tidak scroll lebih dari perlu
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Untuk modal yang punya overflow-y:auto, scroll container-nya juga
+        let parent = el.parentElement;
+        while (parent) {
+          const style = window.getComputedStyle(parent);
+          const overflow = style.overflowY;
+          if (overflow === 'auto' || overflow === 'scroll') {
+            const elRect = el.getBoundingClientRect();
+            const parentRect = parent.getBoundingClientRect();
+            // Kalau input berada di bawah 60% tinggi layar (area keyboard), scroll naik
+            if (elRect.bottom > window.innerHeight * 0.55) {
+              parent.scrollTop += elRect.bottom - window.innerHeight * 0.45;
+            }
+            break;
+          }
+          parent = parent.parentElement;
+        }
+      } catch(e) {}
+    }, 350);
+  }
+
+  // Pasang listener ke semua input & textarea yang ada sekarang maupun yang dibuat nanti
+  document.addEventListener('focusin', function(e) {
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+      // Hanya aktif di mobile (layar ≤ 768px)
+      if (window.innerWidth <= 768) {
+        scrollInputIntoView(e.target);
+      }
+    }
+  }, true);
+
+  // Resize event untuk saat keyboard muncul/hilang (viewport berubah)
+  let lastVH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  function onViewportChange() {
+    if (!window.visualViewport) return;
+    const currentVH = window.visualViewport.height;
+    const diff = lastVH - currentVH;
+    lastVH = currentVH;
+    // Keyboard muncul (viewport mengecil >100px)
+    if (diff > 100) {
+      const focused = document.activeElement;
+      if (focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA')) {
+        scrollInputIntoView(focused);
+      }
+    }
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', onViewportChange);
   }
 })();
 </script>
