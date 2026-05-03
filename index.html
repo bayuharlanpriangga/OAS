@@ -2406,24 +2406,6 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 
   <div id="pajak-pph21" style="display:none">
-    <!-- Metode Perhitungan Toggle -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-      <button id="p21-toggle-ter" class="p21-toggle-btn active" onclick="switchP21Metode('ter')">
-        <span style="font-size:14px;">📅</span>
-        <span>
-          <b>Metode TER (Bulanan)</b>
-          <small style="display:block;font-weight:400;opacity:0.75;">PMK 168/2023 — Tarif Efektif Rata-rata</small>
-        </span>
-      </button>
-      <button id="p21-toggle-ps17" class="p21-toggle-btn" onclick="switchP21Metode('ps17')">
-        <span style="font-size:14px;">📆</span>
-        <span>
-          <b>Metode Pasal 17 (Tahunan/Des)</b>
-          <small style="display:block;font-weight:400;opacity:0.75;">Progresif — Rekonsiliasi akhir tahun</small>
-        </span>
-      </button>
-    </div>
-
     <!-- Kategori Pegawai -->
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
       <button id="p21-kat-tetap" class="p21-kat-btn active" onclick="switchP21Kategori('tetap')">👔 Pegawai Tetap</button>
@@ -2440,7 +2422,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
         <div class="table-header">
           <div>
             <div class="table-title" id="p21-card-title">PPh Pasal 21 — Pegawai Tetap</div>
-            <div id="p21-card-sub" style="font-size:11px;color:var(--accent2);margin-top:2px;">📅 Metode TER · PMK 168 Tahun 2023</div>
+            <div id="p21-card-sub" style="font-size:11px;color:var(--accent2);margin-top:2px;">📋 PMK 168 Tahun 2023</div>
           </div>
         </div>
         <div class="modal-body">
@@ -2569,12 +2551,20 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
 
           <!-- Bagian Bukan Pegawai (honor tidak teratur) -->
           <div id="p21-section-bukan-pegawai" style="display:none">
-            <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:11px 14px;font-size:12px;color:var(--accent3);margin-bottom:14px;">
-              💼 <b>PMK 168/2023:</b> Bukan Pegawai yang menerima honor/imbalan jasa — PPh 21 = Ph.Bruto × 50% × Tarif Ps.17. Diterapkan per masa pajak atau saat terutang.
+            <!-- Toggle Berkesinambungan -->
+            <div style="display:flex;gap:8px;margin-bottom:14px;">
+              <button id="p21-bp-mode-tidak" onclick="setBukanPegawaiMode('tidak')" style="flex:1;padding:8px 12px;border-radius:8px;border:2px solid var(--accent2);background:rgba(34,211,238,0.1);color:var(--accent2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all 0.15s;">🔁 Tidak Berkesinambungan</button>
+              <button id="p21-bp-mode-berkesinambungan" onclick="setBukanPegawaiMode('berkesinambungan')" style="flex:1;padding:8px 12px;border-radius:8px;border:2px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all 0.15s;">📊 Berkesinambungan</button>
+            </div>
+            <div id="p21-bp-info-tidak" style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:11px 14px;font-size:12px;color:var(--accent3);margin-bottom:14px;">
+              💼 <b>Tidak Berkesinambungan:</b> Honor diterima sekali/tidak rutin. PPh 21 = Ph.Bruto × 50% × Tarif Ps.17 — dihitung per pembayaran, tanpa akumulasi.
+            </div>
+            <div id="p21-bp-info-berkesinambungan" style="display:none;background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.2);border-radius:8px;padding:11px 14px;font-size:12px;color:var(--accent2);margin-bottom:14px;">
+              📊 <b>Berkesinambungan:</b> Honor diterima rutin/berulang dari satu pemberi kerja. PPh 21 dihitung secara akumulatif — isi kumulatif bruto sebelum masa ini agar tarif progresif tepat.
             </div>
             <div class="form-row">
               <div class="form-group"><label>Honor / Penghasilan Bruto (Rp)</label><input type="number" id="p21-bukan-pegawai-honor" placeholder="10000000" oninput="hitungPPh21BukanPegawai()"></div>
-              <div class="form-group"><label>Kumulatif Setahun (Rp)</label><input type="number" id="p21-bukan-pegawai-kumulatif" placeholder="0" oninput="hitungPPh21BukanPegawai()"></div>
+              <div class="form-group" id="p21-bp-kumulatif-group" style="display:none"><label>Kumulatif Bruto s.d. Sebelumnya (Rp)</label><input type="number" id="p21-bukan-pegawai-kumulatif" placeholder="0" oninput="hitungPPh21BukanPegawai()"></div>
             </div>
             <div class="form-row full">
               <div class="form-group"><label>NPWP?</label>
@@ -10071,18 +10061,38 @@ function hitungPPN() {
 }
 
 // ===== PPh 21 — State & Switchers =====
-let _p21MetodeCalc = 'ter';   // 'ter' | 'ps17'
-let _p21KategoriCalc = 'tetap'; // 'tetap' | 'tidak-tetap'
+let _p21KategoriCalc = 'tetap'; // 'tetap' | 'tidak-tetap' | dll
+let _p21BukanPegawaiMode = 'tidak'; // 'tidak' | 'berkesinambungan'
 
-function switchP21Metode(m) {
-  _p21MetodeCalc = m;
-  document.getElementById('p21-toggle-ter').classList.toggle('active', m==='ter');
-  document.getElementById('p21-toggle-ps17').classList.toggle('active', m==='ps17');
-  const sub = document.getElementById('p21-card-sub');
-  if(sub) sub.textContent = m==='ter'
-    ? '📅 Metode TER · PMK 168 Tahun 2023'
-    : '📆 Metode Pasal 17 · Tarif Progresif Tahunan';
-  hitungPPh21();
+function setBukanPegawaiMode(mode) {
+  _p21BukanPegawaiMode = mode;
+  const btnTidak = document.getElementById('p21-bp-mode-tidak');
+  const btnBerk  = document.getElementById('p21-bp-mode-berkesinambungan');
+  const kumulatifGroup = document.getElementById('p21-bp-kumulatif-group');
+  const infoBerk  = document.getElementById('p21-bp-info-berkesinambungan');
+  const infoTidak = document.getElementById('p21-bp-info-tidak');
+  const isBerk = mode === 'berkesinambungan';
+
+  if(btnTidak) {
+    btnTidak.style.border = isBerk ? '2px solid var(--border)' : '2px solid var(--accent2)';
+    btnTidak.style.background = isBerk ? 'var(--surface2)' : 'rgba(34,211,238,0.1)';
+    btnTidak.style.color = isBerk ? 'var(--muted)' : 'var(--accent2)';
+  }
+  if(btnBerk) {
+    btnBerk.style.border = isBerk ? '2px solid var(--accent2)' : '2px solid var(--border)';
+    btnBerk.style.background = isBerk ? 'rgba(34,211,238,0.1)' : 'var(--surface2)';
+    btnBerk.style.color = isBerk ? 'var(--accent2)' : 'var(--muted)';
+  }
+  if(kumulatifGroup) kumulatifGroup.style.display = isBerk ? '' : 'none';
+  if(infoBerk)  infoBerk.style.display  = isBerk ? '' : 'none';
+  if(infoTidak) infoTidak.style.display = isBerk ? 'none' : '';
+
+  // Reset kumulatif jika pindah ke mode tidak berkesinambungan
+  if(!isBerk) {
+    const kInput = document.getElementById('p21-bukan-pegawai-kumulatif');
+    if(kInput) kInput.value = '';
+  }
+  hitungPPh21BukanPegawai();
 }
 const _p21KatList = ['tetap','tidak-tetap','komisaris','bukan-pegawai','peserta-kegiatan','pensiun','mantan-pegawai'];
 
@@ -10130,6 +10140,11 @@ function switchP21Kategori(k) {
   document.getElementById('pph21-hasil').innerHTML = '<span style="color:var(--muted);font-size:13px">Isi parameter.</span>';
   document.getElementById('p21-tabel-wrap').style.display = 'none';
   document.getElementById('p21-pmk-info').style.display = 'none';
+  // Reset bukan pegawai mode ke default saat pindah ke kategori itu
+  if(k === 'bukan-pegawai') {
+    _p21BukanPegawaiMode = 'tidak';
+    setTimeout(() => setBukanPegawaiMode('tidak'), 50);
+  }
   // Re-run upgrade for new selects
   setTimeout(upgradePajakPickers, 80);
 }
@@ -10343,8 +10358,8 @@ function hitungPPh21() {
   const tw = document.getElementById('p21-tabel-wrap');
   const pmkEl = document.getElementById('p21-pmk-info');
 
-  if(_p21MetodeCalc === 'ter') {
-    // ===== METODE TER (PMK 168/2023) =====
+  // ===== METODE TER (PMK 168/2023) =====
+  // Pegawai Tetap: Jan-Nov pakai TER, Desember rekonsiliasi Ps.17 otomatis
     const tarif = getTERTarif(penghasilanBrutoBulan, ptkpKode);
     const pphBulan = Math.round(penghasilanBrutoBulan * tarif);
 
@@ -10471,36 +10486,6 @@ function hitungPPh21() {
         `;
       }
     }
-    // ===== METODE PASAL 17 (Tahunan) =====
-    const brutoSetahun = penghasilanBrutoBulan * 12 + bonus;
-    const jhtSetahun = jhtBulan * 12;
-    const bpjsSetahun = bpjsBulan * 12;
-    const jpSetahun = jpBulan * 12;
-    const biayaJabatan = Math.min(brutoSetahun * 0.05, 6000000);
-    const netoSetahun = brutoSetahun - biayaJabatan - jhtSetahun - bpjsSetahun - jpSetahun;
-    const pkp = Math.max(0, Math.floor((netoSetahun - ptkp)/1000)*1000);
-
-    const {pajak: pajakSetahun, rows: lapisanRows} = hitungTarifProgresifDetail(pkp);
-    const pajakBulan = pajakSetahun/12;
-    const take_home = penghasilanBrutoBulan - (metodePot==='netto'?pajakBulan:0) - jhtBulan - bpjsBulan - jpBulan;
-
-    window._lastPPh21 = { gaji: penghasilanBrutoBulan, pph: pajakBulan, jht: jhtBulan+bpjsBulan+jpBulan };
-    el.innerHTML = resRow('Penghasilan Bruto/Tahun', rp(brutoSetahun))
-      + resRow('Biaya Jabatan (max 6jt)', rp(biayaJabatan))
-      + resRow('Iuran JHT+BPJS+JP/Tahun', rp(jhtSetahun+bpjsSetahun+jpSetahun))
-      + resRow('Penghasilan Neto', rp(netoSetahun))
-      + resRow('PTKP ('+ptkpKode+')', rp(ptkp))
-      + resRow('PKP (Dibulatkan)', rp(pkp))
-      + resRow('PPh 21 Setahun (Ps.17)', rp(pajakSetahun))
-      + resRow('PPh 21 / Bulan', `<span class="kredit" style="font-size:18px">${rp(pajakBulan)}</span>`)
-      + resRow('Take Home Pay', rp(take_home));
-
-    tw.style.display = 'block';
-    document.getElementById('p21-tabel-title').textContent = 'Lapisan Tarif Progresif PPh 21 (Pasal 17)';
-    document.getElementById('p21-th1').textContent = 'PKP Lapisan';
-    document.getElementById('p21-tabel-body').innerHTML = lapisanRows.join('');
-    if(pmkEl) pmkEl.style.display = 'none';
-  }
   setTimeout(addInputBtnToPPH21, 80);
 }
 
@@ -10681,46 +10666,64 @@ function hitungPPh21Komisaris() {
 
 function hitungPPh21BukanPegawai() {
   const honor = parseFloat(document.getElementById('p21-bukan-pegawai-honor').value)||0;
-  const kumulatif = parseFloat(document.getElementById('p21-bukan-pegawai-kumulatif').value)||0;
+  const kumulatif = parseFloat(document.getElementById('p21-bukan-pegawai-kumulatif')?.value)||0;
   const npwp = document.getElementById('p21-bukan-pegawai-npwp').value;
   const el = document.getElementById('pph21-hasil');
   const tw = document.getElementById('p21-tabel-wrap');
   if(!honor) return;
 
-  // Bukan Pegawai: Ph.Bruto × 50% × Tarif Ps.17
-  const dasarPengenaan = honor * 0.5;
-  const pkpKumulatif = kumulatif * 0.5;
-  const pkpSekarang = pkpKumulatif + dasarPengenaan;
-  const pajakKumulatif = hitungTarifProgresif(pkpKumulatif);
-  const pajakTotal = hitungTarifProgresif(pkpSekarang);
-  const pajakPeriode = Math.round(Math.max(0, pajakTotal - pajakKumulatif));
+  const isBerk = _p21BukanPegawaiMode === 'berkesinambungan';
   const multiplier = npwp === 'tidak' ? 1.2 : 1;
-  const pph21 = Math.round(pajakPeriode * multiplier);
+
+  let pph21, dasarPengenaan, pkpSekarang, kumulatifEfektif;
+
+  if(isBerk) {
+    // Berkesinambungan: akumulatif progresif
+    dasarPengenaan = honor * 0.5;
+    const pkpKumulatif = kumulatif * 0.5;
+    pkpSekarang = pkpKumulatif + dasarPengenaan;
+    const pajakKumulatif = hitungTarifProgresif(pkpKumulatif);
+    const pajakTotal = hitungTarifProgresif(pkpSekarang);
+    const pajakPeriode = Math.round(Math.max(0, pajakTotal - pajakKumulatif));
+    pph21 = Math.round(pajakPeriode * multiplier);
+    kumulatifEfektif = kumulatif;
+  } else {
+    // Tidak berkesinambungan: per pembayaran, tanpa akumulasi
+    dasarPengenaan = honor * 0.5;
+    pkpSekarang = dasarPengenaan;
+    kumulatifEfektif = 0;
+    const pajakPeriode = Math.round(hitungTarifProgresif(pkpSekarang));
+    pph21 = Math.round(pajakPeriode * multiplier);
+  }
 
   window._lastPPh21 = { gaji: honor, pph: pph21, jht: 0 };
   el.innerHTML = resRow('Penghasilan Bruto', rp(honor))
     + resRow('Dasar Pengenaan (50% × Bruto)', rp(dasarPengenaan))
-    + (kumulatif ? resRow('Kumulatif Bruto s.d. sebelumnya', rp(kumulatif)) : '')
-    + resRow('Tarif Ps.17 (Progresif)', 'Berdasarkan PKP kumulatif')
+    + (isBerk && kumulatifEfektif ? resRow('Kumulatif Bruto s.d. sebelumnya', rp(kumulatifEfektif)) : '')
+    + resRow('Tarif Ps.17 (Progresif)', isBerk ? 'Berdasarkan PKP kumulatif' : 'Per pembayaran')
     + (npwp==='tidak' ? resRow('Koreksi Non-NPWP (+20%)', '+20%') : '')
     + resRow('PPh 21 Masa Ini', '<span class="kredit" style="font-size:18px">' + rp(pph21) + '</span>')
     + resRow('Penghasilan Diterima (Netto)', rp(honor - pph21));
 
   tw.style.display = 'block';
-  document.getElementById('p21-tabel-title').textContent = 'Lapisan Tarif Progresif — Bukan Pegawai';
-  document.getElementById('p21-th1').textContent = 'PKP Kumulatif Lapisan';
+  document.getElementById('p21-tabel-title').textContent = isBerk
+    ? 'Lapisan Tarif Progresif — Bukan Pegawai (Berkesinambungan)'
+    : 'Lapisan Tarif Progresif — Bukan Pegawai (Tidak Berkesinambungan)';
+  document.getElementById('p21-th1').textContent = isBerk ? 'PKP Kumulatif Lapisan' : 'PKP Lapisan';
   const {rows} = hitungTarifProgresifDetail(pkpSekarang);
   document.getElementById('p21-tabel-body').innerHTML = rows.join('');
 
   const pmkEl = document.getElementById('p21-pmk-info');
   if(pmkEl) {
     pmkEl.style.display = 'block';
-    document.getElementById('p21-pmk-info-text').innerHTML = `
-      ✅ <b>Bukan Pegawai</b> (atas honor/imbalan jasa tidak berkesinambungan).<br>
-      ✅ Formula: <b>Ph.Bruto × 50% × Tarif Ps.17</b> — per masa pajak/saat terutang.<br>
-      ✅ Dasar pengenaan pajak = 50% × penghasilan bruto.<br>
-      ${npwp==='tidak' ? '⚠️ Tanpa NPWP: tarif ditambah <b>20%</b> dari nilai pajak.' : ''}
-    `;
+    document.getElementById('p21-pmk-info-text').innerHTML = isBerk
+      ? `✅ <b>Bukan Pegawai Berkesinambungan</b> — penghasilan rutin dari satu pemberi kerja.<br>
+         ✅ Formula: <b>Ph.Bruto × 50% × Tarif Ps.17</b> dihitung secara akumulatif per masa pajak.<br>
+         ✅ Isi kumulatif bruto sebelumnya agar lapisan tarif progresif dihitung tepat.<br>
+         ${npwp==='tidak' ? '⚠️ Tanpa NPWP: tarif ditambah <b>20%</b> dari nilai pajak.' : ''}`
+      : `✅ <b>Bukan Pegawai Tidak Berkesinambungan</b> — honor sekali/tidak rutin.<br>
+         ✅ Formula: <b>Ph.Bruto × 50% × Tarif Ps.17</b> — dihitung per pembayaran, tanpa akumulasi.<br>
+         ${npwp==='tidak' ? '⚠️ Tanpa NPWP: tarif ditambah <b>20%</b> dari nilai pajak.' : ''}`;
   }
   setTimeout(addInputBtnToPPH21, 80);
 }
