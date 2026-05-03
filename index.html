@@ -9548,10 +9548,13 @@ function hitungDiskonto() {
 
 // ===================== RASIO KEUANGAN =====================
 function hitungRasio() {
-  const g = id => parseFloat(document.getElementById(id).value)||0;
-  // Helper: row dengan nilai format string (Rp, dll) — bypass parseFloat check di rasioRow
+  // g(): baca .value, fallback ke 0
+  const g = id => { const el = document.getElementById(id); return el ? (parseFloat(el.value)||0) : 0; };
+  // Helper row untuk nilai format string Rp (bypass parseFloat di rasioRow)
   const rasioRowStr = (nama, nilaiStr, keterangan) =>
     `<tr class="rasio-row"><td>${nama}</td><td>${nilaiStr}</td><td>${keterangan}</td></tr>`;
+
+  // Baca semua field input MANUAL
   const kas=g('rs-kas'), piutang=g('rs-piutang'), pers=g('rs-persediaan');
   const asetT=g('rs-aset-tetap');
   const utangL=g('rs-utang-lancar'), utangP=g('rs-utang-panjang');
@@ -9561,39 +9564,30 @@ function hitungRasio() {
   const bBunga=g('rs-beban-bunga');
   const saham=g('rs-saham'), hargaSaham=g('rs-harga-saham');
 
-  // Auto-kalkulasi field turunan — JANGAN baca rs-laba-bersih dulu, hitung manual dulu
-  const asetL = (g('rs-aset-lancar') > 0)
-    ? g('rs-aset-lancar')
-    : kas + piutang + pers;
-  const labaKotor = (g('rs-laba-kotor') > 0)
-    ? g('rs-laba-kotor')
-    : penjualan - hpp;
-  const totalLiab = (g('rs-total-liab') > 0)
-    ? g('rs-total-liab')
-    : utangL + utangP;
-  const totalAset = (g('rs-total-aset') > 0)
-    ? g('rs-total-aset')
-    : asetL + asetT;
-  // BUGFIX: baca rs-laba-bersih hanya jika user isi manual (value > 0)
-  // Kalau tidak, hitung dari EBIT - Beban Bunga
-  // Field rs-laba-bersih adalah field otomatis (placeholder only) — g() selalu 0 kalau user tidak ketik
-  const _labaBersihManual = g('rs-laba-bersih'); // 0 jika tidak diisi manual
-  const labaBersihFinal = _labaBersihManual > 0
-    ? _labaBersihManual
+  // Hitung field turunan — pakai nilai manual jika ada, kalau tidak hitung otomatis
+  const asetL      = g('rs-aset-lancar') > 0 ? g('rs-aset-lancar') : kas + piutang + pers;
+  const labaKotor  = g('rs-laba-kotor')  > 0 ? g('rs-laba-kotor')  : penjualan - hpp;
+  const totalLiab  = g('rs-total-liab')  > 0 ? g('rs-total-liab')  : utangL + utangP;
+  const totalAset  = g('rs-total-aset')  > 0 ? g('rs-total-aset')  : asetL + asetT;
+
+  // Laba bersih: cek manual dulu, lalu EBIT-bBunga, lalu dari field placeholder
+  const _lbManual = g('rs-laba-bersih');
+  const labaBersihFinal = _lbManual > 0
+    ? _lbManual
     : (ebit > 0 ? Math.max(0, ebit - bBunga) : 0);
 
-  // Update placeholder field kalkulasi otomatis (hanya placeholder, jangan ubah .value)
+  // Update placeholder field otomatis (tidak ubah .value agar tidak ganggu input user)
   const setCalc = (id, val) => {
     const el = document.getElementById(id);
-    if (el && !(parseFloat(el.value) > 0)) {
-      el.placeholder = val > 0 ? val.toLocaleString('id-ID') : '0';
+    if (el && !(parseFloat(el.value) > 0) && val > 0) {
+      el.placeholder = val.toLocaleString('id-ID');
     }
   };
   setCalc('rs-aset-lancar', asetL);
   setCalc('rs-laba-kotor', labaKotor);
   setCalc('rs-total-liab', totalLiab);
   setCalc('rs-total-aset', totalAset);
-  if (labaBersihFinal > 0 && _labaBersihManual === 0) setCalc('rs-laba-bersih', labaBersihFinal);
+  if (labaBersihFinal > 0 && _lbManual === 0) setCalc('rs-laba-bersih', labaBersihFinal);
 
   const r = (a,b) => b ? a/b : 0;
 
@@ -9615,7 +9609,7 @@ function hitungRasio() {
   const ier = bBunga ? r(ebit,bBunga) : null;
   document.getElementById('rasio-solvabilitas').innerHTML = [
     rasioRow('Debt to Equity (DER)', der.toFixed(2), 'x', {ok:1,warn:2}, 'Baik ≤ 1x'),
-    rasioRow('Debt to Assets (DAR)', pct(dar*100), '', {ok:0.5,warn:0.7}, 'Baik < 50%'),
+    rasioRow('Debt to Assets (DAR)', pct(dar*100), '', {ok:50,warn:70}, 'Baik < 50%'),
     rasioRow('Equity Multiplier', r(totalAset,ekuitas).toFixed(2), 'x', null, ''),
     ier!==null ? rasioRow('Interest Coverage (ICR)', ier.toFixed(2), 'x', {ok:3,warn:1.5}, 'Baik ≥ 3x') : '',
     rasioRow('Long-term Debt Ratio', r(utangP, utangP+ekuitas).toFixed(2), 'x', null, 'Utang JP / (Utang JP + Ekuitas)'),
