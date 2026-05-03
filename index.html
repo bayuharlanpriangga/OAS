@@ -12561,6 +12561,13 @@ async function initSupabase() {
   if (chipName) chipName.textContent = 'Menghubungkan...';
   if (chipSub)  chipSub.textContent  = 'Memeriksa akun';
 
+  // Deteksi OAuth params SEBELUM SDK menghapusnya dari URL (PKCE flow)
+  const hasOAuthParams = window.location.hash.includes('access_token') ||
+                         window.location.search.includes('code=') ||
+                         window.location.hash.includes('error=');
+  // Simpan di window agar tetap tersedia setelah URL dibersihkan SDK
+  if (hasOAuthParams) window.__oauthRedirect = true;
+
   // Pasang listener DULU agar SIGNED_IN dari OAuth redirect tidak terlewat
   _supa.auth.onAuthStateChange(async (event, session) => {
     console.log('[Auth]', event, session?.user?.email);
@@ -12570,6 +12577,7 @@ async function initSupabase() {
       currentUser = session.user;
       isGuestMode = false;
       _afterLoginRunning = false; // Reset agar afterLogin() pasti jalan
+      window.__oauthRedirect = false; // OAuth selesai, clear flag
       const gb = document.getElementById('guest-banner');
       if (gb) gb.remove();
       hideAuthModal();
@@ -12580,12 +12588,13 @@ async function initSupabase() {
         currentUser = session.user;
         isGuestMode = false;
         _afterLoginRunning = false;
+        window.__oauthRedirect = false; // OAuth selesai, clear flag
         const gb = document.getElementById('guest-banner');
         if (gb) gb.remove();
         hideAuthModal();
         await afterLogin();
-      } else if (!session) {
-        // Tidak ada session → guest mode
+      } else if (!session && !window.__oauthRedirect) {
+        // Tidak ada session DAN bukan sedang proses OAuth → guest mode
         if (!currentUser) enterGuestMode();
       }
     } else if (event === 'TOKEN_REFRESHED') {
@@ -12600,18 +12609,12 @@ async function initSupabase() {
   });
 
   // onAuthStateChange dengan INITIAL_SESSION sudah menangani session existing.
-  // Kita hanya perlu fallback timeout jika tidak ada session sama sekali.
   _authReady = true;
 
-  // Deteksi OAuth redirect dari hash URL (Supabase menyimpan token di #access_token=...)
-  const hasOAuthParams = window.location.hash.includes('access_token') ||
-                         window.location.search.includes('code=') ||
-                         window.location.hash.includes('error=');
-
-  // Fallback: timeout lebih lama jika ada OAuth params (butuh waktu exchange token)
-  const fallbackMs = hasOAuthParams ? 6000 : 2500;
+  // Fallback: timeout lebih lama jika ada OAuth params (PKCE butuh round-trip ke Supabase)
+  const fallbackMs = (hasOAuthParams || window.__oauthRedirect) ? 15000 : 2500;
   setTimeout(() => {
-    if (!currentUser && !_afterLoginRunning) {
+    if (!currentUser && !_afterLoginRunning && !window.__oauthRedirect) {
       console.warn('[Auth] Fallback → guest mode (timeout', fallbackMs, 'ms)');
       enterGuestMode();
     }
@@ -12622,10 +12625,12 @@ async function initSupabase() {
 // GUEST MODE — masuk app tanpa login, data ke localStorage
 // =====================================================================
 function enterGuestMode() {
-  // Jangan masuk guest mode jika ada OAuth params di URL (sedang proses redirect)
-  if (window.location.hash.includes('access_token') ||
+  // Jangan masuk guest mode jika OAuth redirect sedang diproses
+  // Pakai window.__oauthRedirect karena URL sudah dibersihkan SDK saat ini dipanggil
+  if (window.__oauthRedirect ||
+      window.location.hash.includes('access_token') ||
       window.location.search.includes('code=')) {
-    console.log('[Auth] Skipping guest mode — OAuth redirect detected in URL');
+    console.log('[Auth] Skipping guest mode — OAuth redirect sedang diproses');
     return;
   }
   isGuestMode = true;
