@@ -12540,7 +12540,7 @@ const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     detectSessionInUrl: true,
     persistSession: true,
     autoRefreshToken: true,
-    flowType: 'pkce',
+    flowType: 'implicit',         // Lebih cocok untuk single-page HTML app (tanpa server-side code exchange)
     storageKey: 'bhp_oas_auth',   // key tetap, tidak berubah walau URL berubah
     storage: window.localStorage, // eksplisit pakai localStorage
   }
@@ -12572,17 +12572,27 @@ async function initSupabase() {
   const hasOAuthParams = window.location.hash.includes('access_token') ||
                          window.location.search.includes('code=') ||
                          window.location.hash.includes('error=');
-  if (hasOAuthParams) window.__oauthRedirect = true;
+  if (hasOAuthParams) {
+    window.__oauthRedirect = true;
+    window.__initialOAuthRedirect = true; // Simpan permanen untuk afterLogin
+  }
 
   // Pasang listener DULU agar SIGNED_IN dari OAuth redirect tidak terlewat
   _supa.auth.onAuthStateChange(async (event, session) => {
     console.log('[Auth]', event, session?.user?.email);
+
     if (event === 'SIGNED_IN') {
-      // Batalkan guest mode jika sedang berjalan
+      // PENTING: Jangan reset _afterLoginRunning di sini!
+      // Biarkan afterLogin() sendiri yang mengaturnya.
+      // Hanya proses jika belum ada company (cegah double-call dari INITIAL_SESSION + SIGNED_IN)
+      if (currentCompany) {
+        // Sudah login dan punya company — update user saja
+        currentUser = session.user;
+        return;
+      }
       isGuestMode = false;
       window.__oauthRedirect = false;
       currentUser = session.user;
-      _afterLoginRunning = false;
       const gb = document.getElementById('guest-banner');
       if (gb) gb.remove();
       hideAuthModal();
@@ -12590,12 +12600,12 @@ async function initSupabase() {
       const picker = document.getElementById('company-picker');
       if (picker) picker.style.display = 'none';
       await afterLogin();
+
     } else if (event === 'INITIAL_SESSION') {
       if (session?.user && !currentCompany) {
         isGuestMode = false;
         window.__oauthRedirect = false;
         currentUser = session.user;
-        _afterLoginRunning = false;
         const gb = document.getElementById('guest-banner');
         if (gb) gb.remove();
         hideAuthModal();
@@ -12604,8 +12614,10 @@ async function initSupabase() {
         // Tidak ada session DAN bukan proses OAuth → guest mode
         if (!currentUser) enterGuestMode();
       }
+
     } else if (event === 'TOKEN_REFRESHED') {
       currentUser = session?.user || currentUser;
+
     } else if (event === 'SIGNED_OUT') {
       currentUser = null;
       currentCompany = null;
@@ -13105,7 +13117,14 @@ async function afterLogin() {
   if (chipSub)    chipSub.textContent  = currentUser?.email || '';
 
   // Retry helper — Google OAuth butuh beberapa saat agar token aktif di Supabase backend
-  async function getMyCompaniesWithRetry(maxTries = 4, delayMs = 800) {
+  async function getMyCompaniesWithRetry(maxTries = 5, delayMs = 1000) {
+    // Jika ini OAuth redirect, tunggu sebentar dulu sebelum percobaan pertama
+    const isOAuth = !!(window.__initialOAuthRedirect);
+    if (isOAuth) {
+      if (chipName) chipName.textContent = 'Memuat bisnis...';
+      await new Promise(r => setTimeout(r, 600));
+    }
+
     let lastErr;
     for (let i = 0; i < maxTries; i++) {
       try {
@@ -13115,7 +13134,8 @@ async function afterLogin() {
         lastErr = e;
         console.warn(`[afterLogin] getMyCompanies gagal (percobaan ${i+1}/${maxTries}):`, e.message);
         if (i < maxTries - 1) {
-          if (chipName) chipName.textContent = `Memuat bisnis... (${i+2}/${maxTries})`;
+          const waitSec = Math.round(delayMs * (i + 1) / 1000 * 10) / 10;
+          if (chipName) chipName.textContent = `Memuat... (${i+2}/${maxTries})`;
           await new Promise(r => setTimeout(r, delayMs * (i + 1)));
         }
       }
@@ -13218,35 +13238,32 @@ function renderCompanyList(companies) {
 }
 
 async function getMyCompanies() {
-  if (!currentUser) return [];
-  // Pastikan session benar-benar aktif sebelum query
-  // Ini penting untuk Google OAuth yang butuh round-trip redirect
+  if (!currentUser) throw new Error('Belum login');
+
+  // Verifikasi user masih valid via getUser() — lebih reliable dari getSession() setelah OAuth redirect
   try {
-    const { data: sessionData } = await _supa.auth.getSession();
-    if (!sessionData?.session) {
-      // Session belum siap — lempar error agar afterLogin bisa retry
-      throw new Error('Session belum siap. Coba refresh halaman.');
+    const { data: { user }, error: userErr } = await _supa.auth.getUser();
+    if (userErr || !user) {
+      throw new Error('Token tidak valid: ' + (userErr?.message || 'user null'));
     }
-  } catch(sessErr) {
-    console.warn('getMyCompanies: gagal validasi session:', sessErr);
-    throw sessErr;
-  }
-  try {
-    const { data, error } = await _supa
-      .from('companies')
-      .select('*')
-      .eq('user_id', currentUser.id)
-      .order('created_at');
-    if (error) {
-      console.error('getMyCompanies error:', error);
-      // Lempar error agar afterLogin bisa tampilkan pesan jelas
-      throw new Error(error.message || 'Gagal mengambil data bisnis dari Supabase');
-    }
-    return Array.isArray(data) ? data : [];
+    // Update currentUser dengan data terbaru
+    currentUser = user;
   } catch(e) {
-    console.error('getMyCompanies exception:', e);
+    console.warn('getMyCompanies: verifikasi user gagal:', e.message);
     throw e;
   }
+
+  const { data, error } = await _supa
+    .from('companies')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at');
+
+  if (error) {
+    console.error('getMyCompanies error:', error);
+    throw new Error(error.message || 'Gagal mengambil data bisnis');
+  }
+  return Array.isArray(data) ? data : [];
 }
 
 // Blokir karakter non-angka di input nominal (kecuali tombol kontrol)
