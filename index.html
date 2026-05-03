@@ -2168,18 +2168,18 @@ body.light-mode .opt-picker-item.selected {
           </div>
           <div class="form-row">
             <div class="form-group"><label>Persediaan</label><input type="number" id="rs-persediaan" placeholder="0" oninput="hitungRasio()"></div>
-            <div class="form-group"><label>Aset Lancar Total</label><input type="number" id="rs-aset-lancar" placeholder="0" oninput="hitungRasio()"></div>
+            <div class="form-group"><label>Aset Lancar Total <span style="color:var(--primary);font-size:11px">(otomatis)</span></label><input type="number" id="rs-aset-lancar" placeholder="= Kas + Piutang + Persediaan" oninput="hitungRasio()" style="background:var(--surface2)"></div>
           </div>
           <div class="form-row">
             <div class="form-group"><label>Aset Tetap (Neto)</label><input type="number" id="rs-aset-tetap" placeholder="0" oninput="hitungRasio()"></div>
-            <div class="form-group"><label>Total Aset</label><input type="number" id="rs-total-aset" placeholder="0" oninput="hitungRasio()"></div>
+            <div class="form-group"><label>Total Aset <span style="color:var(--primary);font-size:11px">(otomatis)</span></label><input type="number" id="rs-total-aset" placeholder="= Aset Lancar + Aset Tetap" oninput="hitungRasio()" style="background:var(--surface2)"></div>
           </div>
           <div class="form-row">
             <div class="form-group"><label>Utang Lancar</label><input type="number" id="rs-utang-lancar" placeholder="0" oninput="hitungRasio()"></div>
             <div class="form-group"><label>Utang Jangka Panjang</label><input type="number" id="rs-utang-panjang" placeholder="0" oninput="hitungRasio()"></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>Total Liabilitas</label><input type="number" id="rs-total-liab" placeholder="0" oninput="hitungRasio()"></div>
+            <div class="form-group"><label>Total Liabilitas <span style="color:var(--primary);font-size:11px">(otomatis)</span></label><input type="number" id="rs-total-liab" placeholder="= Utang Lancar + Utang Panjang" oninput="hitungRasio()" style="background:var(--surface2)"></div>
             <div class="form-group"><label>Total Ekuitas</label><input type="number" id="rs-ekuitas" placeholder="0" oninput="hitungRasio()"></div>
           </div>
           <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:0.08em;text-transform:uppercase;margin:14px 0 10px;">LABA RUGI</div>
@@ -2188,7 +2188,7 @@ body.light-mode .opt-picker-item.selected {
             <div class="form-group"><label>HPP</label><input type="number" id="rs-hpp" placeholder="0" oninput="hitungRasio()"></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>Laba Kotor</label><input type="number" id="rs-laba-kotor" placeholder="0" oninput="hitungRasio()"></div>
+            <div class="form-group"><label>Laba Kotor <span style="color:var(--primary);font-size:11px">(otomatis)</span></label><input type="number" id="rs-laba-kotor" placeholder="= Penjualan - HPP" oninput="hitungRasio()" style="background:var(--surface2)"></div>
             <div class="form-group"><label>EBIT (Laba Operasi)</label><input type="number" id="rs-ebit" placeholder="0" oninput="hitungRasio()"></div>
           </div>
           <div class="form-row">
@@ -9542,13 +9542,39 @@ function hitungDiskonto() {
 function hitungRasio() {
   const g = id => parseFloat(document.getElementById(id).value)||0;
   const kas=g('rs-kas'), piutang=g('rs-piutang'), pers=g('rs-persediaan');
-  const asetL=g('rs-aset-lancar'), asetT=g('rs-aset-tetap'), totalAset=g('rs-total-aset');
+  const asetT=g('rs-aset-tetap');
   const utangL=g('rs-utang-lancar'), utangP=g('rs-utang-panjang');
-  const totalLiab=g('rs-total-liab'), ekuitas=g('rs-ekuitas');
+  const ekuitas=g('rs-ekuitas');
   const penjualan=g('rs-penjualan'), hpp=g('rs-hpp');
-  const labaKotor=g('rs-laba-kotor'), ebit=g('rs-ebit');
+  const ebit=g('rs-ebit');
   const bBunga=g('rs-beban-bunga'), labaBersih=g('rs-laba-bersih');
   const saham=g('rs-saham'), hargaSaham=g('rs-harga-saham');
+
+  // Auto-kalkulasi field turunan
+  const asetL = (g('rs-aset-lancar') > 0)
+    ? g('rs-aset-lancar')
+    : kas + piutang + pers;
+  const labaKotor = (g('rs-laba-kotor') > 0)
+    ? g('rs-laba-kotor')
+    : penjualan - hpp;
+  const totalLiab = (g('rs-total-liab') > 0)
+    ? g('rs-total-liab')
+    : utangL + utangP;
+  const totalAset = (g('rs-total-aset') > 0)
+    ? g('rs-total-aset')
+    : asetL + asetT;
+
+  // Update tampilan field kalkulasi otomatis
+  const setCalc = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && !(parseFloat(el.value) > 0)) {
+      el.placeholder = val.toLocaleString('id-ID');
+    }
+  };
+  setCalc('rs-aset-lancar', asetL);
+  setCalc('rs-laba-kotor', labaKotor);
+  setCalc('rs-total-liab', totalLiab);
+  setCalc('rs-total-aset', totalAset);
 
   const r = (a,b) => b ? a/b : 0;
 
