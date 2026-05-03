@@ -13139,11 +13139,11 @@ async function afterLogin() {
   console.log('[afterLogin] Mulai, user:', currentUser?.email, 'id:', currentUser?.id);
   if (chipName) chipName.textContent = 'Memuat bisnis...';
 
+  // Tunggu sebentar agar Supabase auth lock dilepas setelah onAuthStateChange selesai
+  // Tanpa ini, query database akan hang karena lock masih dipegang proses auth
+  await new Promise(r => setTimeout(r, 100));
+
   try {
-    // PENTING: Jangan panggil getUser()/getSession() di sini!
-    // afterLogin() dipanggil dari dalam onAuthStateChange — memanggil auth method
-    // apapun di sini akan menyebabkan deadlock pada internal Supabase lock.
-    // Gunakan currentUser yang sudah di-set dari session di onAuthStateChange.
     if (!currentUser?.id) throw new Error('User ID tidak tersedia');
 
     console.log('[afterLogin] Query companies untuk user_id:', currentUser.id);
