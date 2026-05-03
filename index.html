@@ -12600,18 +12600,32 @@ async function initSupabase() {
   // onAuthStateChange dengan INITIAL_SESSION sudah menangani session existing.
   // Kita hanya perlu fallback timeout jika tidak ada session sama sekali.
   _authReady = true;
-  // Fallback: jika setelah 2 detik tidak ada user (tidak ada session & tidak ada OAuth redirect)
+
+  // Deteksi OAuth redirect dari hash URL (Supabase menyimpan token di #access_token=...)
+  const hasOAuthParams = window.location.hash.includes('access_token') ||
+                         window.location.search.includes('code=') ||
+                         window.location.hash.includes('error=');
+
+  // Fallback: timeout lebih lama jika ada OAuth params (butuh waktu exchange token)
+  const fallbackMs = hasOAuthParams ? 6000 : 2500;
   setTimeout(() => {
     if (!currentUser && !_afterLoginRunning) {
+      console.warn('[Auth] Fallback → guest mode (timeout', fallbackMs, 'ms)');
       enterGuestMode();
     }
-  }, 2000);
+  }, fallbackMs);
 }
 
 // =====================================================================
 // GUEST MODE — masuk app tanpa login, data ke localStorage
 // =====================================================================
 function enterGuestMode() {
+  // Jangan masuk guest mode jika ada OAuth params di URL (sedang proses redirect)
+  if (window.location.hash.includes('access_token') ||
+      window.location.search.includes('code=')) {
+    console.log('[Auth] Skipping guest mode — OAuth redirect detected in URL');
+    return;
+  }
   isGuestMode = true;
   currentUser = null;
   currentCompany = null;
@@ -13161,22 +13175,32 @@ function renderCompanyList(companies) {
 
 async function getMyCompanies() {
   if (!currentUser) return [];
-  try {
-    // Pastikan session valid - penting setelah OAuth redirect
-    const { data: { session } } = await _supa.auth.getSession();
-    if (!session) return [];
-    // Gunakan Supabase client (bukan raw fetch) agar RLS & token OAuth baru langsung valid
-    const { data, error } = await _supa
-      .from('companies')
-      .select('*')
-      .eq('user_id', currentUser.id)
-      .order('created_at');
-    if (error) { console.error('getMyCompanies error:', error); return []; }
-    return Array.isArray(data) ? data : [];
-  } catch(e) {
-    console.error('getMyCompanies error:', e);
-    return [];
+  // Retry hingga 3x — penting untuk sesi OAuth baru dimana token baru saja di-exchange
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const { data: { session } } = await _supa.auth.getSession();
+      if (!session) {
+        if (attempt < 3) { await new Promise(r => setTimeout(r, 800 * attempt)); continue; }
+        return [];
+      }
+      const { data, error } = await _supa
+        .from('companies')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at');
+      if (error) {
+        console.error('getMyCompanies error (attempt', attempt, '):', error);
+        if (attempt < 3) { await new Promise(r => setTimeout(r, 800 * attempt)); continue; }
+        return [];
+      }
+      return Array.isArray(data) ? data : [];
+    } catch(e) {
+      console.error('getMyCompanies error (attempt', attempt, '):', e);
+      if (attempt < 3) { await new Promise(r => setTimeout(r, 800 * attempt)); continue; }
+      return [];
+    }
   }
+  return [];
 }
 
 // Blokir karakter non-angka di input nominal (kecuali tombol kontrol)
@@ -13869,23 +13893,35 @@ async function accsUpdateProfile() {
   const btn = document.getElementById('accs-btn-save-profile');
   btn.innerHTML = '<span class="accs-spinner"></span>Menyimpan...'; btn.disabled = true;
   try {
+    // Pastikan session masih valid sebelum update
+    const { data: { session }, error: sessErr } = await _supa.auth.getSession();
+    if (sessErr || !session) {
+      accsShowMsg('profile', '❌ Sesi login sudah habis. Silakan login ulang.', 'error');
+      btn.innerHTML = '💾 Simpan Perubahan'; btn.disabled = false;
+      return;
+    }
     const { error } = await _supa.auth.updateUser({ data: { full_name: name } });
     if (error) throw error;
     if (currentUser?.user_metadata) currentUser.user_metadata.full_name = name;
     // Simpan nama perusahaan ke profil localStorage
-    if (companyName !== undefined) {
-      try {
-        const p = JSON.parse(localStorage.getItem('bhp_profil_v1')||'{}');
-        p.nama = companyName;
-        localStorage.setItem('bhp_profil_v1', JSON.stringify(p));
-        // Update exp-nama-perusahaan jika modal profil terbuka
-        const expEl = document.getElementById('exp-nama-perusahaan');
-        if (expEl && !expEl.value) expEl.value = companyName;
-      } catch(e2) {}
-    }
+    try {
+      const p = JSON.parse(localStorage.getItem('bhp_profil_v1')||'{}');
+      if (companyName) p.nama = companyName;
+      localStorage.setItem('bhp_profil_v1', JSON.stringify(p));
+      const expEl = document.getElementById('exp-nama-perusahaan');
+      if (expEl && companyName && !expEl.value) expEl.value = companyName;
+    } catch(e2) {}
     await accsLoadUserInfo();
     accsShowMsg('profile', '✅ Profil berhasil disimpan!', 'success');
-  } catch(e) { accsShowMsg('profile', '❌ ' + e.message, 'error'); }
+  } catch(e) {
+    console.error('accsUpdateProfile error:', e);
+    const msg = e.message || 'Gagal menyimpan';
+    if (msg.toLowerCase().includes('jwt') || msg.toLowerCase().includes('token') || msg.toLowerCase().includes('session')) {
+      accsShowMsg('profile', '❌ Sesi expired — coba refresh halaman lalu login ulang.', 'error');
+    } else {
+      accsShowMsg('profile', '❌ ' + msg, 'error');
+    }
+  }
   finally { btn.innerHTML = '💾 Simpan Perubahan'; btn.disabled = false; }
 }
 
