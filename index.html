@@ -36,7 +36,7 @@
   --sans: 'DM Sans', sans-serif;
 }
 
-/* ===== LIGHT MODE ===== */
+/* LIGHT MODE */
 body.light-mode {
   --bg: #f8fafc;
   --surface: #ffffff;
@@ -63,7 +63,7 @@ body.light-mode .tut-card { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
 body.light-mode .ai-bubble { border-color: var(--border); }
 body.light-mode .ai-msg-user .ai-bubble { background: rgba(22,163,74,0.08); }
 
-/* ===== PPh 21 TOGGLE BUTTONS ===== */
+/* PPh 21 TOGGLE BUTTONS */
 .p21-toggle-btn {
   flex: 1; min-width: 180px; display: flex; align-items: center; gap: 12px;
   padding: 12px 16px; background: var(--surface2); border: 2px solid var(--border);
@@ -135,7 +135,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
   color: var(--muted); padding: 10px 6px 5px; text-transform: uppercase;
   opacity: 0.7;
 }
-/* ===== CARD TILE NAV ===== */
+/* CARD TILE NAV */
 .nav-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -172,7 +172,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
   box-shadow: 0 0 0 1px rgba(74,222,128,0.2) inset;
 }
 .nav-card.active .nav-card-icon { transform: scale(1.1); }
-/* ===== BUSINESS TYPE CARDS ===== */
+/* BUSINESS TYPE CARDS */
 .cp-type-card {
   display: flex; align-items: center; gap: 12px;
   padding: 13px 16px; cursor: pointer;
@@ -245,7 +245,6 @@ body.light-mode .nav-card.active { background: rgba(22,163,74,0.07); border-colo
   font-size: 11px; color: var(--muted); font-family: var(--mono);
   flex-shrink: 0;
 }
-/* ===== END CARD TILE NAV ===== */
 
 /* Overlay */
 .sidebar-overlay {
@@ -285,7 +284,7 @@ body.light-mode .nav-card.active { background: rgba(22,163,74,0.07); border-colo
 
 .content { padding: 16px; flex: 1; }
 
-/* ===== MOBILE RESPONSIVE ===== */
+/* MOBILE RESPONSIVE */
 /* NOTE: moved to end of stylesheet - see below */
 
 /* Pages */
@@ -424,8 +423,8 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 .remove-line { background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; padding: 0; opacity: 0.6; }
 .remove-line:hover { opacity: 1; }
 
-/* ===== CUSTOM CONFIRM DIALOG ===== */
-/* ===== END CUSTOM CONFIRM DIALOG ===== */
+/* CUSTOM CONFIRM DIALOG */
+
 #akun-picker-backdrop {
   display: none; position: fixed; inset: 0;
   background: rgba(0,0,0,0.6); z-index: 6000;
@@ -544,7 +543,7 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
   border: 1px solid var(--border); flex-shrink:0;
 }
 
-/* ===== CUSTOM OPTION PICKER (menggantikan select default) ===== */
+/* CUSTOM OPTION PICKER (menggantikan select default) */
 /* Trigger button */
 .opt-picker-btn {
   width: 100%; background: var(--surface2); border: 1px solid var(--border);
@@ -707,8 +706,6 @@ body.light-mode .opt-picker-item.selected {
 .period-picker-btn .period-text { font-weight: 500; }
 .period-picker-btn .period-arrow { color: var(--muted); font-size: 10px; margin-left: 4px; }
 
-/* ===== END CUSTOM OPTION PICKER ===== */
-
 /* Neraca Saldo — kolom terakhir (Kredit) tidak terpotong */
 #page-neraca-saldo .table-card { overflow: visible !important; border-radius: 10px; }
 #page-neraca-saldo .table-scroll { overflow-x: auto !important; -webkit-overflow-scrolling: touch; border-radius: 10px; }
@@ -751,7 +748,7 @@ body.light-mode .opt-picker-item.selected {
 .empty-state .empty-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
 .empty-state .empty-desc { font-size: 13px; }
 
-/* ===== AI ASSISTANT ===== */
+/* AI ASSISTANT */
 .chip {
   background: var(--surface2); border: 1px solid var(--border);
   border-radius: 20px; padding: 6px 14px; font-size: 12px;
@@ -804,7 +801,7 @@ body.light-mode .opt-picker-item.selected {
 }
 .ai-action-btn:hover { background: rgba(74,222,128,0.2); }
 
-/* ===== TUTORIAL ===== */
+/* TUTORIAL */
 .tut-highlight {
   outline: 3px solid var(--accent2) !important;
   outline-offset: 4px !important;
@@ -828,7 +825,7 @@ body.light-mode .opt-picker-item.selected {
   to { opacity:1; transform:translate(-50%,-50%) scale(1); }
 }
 
-/* ===== TUTORIAL HUB CARDS ===== */
+/* TUTORIAL HUB CARDS */
 .tut-card {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 12px; padding: 18px; cursor: pointer;
@@ -878,7 +875,7 @@ body.light-mode .opt-picker-item.selected {
   /* Tutorial tooltip stays as floating window on mobile too */
 }
 
-/* ===== EXPORT MODAL ===== */
+/* EXPORT MODAL */
 .exp-fmt-card {
   background: var(--surface2); border: 2px solid var(--border);
   border-radius: 10px; padding: 14px 10px; text-align: center;
@@ -895,7 +892,7 @@ body.light-mode .opt-picker-item.selected {
 .exp-check:hover { border-color: var(--accent); }
 .exp-check input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; flex-shrink: 0; }
 
-/* ===== STORAGE SYSTEM ===== */
+/* STORAGE SYSTEM */
 @keyframes savePulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 .saving-anim { animation: savePulse 0.8s ease infinite !important; }
 .storage-slot {
@@ -917,13 +914,12 @@ body.light-mode .opt-picker-item.selected {
 .slot-btn.primary { color:var(--accent); border-color:rgba(74,222,128,0.3); }
 .slot-btn.primary:hover { background:rgba(74,222,128,0.1); }
 
-/* ===== API KEY ===== */
+/* API KEY */
 #ai-key-status-btn.key-ok { border-color: rgba(74,222,128,0.3) !important; color: var(--accent) !important; }
 #ai-key-status-btn.key-missing { border-color: rgba(245,158,11,0.4) !important; color: var(--accent3) !important; animation: keyPulse 2s ease infinite; }
 @keyframes keyPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
 
-
-/* ===== DASHBOARD UPGRADES ===== */
+/* DASHBOARD UPGRADES */
 .quick-action-btn {
   background: var(--surface2); border: 1px solid var(--border);
   border-radius: 8px; padding: 10px 8px; cursor: pointer;
@@ -982,7 +978,7 @@ body.light-mode .opt-picker-item.selected {
 /* Closing entries highlight */
 .closing-row { background: rgba(245,158,11,0.05) !important; }
 
-/* ===== TOPBAR SEARCH BUTTON ===== */
+/* TOPBAR SEARCH BUTTON */
 .topbar-search-btn {
   background: var(--surface2); border: 1px solid var(--border);
   border-radius: 8px; padding: 7px 12px; color: var(--muted);
@@ -1001,7 +997,7 @@ body.light-mode .opt-picker-item.selected {
   #current-date { display: none; }
 }
 
-/* ===== SHORTCUT TOOLTIP SYSTEM ===== */
+/* SHORTCUT TOOLTIP SYSTEM */
 [data-tooltip] { position: relative; }
 [data-tooltip]::after {
   content: attr(data-tooltip);
@@ -1090,7 +1086,7 @@ body.light-mode .opt-picker-item.selected {
   }
 }
 
-/* ===== MOBILE RESPONSIVE — must be LAST to override ===== */
+/* MOBILE RESPONSIVE — must be LAST to override */
 @media (max-width: 768px) {
   body { display: block; }
   .sidebar { transform: translateX(-100%); width: 270px; }
@@ -1186,7 +1182,7 @@ body.light-mode .opt-picker-item.selected {
   #tut-minimized { bottom: 16px !important; right: 16px !important; }
 }
 
-/* ===== PENGATURAN AKUN — Provider Linking ===== */
+/* PENGATURAN AKUN — Provider Linking */
 #modal-account-settings .modal { max-width: 520px; }
 .accs-avatar-ring {
   width: 72px; height: 72px; border-radius: 50%;
@@ -1242,7 +1238,7 @@ body.light-mode .opt-picker-item.selected {
 .accs-danger-desc { font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.5; }
 .accs-spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.2); border-top-color:currentColor; border-radius:50%; animation:spin 0.6s linear infinite; vertical-align:middle; margin-right:6px; }
 
-/* ===== CUSTOM DATE PICKER ===== */
+/* CUSTOM DATE PICKER */
 .bhp-date-wrapper { position: relative; display: inline-block; width: 100%; }
 .bhp-date-display {
   background: var(--surface2); border: 1px solid var(--border);
@@ -1485,7 +1481,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
 
 <div class="content">
 
-<!-- ========== DASHBOARD ========== -->
+<!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
   <!-- Top controls -->
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
@@ -1594,7 +1590,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-<!-- ========== TRANSAKSI ========== -->
+<!-- TRANSAKSI -->
 <div class="page" id="page-transaksi">
   <div class="section-header">
     <div>
@@ -1777,7 +1773,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-<!-- ========== JURNAL UMUM ========== -->
+<!-- JURNAL UMUM -->
 <div class="page" id="page-jurnal-umum">
   <div class="section-header">
     <div><div class="section-title">Jurnal Umum</div><div class="section-sub">Semua entri jurnal</div></div>
@@ -1809,8 +1805,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-
-<!-- ========== REKONSILIASI BANK ========== -->
+<!-- REKONSILIASI BANK -->
 <div class="page" id="page-rekonsiliasi-bank">
   <div class="section-header">
     <div>
@@ -1882,7 +1877,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-<!-- ========== JURNAL KAS ========== -->
+<!-- JURNAL KAS -->
 <div class="page" id="page-jurnal-kas">
   <div class="section-header">
     <div><div class="section-title">Jurnal Kas</div><div class="section-sub">Penerimaan dan pengeluaran kas</div></div>
@@ -1901,7 +1896,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-<!-- ========== JURNAL PENJUALAN ========== -->
+<!-- JURNAL PENJUALAN -->
 <div class="page" id="page-jurnal-penjualan">
   <div class="section-header">
     <div><div class="section-title">Jurnal Penjualan</div><div class="section-sub">Semua transaksi penjualan</div></div>
@@ -1919,7 +1914,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-<!-- ========== JURNAL PEMBELIAN ========== -->
+<!-- JURNAL PEMBELIAN -->
 <div class="page" id="page-jurnal-pembelian">
   <div class="section-header">
     <div><div class="section-title">Jurnal Pembelian</div><div class="section-sub">Semua transaksi pembelian</div></div>
@@ -1937,7 +1932,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-<!-- ========== BUKU BESAR ========== -->
+<!-- BUKU BESAR -->
 <div class="page" id="page-buku-besar">
   <div class="section-header">
     <div><div class="section-title">Buku Besar</div><div class="section-sub">Mutasi per akun</div></div>
@@ -1952,7 +1947,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   <div id="buku-besar-content"></div>
 </div>
 
-<!-- ========== NERACA SALDO ========== -->
+<!-- NERACA SALDO -->
 <div class="page" id="page-neraca-saldo">
   <div class="section-header">
     <div><div class="section-title">Neraca Saldo</div><div class="section-sub">Saldo semua akun</div></div>
@@ -1967,7 +1962,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-<!-- ========== LABA RUGI ========== -->
+<!-- LABA RUGI -->
 <div class="page" id="page-laba-rugi">
   <div class="section-header">
     <div><div class="section-title">Laporan Laba Rugi</div><div class="section-sub">Pendapatan dan beban periode berjalan</div></div>
@@ -1975,7 +1970,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   <div id="laba-rugi-content"></div>
 </div>
 
-<!-- ========== NERACA ========== -->
+<!-- NERACA -->
 <div class="page" id="page-neraca">
   <div class="section-header">
     <div><div class="section-title">Neraca (Balance Sheet)</div><div class="section-sub">Posisi keuangan perusahaan</div></div>
@@ -1983,7 +1978,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   <div id="neraca-content"></div>
 </div>
 
-<!-- ========== CHART OF ACCOUNTS ========== -->
+<!-- CHART OF ACCOUNTS -->
 <div class="page" id="page-akun">
   <div class="section-header" style="margin-bottom:12px;">
     <div>
@@ -2034,8 +2029,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-
-<!-- ========== KALKULATOR: PENYUSUTAN ========== -->
+<!-- KALKULATOR: PENYUSUTAN -->
 <div class="page" id="page-kalk-penyusutan">
   <div class="section-header">
     <div><div class="section-title">Kalkulator Penyusutan Aset</div>
@@ -2089,7 +2083,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-<!-- ========== KALKULATOR: PERSEDIAAN ========== -->
+<!-- KALKULATOR: PERSEDIAAN -->
 <div class="page" id="page-kalk-persediaan">
   <div class="section-header">
     <div><div class="section-title">Kalkulator Persediaan</div>
@@ -2135,7 +2129,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-<!-- ========== KALKULATOR: BUNGA ========== -->
+<!-- KALKULATOR: BUNGA -->
 <div class="page" id="page-kalk-bunga">
   <div class="section-header">
     <div><div class="section-title">Kalkulator Bunga & Anuitas</div>
@@ -2258,7 +2252,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-<!-- ========== KALKULATOR: RASIO KEUANGAN ========== -->
+<!-- KALKULATOR: RASIO KEUANGAN -->
 <div class="page" id="page-kalk-rasio">
   <div class="section-header">
     <div><div class="section-title">Kalkulator Rasio Keuangan</div>
@@ -2324,7 +2318,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-<!-- ========== KALKULATOR: BEP ========== -->
+<!-- KALKULATOR: BEP -->
 <div class="page" id="page-kalk-bep">
   <div class="section-header">
     <div><div class="section-title">Kalkulator BEP & Margin</div>
@@ -2367,7 +2361,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-<!-- ========== KALKULATOR: PPN & PPh ========== -->
+<!-- KALKULATOR: PPN & PPh -->
 <div class="page" id="page-kalk-ppn">
   <div class="section-header">
     <div><div class="section-title">Kalkulator PPN & PPh</div>
@@ -2691,7 +2685,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-<!-- ========== AI ASSISTANT ========== -->
+<!-- AI ASSISTANT -->
 <div class="page" id="page-ai-assistant">
   <div style="display:flex;flex-direction:column;height:calc(100vh - 120px);gap:0;">
 
@@ -2766,7 +2760,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
-<!-- ========== TUTORIAL HUB PAGE ========== -->
+<!-- TUTORIAL HUB PAGE -->
 <div class="page" id="page-tutorial">
   <div class="section-header" style="margin-bottom:20px;">
     <div>
@@ -2961,7 +2955,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
 <!-- ALERT -->
 <div class="alert" id="alert-box" id="alert-msg"></div>
 
-<!-- ===== AKUN PICKER BOTTOM SHEET ===== -->
+<!-- AKUN PICKER BOTTOM SHEET -->
 <div id="akun-picker-backdrop" onclick="closeAkunPicker(event)">
   <div id="akun-picker-sheet">
     <div id="akun-picker-handle"></div>
@@ -2978,7 +2972,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
 </div>
 
 <script>
-// ===== SIDEBAR TOGGLE — didefinisikan awal agar onclick bisa akses =====
+// SIDEBAR TOGGLE — didefinisikan awal agar onclick bisa akses
 function toggleSidebar(){
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('sidebar-overlay').classList.toggle('open');
@@ -2988,7 +2982,7 @@ function closeSidebar(){
   document.getElementById('sidebar-overlay').classList.remove('open');
 }
 
-// ===================== DATA =====================
+// DATA
 let akuns = [
   // ═══════ ASET LANCAR ═══════
   {kode:'1101',nama:'Kas',tipe:'Aset',kat:'Lancar',normal:'D'},
@@ -3149,7 +3143,7 @@ function addJurnal(entry) {
   if(typeof markDirty === 'function') markDirty();
 }
 
-// ===================== FORMAT =====================
+// FORMAT
 function fmtRp(n) {
   if(!n) return 'Rp 0';
   return 'Rp ' + Number(n).toLocaleString('id-ID');
@@ -3161,7 +3155,7 @@ function fmtDate(d) {
   return `${day} ${months[parseInt(m)-1]} ${y}`;
 }
 
-// ===================== NAVIGATION =====================
+// NAVIGATION
 const pageTitles = {
   'rekonsiliasi-bank': ['Rekonsiliasi Bank','Upload & cocokkan mutasi bank'],
   'dashboard':['Dashboard','Ringkasan keuangan bisnis Anda'],
@@ -3234,7 +3228,7 @@ function handleAddBtn() {
   showPage('transaksi');
 }
 
-// ===================== TABS =====================
+// TABS
 function switchTab(group, tab) {
   document.querySelectorAll('.trx-tab').forEach(t => t.style.display='none');
   document.getElementById(`${group}-${tab}`).style.display='block';
@@ -3243,7 +3237,7 @@ function switchTab(group, tab) {
   if(tab==='umum') initManualLines();
 }
 
-// ===================== AKUN DROPDOWN =====================
+// AKUN DROPDOWN
 function populateAkunSelect(selId, filter=null) {
   // Jika elemen adalah hidden input (pakai picker), skip — nilai diset via picker
   const el = document.getElementById(selId);
@@ -3257,7 +3251,7 @@ function populateAkunSelect(selId, filter=null) {
   });
 }
 
-// ===== SIMPLE PICKER untuk form kas & pembelian =====
+// SIMPLE PICKER untuk form kas & pembelian
 let _simplePickerHiddenId = null;
 let _simplePickerBtnId = null;
 let _simplePickerFilter = null;
@@ -3348,7 +3342,7 @@ function initTransaksiForm() {
   initManualLines();
 }
 
-// ===================== KAS =====================
+// KAS
 function previewKas() {
   const jenis = document.getElementById('kas-jenis').value;
   const akunKode = document.getElementById('kas-akun-lawan').value;
@@ -3392,7 +3386,7 @@ function simpanKas() {
   showAlert('✓ Jurnal Kas berhasil disimpan!');
 }
 
-// ===================== PENJUALAN =====================
+// PENJUALAN
 function simpanPenjualan() {
   const tanggal = document.getElementById('jual-tanggal').value;
   const inv = document.getElementById('jual-inv').value || autoNo('INV');
@@ -3415,7 +3409,7 @@ function simpanPenjualan() {
   showAlert('✓ Jurnal Penjualan berhasil disimpan!');
 }
 
-// ===================== PEMBELIAN =====================
+// PEMBELIAN
 function simpanPembelian() {
   const tanggal = document.getElementById('beli-tanggal').value;
   const faktur = document.getElementById('beli-faktur').value || autoNo('PO');
@@ -3439,7 +3433,7 @@ function simpanPembelian() {
   showAlert('✓ Jurnal Pembelian berhasil disimpan!');
 }
 
-// ===================== MANUAL =====================
+// MANUAL
 let manualLineId = 0;
 function initManualLines() {
   document.getElementById('manual-lines').innerHTML='';
@@ -3497,7 +3491,7 @@ function simpanManual() {
   showAlert('✓ Jurnal Manual berhasil disimpan!');
 }
 
-// ===================== LEDGER CALC =====================
+// LEDGER CALC
 function getSaldoAkun(kode) {
   let d=0,k=0;
   jurnalEntries.forEach(j=>j.lines.forEach(l=>{
@@ -3507,9 +3501,8 @@ function getSaldoAkun(kode) {
   return akun?.normal==='D' ? d-k : k-d;
 }
 
-// ===================== RENDER DASHBOARD =====================
+// RENDER DASHBOARD
 // Old renderDashboard removed — new version below
-
 
 function jeninsBadge(j){
   if(j==='Kas') return 'badge-blue';
@@ -3518,7 +3511,7 @@ function jeninsBadge(j){
   return 'badge-gray';
 }
 
-// ===================== RENDER JURNAL UMUM =====================
+// RENDER JURNAL UMUM
 function renderJurnalUmum() {
   const search = document.getElementById('filter-ju')?.value?.toLowerCase()||'';
   const type = document.getElementById('filter-ju-type')?.value||'';
@@ -3559,7 +3552,7 @@ function renderJurnalUmum() {
   body.innerHTML = rows.length ? rows.join('') : `<tr><td colspan="9">${emptyState('Belum ada jurnal')}</td></tr>`;
 }
 
-// ===================== RENDER JURNAL KAS =====================
+// RENDER JURNAL KAS
 function renderJurnalKas() {
   const body = document.getElementById('jurnal-kas-body');
   let saldo=0, totalIn=0, totalOut=0;
@@ -3585,7 +3578,7 @@ function renderJurnalKas() {
     `<span style="font-size:12.5px;color:var(--muted);">Total Penerimaan: <b style="color:var(--accent);font-family:var(--mono);">${fmtRp(totalIn)}</b> &nbsp;|&nbsp; Total Pengeluaran: <b style="color:var(--red);font-family:var(--mono);">${fmtRp(totalOut)}</b> &nbsp;|&nbsp; Saldo Akhir Kas: <b style="color:var(--accent2);font-family:var(--mono);">${fmtRp(saldo)}</b></span>`;
 }
 
-// ===================== RENDER JURNAL PENJUALAN =====================
+// RENDER JURNAL PENJUALAN
 function renderJurnalPenjualan() {
   const body = document.getElementById('jurnal-penjualan-body');
   const rows=[];
@@ -3604,7 +3597,7 @@ function renderJurnalPenjualan() {
   body.innerHTML = rows.join('') || `<tr><td colspan="6">${emptyState('Belum ada penjualan')}</td></tr>`;
 }
 
-// ===================== RENDER JURNAL PEMBELIAN =====================
+// RENDER JURNAL PEMBELIAN
 function renderJurnalPembelian() {
   const body = document.getElementById('jurnal-pembelian-body');
   const rows=[];
@@ -3623,7 +3616,7 @@ function renderJurnalPembelian() {
   body.innerHTML = rows.join('') || `<tr><td colspan="6">${emptyState('Belum ada pembelian')}</td></tr>`;
 }
 
-// ===================== RENDER BUKU BESAR =====================
+// RENDER BUKU BESAR
 function renderBukuBesar() {
   const kode = document.getElementById('bb-akun-filter-val')?.value || '';
   const cont=document.getElementById('buku-besar-content');
@@ -3669,15 +3662,13 @@ function openBukuBesarPicker() {
   setTimeout(()=>document.getElementById('akun-picker-search').focus(), 200);
 }
 
-// ===================== NERACA SALDO =====================
+// NERACA SALDO
 // Old renderNeracaSaldo removed — filtered version below
 
-
-// ===================== LABA RUGI =====================
+// LABA RUGI
 // Old renderLabaRugi removed — filtered version below
 
-
-// ===================== NERACA =====================
+// NERACA
 function renderNeraca() {
   let aset=0,liab=0,ekuitas=0;
   const asetRows=[],liabRows=[],ekRows=[];
@@ -3736,7 +3727,7 @@ function renderNeraca() {
     </div>`;
 }
 
-// ===================== AKUN =====================
+// AKUN
 function tipeBadge(t){
   if(t==='Aset') return 'badge-green';
   if(t==='Liabilitas') return 'badge-red';
@@ -3884,7 +3875,7 @@ function hapusAkun(kode) {
 function openModalAkun(){document.getElementById('modal-akun').classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
-// ===== AKUN PICKER BOTTOM SHEET =====
+// AKUN PICKER BOTTOM SHEET
 let _pickerTriggerBtn = null;
 
 function openAkunPicker(triggerBtn) {
@@ -3988,9 +3979,7 @@ function simpanAkun(){
   ['new-akun-kode','new-akun-nama','new-akun-kat'].forEach(id=>document.getElementById(id).value='');
 }
 
-
-
-// ===================== EXPORT SYSTEM =====================
+// EXPORT SYSTEM
 let exportFmt = 'excel';
 let excelTemplate = 'data'; // 'data' or 'formula'
 let exportLogoDataUrl = null; // base64 logo for PDF
@@ -4102,7 +4091,7 @@ function doExport() {
   }, 100);
 }
 
-// ─── HELPERS ───────────────────────────────────────────
+// HELPERS
 function rpNum(n) { return Math.round(n)||0; }
 
 function getAkunNama(kode) {
@@ -4128,7 +4117,7 @@ function computeSaldoBersih(kode) {
   return a.normal==='D' ? s.debit-s.kredit : s.kredit-s.debit;
 }
 
-// ─── EXCEL EXPORT ──────────────────────────────────────
+// EXCEL EXPORT
 function exportExcel(nama, periode, template='data') {
   if(typeof XLSX === 'undefined') { expStatus('❌ Library XLSX belum dimuat. Coba refresh halaman.', 'var(--red)'); return; }
   if(template === 'formula') {
@@ -4172,7 +4161,7 @@ function exportExcelData(nama, periode) {
     ];
   }
 
-  // ── SHEET 1: RINGKASAN (Dashboard) ──
+  // SHEET 1: RINGKASAN (Dashboard)
   if(document.getElementById('exp-dashboard').checked) {
     const saldo = computeSaldoAll();
     let totalAset=0, totalLiab=0, totalEk=0, totalPend=0, totalBeban=0;
@@ -4208,7 +4197,7 @@ function exportExcelData(nama, periode) {
     addSheet(wb, '📊 Ringkasan', rows, [28,4,20]);
   }
 
-  // ── SHEET 2: JURNAL UMUM ──
+  // SHEET 2: JURNAL UMUM
   if(document.getElementById('exp-jurnal-umum').checked) {
     const rows = [
       ...headerBlock(nama, periode, 'JURNAL UMUM', today),
@@ -4237,7 +4226,7 @@ function exportExcelData(nama, periode) {
     addSheet(wb, '📒 Jurnal Umum', rows, [5,12,14,36,12,28,18,18]);
   }
 
-  // ── SHEET 3: JURNAL KAS ──
+  // SHEET 3: JURNAL KAS
   if(document.getElementById('exp-jurnal-kas').checked) {
     const rows = [
       ...headerBlock(nama, periode, 'JURNAL KAS', today),
@@ -4262,7 +4251,7 @@ function exportExcelData(nama, periode) {
     addSheet(wb, '💵 Jurnal Kas', rows, [12,14,36,20,20,20]);
   }
 
-  // ── SHEET 4: JURNAL PENJUALAN ──
+  // SHEET 4: JURNAL PENJUALAN
   if(document.getElementById('exp-jurnal-jual').checked) {
     const rows = [
       ...headerBlock(nama, periode, 'JURNAL PENJUALAN', today),
@@ -4286,7 +4275,7 @@ function exportExcelData(nama, periode) {
     addSheet(wb, '🧾 Jurnal Penjualan', rows, [12,14,36,10,22,22]);
   }
 
-  // ── SHEET 5: JURNAL PEMBELIAN ──
+  // SHEET 5: JURNAL PEMBELIAN
   if(document.getElementById('exp-jurnal-beli').checked) {
     const rows = [
       ...headerBlock(nama, periode, 'JURNAL PEMBELIAN', today),
@@ -4310,7 +4299,7 @@ function exportExcelData(nama, periode) {
     addSheet(wb, '🛒 Jurnal Pembelian', rows, [12,14,36,10,24,20,20]);
   }
 
-  // ── SHEET 6: BUKU BESAR ──
+  // SHEET 6: BUKU BESAR
   if(document.getElementById('exp-buku-besar').checked) {
     const saldoMap = computeSaldoAll();
     const rows = [...headerBlock(nama, periode, 'BUKU BESAR', today)];
@@ -4341,7 +4330,7 @@ function exportExcelData(nama, periode) {
     addSheet(wb, '📗 Buku Besar', rows, [12,14,36,18,18,20]);
   }
 
-  // ── SHEET 7: NERACA SALDO ──
+  // SHEET 7: NERACA SALDO
   if(document.getElementById('exp-neraca-saldo').checked) {
     const rows = [
       ...headerBlock(nama, periode, 'NERACA SALDO', today),
@@ -4363,7 +4352,7 @@ function exportExcelData(nama, periode) {
     addSheet(wb, '⚖️ Neraca Saldo', rows, [8,28,14,20,20]);
   }
 
-  // ── SHEET 8: LABA RUGI ──
+  // SHEET 8: LABA RUGI
   if(document.getElementById('exp-laba-rugi').checked) {
     const rows = [...headerBlock(nama, periode, 'LAPORAN LABA RUGI', today)];
     let totalPend=0, totalHPP=0, totalBeban=0;
@@ -4396,7 +4385,7 @@ function exportExcelData(nama, periode) {
     addSheet(wb, '📈 Laba Rugi', rows, [36,22]);
   }
 
-  // ── SHEET 9: NERACA ──
+  // SHEET 9: NERACA
   if(document.getElementById('exp-neraca').checked) {
     const rows = [...headerBlock(nama, periode, 'NERACA (BALANCE SHEET)', today)];
     let totalAset=0, totalLiab=0, totalEk=0;
@@ -4438,7 +4427,7 @@ function exportExcelData(nama, periode) {
     addSheet(wb, '🏦 Neraca', rows, [30,22,30,22]);
   }
 
-  // ── SHEET 10: CHART OF ACCOUNTS ──
+  // SHEET 10: CHART OF ACCOUNTS
   if(document.getElementById('exp-coa').checked) {
     const rows = [
       ...headerBlock(nama, periode, 'CHART OF ACCOUNTS', today),
@@ -4458,7 +4447,7 @@ function exportExcelData(nama, periode) {
     addSheet(wb, '🗂️ Chart of Accounts', rows, [8,28,14,12,14,20]);
   }
 
-  // ── SHEET 11: FORMULA REFERENCE ──
+  // SHEET 11: FORMULA REFERENCE
   const formulaRows = [
     ...headerBlock(nama, periode, 'REFERENSI FORMULA AKUNTANSI', today),
     [boldTxt('FORMULA DASAR'), '', boldTxt('KETERANGAN')],
@@ -4495,20 +4484,20 @@ function exportExcelData(nama, periode) {
   formulaWs['!cols'] = [{wch:26},{wch:44},{wch:36}];
   XLSX.utils.book_append_sheet(wb, formulaWs, '📐 Referensi Formula');
 
-  // ── WRITE FILE ──
+  // WRITE FILE
   const fn = `BHP_${nama.replace(/\s+/g,'_')}_${periode.replace(/\s+/g,'_')}.xlsx`;
   XLSX.writeFile(wb, fn);
   expStatus(`✅ File Excel berhasil diunduh: <b>${fn}</b><br><span style="font-size:11px">${wb.SheetNames.length} sheet tersedia</span>`);
 }
 
-// ─── EXCEL TEMPLATE HITUNG OTOMATIS ────────────────────────────────────────────
+// EXCEL TEMPLATE HITUNG OTOMATIS
 // Template ini menggunakan formula Excel aktif yang saling terhubung antar sheet.
 // Sheet INPUT adalah sumber data; semua laporan otomatis update jika diubah.
 function exportExcelFormula(nama, periode) {
   const wb = XLSX.utils.book_new();
   const today = new Date().toLocaleDateString('id-ID');
 
-  // ── Style helpers ──────────────────────────────────────────────────
+  // Style helpers
   const hdr = (v, rgb='16406A') => ({ v, t:'s', s:{
     font:{bold:true, color:{rgb:'FFFFFF'}, sz:11},
     fill:{fgColor:{rgb}},
@@ -4605,10 +4594,8 @@ function exportExcelFormula(nama, periode) {
   // Empty cell with border
   const eb = () => ({ v:'', t:'s', s:{border:{bottom:{style:'thin',color:{rgb:'EEEEEE'}}, left:{style:'thin',color:{rgb:'EEEEEE'}}, right:{style:'thin',color:{rgb:'EEEEEE'}}}} });
 
-  // ─────────────────────────────────────────────────────────────────
-  // Compute data dari app
-  // ─────────────────────────────────────────────────────────────────
-  const saldo = computeSaldoAll();
+  // // Compute data dari app
+  // const saldo = computeSaldoAll();
   let totalAset=0, totalLiab=0, totalEk=0, totalPend=0, totalBeban=0;
   akuns.forEach(a=>{
     const s=saldo[a.kode]||{debit:0,kredit:0};
@@ -4855,7 +4842,7 @@ function exportExcelFormula(nama, periode) {
   ]);
   const totLiabEkRow = neracaRows.length;
 
-  // ── Balance check ──
+  // Balance check
   neracaRows.push([]);
   const balanced = Math.abs(totA-(totL+totE2+labaBersih))<1;
   neracaRows.push([
@@ -5114,12 +5101,12 @@ function exportExcelFormula(nama, periode) {
   guideWs['!cols'] = [{wch:52},{wch:60}];
   XLSX.utils.book_append_sheet(wb, guideWs, '📖 Panduan');
 
-  // ── WRITE FILE ──
+  // WRITE FILE
   const fn = `BHP_${nama.replace(/\s+/g,'_')}_${periode.replace(/\s+/g,'_')}_FormulaTemplate.xlsx`;
   XLSX.writeFile(wb, fn);
   expStatus(`✅ Template Hitung Otomatis berhasil diunduh: <b>${fn}</b><br><span style="font-size:11px">${wb.SheetNames.length} sheet • Baris kuning = siap isi • Balance check otomatis aktif di setiap sheet</span>`);
 }
-// ─── PDF EXPORT ────────────────────────────────────────
+// PDF EXPORT
 function exportPDF(nama, periode, proyek='') {
   if(typeof window.jspdf === 'undefined' && typeof jspdf === 'undefined') {
     expStatus('❌ Library jsPDF belum dimuat. Coba refresh halaman.', 'var(--red)'); return;
@@ -5296,7 +5283,7 @@ function exportPDF(nama, periode, proyek='') {
   // COVER
   addCover();
 
-  // ── RINGKASAN ──
+  // RINGKASAN
   if(document.getElementById('exp-dashboard').checked) {
     sectionHeader('RINGKASAN KEUANGAN', 'Dashboard');
     const saldoMap = computeSaldoAll();
@@ -5324,7 +5311,7 @@ function exportPDF(nama, periode, proyek='') {
     y += 50;
   }
 
-  // ── JURNAL UMUM ──
+  // JURNAL UMUM
   if(document.getElementById('exp-jurnal-umum').checked) {
     sectionHeader('JURNAL UMUM', `${jurnalEntries.length} entri`);
     const cols = [12,14,22,14,48,22,22];
@@ -5345,7 +5332,7 @@ function exportPDF(nama, periode, proyek='') {
     totalRow(['','','','','TOTAL', fmtRpPDF(totalD), fmtRpPDF(totalK)], cols);
   }
 
-  // ── JURNAL KAS ──
+  // JURNAL KAS
   if(document.getElementById('exp-jurnal-kas').checked) {
     sectionHeader('JURNAL KAS');
     const cols = [20,18,60,28,28,28];
@@ -5360,7 +5347,7 @@ function exportPDF(nama, periode, proyek='') {
     totalRow(['','','TOTAL', fmtRpPDF(tI), fmtRpPDF(tO), fmtRpPDF(saldo)], cols);
   }
 
-  // ── JURNAL PENJUALAN ──
+  // JURNAL PENJUALAN
   if(document.getElementById('exp-jurnal-jual').checked) {
     const pjEntries = jurnalEntries.filter(j=>j.jenis==='Penjualan');
     sectionHeader('JURNAL PENJUALAN', `${pjEntries.length} transaksi`);
@@ -5377,7 +5364,7 @@ function exportPDF(nama, periode, proyek='') {
     totalRow(['','','','TOTAL',fmtRpPDF(tD),fmtRpPDF(tK)],cols);
   }
 
-  // ── JURNAL PEMBELIAN ──
+  // JURNAL PEMBELIAN
   if(document.getElementById('exp-jurnal-beli').checked) {
     const pbEntries = jurnalEntries.filter(j=>j.jenis==='Pembelian');
     sectionHeader('JURNAL PEMBELIAN', `${pbEntries.length} transaksi`);
@@ -5394,7 +5381,7 @@ function exportPDF(nama, periode, proyek='') {
     totalRow(['','','','','TOTAL',fmtRpPDF(tK)],cols);
   }
 
-  // ── NERACA SALDO ──
+  // NERACA SALDO
   if(document.getElementById('exp-neraca-saldo').checked) {
     sectionHeader('NERACA SALDO');
     const cols = [16,72,28,28,28];
@@ -5418,7 +5405,7 @@ function exportPDF(nama, periode, proyek='') {
     y+=8;
   }
 
-  // ── LABA RUGI ──
+  // LABA RUGI
   if(document.getElementById('exp-laba-rugi').checked) {
     sectionHeader('LAPORAN LABA RUGI');
     let tP=0,tH=0,tB=0;
@@ -5447,7 +5434,7 @@ function exportPDF(nama, periode, proyek='') {
     doc.text('LABA BERSIH',margin+2,y+7);doc.text(fmtRpPDF(labaB),W-margin-2,y+7,{align:'right'});y+=12;
   }
 
-  // ── NERACA (rewritten — proper page breaks, single column) ──
+  // NERACA (rewritten — proper page breaks, single column)
   if(document.getElementById('exp-neraca').checked) {
     sectionHeader('NERACA (BALANCE SHEET)');
 
@@ -5587,7 +5574,7 @@ function exportPDF(nama, periode, proyek='') {
     y += 10;
   }
 
-  // ── COA ──
+  // COA
   if(document.getElementById('exp-coa').checked) {
     sectionHeader('CHART OF ACCOUNTS', `${akuns.length} akun`);
     const cols=[16,58,22,18,22,36];
@@ -5600,7 +5587,7 @@ function exportPDF(nama, periode, proyek='') {
     });
   }
 
-  // ── PAGE NUMBERS ──
+  // PAGE NUMBERS
   const pageCount = doc.getNumberOfPages();
   for(let i=1;i<=pageCount;i++) {
     doc.setPage(i);
@@ -5617,7 +5604,7 @@ function exportPDF(nama, periode, proyek='') {
   expStatus(`✅ PDF berhasil diunduh: <b>${fn}</b><br><span style="font-size:11px">${pageCount} halaman</span>`);
 }
 
-// ─── CSV EXPORT (Google Sheets compatible) ──────────────
+// CSV EXPORT (Google Sheets compatible)
 function exportCSV(nama, periode) {
   const zip_parts = [];
 
@@ -5683,8 +5670,7 @@ function exportCSV(nama, periode) {
   expStatus('✅ CSV berhasil diunduh! Import ke Google Sheets via File → Import → Upload.');
 }
 
-
-// ===================== AI ACTION EXECUTOR =====================
+// AI ACTION EXECUTOR
 async function executeAIActions(actions) {
   const results = [];
   const today = new Date().toISOString().split('T')[0];
@@ -5847,8 +5833,7 @@ function setSelectVal(id, val) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-
-// ===================== STORAGE SYSTEM =====================
+// STORAGE SYSTEM
 const STORAGE_KEY = 'bhp_data_v2';
 const STORAGE_SLOTS_KEY = 'bhp_slots_v2';
 const AUTOSAVE_KEY = 'bhp_autosave_enabled';
@@ -5859,7 +5844,7 @@ let autoSaveTimer = null;
 let hasUnsavedChanges = false;
 let lastSaveTime = null;
 
-// ── INIT STORAGE ────────────────────────────────────────
+// INIT STORAGE
 function initStorage() {
   autoSaveEnabled = localStorage.getItem(AUTOSAVE_KEY) !== 'false';
   loadFromStorage();
@@ -5884,7 +5869,7 @@ function scheduleAutoSave() {
   }, 3000); // Auto-save 3 seconds after last change
 }
 
-// ── SAVE TO LOCALSTORAGE ────────────────────────────────
+// SAVE TO LOCALSTORAGE
 function saveToStorage(showToast = true) {
   try {
     const data = serializeData();
@@ -5917,7 +5902,7 @@ function manualSave() {
   renderStorageSlots();
 }
 
-// ── LOAD FROM LOCALSTORAGE ──────────────────────────────
+// LOAD FROM LOCALSTORAGE
 function loadFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -5940,7 +5925,7 @@ function loadFromStorage() {
   }
 }
 
-// ── SERIALIZE DATA ──────────────────────────────────────
+// SERIALIZE DATA
 function serializeData() {
   return {
     version: '2.0',
@@ -5952,7 +5937,7 @@ function serializeData() {
   };
 }
 
-// ── SLOT SAVES (5 SLOTS) ────────────────────────────────
+// SLOT SAVES (5 SLOTS)
 function getSlots() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_SLOTS_KEY) || '{}');
@@ -6083,7 +6068,7 @@ function openStorageModal() {
   document.getElementById('modal-storage').classList.add('open');
 }
 
-// ── AUTO-SAVE TOGGLE ────────────────────────────────────
+// AUTO-SAVE TOGGLE
 function toggleAutoSave() {
   autoSaveEnabled = !autoSaveEnabled;
   localStorage.setItem(AUTOSAVE_KEY, autoSaveEnabled);
@@ -6093,7 +6078,7 @@ function toggleAutoSave() {
   if(autoSaveEnabled && hasUnsavedChanges) scheduleAutoSave();
 }
 
-// ── SAVE INDICATOR ──────────────────────────────────────
+// SAVE INDICATOR
 function updateSaveIndicator(state) {
   const dot = document.getElementById('save-dot');
   const txt = document.getElementById('save-text');
@@ -6113,7 +6098,7 @@ function updateSaveIndicator(state) {
   }
 }
 
-// ── TOAST NOTIFICATION ──────────────────────────────────
+// TOAST NOTIFICATION
 let toastTimer;
 function showAutoSaveToast(msg, subtle = true) {
   const toast = document.getElementById('autosave-toast');
@@ -6130,7 +6115,7 @@ function showAutoSaveToast(msg, subtle = true) {
   }, 2000);
 }
 
-// ── EXPORT/IMPORT JSON BACKUP ────────────────────────────
+// EXPORT/IMPORT JSON BACKUP
 function exportBackupJSON() {
   const data = serializeData();
   const json = JSON.stringify(data, null, 2);
@@ -6177,7 +6162,7 @@ function importBackupJSON(input) {
   reader.readAsText(file);
 }
 
-// ── PATCH doResetAll to also clear storage ───────────────
+// PATCH doResetAll to also clear storage
 // doResetAll handled by storage system
 function doResetAll() {
   const val = document.getElementById('reset-confirm-input')?.value?.trim()?.toUpperCase();
@@ -6201,22 +6186,21 @@ function doResetAll() {
 
 // markDirty is called directly inside addJurnal()
 
-// ── WARN BEFORE UNLOAD ───────────────────────────────────
+// WARN BEFORE UNLOAD
 window.addEventListener('beforeunload', (e) => {
   if(hasUnsavedChanges) {
     saveToStorage(false); // try to save on exit
   }
 });
 
-// ── PAGE VISIBILITY: save when tab hidden ────────────────
+// PAGE VISIBILITY: save when tab hidden
 document.addEventListener('visibilitychange', () => {
   if(document.hidden && hasUnsavedChanges) {
     saveToStorage(false);
   }
 });
 
-
-// ===================== TEMPLATE SYSTEM =====================
+// TEMPLATE SYSTEM
 const TEMPLATES = {
   jasa: {
     label: 'Template Bisnis Jasa',
@@ -6433,8 +6417,7 @@ function getDefaultAkuns() {
   ];
 }
 
-
-// ===================== BACK BUTTON NAVIGATION =====================
+// BACK BUTTON NAVIGATION
 let pageHistory = ['dashboard'];
 let isNavigating = false;
 
@@ -6491,9 +6474,7 @@ if(!inIframe) {
   });
 }
 
-
-
-// ===================== THEME SYSTEM =====================
+// THEME SYSTEM
 const THEME_KEY = 'bhp_theme';
 
 function initTheme() {
@@ -6527,7 +6508,7 @@ function toggleTheme() {
   // No alert — switch is self-explanatory
 }
 
-// ===================== GROQ AI — MULTI-KEY ROTATION =====================
+// GROQ AI — MULTI-KEY ROTATION
 // Multiple free Groq API keys — rotate when rate limited
 // Each key has 30 req/min limit, rotating between keys multiplies capacity
 // Get free keys at: console.groq.com (free, no credit card)
@@ -6701,7 +6682,7 @@ async function callGroqWithRotation(systemPrompt, messages) {
 // startCooldownDisplay moved to smart rate limit section above
 let cooldownInterval = null;
 
-// ── Groq Key Modal ──
+// Groq Key Modal
 function openGroqKeyModal() {
   loadGroqKeys();
   document.getElementById('modal-apikey').classList.add('open');
@@ -6766,11 +6747,10 @@ function updateAIKeyStatus() {
   btn.style.flexShrink = '0';
 }
 
-// ── Update API key modal to show Groq setup ──
+// Update API key modal to show Groq setup
 function openApiKeyModal() { openGroqKeyModal(); }
 
-
-// ===================== NUMBER FORMAT INPUT =====================
+// NUMBER FORMAT INPUT
 // Auto-format number inputs with thousand separator display
 function setupNumberInputs() {
   // Apply to all calculator number inputs
@@ -6826,7 +6806,7 @@ function showFormatDisplay(inp) {
   }
 }
 
-// ===================== KODE UNIK & DUPLIKAT CHECK =====================
+// KODE UNIK & DUPLIKAT CHECK
 const KODE_COUNTER_KEY = 'bhp_kode_counters';
 
 function getKodeCounter() {
@@ -6861,7 +6841,7 @@ function checkAndInputKalkulator(kode, jurnals, successMsg, onSuccess) {
   if(onSuccess) onSuccess(kode);
 }
 
-// ===================== UNDO SYSTEM =====================
+// UNDO SYSTEM
 let lastKalkInput = null; // {kode, jurnalCount, timestamp}
 
 function undoLastKalkInput() {
@@ -6878,9 +6858,9 @@ function undoLastKalkInput() {
   document.querySelectorAll('.kalk-undo-btn').forEach(b => b.style.display='none');
 }
 
-// ===================== KALKULATOR INPUT BUTTONS =====================
+// KALKULATOR INPUT BUTTONS
 
-// ── PENYUSUTAN → INPUT JURNAL ──
+// PENYUSUTAN → INPUT JURNAL
 function inputPenyusutanJurnal() {
   const cost = parseFloat(document.getElementById('py-cost').value)||0;
   const sisa = parseFloat(document.getElementById('py-sisa').value)||0;
@@ -6975,7 +6955,7 @@ function inputPenyusutanJurnal() {
   }); // end showCustomInputModal
 }
 
-// ── BEP → INPUT JURNAL ──
+// BEP → INPUT JURNAL
 function inputBEPJurnal() {
   const harga = parseFloat(document.getElementById('bep-harga').value)||0;
   const bv = parseFloat(document.getElementById('bep-bv').value)||0;
@@ -7031,7 +7011,7 @@ function inputBEPJurnal() {
   );
 }
 
-// ── ANUITAS → INPUT JURNAL ──
+// ANUITAS → INPUT JURNAL
 function inputAnuitasJurnal() {
   const pokok = parseFloat(document.getElementById('an-pokok').value)||0;
   const rate = parseFloat(document.getElementById('an-rate').value)||0;
@@ -7078,7 +7058,7 @@ function inputAnuitasJurnal() {
   );
 }
 
-// ── PERSEDIAAN → INPUT JURNAL ──
+// PERSEDIAAN → INPUT JURNAL
 function inputPersediaanJurnal() {
   const hpp = parseFloat(document.getElementById('inv-hpp')?.textContent?.replace(/[^0-9]/g,''))||0;
   const akhir = parseFloat(document.getElementById('inv-akhir')?.textContent?.replace(/[^0-9]/g,''))||0;
@@ -7107,7 +7087,7 @@ function inputPersediaanJurnal() {
   );
 }
 
-// ── PPN → INPUT JURNAL ──
+// PPN → INPUT JURNAL
 function inputPPNJurnal() {
   const nilai = parseFloat(document.getElementById('ppn-nilai').value)||0;
   const tarifSel = document.getElementById('ppn-tarif').value;
@@ -7140,7 +7120,7 @@ function inputPPNJurnal() {
   );
 }
 
-// ── PPH21 → INPUT JURNAL ──
+// PPH21 → INPUT JURNAL
 function inputPPH21Jurnal() {
   const stored = window._lastPPh21;
   if (!stored || !stored.pph) { showAlert('Hitung PPh 21 dulu! Pastikan nilai PPh 21 sudah muncul di hasil.'); return; }
@@ -7170,7 +7150,7 @@ function inputPPH21Jurnal() {
   );
 }
 
-// ── UNDO BAR ──
+// UNDO BAR
 function showKalkUndoBar(label, kode) {
   // Remove existing undo bars
   document.querySelectorAll('.kalk-undo-bar').forEach(b => b.remove());
@@ -7197,7 +7177,7 @@ function showKalkUndoBar(label, kode) {
   setTimeout(() => { if(bar.parentNode) bar.remove(); }, 12000);
 }
 
-// ── ADD INPUT BUTTONS TO CALCULATOR RESULTS ──
+// ADD INPUT BUTTONS TO CALCULATOR RESULTS
 function addKalkInputButtons() { /* buttons added via individual addInputBtnTo* fns */ }
 function _addKalkInputButtonsUnused() {
   // Penyusutan
@@ -7309,8 +7289,7 @@ const slideStyle = document.createElement('style');
 slideStyle.textContent = '@keyframes slideUp { from{transform:translateX(-50%) translateY(20px);opacity:0} to{transform:translateX(-50%) translateY(0);opacity:1} }';
 document.head.appendChild(slideStyle);
 
-
-// ===================== TUTORIAL DRAG & MINIMIZE =====================
+// TUTORIAL DRAG & MINIMIZE
 let tutIsDragging = false, tutDragStartX, tutDragStartY, tutInitLeft, tutInitTop;
 let tutIsMinimized = false;
 
@@ -7417,7 +7396,7 @@ function tutRestore() {
 
 // renderTutStep mini sync handled inline
 
-// ===================== JURNAL PENYESUAIAN OTOMATIS =====================
+// JURNAL PENYESUAIAN OTOMATIS
 function openJurnalPenyesuaian() {
   // Navigate to transaksi and show penyesuaian helper
   showPage('transaksi');
@@ -7546,7 +7525,7 @@ function fillPenyesuaian(type) {
   showAlert(`✅ Template "${tmpl.ket}" sudah diisi. Masukkan nilainya lalu klik Simpan.`);
 }
 
-// ===================== KALKULATOR INPUT BUTTONS — Fixed approach =====================
+// KALKULATOR INPUT BUTTONS — Fixed approach
 // Called directly from hitungPenyusutan etc. via button in result HTML
 
 function addInputBtnToPenyusutan() {
@@ -7596,8 +7575,7 @@ function addInputBtnToPPH21() {
   res.appendChild(bar);
 }
 
-
-// ===================== PROFIL PERUSAHAAN =====================
+// PROFIL PERUSAHAAN
 const PROFIL_KEY = 'bhp_profil_v1';
 
 function getProfil() {
@@ -7637,7 +7615,7 @@ function saveProfil() {
 }
 function openModal(id) { document.getElementById(id)?.classList.add('open'); }
 
-// ===================== ONBOARDING =====================
+// ONBOARDING
 let obStep = 1;
 let obType = 'lengkap';
 
@@ -7705,7 +7683,7 @@ function selectObType(type, el) {
   el.style.background = 'rgba(74,222,128,0.07)';
 }
 
-// ===================== PERIOD FILTER HELPERS =====================
+// PERIOD FILTER HELPERS
 function getPeriodRange() {
   const filter = document.getElementById('dash-filter-period')?.value || 'all';
   const now = new Date();
@@ -7748,7 +7726,7 @@ function filterJurnalByPeriod(from, to) {
   });
 }
 
-// ===================== REMINDERS =====================
+// REMINDERS
 function getReminders() {
   const reminders = [];
   const now = new Date();
@@ -7793,7 +7771,7 @@ function getReminders() {
   return reminders;
 }
 
-// ===================== CHART (CANVAS) =====================
+// CHART (CANVAS)
 function renderChart() {
   const canvas = document.getElementById('dash-chart');
   if(!canvas) return;
@@ -7868,7 +7846,7 @@ function renderChart() {
   });
 }
 
-// ===================== UPGRADED renderDashboard =====================
+// UPGRADED renderDashboard
 function renderDashboard() {
   const { from, to, label } = getPeriodRange();
   const filtered = filterJurnalByPeriod(from, to);
@@ -7981,7 +7959,7 @@ function renderDashboard() {
   renderPajakPanel();
 }
 
-// ===================== JURNAL PENUTUP (CLOSING ENTRIES) =====================
+// JURNAL PENUTUP (CLOSING ENTRIES)
 function buatJurnalPenutup() {
   let totalPend = 0, totalBeban = 0;
   const pendLines = [], bebanLines = [];
@@ -8045,7 +8023,7 @@ function buatJurnalPenutup() {
   });
 }
 
-// ===================== REKONSILIASI KAS =====================
+// REKONSILIASI KAS
 function cekRekonsiliasi() {
   const saldoSistem = computeSaldoBersih('1101');
   const salBank = computeSaldoBersih('1102') + computeSaldoBersih('1103');
@@ -8111,7 +8089,7 @@ function cekRekonsiliasi() {
   });
 }
 
-// ===================== GLOBAL SEARCH =====================
+// GLOBAL SEARCH
 let searchIdx = -1;
 
 function openGlobalSearch() {
@@ -8217,7 +8195,7 @@ function highlightSearch() {
   if(active) active.scrollIntoView({ block:'nearest' });
 }
 
-// ===================== KEYBOARD SHORTCUTS =====================
+// KEYBOARD SHORTCUTS
 document.addEventListener('keydown', (e) => {
   // Ctrl+K or Cmd+K — Global search
   if((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); openGlobalSearch(); }
@@ -8231,14 +8209,14 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ===================== PERIOD FILTER SHOW/HIDE =====================
+// PERIOD FILTER SHOW/HIDE
 document.getElementById('dash-filter-period')?.addEventListener('change', function() {
   const cr = document.getElementById('dash-custom-range');
   if(this.value === 'custom') cr?.classList.add('show');
   else cr?.classList.remove('show');
 });
 
-// ===================== FILTER PERIOD ON REPORTS =====================
+// FILTER PERIOD ON REPORTS
 // Add period filter to laporan pages
 function addPeriodFilterToReports() {
   ['laba-rugi','neraca-saldo','neraca'].forEach(id => {
@@ -8339,8 +8317,7 @@ function renderNeracaSaldoFiltered(periodVal='all') {
 function renderLabaRugi() { renderLabaRugiFiltered('all'); setTimeout(()=>addPeriodFilterToReports(),50); }
 function renderNeracaSaldo() { renderNeracaSaldoFiltered('all'); setTimeout(()=>addPeriodFilterToReports(),50); }
 
-
-// ===================== CUSTOM CONFIRM DIALOG =====================
+// CUSTOM CONFIRM DIALOG
 function showAIConfirm(jurnalActions, otherActions) {
   return new Promise((resolve) => {
     const backdrop = document.getElementById('custom-confirm-backdrop');
@@ -8394,10 +8371,7 @@ function showAIConfirm(jurnalActions, otherActions) {
   });
 }
 
-
-
-
-// ===================== GENERAL PURPOSE CUSTOM CONFIRM =====================
+// GENERAL PURPOSE CUSTOM CONFIRM
 // Untuk Jurnal Penutup, Rekonsiliasi, dan aksi besar lainnya
 function showCustomConfirmGeneral({ icon, iconColor, iconBorder, title, subtitle, rows, warning, btnLabel, btnGradient }) {
   return new Promise((resolve) => {
@@ -8472,7 +8446,7 @@ function showCustomConfirmGeneral({ icon, iconColor, iconBorder, title, subtitle
   });
 }
 
-// ===================== CUSTOM INPUT MODAL (pengganti prompt) =====================
+// CUSTOM INPUT MODAL (pengganti prompt)
 function showCustomInputModal({ icon, iconColor, iconBorder, title, subtitle, rows, inputLabel, inputDefault, btnLabel }) {
   return new Promise((resolve) => {
     const modal = document.createElement('div');
@@ -8558,7 +8532,7 @@ function showCustomInputModal({ icon, iconColor, iconBorder, title, subtitle, ro
   });
 }
 
-// ===================== CUSTOM SELECT MODAL (pengganti prompt pilihan) =====================
+// CUSTOM SELECT MODAL (pengganti prompt pilihan)
 function showCustomSelectModal({ icon, iconColor, iconBorder, title, subtitle, options, btnLabel }) {
   return new Promise((resolve) => {
     let selected = options?.[0]?.value ?? null;
@@ -8657,7 +8631,7 @@ function showCustomSelectModal({ icon, iconColor, iconBorder, title, subtitle, o
   });
 }
 
-// ===================== SMART RATE LIMIT UI =====================
+// SMART RATE LIMIT UI
 
 function showAIRateLimitInfo(keys, cooldownSec, limitType) {
   const chat = document.getElementById('ai-chat');
@@ -8772,8 +8746,7 @@ function startCooldownDisplay(seconds, autoRetry = false) {
   cooldownInterval = setInterval(update, 1000);
 }
 
-
-// ===================== FEATURE 1: REKONSILIASI BANK =====================
+// FEATURE 1: REKONSILIASI BANK
 let bankRows = []; // parsed from CSV/Excel
 
 function parseBankStatement(input) {
@@ -8972,7 +8945,7 @@ async function buatJurnalDariBankRow(idx) {
   }, 300);
 }
 
-// ===================== FEATURE 2: ATTACH BUKTI TRANSAKSI =====================
+// FEATURE 2: ATTACH BUKTI TRANSAKSI
 const ATTACHMENTS_KEY = 'bhp_attachments';
 
 function getAttachments() {
@@ -9145,7 +9118,7 @@ async function downloadAllAttachments(jurnalNo) {
   showAlert(`✅ ${attachments.length} lampiran diunduh sebagai ZIP`);
 }
 
-// ===================== FEATURE 3: NOTIFIKASI PAJAK =====================
+// FEATURE 3: NOTIFIKASI PAJAK
 const PAJAK_NOTIF_KEY = 'bhp_pajak_notif_dismissed';
 
 function getPajakNotifications() {
@@ -9232,7 +9205,7 @@ function renderPajakPanel() {
       </div>`).join('')}`;
 }
 
-// ===================== HAPUS & RESET =====================
+// HAPUS & RESET
 function konfirmasiHapusJurnal(idx) {
   const j = jurnalEntries[idx];
   if(!j) return;
@@ -9244,12 +9217,23 @@ function konfirmasiHapusJurnal(idx) {
      <b>Jenis:</b> ${j.jenis}<br>
      <b>Jumlah Baris:</b> ${j.lines.length} baris<br>
      <b>Total:</b> ${fmtRp(totalDebit)}`;
-  document.getElementById('hapus-jurnal-confirm-btn').onclick = () => {
+  document.getElementById('hapus-jurnal-confirm-btn').onclick = async () => {
+    const entry = jurnalEntries[idx];
     jurnalEntries.splice(idx, 1);
     closeModal('modal-hapus-jurnal');
     renderJurnalUmum();
     renderDashboard();
-    showAlert('🗑 Jurnal berhasil dihapus');
+    // Hapus dari Supabase/cloud jika sudah tersimpan
+    if (entry && entry._id && typeof deleteJurnalFromSupabase === 'function') {
+      try {
+        await deleteJurnalFromSupabase(entry);
+        showAlert('🗑 Jurnal berhasil dihapus & tersinkron ke cloud');
+      } catch(e) {
+        showAlert('🗑 Jurnal dihapus (lokal), tapi gagal sinkron cloud — coba simpan ulang');
+      }
+    } else {
+      showAlert('🗑 Jurnal berhasil dihapus');
+    }
   };
   document.getElementById('modal-hapus-jurnal').classList.add('open');
 }
@@ -9262,7 +9246,7 @@ function confirmResetAll() {
 
 // doResetAll moved to storage system above
 
-// ===================== SALDO AWAL =====================
+// SALDO AWAL
 function openModalSaldoAwal() {
   const tgl = new Date().toISOString().split('T')[0];
   const saldoTglInput = document.getElementById('saldo-awal-tgl');
@@ -9343,7 +9327,7 @@ function simpanSaldoAwal() {
   showAlert('✅ Saldo awal berhasil disimpan!');
 }
 
-// ===================== UTILS =====================
+// UTILS
 function autoNo(prefix) {
   const n=jurnalEntries.filter(j=>j.ref?.startsWith(prefix)).length+1;
   return `${prefix}-${String(n).padStart(3,'0')}`;
@@ -9360,7 +9344,7 @@ function showAlert(msg){
   alertTimer=setTimeout(()=>el.classList.remove('show'),2800);
 }
 
-// ===================== INIT =====================
+// INIT
 document.getElementById('current-date').textContent = new Date().toLocaleDateString('id-ID',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
 // initStorage & auth are handled by the Supabase init block (DOMContentLoaded)
 // which overrides initStorage() to be a no-op until auth completes.
@@ -9394,7 +9378,7 @@ document.querySelectorAll('.nav-card').forEach(n => {
   });
 });
 
-// ===================== CSS KALKULATOR GRID =====================
+// CSS KALKULATOR GRID
 // inject responsive kalk-grid style
 const kalkStyle = document.createElement('style');
 kalkStyle.textContent = `
@@ -9413,7 +9397,7 @@ kalkStyle.textContent = `
 `;
 document.head.appendChild(kalkStyle);
 
-// ===================== UTILS KALKULATOR =====================
+// UTILS KALKULATOR
 const rp = n => 'Rp ' + (Math.round(n)||0).toLocaleString('id-ID');
 const pct = n => (n||0).toFixed(2) + '%';
 const num = n => (Math.round(n*100)/100).toLocaleString('id-ID');
@@ -9431,7 +9415,7 @@ function rasioRow(nama, nilai, satuan, benchmark, keterangan) {
   return `<tr class="rasio-row"><td>${nama}</td><td class="${cls}">${isNaN(v)||!isFinite(v)?'—':nilai+' '+satuan}</td><td>${keterangan}</td></tr>`;
 }
 
-// ===================== PENYUSUTAN =====================
+// PENYUSUTAN
 function hitungPenyusutan() {
   const cost = parseFloat(document.getElementById('py-cost').value)||0;
   const sisa = parseFloat(document.getElementById('py-sisa').value)||0;
@@ -9527,7 +9511,7 @@ function hitungPenyusutan() {
   setTimeout(addInputBtnToPenyusutan, 80);
 }
 
-// ===================== PERSEDIAAN =====================
+// PERSEDIAAN
 let invRows = [];
 let invRowId = 0;
 function addInvRow(jenis) {
@@ -9664,7 +9648,7 @@ function hitungPersediaan() {
   setTimeout(addInputBtnToPersediaan, 80);
 }
 
-// ===================== BUNGA =====================
+// BUNGA
 function switchBungaTab(id, el) {
   ['tunggal','anuitas','pv','diskonto'].forEach(x => document.getElementById('bunga-'+x).style.display='none');
   document.getElementById('bunga-'+id).style.display='block';
@@ -9843,7 +9827,7 @@ function hitungDiskonto() {
     + resRow('Tarif Efektif',pct(((diskonto/hasilBersih)*(basis/hari)*100)));
 }
 
-// ===================== RASIO KEUANGAN =====================
+// RASIO KEUANGAN
 function hitungRasio() {
   // g(): baca .value, fallback ke 0
   const g = id => { const el = document.getElementById(id); return el ? (parseFloat(el.value)||0) : 0; };
@@ -9955,7 +9939,7 @@ function hitungRasio() {
   ].join('');
 }
 
-// ===================== BEP =====================
+// BEP
 function hitungBEP() {
   const harga = parseFloat(document.getElementById('bep-harga').value)||0;
   const bv = parseFloat(document.getElementById('bep-bv').value)||0;
@@ -10017,7 +10001,7 @@ function hitungBEP() {
   setTimeout(addInputBtnToBEP, 80);
 }
 
-// ===================== PPN =====================
+// PPN
 function switchPajakTab(id, el) {
   ['ppn','pph21','pph23','badan'].forEach(x => document.getElementById('pajak-'+x).style.display='none');
   document.getElementById('pajak-'+id).style.display='block';
@@ -10060,7 +10044,7 @@ function hitungPPN() {
   setTimeout(addInputBtnToPPN, 80);
 }
 
-// ===== PPh 21 — State & Switchers =====
+// PPh 21 — State & Switchers
 let _p21KategoriCalc = 'tetap'; // 'tetap' | 'tidak-tetap' | dll
 let _p21BukanPegawaiMode = 'tidak'; // 'tidak' | 'berkesinambungan'
 
@@ -10149,7 +10133,7 @@ function switchP21Kategori(k) {
   setTimeout(upgradePajakPickers, 80);
 }
 
-// ===== Tabel TER Bulanan (PMK 168/2023) =====
+// Tabel TER Bulanan (PMK 168/2023)
 // Sumber: www.pajak.go.id — Lampiran PMK 168 Tahun 2023
 // TER A = PTKP: TK/0 (54 juta); TK/1 & K/0 (58,5 juta)
 const TER_A = [
@@ -10288,7 +10272,7 @@ const TER_C = [
   [Infinity,0.34]
 ];
 
-// ===== TER HARIAN (PMK 168/2023) — berlaku untuk upah > Rp2.500.000/hari =====
+// TER HARIAN (PMK 168/2023) — berlaku untuk upah > Rp2.500.000/hari
 // Minimal penghasilan kena pajak harian: Rp450.000/hari
 function getTERHarian(upahHarian) {
   // Batas PTKP harian = 54jt / 360 = 150.000. Tapi PMK 168 pasal TER Harian
@@ -10358,7 +10342,7 @@ function hitungPPh21() {
   const tw = document.getElementById('p21-tabel-wrap');
   const pmkEl = document.getElementById('p21-pmk-info');
 
-  // ===== METODE TER (PMK 168/2023) =====
+  // METODE TER (PMK 168/2023)
   // Pegawai Tetap: Jan-Nov pakai TER, Desember rekonsiliasi Ps.17 otomatis
     const tarif = getTERTarif(penghasilanBrutoBulan, ptkpKode);
     const pphBulan = Math.round(penghasilanBrutoBulan * tarif);
@@ -10366,7 +10350,7 @@ function hitungPPh21() {
     const tarifPct = (tarif*100).toFixed(2);
     window._lastPPh21 = { gaji: penghasilanBrutoBulan, pph: pphBulan, jht: jhtBulan+bpjsBulan+jpBulan };
 
-    // ===== REKONSILIASI DESEMBER — Otomatis & Detail =====
+    // REKONSILIASI DESEMBER — Otomatis & Detail
     let rekonsiliasi = '';
     if(bulan === 12) {
       // Ambil input aktual Jan-Nov, fallback ke estimasi × 11
@@ -10857,7 +10841,6 @@ function hitungPPh21MantanPegawai() {
   setTimeout(addInputBtnToPPH21, 80);
 }
 
-
 function hitungPPh23() {
   const bruto = parseFloat(document.getElementById('p23-bruto').value)||0;
   const jenis = document.getElementById('p23-jenis').value;
@@ -10915,8 +10898,7 @@ function hitungBadan() {
     + `<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:6px;font-size:12px;color:var(--muted);">${catatan}</div>`;
 }
 
-
-// ===================== AI ASSISTANT =====================
+// AI ASSISTANT
 let aiHistory = [];
 let aiThinking = false;
 
@@ -11309,10 +11291,9 @@ function saveJurnalFromAI(parsed) {
   showPage('jurnal-umum');
 }
 
+// TUTORIAL SYSTEM v2 — MODULAR
 
-// ===================== TUTORIAL SYSTEM v2 — MODULAR =====================
-
-// ---- Tutorial step data per modul ----
+// Tutorial step data per modul
 const TUT_MODULES = {
 
   'pengenalan': {
@@ -11721,12 +11702,12 @@ const TUT_MODULES = {
   }
 };
 
-// ---- Runtime state ----
+// Runtime state
 let activeTutId = null;
 let tutStep = 0;
 let tutHighlighted = null;
 
-// ---- Start tutorial by ID ----
+// Start tutorial by ID
 function startTutorialById(id) {
   tutRestore();
   setTimeout(initTutDrag, 300);
@@ -11932,7 +11913,7 @@ function showTutComplete() {
 // legacy compat
 function startTutorial() { showPage('tutorial'); }
 
-// ===================== INIT KALKULATOR =====================
+// INIT KALKULATOR
 (function initKalk(){
   const today = new Date().toISOString().split('T')[0];
   // seed persediaan
@@ -11943,7 +11924,7 @@ function startTutorial() { showPage('tutorial'); }
 
 </script>
 
-<!-- ===== TUTORIAL OVERLAY ===== -->
+<!-- TUTORIAL OVERLAY -->
 <div id="tut-backdrop" style="display:none;position:fixed;inset:0;z-index:1100;pointer-events:none;">
   <!-- Tooltip window — draggable & minimizable -->
   <div id="tut-tooltip" style="
@@ -12035,8 +12016,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-
-<!-- ===== MODAL: KONFIRMASI HAPUS JURNAL ===== -->
+<!-- MODAL: KONFIRMASI HAPUS JURNAL -->
 <div class="modal-backdrop" id="modal-hapus-jurnal">
   <div class="modal" style="max-width:400px;">
     <div class="modal-head">
@@ -12058,7 +12038,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-<!-- ===== MODAL: RESET SEMUA DATA ===== -->
+<!-- MODAL: RESET SEMUA DATA -->
 <div class="modal-backdrop" id="modal-reset-all">
   <div class="modal" style="max-width:400px;">
     <div class="modal-head">
@@ -12084,7 +12064,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-<!-- ===== MODAL: SETTING SALDO AWAL ===== -->
+<!-- MODAL: SETTING SALDO AWAL -->
 <div class="modal-backdrop" id="modal-saldo-awal">
   <div class="modal" style="max-width:520px;">
     <div class="modal-head">
@@ -12122,8 +12102,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-
-<!-- ===== MODAL: EXPORT ===== -->
+<!-- MODAL: EXPORT -->
 <div class="modal-backdrop" id="modal-export">
   <div class="modal" style="max-width:560px;">
     <div class="modal-head">
@@ -12154,7 +12133,7 @@ function startTutorial() { showPage('tutorial'); }
         </div>
       </div>
 
-      <!-- ===== EXCEL TEMPLATE OPTIONS (hanya tampil kalau pilih Excel) ===== -->
+      <!-- EXCEL TEMPLATE OPTIONS (hanya tampil kalau pilih Excel) -->
       <div id="exp-excel-template-section" style="margin-bottom:16px;">
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">🗂️ Pilih Template Excel:</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -12187,7 +12166,7 @@ function startTutorial() { showPage('tutorial'); }
         </div>
       </div>
 
-      <!-- ===== PDF LOGO UPLOAD (hanya tampil kalau pilih PDF) ===== -->
+      <!-- PDF LOGO UPLOAD (hanya tampil kalau pilih PDF) -->
       <div id="exp-pdf-logo-section" style="margin-bottom:16px;display:none;">
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">🖼️ Logo Perusahaan (opsional):</div>
         <div style="display:flex;align-items:flex-start;gap:14px;">
@@ -12258,8 +12237,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-
-<!-- ===== MODAL: KELOLA DATA ===== -->
+<!-- MODAL: KELOLA DATA -->
 <div class="modal-backdrop" id="modal-storage">
   <div class="modal" style="max-width:540px;">
     <div class="modal-head">
@@ -12325,8 +12303,7 @@ function startTutorial() { showPage('tutorial'); }
   <span id="autosave-toast-msg">Data tersimpan otomatis</span>
 </div>
 
-
-<!-- ===== MODAL: TEMPLATE BISNIS ===== -->
+<!-- MODAL: TEMPLATE BISNIS -->
 <div class="modal-backdrop" id="modal-template">
   <div class="modal" style="max-width:580px;">
     <div class="modal-head">
@@ -12411,8 +12388,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-
-<!-- ===== MODAL: GROQ API KEY SETUP ===== -->
+<!-- MODAL: GROQ API KEY SETUP -->
 <div class="modal-backdrop" id="modal-apikey" style="z-index:2000;">
   <div class="modal" style="max-width:500px;">
     <div class="modal-head">
@@ -12468,7 +12444,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-<!-- ===== MODAL: JURNAL PENYESUAIAN ===== -->
+<!-- MODAL: JURNAL PENYESUAIAN -->
 <div class="modal-backdrop" id="modal-penyesuaian">
   <div class="modal" style="max-width:520px;">
     <div class="modal-head">
@@ -12528,8 +12504,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-
-<!-- ===== MODAL: PROFIL PERUSAHAAN ===== -->
+<!-- MODAL: PROFIL PERUSAHAAN -->
 <div class="modal-backdrop" id="modal-profil">
   <div class="modal" style="max-width:500px;">
     <div class="modal-head">
@@ -12574,7 +12549,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-<!-- ===== MODAL: ONBOARDING WIZARD ===== -->
+<!-- MODAL: ONBOARDING WIZARD -->
 <div class="modal-backdrop" id="modal-onboarding" style="z-index:2100;align-items:flex-start;padding-top:40px;">
   <div class="modal" style="max-width:520px;max-height:85vh;overflow-y:auto;">
     <div class="modal-head" style="background:linear-gradient(135deg,rgba(74,222,128,0.1),rgba(34,211,238,0.08));border-bottom:1px solid var(--border);">
@@ -12645,8 +12620,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-
-<!-- ===== GLOBAL SEARCH ===== -->
+<!-- GLOBAL SEARCH -->
 <div id="global-search-wrap" onclick="if(event.target===this)closeGlobalSearch()">
   <div id="global-search-box">
     <div style="display:flex;align-items:center;padding:4px 16px 0;">
@@ -12668,9 +12642,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-
-
-<!-- ===== AUTH SCREEN ===== -->
+<!-- AUTH SCREEN -->
 <div id="auth-screen" style="display:none;position:fixed;inset:0;z-index:99998;overflow-y:auto;">
   <div id="auth-bg" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;">
     <!-- Animated background shapes -->
@@ -12754,7 +12726,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-<!-- ===== COMPANY PICKER ===== -->
+<!-- COMPANY PICKER -->
 <div id="company-picker" style="display:none;position:fixed;inset:0;z-index:99997;overflow-y:auto;">
   <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;">
     <div class="auth-orb auth-orb-1"></div>
@@ -12822,7 +12794,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-<!-- ===== COMPANY ACTION BOTTOM SHEET ===== -->
+<!-- COMPANY ACTION BOTTOM SHEET -->
 <div id="cp-action-sheet-backdrop" onclick="if(event.target===this)closeCompanyActionSheet()">
   <div id="cp-action-sheet">
     <div class="cp-action-handle"></div>
@@ -12853,7 +12825,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-<!-- ===== BEAUTIFUL DELETE CONFIRM ===== -->
+<!-- BEAUTIFUL DELETE CONFIRM -->
 <div id="cp-delete-confirm-backdrop" onclick="if(event.target===this)closeDeleteCompanyConfirm()">
   <div id="cp-delete-confirm-dialog">
     <div style="text-align:center;">
@@ -12878,7 +12850,7 @@ function startTutorial() { showPage('tutorial'); }
   </div>
 </div>
 
-<!-- ===== LOADING SCREEN ===== -->
+<!-- LOADING SCREEN -->
 <div id="app-loading" style="
   position:fixed;inset:0;z-index:9999;
   display:flex;flex-direction:column;
@@ -12949,7 +12921,7 @@ function startTutorial() { showPage('tutorial'); }
   animation: loadingFadeOut 0.5s ease forwards;
 }
 
-/* ===== AUTH & COMPANY PICKER STYLES ===== */
+/* AUTH & COMPANY PICKER STYLES */
 .auth-orb {
   position: absolute; border-radius: 50%; pointer-events: none; filter: blur(60px);
 }
@@ -13073,7 +13045,7 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
   transition: width 0.6s linear;
 }
 
-/* ===== COMPANY ACTION BOTTOM SHEET ===== */
+/* COMPANY ACTION BOTTOM SHEET */
 #cp-action-sheet-backdrop {
   display: none; position: fixed; inset: 0;
   background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
@@ -13128,7 +13100,7 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 }
 .cp-action-cancel:hover { color: var(--text); border-color: var(--muted); }
 
-/* ===== BEAUTIFUL DELETE CONFIRM DIALOG — REDESIGNED ===== */
+/* BEAUTIFUL DELETE CONFIRM DIALOG — REDESIGNED */
 #cp-delete-confirm-backdrop {
   display: none; position: fixed; inset: 0;
   background: rgba(0,0,0,0.72); backdrop-filter: blur(10px);
@@ -13228,7 +13200,6 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 .chip-name {
   font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-/* ===== END AUTH STYLES ===== */
 
 @keyframes loadingFadeOut {
   to { opacity:0; pointer-events:none; }
@@ -13237,7 +13208,7 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 
 <script>
 (function(){
-  // ── Terapkan tema ke loading screen SEBELUM apapun terlihat ──
+  // Terapkan tema ke loading screen SEBELUM apapun terlihat
   var theme = window.__initialTheme || 'dark';
   var isLight = theme === 'light';
 
@@ -13295,7 +13266,7 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
   var ver = document.getElementById('loading-version');
   if(ver) ver.style.color = isLight ? '#94a3b8' : '#334155';
 
-  // ── Animasi progress ──
+  // Animasi progress
   var pct = document.getElementById('loading-pct');
   var status = document.getElementById('loading-status');
 
@@ -13339,8 +13310,7 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 })();
 </script>
 
-
-<!-- ===== CUSTOM CONFIRM MODAL ===== -->
+<!-- CUSTOM CONFIRM MODAL -->
 <div id="custom-confirm-backdrop" style="
   display:none;position:fixed;inset:0;
   background:rgba(0,0,0,0.65);z-index:8000;
@@ -13419,8 +13389,7 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 }
 </style>
 
-
-<!-- ===== MODAL: LAMPIRAN JURNAL ===== -->
+<!-- MODAL: LAMPIRAN JURNAL -->
 <div class="modal-backdrop" id="modal-attach">
   <div class="modal" style="max-width:480px;">
     <div class="modal-head">
@@ -13452,7 +13421,7 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
     </div>
   </div>
 </div>
-<!-- ===== CUSTOM OPTION PICKER SHEET ===== -->
+<!-- CUSTOM OPTION PICKER SHEET -->
 <div id="opt-picker-backdrop" onclick="optPickerBackdropClick(event)">
   <div id="opt-picker-sheet">
     <div id="opt-picker-handle"></div>
@@ -13465,7 +13434,7 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 </div>
 
 <script>
-// ===== CUSTOM OPTION PICKER ENGINE =====
+// CUSTOM OPTION PICKER ENGINE
 // Replaces <select> with a beautiful bottom-sheet/dialog picker
 let _optPickerCallback = null;
 let _optPickerBtnEl = null;
@@ -13537,7 +13506,7 @@ function optPickerBackdropClick(e) {
   if (e.target === document.getElementById('opt-picker-backdrop')) closeOptPicker();
 }
 
-// ===== UPGRADE SELECTS TO OPT PICKER =====
+// UPGRADE SELECTS TO OPT PICKER
 // Converts a <select> element to a styled button + opt picker
 function upgradeSelectToOptPicker(selectEl, config = {}) {
   if (selectEl.dataset.upgraded) return;
@@ -13599,7 +13568,7 @@ function upgradeSelectToOptPicker(selectEl, config = {}) {
   return btn;
 }
 
-// ===== UPGRADE PERIOD FILTERS =====
+// UPGRADE PERIOD FILTERS
 // Upgrades all .report-period-sel and #dash-filter-period selects
 function upgradeAllPeriodPickers() {
   const periodIconMap = {
@@ -13630,7 +13599,7 @@ function upgradeAllPeriodPickers() {
   });
 }
 
-// ===== UPGRADE FORM SELECTS =====
+// UPGRADE FORM SELECTS
 function upgradeFormPickers() {
   // Jenis kas: penerimaan/pengeluaran
   const kasJenis = document.getElementById('kas-jenis');
@@ -13678,7 +13647,7 @@ function upgradeFormPickers() {
   upgradePajakPickers();
 }
 
-// ===== UPGRADE PAJAK PICKERS (PPN & PPh) =====
+// UPGRADE PAJAK PICKERS (PPN & PPh)
 function upgradePajakPickers() {
   // PPN Mode
   const ppnMode = document.getElementById('ppn-mode');
@@ -13746,6 +13715,42 @@ function upgradePajakPickers() {
     subMap: { ya: 'Tarif normal sesuai ketentuan', tidak: 'Tarif +20% lebih tinggi (tanpa NPWP)' }
   });
 
+  // PPh 21 PTKP Komisaris/Pengawas
+  const p21komisarisPtkp = document.getElementById('p21-komisaris-ptkp');
+  if (p21komisarisPtkp && !p21komisarisPtkp.dataset.upgraded) upgradeSelectToOptPicker(p21komisarisPtkp, {
+    title: '🏛️ Status PTKP — Komisaris/Pengawas',
+    subMap: {
+      TK0:'PTKP Rp54.000.000/th', TK1:'PTKP Rp58.500.000/th',
+      TK2:'PTKP Rp63.000.000/th', TK3:'PTKP Rp67.500.000/th',
+      K0:'PTKP Rp58.500.000/th',  K1:'PTKP Rp63.000.000/th',
+      K2:'PTKP Rp67.500.000/th',  K3:'PTKP Rp72.000.000/th',
+    }
+  });
+
+  // PPh 21 NPWP Bukan Pegawai
+  const p21bukanPegawaiNpwp = document.getElementById('p21-bukan-pegawai-npwp');
+  if (p21bukanPegawaiNpwp && !p21bukanPegawaiNpwp.dataset.upgraded) upgradeSelectToOptPicker(p21bukanPegawaiNpwp, {
+    title: '🪪 Kepemilikan NPWP — Bukan Pegawai',
+    iconMap: { ya: '✅', tidak: '❌' },
+    subMap: { ya: 'Tarif normal sesuai ketentuan', tidak: 'Tarif +20% lebih tinggi (tanpa NPWP)' }
+  });
+
+  // PPh 21 NPWP Peserta Kegiatan
+  const p21pesertaNpwp = document.getElementById('p21-peserta-kegiatan-npwp');
+  if (p21pesertaNpwp && !p21pesertaNpwp.dataset.upgraded) upgradeSelectToOptPicker(p21pesertaNpwp, {
+    title: '🪪 Kepemilikan NPWP — Peserta Kegiatan',
+    iconMap: { ya: '✅', tidak: '❌' },
+    subMap: { ya: 'Tarif normal sesuai ketentuan', tidak: 'Tarif +20% lebih tinggi (tanpa NPWP)' }
+  });
+
+  // PPh 21 NPWP Mantan Pegawai
+  const p21mantanNpwp = document.getElementById('p21-mantan-npwp');
+  if (p21mantanNpwp && !p21mantanNpwp.dataset.upgraded) upgradeSelectToOptPicker(p21mantanNpwp, {
+    title: '🪪 Kepemilikan NPWP — Mantan Pegawai',
+    iconMap: { ya: '✅', tidak: '❌' },
+    subMap: { ya: 'Tarif normal sesuai ketentuan', tidak: 'Tarif +20% lebih tinggi (tanpa NPWP)' }
+  });
+
   // PPh 23 jenis
   const p23jenis = document.getElementById('p23-jenis');
   if (p23jenis && !p23jenis.dataset.upgraded) upgradeSelectToOptPicker(p23jenis, {
@@ -13763,7 +13768,7 @@ function upgradePajakPickers() {
   });
 }
 
-// ===== INIT =====
+// INIT
 // Upgrades run after page load via window.addEventListener('load') below
 
 // Patch showPage after load
@@ -13789,14 +13794,13 @@ window.addEventListener('load', () => {
 });
 </script>
 
-<!-- ===== CUSTOM CONFIRM DIALOG HTML ===== -->
-
+<!-- CUSTOM CONFIRM DIALOG HTML -->
 
 <script>
-// =====================================================================
+
 // SUPABASE CONFIG — ganti dengan URL & anon key project kamu
 // Buat project gratis di https://supabase.com
-// =====================================================================
+
 const SUPABASE_URL = 'https://bcaxdjlyijyfzskbshcz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjYXhkamx5aWp5Znpza2JzaGN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MTY5MjYsImV4cCI6MjA5MzI5MjkyNn0.9vJCqtnE9k33BD6oe0AwZW_xvvZa2Dak1BzA-P9FfzE';
 
@@ -13837,22 +13841,19 @@ const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   }
 });
 
-// =====================================================================
 // STATE GLOBAL
-// =====================================================================
+
 let currentUser = null;       // Supabase user object
 let currentCompany = null;    // { id, name, type, user_id }
 let _authReady = false;
 
-// =====================================================================
 // GUEST MODE STATE
-// =====================================================================
+
 let isGuestMode = false;
 let _afterLoginRunning = false; // Cegah double-call
 
-// =====================================================================
 // INIT — dipanggil saat app pertama kali load
-// =====================================================================
+
 async function initSupabase() {
   const chipName = document.getElementById('chip-company-name');
   const chipSub  = document.getElementById('chip-sub');
@@ -13967,9 +13968,8 @@ async function initSupabase() {
   }, fallbackMs);
 }
 
-// =====================================================================
 // GUEST MODE — masuk app tanpa login, data ke localStorage
-// =====================================================================
+
 function enterGuestMode() {
   // Jangan masuk guest mode jika OAuth sedang diproses
   // Pakai flag __oauthRedirect karena URL sudah dibersihkan SDK saat ini dipanggil
@@ -14038,9 +14038,8 @@ function showGuestBanner() {
   document.body.appendChild(banner);
 }
 
-// =====================================================================
 // AUTH MODAL (in-app, bukan fullscreen)
-// =====================================================================
+
 function showAuthModal() {
   // Jika sudah login, langsung buka company picker
   if (currentUser) { showCompanyPicker(); return; }
@@ -14216,9 +14215,8 @@ async function doModalForgotPassword() {
   else showModalAuthMsg('✅ Link reset password sudah dikirim!', false);
 }
 
-// =====================================================================
 // MIGRASI DATA GUEST → SUPABASE (opsional saat pertama login)
-// =====================================================================
+
 async function offerGuestDataMigration() {
   if (!currentCompany || !jurnalEntries.length) return;
   // Cek apakah ada data lokal yang belum ada di Supabase (belum punya _id)
@@ -14246,9 +14244,8 @@ async function offerGuestDataMigration() {
   }
 }
 
-// =====================================================================
 // AUTH SCREEN (lama — sekarang hanya sebagai fallback, tidak dipakai langsung)
-// =====================================================================
+
 function showAuthScreen() {
   // Sekarang kita gunakan modal in-app, bukan fullscreen
   showAuthModal();
@@ -14412,9 +14409,8 @@ async function doLogout() {
   window.location.reload();
 }
 
-// =====================================================================
 // CHIP CLICK HANDLER — safe handler yang cek state dulu
-// =====================================================================
+
 function handleChipClick() {
   // Abaikan klik jika sedang proses apapun
   if (_afterLoginRunning) return;
@@ -14425,9 +14421,8 @@ function handleChipClick() {
   showCompanyPicker();
 }
 
-// =====================================================================
 // AFTER LOGIN — cek companies
-// =====================================================================
+
 async function afterLogin() {
   if (_afterLoginRunning) return;
   _afterLoginRunning = true;
@@ -14518,9 +14513,8 @@ async function afterLogin() {
   }
 }
 
-// =====================================================================
 // COMPANY PICKER
-// =====================================================================
+
 let _companyPickerLoading = false;
 async function showCompanyPicker() {
   // Jika belum login, tampilkan auth modal
@@ -14671,7 +14665,7 @@ function attachCompanyCardHandlers(card, company) {
   card.addEventListener('mouseleave', () => { cancelPress(); });
 }
 
-// ===== COMPANY ACTION SHEET =====
+// COMPANY ACTION SHEET
 let _cpActionTarget = null;
 
 function showCompanyActionSheet(company) {
@@ -14702,7 +14696,7 @@ function cpActionDelete() {
   setTimeout(() => showDeleteCompanyConfirm(company), 120);
 }
 
-// ===== BEAUTIFUL DELETE CONFIRM =====
+// BEAUTIFUL DELETE CONFIRM
 let _cpDeleteTarget = null;
 
 function showDeleteCompanyConfirm(company) {
@@ -14905,11 +14899,9 @@ function updateUserChip() {
   if (bisnisAktif) bisnisAktif.textContent = currentCompany.name;
 }
 
-// =====================================================================
 // SUPABASE DATA LAYER — menggantikan localStorage
-// =====================================================================
 
-// ── LOAD DATA ──────────────────────────────────────────────────────
+// LOAD DATA
 async function loadDataFromSupabase() {
   if (!currentCompany) return;
   const companyId = currentCompany.id;
@@ -14974,7 +14966,7 @@ function getDefaultAkuns() {
   return typeof akuns !== 'undefined' && akuns.length > 0 ? [...akuns] : [];
 }
 
-// ── SAVE JURNAL ──────────────────────────────────────────────────
+// SAVE JURNAL
 async function saveJurnalToSupabase(entry) {
   if (!currentCompany) return;
   const payload = {
@@ -15008,7 +15000,7 @@ async function deleteJurnalFromSupabase(entry) {
   await _supa.from('jurnal_entries').delete().eq('id', entry._id);
 }
 
-// ── SAVE AKUNS ───────────────────────────────────────────────────
+// SAVE AKUNS
 async function saveAkunsToSupabase() {
   if (!currentCompany) return;
   // Upsert semua akun
@@ -15020,7 +15012,7 @@ async function saveAkunsToSupabase() {
   await _supa.from('akuns').upsert(payload, { onConflict: 'company_id,kode' });
 }
 
-// ── SAVE PROFIL ──────────────────────────────────────────────────
+// SAVE PROFIL
 async function saveProfilToSupabase(profilData) {
   if (!currentCompany) return;
   await _supa.from('company_profiles').upsert({
@@ -15030,15 +15022,14 @@ async function saveProfilToSupabase(profilData) {
   }, { onConflict: 'company_id' });
 }
 
-// ── ATTACHMENTS ──────────────────────────────────────────────────
+// ATTACHMENTS
 async function saveAttachmentToSupabase(jurnalEntry, attachments) {
   if (!currentCompany || !jurnalEntry._id) return;
   await _supa.from('jurnal_entries').update({ attachments }).eq('id', jurnalEntry._id);
 }
 
-// =====================================================================
 // OVERRIDE saveToStorage — redirect ke Supabase
-// =====================================================================
+
 const _origSaveToStorage = saveToStorage;
 async function saveToStorage(showToast = true) {
   if (!currentCompany) {
@@ -15069,9 +15060,8 @@ async function saveToStorage(showToast = true) {
   }
 }
 
-// =====================================================================
 // OVERRIDE addJurnal — auto save ke Supabase
-// =====================================================================
+
 const _origAddJurnal = addJurnal;
 function addJurnal(entry) {
   entry.no = 'JRN-' + String(jurnalCounter++).padStart(3,'0');
@@ -15082,9 +15072,8 @@ function addJurnal(entry) {
   if(typeof markDirty === 'function') markDirty();
 }
 
-// =====================================================================
 // OVERRIDE manualSave — pastikan async Supabase save berjalan benar
-// =====================================================================
+
 const _origManualSave = manualSave;
 async function manualSave() {
   if (!currentCompany) {
@@ -15103,9 +15092,8 @@ async function manualSave() {
   }
 }
 
-// =====================================================================
 // OVERRIDE saveProfil — juga save ke Supabase
-// =====================================================================
+
 const _origSaveProfil = saveProfil;
 function saveProfil() {
   _origSaveProfil();
@@ -15115,9 +15103,8 @@ function saveProfil() {
   }
 }
 
-// =====================================================================
 // OVERRIDE handleAttachFile — save attachment ke Supabase
-// =====================================================================
+
 const _origHandleAttachFile = handleAttachFile;
 function handleAttachFile(input) {
   const idx = parseInt(document.getElementById('attach-jurnal-idx').value);
@@ -15150,9 +15137,8 @@ function handleAttachFile(input) {
   input.value = '';
 }
 
-// =====================================================================
 // SUPABASE SCHEMA HELPER — tampilkan SQL yang perlu dijalankan
-// =====================================================================
+
 async function diagnosSupabase() {
   let result = '🔍 Diagnosa Supabase:\n\n';
   try {
@@ -15261,9 +15247,8 @@ CREATE POLICY "Users can manage own profiles"
   w.document.close();
 }
 
-// =====================================================================
 // INIT — jalankan setelah DOM ready
-// =====================================================================
+
 // Override initStorage agar tidak crash sebelum auth selesai
 const _origInitStorage = initStorage;
 function initStorage() {
@@ -15319,7 +15304,7 @@ function showDemoModeBanner() {
 }
 </script>
 
-<!-- ===== MODAL PENGATURAN AKUN ===== -->
+<!-- MODAL PENGATURAN AKUN -->
 <div class="modal-backdrop" id="modal-account-settings">
   <div class="modal" style="max-width:520px;">
     <div class="modal-head">
@@ -15422,9 +15407,8 @@ function showDemoModeBanner() {
 </div>
 
 <script>
-// =====================================================================
+
 // PENGATURAN AKUN — Account Settings & Provider Linking
-// =====================================================================
 
 // Daftar provider OAuth yang didukung.
 // Untuk tambah provider baru: aktifkan di Supabase Dashboard → Authentication → Providers,
@@ -15707,7 +15691,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
-// ===== FIX: Input tidak tertutup keyboard di mobile =====
+// FIX: Input tidak tertutup keyboard di mobile
 // Saat input/textarea dapat fokus di dalam modal, scroll supaya input terlihat di atas keyboard
 (function() {
   function scrollInputIntoView(el) {
@@ -15768,11 +15752,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
+<!-- SHARED BHP SELECT POPUP -->
+
 </body>
 </html>
 
 <script>
-// ===== CUSTOM DATE PICKER (BHP) =====
+// CUSTOM DATE PICKER (BHP)
 (function() {
   const MONTHS_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const DAYS_ID = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
@@ -15977,5 +15963,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.bhpDatePicker = { upgrade: upgradeAllDateInputs, formatDisplay: formatDisplay, todayStr: todayStr };
 })();
+</script>
+
+<!-- SHARED BHP SELECT POPUP -->
 </script>
 </body></html>
