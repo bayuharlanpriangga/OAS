@@ -12568,13 +12568,27 @@ async function initSupabase() {
   if (chipName) chipName.textContent = 'Menghubungkan...';
   if (chipSub)  chipSub.textContent  = 'Memeriksa akun';
 
-  // Deteksi OAuth PKCE params SEBELUM SDK menghapusnya dari URL
+  // Bersihkan refresh token yang corrupt/expired dari sesi lama
+  // Ini mencegah "Invalid Refresh Token" error yang menyebabkan auto-logout
+  try {
+    const storedAuth = localStorage.getItem('bhp_oas_auth');
+    if (storedAuth) {
+      const parsed = JSON.parse(storedAuth);
+      // Jika ada refresh_token tapi access_token sudah expired sangat lama, hapus
+      if (parsed && !parsed.access_token && parsed.refresh_token) {
+        console.log('[Auth] Membersihkan refresh token lama yang tidak valid');
+        localStorage.removeItem('bhp_oas_auth');
+      }
+    }
+  } catch(e) {}
+
+  // Deteksi OAuth params SEBELUM SDK menghapusnya dari URL
   const hasOAuthParams = window.location.hash.includes('access_token') ||
                          window.location.search.includes('code=') ||
                          window.location.hash.includes('error=');
   if (hasOAuthParams) {
     window.__oauthRedirect = true;
-    window.__initialOAuthRedirect = true; // Simpan permanen untuk afterLogin
+    window.__initialOAuthRedirect = true;
   }
 
   // Pasang listener DULU agar SIGNED_IN dari OAuth redirect tidak terlewat
@@ -12619,6 +12633,12 @@ async function initSupabase() {
       currentUser = session?.user || currentUser;
 
     } else if (event === 'SIGNED_OUT') {
+      // Jangan langsung guest mode jika ini adalah refresh token error sementara
+      // dan user baru saja berhasil login (currentCompany sudah terisi)
+      if (currentCompany) {
+        console.log('[Auth] SIGNED_OUT tapi sudah punya company, abaikan');
+        return;
+      }
       currentUser = null;
       currentCompany = null;
       isGuestMode = true;
