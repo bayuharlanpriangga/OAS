@@ -393,58 +393,6 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 .remove-line:hover { opacity: 1; }
 
 /* ===== CUSTOM CONFIRM DIALOG ===== */
-#delete-confirm-backdrop {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.65); backdrop-filter: blur(8px);
-  z-index: 99999; align-items: center; justify-content: center; padding: 20px;
-}
-#delete-confirm-backdrop.open { display: flex; }
-#delete-confirm-dialog {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 20px; width: 100%; max-width: 360px;
-  box-shadow: 0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
-  animation: confirmPop 0.25s cubic-bezier(0.34,1.56,0.64,1);
-  overflow: hidden;
-}
-#delete-confirm-body {
-  padding: 32px 24px 24px; text-align: center;
-}
-#delete-confirm-icon-wrap {
-  width: 64px; height: 64px; border-radius: 50%;
-  background: rgba(248,113,113,0.12); border: 1.5px solid rgba(248,113,113,0.3);
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 16px; font-size: 28px;
-  animation: confirmIconBounce 0.35s cubic-bezier(0.34,1.6,0.64,1) 0.1s both;
-}
-#delete-confirm-title {
-  font-size: 17px; font-weight: 700; color: var(--text);
-  margin-bottom: 8px; font-family: var(--sans);
-}
-#delete-confirm-message {
-  font-size: 13px; color: var(--muted); line-height: 1.65;
-}
-#delete-confirm-footer {
-  display: grid; grid-template-columns: 1fr 1fr;
-  border-top: 1px solid var(--border);
-}
-#delete-confirm-cancel {
-  padding: 16px; background: none; border: none;
-  border-right: 1px solid var(--border);
-  color: var(--muted); font-size: 14px; font-weight: 600;
-  cursor: pointer; font-family: var(--sans);
-  transition: all 0.15s; border-radius: 0 0 0 20px;
-}
-#delete-confirm-cancel:hover { background: var(--surface2); color: var(--text); }
-#delete-confirm-ok {
-  padding: 16px; background: none; border: none;
-  font-size: 14px; font-weight: 700;
-  cursor: pointer; font-family: var(--sans); transition: all 0.15s;
-  border-radius: 0 0 20px 0;
-}
-#delete-confirm-ok.danger { color: var(--red); }
-#delete-confirm-ok.danger:hover { background: rgba(248,113,113,0.12); }
-#delete-confirm-ok.safe { color: var(--accent); }
-#delete-confirm-ok.safe:hover { background: rgba(74,222,128,0.1); }
 /* ===== END CUSTOM CONFIRM DIALOG ===== */
 #akun-picker-backdrop {
   display: none; position: fixed; inset: 0;
@@ -8825,26 +8773,25 @@ function viewAttachment(jurnalNo, idx) {
 }
 
 function deleteAttachment(jurnalNo, idx) {
-  // Use custom confirm dialog instead of browser default
-  showCustomConfirm({
-    icon: '🗑️',
+  showCustomConfirmGeneral({
+    icon: '🗑️', iconColor: 'rgba(248,113,113,0.15)', iconBorder: 'rgba(248,113,113,0.3)',
     title: 'Hapus Lampiran?',
-    message: 'Lampiran ini akan dihapus permanen dan tidak bisa dikembalikan.',
-    confirmText: 'Hapus',
-    cancelText: 'Batal',
-    danger: true,
-    onConfirm: () => {
-      const allAttach = getAttachments();
-      allAttach[jurnalNo].splice(idx, 1);
-      if(!allAttach[jurnalNo].length) delete allAttach[jurnalNo];
-      localStorage.setItem(ATTACHMENTS_KEY, JSON.stringify(allAttach));
-      // Update jurnal
-      const j = jurnalEntries.find(x=>x.no===jurnalNo);
-      if(j) j.attachments = allAttach[jurnalNo] || [];
-      renderAttachList(jurnalNo);
-      renderJurnalUmum();
-      showAlert('🗑️ Lampiran dihapus');
-    }
+    subtitle: 'Lampiran ini akan dihapus permanen.',
+    rows: [{ label: 'Perhatian', value: 'Tidak bisa dikembalikan setelah dihapus.' }],
+    warning: null,
+    btnLabel: '🗑️ Hapus Lampiran',
+    btnGradient: 'linear-gradient(135deg,#f87171,#ef4444)'
+  }).then(confirmed => {
+    if (!confirmed) return;
+    const allAttach = getAttachments();
+    allAttach[jurnalNo].splice(idx, 1);
+    if(!allAttach[jurnalNo].length) delete allAttach[jurnalNo];
+    localStorage.setItem(ATTACHMENTS_KEY, JSON.stringify(allAttach));
+    const j = jurnalEntries.find(x=>x.no===jurnalNo);
+    if(j) j.attachments = allAttach[jurnalNo] || [];
+    renderAttachList(jurnalNo);
+    renderJurnalUmum();
+    showAlert('🗑️ Lampiran dihapus');
   });
 }
 
@@ -12676,55 +12623,6 @@ window.addEventListener('load', () => {
 </script>
 
 <!-- ===== CUSTOM CONFIRM DIALOG HTML ===== -->
-<div id="delete-confirm-backdrop">
-  <div id="delete-confirm-dialog">
-    <div id="delete-confirm-body">
-      <div id="delete-confirm-icon-wrap">
-        <span id="delete-confirm-icon">🗑️</span>
-      </div>
-      <div id="delete-confirm-title">Konfirmasi</div>
-      <div id="delete-confirm-message">Apakah kamu yakin?</div>
-    </div>
-    <div id="delete-confirm-footer">
-      <button id="delete-confirm-cancel" onclick="closeCustomConfirm()">Batal</button>
-      <button id="delete-confirm-ok" onclick="resolveCustomConfirm()">Hapus</button>
-    </div>
-  </div>
-</div>
-
-<script>
-// ===== CUSTOM CONFIRM DIALOG =====
-let _confirmCallback = null;
-
-function showCustomConfirm({ icon='🗑️', title='Konfirmasi', message='Apakah kamu yakin?', confirmText='Hapus', cancelText='Batal', danger=false, onConfirm }) {
-  document.getElementById('delete-confirm-icon').textContent = icon;
-  document.getElementById('delete-confirm-title').textContent = title;
-  document.getElementById('delete-confirm-message').textContent = message;
-  document.getElementById('delete-confirm-ok').textContent = confirmText;
-  document.getElementById('delete-confirm-cancel').textContent = cancelText;
-  const okBtn = document.getElementById('delete-confirm-ok');
-  okBtn.className = danger ? 'danger' : 'safe';
-  _confirmCallback = onConfirm;
-  const bd = document.getElementById('delete-confirm-backdrop');
-  bd.classList.add('open');
-  document.body.style.overflow = 'hidden';
-  bd.onclick = (e) => { if(e.target === bd) closeCustomConfirm(); };
-}
-
-function closeCustomConfirm() {
-  document.getElementById('delete-confirm-backdrop').classList.remove('open');
-  document.body.style.overflow = '';
-  _confirmCallback = null;
-}
-
-function resolveCustomConfirm() {
-  const cb = _confirmCallback;
-  closeCustomConfirm();
-  if(typeof cb === 'function') {
-    setTimeout(cb, 80);
-  }
-}
-</script>
 
 
 <script>
@@ -13160,18 +13058,14 @@ async function offerGuestDataMigration() {
   const localEntries = jurnalEntries.filter(j => !j._id);
   if (!localEntries.length) return;
 
-  const doMigrate = await new Promise(resolve => {
-    showCustomConfirm({
-      icon: '☁️',
-      title: 'Pindahkan Data Tamu?',
-      message: `Kamu punya ${localEntries.length} jurnal dari mode tamu. Pindahkan ke bisnis "${currentCompany.name}" di cloud?`,
-      confirmText: 'Ya, Pindahkan',
-      cancelText: 'Lewati',
-      danger: false,
-      onConfirm: () => resolve(true)
-    });
-    // Timeout fallback jika tidak ada pilihan
-    setTimeout(() => resolve(false), 30000);
+  const doMigrate = await showCustomConfirmGeneral({
+    icon: '☁️', iconColor: 'rgba(34,211,238,0.12)', iconBorder: 'rgba(34,211,238,0.3)',
+    title: 'Pindahkan Data Tamu?',
+    subtitle: `Kamu punya ${localEntries.length} jurnal dari mode tamu.`,
+    rows: [{ label: 'Tujuan', value: `Bisnis "${currentCompany.name}" di cloud` }],
+    warning: null,
+    btnLabel: '☁️ Ya, Pindahkan',
+    btnGradient: 'linear-gradient(135deg,#22d3ee,#4ade80)'
   });
 
   if (doMigrate) {
