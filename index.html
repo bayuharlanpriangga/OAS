@@ -1445,7 +1445,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
 
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
-  <div class="logo">OAS<span style="color:var(--accent)"> Pro</span><button class="logo-close" onclick="closeSidebar()">✕</button></div>
+  <div class="logo">OAS<button class="logo-close" onclick="closeSidebar()">✕</button></div>
 
   <!-- CHIP AKUN / BISNIS di dalam sidebar -->
   <div id="sidebar-account-area" style="padding:10px 12px 6px;border-bottom:1px solid var(--border);">
@@ -7967,8 +7967,18 @@ function loadProfil() {
     const el = document.getElementById('prof-'+k);
     if(el) el.value = p[k] || '';
   });
-  if(p.tahunBuku) document.getElementById('prof-tahun-buku').value = p.tahunBuku;
-  if(p.matauang) document.getElementById('prof-mata-uang').value = p.matauang;
+  if(p.tahunBuku) {
+    document.getElementById('prof-tahun-buku').value = p.tahunBuku;
+    const _tbMap = {jan:'🗓️ Januari - Desember',apr:'🌸 April - Maret',jul:'☀️ Juli - Juni',okt:'🍂 Oktober - September'};
+    const lbl = document.getElementById('prof-tahun-buku-label');
+    if(lbl && _tbMap[p.tahunBuku]) lbl.textContent = _tbMap[p.tahunBuku];
+  }
+  if(p.matauang) {
+    document.getElementById('prof-mata-uang').value = p.matauang;
+    const _muMap = {IDR:'🇮🇩 IDR — Rupiah',USD:'🇺🇸 USD — Dollar',SGD:'🇸🇬 SGD — Singapore Dollar'};
+    const lbl = document.getElementById('prof-mata-uang-label');
+    if(lbl && _muMap[p.matauang]) lbl.textContent = _muMap[p.matauang];
+  }
 }
 function saveProfil() {
   const p = {
@@ -7987,7 +7997,7 @@ function saveProfil() {
   if(logoEl && p.nama) {
     const words = p.nama.split(' ');
     const short = words.length >= 3 ? words.slice(0,2).join(' ') : p.nama;
-    logoEl.innerHTML = `${short.split(' ')[0]}<span>${short.split(' ').slice(1).join(' ')||' Pro'}</span>`;
+    logoEl.innerHTML = `${short.split(' ')[0]}<span>${short.split(' ').slice(1).join(' ')}</span>`;
   }
   closeModal('modal-profil');
   showAlert('✅ Profil perusahaan disimpan!');
@@ -14304,19 +14314,18 @@ function startTutorial() { showPage('tutorial'); }
       </div>
       <div class="form-row">
         <div class="form-group"><label>Tahun Buku</label>
-          <select id="prof-tahun-buku">
-            <option value="jan">Januari - Desember</option>
-            <option value="apr">April - Maret</option>
-            <option value="jul">Juli - Juni</option>
-            <option value="okt">Oktober - September</option>
-          </select>
+          <input type="hidden" id="prof-tahun-buku" value="jan">
+          <button type="button" id="prof-tahun-buku-btn" class="bhp-picker-trigger" onclick="openTahunBukuPicker()">
+            <span id="prof-tahun-buku-label">📅 Januari - Desember</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
         </div>
         <div class="form-group"><label>Mata Uang</label>
-          <select id="prof-mata-uang">
-            <option value="IDR">IDR — Rupiah</option>
-            <option value="USD">USD — Dollar</option>
-            <option value="SGD">SGD — Singapore Dollar</option>
-          </select>
+          <input type="hidden" id="prof-mata-uang" value="IDR">
+          <button type="button" id="prof-mata-uang-btn" class="bhp-picker-trigger" onclick="openMataUangPicker()">
+            <span id="prof-mata-uang-label">💰 IDR — Rupiah</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
         </div>
       </div>
     </div>
@@ -14432,7 +14441,7 @@ function startTutorial() { showPage('tutorial'); }
       <!-- Logo -->
       <div style="text-align:center;margin-bottom:32px;">
         <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,rgba(74,222,128,0.2),rgba(34,211,238,0.15));border:1px solid rgba(74,222,128,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;box-shadow:0 8px 32px rgba(74,222,128,0.15);">⚖️</div>
-        <div style="font-size:22px;font-weight:800;font-family:var(--mono);letter-spacing:0.02em;">OAS<span style="color:var(--accent)"> Pro</span></div>
+        <div style="font-size:22px;font-weight:800;font-family:var(--mono);letter-spacing:0.02em;color:#4ade80;text-shadow:0 0 20px rgba(74,222,128,0.4);">OAS</div>
         <div style="font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:0.08em;text-transform:uppercase;">Software Akuntansi Profesional</div>
       </div>
 
@@ -14666,7 +14675,7 @@ function startTutorial() { showPage('tutorial'); }
       </svg>
     </div>
     <div id="loading-company-name" style="font-size:22px;font-weight:800;letter-spacing:0.02em;font-family:'IBM Plex Mono',monospace;">
-      OAS<span id="loading-name-accent"> Pro</span>
+      OAS
     </div>
     <div id="loading-subtitle" style="font-size:12px;margin-top:6px;letter-spacing:0.1em;text-transform:uppercase;">
       Software Akuntansi Profesional
@@ -15081,7 +15090,7 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
     setTimeout(runStep, delay);
   }
 
-  // Loading screen selalu tampil OAS Pro — tidak berubah mengikuti nama perusahaan user
+  // Loading screen selalu tampil OAS — tidak berubah mengikuti nama perusahaan user
 
   // Mulai langsung — tidak ada delay, langsung tampil sebelum konten lain terrender
   runStep();
@@ -15835,7 +15844,7 @@ function showAuthModal() {
         <!-- Logo kecil -->
         <div style="text-align:center;margin-bottom:20px;">
           <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,rgba(74,222,128,0.2),rgba(34,211,238,0.15));border:1px solid rgba(74,222,128,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px;">⚖️</div>
-          <div style="font-size:18px;font-weight:800;font-family:var(--mono);">OAS<span style="color:var(--accent)"> Pro</span></div>
+          <div style="font-size:18px;font-weight:800;font-family:var(--mono);">OAS</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px;">Login untuk simpan data ke cloud</div>
         </div>
 
@@ -17096,7 +17105,7 @@ CREATE POLICY "Users can manage own profiles"
   p{color:#64748b;margin-bottom:16px;font-family:sans-serif;font-size:14px;}
   button{background:#4ade80;border:none;border-radius:8px;padding:10px 20px;font-weight:700;cursor:pointer;color:#0d0f14;}
   </style></head><body>
-  <h2>⚙️ Setup Supabase untuk OAS Pro</h2>
+  <h2>⚙️ Setup Supabase untuk OAS</h2>
   <p>1. Buat project baru di <a href="https://supabase.com" style="color:#22d3ee">supabase.com</a><br>
   2. Pergi ke SQL Editor → New Query<br>
   3. Copy-paste SQL di bawah ini dan klik RUN<br>
@@ -17144,7 +17153,7 @@ function loadProfilToSidebar() {
     if(_logoEl) {
       const _words = _initProfil.nama.split(' ');
       const _short = _words.length >= 2 ? _words[0]+' '+_words[1] : _initProfil.nama;
-      _logoEl.innerHTML = `${_short.split(' ')[0]}<span>${_short.split(' ').slice(1).join(' ')||' Pro'}</span><button class="logo-close" onclick="closeSidebar()">✕</button>`;
+      _logoEl.innerHTML = `${_short.split(' ')[0]}<span>${_short.split(' ').slice(1).join(' ')}</span><button class="logo-close" onclick="closeSidebar()">✕</button>`;
     }
   }
   // Chip tetap tampil — akan diupdate oleh updateGuestChip() atau updateUserChip()
@@ -17669,6 +17678,172 @@ function closeInvMetodeSheet() {
 }
 </script>
 <!-- SHARED BHP SELECT POPUP -->
+
+<!-- TAHUN BUKU PICKER MODAL -->
+<div id="bhp-tahun-buku-backdrop" onclick="if(event.target===this)closeTahunBukuPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);width:calc(100% - 40px);max-width:360px;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06);animation:bhpPickerIn 0.22s cubic-bezier(0.34,1.3,0.64,1);overflow:hidden;">
+    <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);">📅 Pilih Tahun Buku</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Periode fiskal perusahaan Anda</div>
+      </div>
+      <button onclick="closeTahunBukuPicker()" style="background:var(--surface2);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);">✕</button>
+    </div>
+    <div style="padding:12px 16px 20px;display:flex;flex-direction:column;gap:8px;" id="bhp-tahun-buku-options"></div>
+  </div>
+</div>
+
+<!-- MATA UANG PICKER MODAL -->
+<div id="bhp-mata-uang-backdrop" onclick="if(event.target===this)closeMataUangPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);width:calc(100% - 40px);max-width:360px;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06);animation:bhpPickerIn 0.22s cubic-bezier(0.34,1.3,0.64,1);overflow:hidden;">
+    <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);">💰 Pilih Mata Uang</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Satuan moneter laporan keuangan</div>
+      </div>
+      <button onclick="closeMataUangPicker()" style="background:var(--surface2);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);">✕</button>
+    </div>
+    <div style="padding:12px 16px 20px;display:flex;flex-direction:column;gap:8px;" id="bhp-mata-uang-options"></div>
+  </div>
+</div>
+
+<style>
+@keyframes bhpPickerIn {
+  from { opacity:0; transform:scale(0.88) translateY(12px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+.bhp-picker-trigger {
+  width:100%; display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; cursor:pointer; font-family:var(--sans); font-size:14px;
+  color:var(--text); transition:all 0.18s; text-align:left; gap:8px;
+}
+.bhp-picker-trigger:hover { border-color:var(--accent); background:rgba(74,222,128,0.05); }
+.bhp-picker-trigger:active { transform:scale(0.98); }
+.bhp-picker-trigger svg { flex-shrink:0; color:var(--muted); transition:transform 0.2s; }
+.bhp-picker-trigger.open svg { transform:rotate(180deg); }
+.bhp-picker-option {
+  display:flex; align-items:center; gap:14px; padding:14px 16px;
+  border-radius:14px; border:2px solid var(--border); background:var(--surface2);
+  cursor:pointer; font-family:var(--sans); width:100%; text-align:left;
+  transition:all 0.15s; position:relative; overflow:hidden;
+}
+.bhp-picker-option:hover { border-color:var(--accent2); background:rgba(34,211,238,0.06); }
+.bhp-picker-option.selected {
+  border-color:var(--accent); background:rgba(74,222,128,0.08);
+  box-shadow:0 0 0 1px rgba(74,222,128,0.15);
+}
+.bhp-picker-option .opt-icon { font-size:22px; flex-shrink:0; }
+.bhp-picker-option .opt-body { flex:1; min-width:0; }
+.bhp-picker-option .opt-label { display:block; font-size:14px; font-weight:700; color:var(--text); }
+.bhp-picker-option.selected .opt-label { color:var(--accent); }
+.bhp-picker-option .opt-sub { display:block; font-size:11px; color:var(--muted); margin-top:2px; }
+.bhp-picker-option .opt-check {
+  width:22px; height:22px; border-radius:50%; border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  font-size:12px; transition:all 0.15s; color:transparent;
+}
+.bhp-picker-option.selected .opt-check {
+  background:var(--accent); border-color:var(--accent); color:#000;
+}
+</style>
+
+<script>
+// ── TAHUN BUKU PICKER ──
+const _tahunBukuList = [
+  { value:'jan', label:'Januari - Desember', sub:'Fiskal kalender standar', icon:'🗓️' },
+  { value:'apr', label:'April - Maret',       sub:'Fiskal tahunan April',    icon:'🌸' },
+  { value:'jul', label:'Juli - Juni',          sub:'Fiskal semester tengah', icon:'☀️' },
+  { value:'okt', label:'Oktober - September', sub:'Fiskal kuartal akhir',   icon:'🍂' },
+];
+
+function openTahunBukuPicker() {
+  const val = document.getElementById('prof-tahun-buku').value || 'jan';
+  const optEl = document.getElementById('bhp-tahun-buku-options');
+  optEl.innerHTML = _tahunBukuList.map(m => `
+    <button class="bhp-picker-option ${val===m.value?'selected':''}" onclick="selectTahunBuku('${m.value}')">
+      <span class="opt-icon">${m.icon}</span>
+      <span class="opt-body">
+        <span class="opt-label">${m.label}</span>
+        <span class="opt-sub">${m.sub}</span>
+      </span>
+      <span class="opt-check">${val===m.value?'✓':''}</span>
+    </button>`).join('');
+  const bd = document.getElementById('bhp-tahun-buku-backdrop');
+  bd.style.display = 'flex';
+  document.getElementById('prof-tahun-buku-btn').classList.add('open');
+}
+function selectTahunBuku(val) {
+  document.getElementById('prof-tahun-buku').value = val;
+  const found = _tahunBukuList.find(m => m.value === val);
+  if (found) document.getElementById('prof-tahun-buku-label').textContent = found.icon + ' ' + found.label;
+  closeTahunBukuPicker();
+}
+function closeTahunBukuPicker() {
+  document.getElementById('bhp-tahun-buku-backdrop').style.display = 'none';
+  const btn = document.getElementById('prof-tahun-buku-btn');
+  if (btn) btn.classList.remove('open');
+}
+
+// ── MATA UANG PICKER ──
+const _mataUangList = [
+  { value:'IDR', label:'IDR — Rupiah',           sub:'Rupiah Indonesia',     icon:'🇮🇩', flag:'Rp' },
+  { value:'USD', label:'USD — Dollar',            sub:'Dolar Amerika Serikat',icon:'🇺🇸', flag:'$'  },
+  { value:'SGD', label:'SGD — Singapore Dollar', sub:'Dolar Singapura',      icon:'🇸🇬', flag:'S$' },
+];
+
+function openMataUangPicker() {
+  const val = document.getElementById('prof-mata-uang').value || 'IDR';
+  const optEl = document.getElementById('bhp-mata-uang-options');
+  optEl.innerHTML = _mataUangList.map(m => `
+    <button class="bhp-picker-option ${val===m.value?'selected':''}" onclick="selectMataUang('${m.value}')">
+      <span class="opt-icon">${m.icon}</span>
+      <span class="opt-body">
+        <span class="opt-label">${m.label}</span>
+        <span class="opt-sub">${m.sub}</span>
+      </span>
+      <span class="opt-check">${val===m.value?'✓':''}</span>
+    </button>`).join('');
+  const bd = document.getElementById('bhp-mata-uang-backdrop');
+  bd.style.display = 'flex';
+  document.getElementById('prof-mata-uang-btn').classList.add('open');
+}
+function selectMataUang(val) {
+  document.getElementById('prof-mata-uang').value = val;
+  const found = _mataUangList.find(m => m.value === val);
+  if (found) document.getElementById('prof-mata-uang-label').textContent = found.icon + ' ' + found.label;
+  closeMataUangPicker();
+}
+function closeMataUangPicker() {
+  document.getElementById('bhp-mata-uang-backdrop').style.display = 'none';
+  const btn = document.getElementById('prof-mata-uang-btn');
+  if (btn) btn.classList.remove('open');
+}
+
+// Sync loadProfil agar trigger button label ikut update saat data di-load
+(function() {
+  const _origLoadProfil = window.loadProfil;
+  if (typeof _origLoadProfil === 'function') {
+    window.loadProfil = function() {
+      _origLoadProfil.apply(this, arguments);
+      setTimeout(function() {
+        const tb = document.getElementById('prof-tahun-buku');
+        if (tb && tb.value) {
+          const found = _tahunBukuList.find(m => m.value === tb.value);
+          const lbl = document.getElementById('prof-tahun-buku-label');
+          if (found && lbl) lbl.textContent = found.icon + ' ' + found.label;
+        }
+        const mu = document.getElementById('prof-mata-uang');
+        if (mu && mu.value) {
+          const found = _mataUangList.find(m => m.value === mu.value);
+          const lbl = document.getElementById('prof-mata-uang-label');
+          if (found && lbl) lbl.textContent = found.icon + ' ' + found.label;
+        }
+      }, 50);
+    };
+  }
+})();
+</script>
 
 </body>
 </html>
