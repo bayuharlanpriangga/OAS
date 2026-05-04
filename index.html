@@ -2818,10 +2818,12 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
                 </select>
               </div>
             </div>
+          </div><!-- END p21-section-mantan-pegawai -->
 
+          <!-- Bagian PNS/TNI/POLRI/Pejabat Negara -->
           <div id="p21-section-pns" style="display:none">
             <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:11px 14px;font-size:12px;color:var(--accent3);margin-bottom:14px;">
-              🏛 <b>PMK 168/2023:</b> PNS/TNI/POLRI/Pejabat Negara &amp; Pensiunan — penghasilan tetap teratur dipotong dengan TER Bulanan tiap masa (kecuali masa pajak terakhir). Termasuk gaji ke-13 &amp; gaji ke-14 yang dibayar pada masa yang bersangkutan.
+              🏛 <b>PMK 168/2023:</b> PNS/TNI/POLRI/Pejabat Negara &amp; Pensiunan — penghasilan tetap teratur dipotong dengan TER Bulanan tiap masa (kecuali masa pajak terakhir Desember). Termasuk gaji ke-13 &amp; gaji ke-14 yang dibayar pada masa yang bersangkutan.
             </div>
             <div class="form-row">
               <div class="form-group"><label>Gaji Pokok / Bulan (Rp)</label><input type="number" id="p21-pns-gaji" placeholder="5000000" oninput="hitungPPh21PNS()"></div>
@@ -2858,7 +2860,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
             <div class="form-row full">
               <div class="form-group"><label>Iuran Pensiun / JHT Pegawai (Rp)</label><input type="number" id="p21-pns-iuran" placeholder="0" oninput="hitungPPh21PNS()"></div>
             </div>
-          </div>
+          </div><!-- END p21-section-pns -->
 
         </div>
       </div>
@@ -10744,6 +10746,8 @@ function inputKeKartuStock() {
   else renderKartuStock();
 
   showAlert('✅ Berhasil disimpan ke Kartu Stock ('+metode.toUpperCase()+')!');
+  // Simpan ke cloud
+  saveKartuStockToCloud();
   // Scroll to kartu
   setTimeout(()=>{ const el=document.getElementById('catatan-persediaan-wrap'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }, 200);
 }
@@ -10896,6 +10900,7 @@ function _attachKartuStockEvents(tbody) {
       _ksConfirm('Hapus entri ini dari Kartu Stock?', '🗑️', function() {
         kartuStockData[kartuStockTab].splice(idx, 1);
         renderKartuStock();
+        saveKartuStockToCloud();
       });
     });
   });
@@ -10911,6 +10916,7 @@ function clearKartuStock() {
   _ksConfirm('Hapus semua catatan metode ' + kartuStockTab.toUpperCase() + '?', '🗑️', function() {
     kartuStockData[kartuStockTab] = [];
     renderKartuStock();
+    saveKartuStockToCloud();
   });
 }
 
@@ -11011,6 +11017,7 @@ function konfirmasiInputJurnalKartu() {
 
   popup.style.display='none';
   renderKartuStock();
+  saveKartuStockToCloud();
   showAlert(`✅ ${selectedEntries.length} jurnal HPP berhasil diinput!`);
 }
 
@@ -12240,15 +12247,16 @@ function hitungPPh21PNS() {
 
   let rekHTML = '';
   if(bulan === 12) {
-    // Rekonsiliasi akhir tahun dengan Pasal 17
-    const brutoSetahun = (gaji + tunjangan + tunjanganKel) * 12 + gaji13;
+    // Rekonsiliasi akhir tahun dengan Pasal 17 (PMK 168/2023)
+    const brutoBulananTetap = gaji + tunjangan + tunjanganKel;
+    const brutoSetahun = brutoBulananTetap * 12 + gaji13;
     const iuranSetahun = iuran * 12;
     const biayaJabatan = Math.min(brutoSetahun * 0.05, 6000000);
     const netoSetahun = brutoSetahun - biayaJabatan - iuranSetahun;
     const pkp = Math.max(0, Math.floor((netoSetahun - ptkp)/1000)*1000);
     const {pajak: pajTahunan, rows: lapisanRows} = hitungTarifProgresifDetail(pkp);
-    const pphJanNov = pphTER * 11; // estimasi
-    const pphDes = Math.max(0, Math.round(pajTahunan - pphJanNov));
+    const pphJanNov = Math.round(getTERTarif(brutoBulananTetap, ptkpKode) * brutoBulananTetap) * 11;
+    const pphDes = Math.round(pajTahunan - pphJanNov);
 
     window._lastPPh21 = { gaji: brutoBulan, pph: pphDes, jht: iuran, kategori: 'pns' };
 
@@ -12273,32 +12281,36 @@ function hitungPPh21PNS() {
       + '</div></div>';
 
     el.innerHTML = resRow('Penghasilan Bruto Bulan Ini', rp(brutoBulan))
-      + resRow('Tarif TER (' + ptkpKode + ')', (tarif*100).toFixed(2) + '% (TER)')
-      + resRow('PPh 21 Bulan Desember (Rekonsiliasi)', '<span class="kredit" style="font-size:18px">' + rp(pphDes) + '</span>')
+      + resRow('Tarif TER Desember (' + ptkpKode + ')', (tarif*100).toFixed(2) + '%')
+      + resRow('PPh 21 Desember (Rekonsiliasi Ps.17)', '<span class="' + (pphDes >= 0 ? 'kredit' : 'debit') + '" style="font-size:18px">' + (pphDes < 0 ? '(Lebih Potong) ' : '') + rp(Math.abs(pphDes)) + '</span>')
       + resRow('Iuran Pensiun/JHT', rp(iuran))
-      + resRow('Take Home Pay', rp(brutoBulan - pphDes - iuran))
+      + resRow('Take Home Pay (Desember)', rp(brutoBulan - Math.max(0, pphDes) - iuran))
       + rekHTML;
   } else {
     window._lastPPh21 = { gaji: brutoBulan, pph: pphTER, jht: iuran, kategori: 'pns' };
     tw.style.display = 'block';
-    document.getElementById('p21-tabel-title').textContent = 'Tabel TER Bulan ke-' + bulan + ' (PNS ' + ptkpKode + ')';
+    document.getElementById('p21-tabel-title').textContent = 'Tabel TER Bulan ke-' + bulan + ' (PNS — TER ' + getTERKategori(ptkpKode) + ', ' + ptkpKode + ')';
     document.getElementById('p21-th1').textContent = 'Penghasilan Bruto Bulanan ≤';
     const tbl = getTERTable(ptkpKode);
-    document.getElementById('p21-tabel-body').innerHTML = tbl.slice(0,12).map(([batas,rate], idx, arr) => {
-      const isActive = brutoBulan <= batas && (idx === 0 || arr[idx-1][0] < brutoBulan);
-      return '<tr ' + (isActive ? 'style="background:rgba(245,158,11,0.08);font-weight:600"' : '') + '>'
-        + '<td>' + (batas===Infinity ? '> '+rp(arr[arr.length-2]?.[0]||0) : rp(batas)) + '</td>'
+    let activeIdx = tbl.findIndex(([batas]) => brutoBulan <= batas);
+    if(activeIdx < 0) activeIdx = tbl.length - 1;
+    document.getElementById('p21-tabel-body').innerHTML = tbl.map(([batas, rate], idx, arr) => {
+      const isActive = idx === activeIdx;
+      const batasLabel = batas === Infinity ? '> ' + rp(arr[idx-1]?.[0] || 0) : '≤ ' + rp(batas);
+      return '<tr ' + (isActive ? 'style="background:rgba(245,158,11,0.12);font-weight:700;color:var(--accent3)"' : '') + '>'
+        + '<td>' + batasLabel + (isActive ? ' ✓' : '') + '</td>'
         + '<td>' + (rate*100).toFixed(2) + '%</td>'
-        + '<td class="kredit">' + rp(brutoBulan * rate) + '</td>'
+        + '<td class="kredit">' + rp(Math.round(brutoBulan * rate)) + '</td>'
         + '</tr>';
-    }).join('') + '<tr><td colspan="3" style="text-align:center;color:var(--muted);font-size:11px;padding:8px;">Baris <b>kuning</b> = tarif aktif untuk penghasilan ini</td></tr>';
+    }).join('') + '<tr><td colspan="3" style="text-align:center;color:var(--muted);font-size:11px;padding:8px;">Baris <b style="color:var(--accent3)">kuning ✓</b> = tarif aktif untuk penghasilan bruto Rp' + brutoBulan.toLocaleString('id-ID') + '</td></tr>';
 
     el.innerHTML = resRow('Penghasilan Bruto Bulan Ini', rp(brutoBulan))
       + (gaji13 ? resRow('⭐ Termasuk Gaji ke-13/14', rp(gaji13)) : '')
       + resRow('Tarif TER Kategori ' + getTERKategori(ptkpKode) + ' (' + ptkpKode + ')', (tarif*100).toFixed(2) + '%')
       + resRow('PPh 21 Bulan Ini (TER)', '<span class="kredit" style="font-size:18px">' + rp(pphTER) + '</span>')
       + resRow('Iuran Pensiun/JHT', rp(iuran))
-      + resRow('Take Home Pay', rp(brutoBulan - pphTER - iuran));
+      + resRow('Take Home Pay', rp(brutoBulan - pphTER - iuran))
+      + '<div style="margin-top:10px;padding:10px 14px;background:rgba(74,222,128,0.06);border-radius:8px;border:1px solid rgba(74,222,128,0.15);font-size:12px;color:var(--muted);">📌 Bulan ' + bulan + ' dari 11 masa pajak TER. PPh Desember = rekonsiliasi Pasal 17.</div>';
   }
 
   const pmkEl = document.getElementById('p21-pmk-info');
@@ -16445,6 +16457,8 @@ async function loadDataFromSupabase() {
   if (profilData) {
     // Simpan ke localStorage untuk backward compat dengan fungsi getProfil()
     localStorage.setItem('bhp_profil_v1', JSON.stringify(profilData.data || {}));
+    // Load kartu stock dari cloud
+    loadKartuStockFromData(profilData.data || {});
   }
 
   updateSaveIndicator('saved');
@@ -16509,6 +16523,63 @@ async function saveProfilToSupabase(profilData) {
     data: profilData,
     updated_at: new Date().toISOString()
   }, { onConflict: 'company_id' });
+}
+
+// SAVE & LOAD KARTU STOCK KE CLOUD
+async function saveKartuStockToCloud() {
+  if (!currentCompany) {
+    // Fallback ke localStorage jika belum login / mode tamu
+    try { localStorage.setItem('bhp_kartu_stock_v1_guest', JSON.stringify(kartuStockData)); } catch(e) {}
+    return;
+  }
+  try {
+    const { data: existing } = await _supa.from('company_profiles').select('data').eq('company_id', currentCompany.id).single();
+    const existingData = (existing && existing.data) ? existing.data : {};
+    const kartuPayload = {};
+    for (const [key, arr] of Object.entries(kartuStockData)) {
+      kartuPayload[key] = arr.map(e => ({
+        id: e.id, tgl: e.tgl, ket: e.ket,
+        mQty: e.mQty, mHarga: e.mHarga,
+        kQty: e.kQty, kHarga: e.kHarga, kJml: e.kJml,
+        saldoLayers: e.saldoLayers || [],
+        keluarLayers: e.keluarLayers || [],
+        jurnalDone: e.jurnalDone || false
+      }));
+    }
+    await _supa.from('company_profiles').upsert({
+      company_id: currentCompany.id,
+      data: { ...existingData, _kartu_stock: kartuPayload },
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'company_id' });
+  } catch(e) {
+    console.warn('saveKartuStockToCloud error:', e);
+    try { localStorage.setItem('bhp_kartu_stock_v1_' + currentCompany.id, JSON.stringify(kartuStockData)); } catch(e2) {}
+  }
+}
+
+function loadKartuStockFromData(profileData) {
+  // Coba dari cloud data dulu
+  const ks = profileData && profileData._kartu_stock;
+  if (ks) {
+    kartuStockData = {
+      fifo: ks.fifo || [],
+      lifo: ks.lifo || [],
+      wa:   ks.wa   || [],
+      mwa:  ks.mwa  || []
+    };
+  } else {
+    // Fallback ke localStorage
+    try {
+      const key = 'bhp_kartu_stock_v1_' + (currentCompany ? currentCompany.id : 'guest');
+      const stored = localStorage.getItem(key);
+      if (stored) kartuStockData = JSON.parse(stored);
+    } catch(e) {}
+  }
+  // Rebuild id counter
+  let maxId = 0;
+  for (const arr of Object.values(kartuStockData)) arr.forEach(e => { if((e.id||0) > maxId) maxId = e.id; });
+  kartuStockIdCounter = maxId + 1;
+  if (typeof renderKartuStock === 'function') renderKartuStock();
 }
 
 // ATTACHMENTS
