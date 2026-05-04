@@ -2225,7 +2225,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
         <button class="btn btn-danger btn-sm" onclick="resetInv()">Reset</button>
       </div>
       <div class="table-scroll"><table>
-        <thead><tr><th>No</th><th>Tanggal</th><th>Jenis</th><th>Qty</th><th>Harga/Unit (Rp)</th><th style="color:var(--accent2)">Harga Jual ke Pasar <small style="color:var(--muted)">(khusus Keluar)</small></th><th>Keterangan</th><th></th></tr></thead>
+        <thead><tr><th>No</th><th>Tanggal</th><th>Jenis</th><th>Qty</th><th>Harga/Unit (Rp)</th><th>Keterangan</th><th></th></tr></thead>
         <tbody id="inv-input-body"></tbody>
       </table></div>
     </div>
@@ -2234,8 +2234,8 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
     <div class="table-card">
       <div class="table-header"><div class="table-title">📊 Kartu Persediaan</div><div id="inv-metode-label" style="font-size:12px;color:var(--accent);"></div></div>
       <div class="table-scroll"><table>
-        <thead><tr><th>Tgl</th><th>Ket</th><th colspan="3" style="text-align:center;border-left:1px solid var(--border)">MASUK</th><th colspan="4" style="text-align:center;border-left:1px solid var(--border)">KELUAR</th><th colspan="3" style="text-align:center;border-left:1px solid var(--border)">SALDO</th></tr>
-        <tr><th></th><th></th><th style="border-left:1px solid var(--border)">Qty</th><th>Hrg Beli</th><th>Jumlah</th><th style="border-left:1px solid var(--border)">Qty</th><th>HPP/Unit</th><th>Hrg Jual/Unit</th><th>Laba</th><th style="border-left:1px solid var(--border)">Qty</th><th>Hrg</th><th>Jumlah</th></tr></thead>
+        <thead><tr><th>Tgl</th><th>Ket</th><th colspan="3" style="text-align:center;border-left:1px solid var(--border)">MASUK</th><th colspan="2" style="text-align:center;border-left:1px solid var(--border)">KELUAR</th><th colspan="3" style="text-align:center;border-left:1px solid var(--border)">SALDO</th></tr>
+        <tr><th></th><th></th><th style="border-left:1px solid var(--border)">Qty</th><th>Hrg Beli</th><th>Jumlah</th><th style="border-left:1px solid var(--border)">Qty</th><th>HPP/Unit</th><th style="border-left:1px solid var(--border)">Qty</th><th>Hrg</th><th>Jumlah</th></tr></thead>
         <tbody id="inv-kartu-body"></tbody>
       </table></div>
     </div>
@@ -2248,6 +2248,83 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
       <div class="stat-card green"><div class="stat-label">Total Pendapatan Penjualan</div><div class="stat-value" id="inv-pendapatan">Rp 0</div></div>
       <div class="stat-card blue"><div class="stat-label">Total HPP Terjual</div><div class="stat-value" id="inv-hpp-terjual">Rp 0</div></div>
       <div class="stat-card yellow"><div class="stat-label">Laba Kotor</div><div class="stat-value" id="inv-laba">Rp 0</div></div>
+    </div>
+  </div>
+
+  <!-- CATATAN PERSEDIAAN / KARTU STOCK TERINTEGRASI -->
+  <div class="table-card" id="catatan-persediaan-wrap" style="margin-top:0;">
+    <div class="table-header" style="flex-wrap:wrap;gap:10px;">
+      <div class="table-title">📋 Catatan Persediaan / Kartu Stock</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <div id="kartu-stock-tabs" style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-sm" id="ks-tab-fifo" onclick="switchKartuStockTab('fifo',this)" style="background:rgba(74,222,128,0.1);border:1px solid var(--accent);color:var(--accent);font-size:12px;">FIFO</button>
+          <button class="btn btn-sm" id="ks-tab-lifo" onclick="switchKartuStockTab('lifo',this)" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;">LIFO</button>
+          <button class="btn btn-sm" id="ks-tab-wa" onclick="switchKartuStockTab('wa',this)" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;">Weighted Avg</button>
+          <button class="btn btn-sm" id="ks-tab-mwa" onclick="switchKartuStockTab('mwa',this)" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;">Moving WA</button>
+        </div>
+        <button id="ks-clear-btn" class="btn btn-danger btn-sm" style="font-size:12px;">🗑️ Hapus Catatan</button>
+      </div>
+    </div>
+    <div id="catatan-persediaan-content" style="padding:12px 16px;">
+      <div id="ks-active-tab-label" style="font-size:12px;color:var(--accent);margin-bottom:8px;font-weight:600;">Metode: FIFO</div>
+      <div class="table-scroll"><table id="ks-table">
+        <thead><tr>
+          <th>Tgl</th><th>Ket</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">MASUK</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">KELUAR</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">SALDO</th>
+          <th>Aksi</th>
+        </tr>
+        <tr>
+          <th></th><th></th>
+          <th style="border-left:1px solid var(--border)">Qty</th><th>Hrg Beli</th><th>Jumlah</th>
+          <th style="border-left:1px solid var(--border)">Qty</th><th>HPP/Unit</th><th>Jumlah</th>
+          <th style="border-left:1px solid var(--border)">Qty</th><th>Hrg</th><th>Jumlah</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="ks-table-body">
+          <tr><td colspan="12" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Belum ada catatan. Hitung persediaan lalu klik "Input ke Kartu Stock".</td></tr>
+        </tbody>
+      </table></div>
+      <div id="ks-stock-summary" style="margin-top:12px;display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;" class="kalk-grid">
+          <div class="stat-card green"><div class="stat-label">Saldo Qty</div><div class="stat-value" id="ks-saldo-qty">0</div></div>
+          <div class="stat-card blue"><div class="stat-label">Nilai Persediaan</div><div class="stat-value" id="ks-saldo-nilai">Rp 0</div></div>
+          <div class="stat-card yellow"><div class="stat-label">Total HPP Tercatat</div><div class="stat-value" id="ks-total-hpp">Rp 0</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP: Pilih transaksi keluar untuk input ke jurnal -->
+<div id="ks-jurnal-popup" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;">
+  <div class="modal" style="max-width:560px;width:95%;max-height:85vh;overflow-y:auto;border-radius:16px;padding:0;">
+    <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:16px;font-weight:700;">📥 Pilih Transaksi untuk Input Jurnal</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Pilih transaksi keluar dari Kartu Stock yang ingin diinput ke Jurnal</div>
+      </div>
+      <button id="ks-jurnal-popup-close" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;">✕</button>
+    </div>
+    <div id="ks-jurnal-popup-list" style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+      <div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Tidak ada transaksi keluar di kartu stock.</div>
+    </div>
+    <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
+      <button id="ks-jurnal-popup-batal" class="btn btn-ghost btn-sm">Batal</button>
+      <button id="ks-jurnal-popup-ok" class="btn btn-primary btn-sm">✅ Input Jurnal Terpilih</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM CONFIRM MODAL untuk Kartu Stock -->
+<div id="ks-confirm-modal" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.65);align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 28px 20px;max-width:340px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <div id="ks-confirm-icon" style="font-size:32px;text-align:center;margin-bottom:12px;">⚠️</div>
+    <div id="ks-confirm-msg" style="font-size:14px;font-weight:600;text-align:center;color:var(--text);margin-bottom:20px;line-height:1.5;"></div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button id="ks-confirm-cancel" class="btn btn-ghost" style="flex:1;max-width:120px;">Batal</button>
+      <button id="ks-confirm-ok" class="btn btn-danger" style="flex:1;max-width:120px;">Hapus</button>
     </div>
   </div>
 </div>
@@ -7193,69 +7270,12 @@ function inputAnuitasJurnal() {
   );
 }
 
-// PERSEDIAAN → INPUT JURNAL
+// PERSEDIAAN → INPUT JURNAL (sekarang lewat popup kartu stock)
 function inputPersediaanJurnal() {
-  const hpp = window._invHpp || (parseFloat(document.getElementById('inv-hpp')?.textContent?.replace(/[^0-9]/g,''))||0);
-  const pendapatan = window._invPendapatan || 0;
+  // Redirect ke popup jurnal kartu stock
   const metode = window._invMetode || document.getElementById('inv-metode')?.value || 'fifo';
-  const adaHargaJual = window._invAdaHargaJual || false;
-
-  if(!hpp) { showAlert('Hitung persediaan dulu!'); return; }
-
-  const kode = nextKode('INV');
-  const today = new Date().toISOString().split('T')[0];
-  const jurnals = [];
-
-  if(adaHargaJual && pendapatan > 0) {
-    // Jurnal 1: Penjualan (Pendapatan)
-    jurnals.push({
-      tanggal: today,
-      ket: `Penjualan barang dagangan ${metode.toUpperCase()} [${kode}]`,
-      jenis: 'Penjualan',
-      lines: [
-        { akun: '1101', ket: 'Kas / Piutang penjualan', debit: pendapatan, kredit: 0 },
-        { akun: '4101', ket: 'Pendapatan Penjualan', debit: 0, kredit: pendapatan }
-      ]
-    });
-    // Jurnal 2: HPP
-    jurnals.push({
-      tanggal: today,
-      ket: `Pengakuan HPP persediaan ${metode.toUpperCase()} [${kode}]`,
-      jenis: 'Manual',
-      lines: [
-        { akun: '5101', ket: 'HPP - Harga Pokok Penjualan', debit: hpp, kredit: 0 },
-        { akun: '1301', ket: 'Persediaan Barang Dagangan', debit: 0, kredit: hpp }
-      ]
-    });
-  } else {
-    // Hanya jurnal HPP saja (tanpa harga jual)
-    jurnals.push({
-      tanggal: today,
-      ket: `Pengakuan HPP persediaan ${metode.toUpperCase()} [${kode}]`,
-      jenis: 'Manual',
-      lines: [
-        { akun: '5101', ket: 'HPP - Harga Pokok Penjualan', debit: hpp, kredit: 0 },
-        { akun: '1301', ket: 'Persediaan Barang Dagangan', debit: 0, kredit: hpp }
-      ]
-    });
-  }
-
-  const beforeCount = jurnalEntries.length;
-  const indices = jurnals.map((_,i)=>beforeCount+i);
-  const labaKotor = pendapatan - hpp;
-  const labelBar = adaHargaJual
-    ? `Persediaan ${metode.toUpperCase()}: Pendapatan ${rp(pendapatan)} | HPP ${rp(hpp)} | Laba ${rp(labaKotor)}`
-    : `Persediaan ${metode.toUpperCase()}: HPP Rp${hpp.toLocaleString('id-ID')}`;
-
-  checkAndInputKalkulator(kode, jurnals,
-    adaHargaJual
-      ? `Jurnal penjualan + HPP persediaan ${metode.toUpperCase()} diinput (Pendapatan ${rp(pendapatan)}, HPP ${rp(hpp)})`
-      : `Jurnal HPP persediaan ${metode.toUpperCase()} Rp${hpp.toLocaleString('id-ID')} diinput`,
-    (k) => {
-      lastKalkInput = { kode: k, jurnalIndices: indices };
-      showKalkUndoBar(labelBar, k);
-    }
-  );
+  kartuStockTab = metode;
+  bukaPopupJurnalSemua();
 }
 
 // PPN → INPUT JURNAL
@@ -7442,9 +7462,7 @@ function addKalkButtonsIfNeeded() {
   }
   const invRes = document.getElementById('inv-result');
   if(invRes && invRes.style.display !== 'none' && !document.getElementById('inv-input-btn-bar')) {
-    const adaHJ = window._invAdaHargaJual || false;
-    const lbl = adaHJ ? '📥 Input Jurnal Penjualan + HPP Persediaan' : '📥 Input Jurnal HPP Persediaan';
-    const bar = createKalkBar([{label:lbl, fn:'inputPersediaanJurnal()', color:'green'}]);
+    const bar = createKalkBar([{label:'📋 Input ke Kartu Stock', fn:'inputKeKartuStock()', color:'green'}]);
     bar.id = 'inv-input-btn-bar';
     invRes.appendChild(bar);
   }
@@ -7742,11 +7760,7 @@ function addInputBtnToAnuitas() {
 function addInputBtnToPersediaan() {
   const res = document.getElementById('inv-result');
   if(!res || res.style.display==='none' || document.getElementById('inv-input-btn-bar')) return;
-  const adaHargaJual = window._invAdaHargaJual || false;
-  const label = adaHargaJual
-    ? '📥 Input Jurnal Penjualan + HPP Persediaan'
-    : '📥 Input Jurnal HPP Persediaan';
-  const bar = createKalkBar([{label, fn:'inputPersediaanJurnal()', color:'green'}]);
+  const bar = createKalkBar([{label:'📋 Input ke Kartu Stock', fn:'inputKeKartuStock()', color:'green'}]);
   bar.id = 'inv-input-btn-bar';
   res.appendChild(bar);
 }
@@ -10362,7 +10376,6 @@ function addInvRow(jenis) {
     <td><span class="badge ${jenis==='masuk'?'badge-green':'badge-red'}">${jenis==='masuk'?'Masuk':'Keluar'}</span><input type="hidden" value="${jenis}"></td>
     <td><input type="number" placeholder="0" min="0" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px;color:var(--text);font-size:12px;width:80px"></td>
     <td><input type="number" placeholder="${jenis==='keluar'?'(auto-HPP)':'0'}" min="0" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px;color:var(--text);font-size:12px;width:100px" ${jenis==='keluar'?'readonly':''}></td>
-    <td><input type="number" placeholder="${jenis==='keluar'?'Harga jual ke pasar':'-'}" min="0" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px;color:${jenis==='keluar'?'var(--text)':'var(--muted)'};font-size:12px;width:120px;${jenis==='masuk'?'opacity:0.35;cursor:not-allowed;':''}" ${jenis==='masuk'?'readonly tabindex="-1" title="Harga jual hanya diisi untuk baris Keluar"':''}></td>
     <td><input type="text" placeholder="Keterangan" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px;color:var(--text);font-size:12px;width:120px"></td>
     <td><button onclick="document.getElementById('invr-${id}').remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;">✕</button></td>`;
   tbody.appendChild(tr);
@@ -10392,9 +10405,8 @@ function hitungPersediaan() {
     const tgl = allInputs[0].value;
     const qty = parseFloat(allInputs[1].value) || 0;
     const harga = parseFloat(allInputs[2]?.value) || 0;
-    const hargaJual = parseFloat(allInputs[3]?.value) || 0;
-    const ket = allInputs[4]?.value || '';
-    if(qty) rows.push({tgl, jenis, qty, harga, hargaJual, ket});
+    const ket = allInputs[3]?.value || '';
+    if(qty) rows.push({tgl, jenis, qty, harga, ket});
   });
   if(!rows.length) { showAlert('Tambah data transaksi dulu!'); return; }
 
@@ -10473,17 +10485,12 @@ function hitungPersediaan() {
       hpp += hppBatch;
       // Harga rata-rata HPP per unit untuk display
       const hppPerUnit = r.qty ? hppBatch / r.qty : 0;
-      // Harga jual & laba
-      const pendapatanBatch = r.hargaJual ? r.hargaJual * r.qty : 0;
-      const labaBatch = pendapatanBatch ? pendapatanBatch - hppBatch : 0;
-      if(r.hargaJual) { adaHargaJual = true; totalPendapatan += pendapatanBatch; }
 
       const saldoLayers = stock.filter(x=>x.qty>0).map(x=>({...x}));
       kartu.push({
         tgl:r.tgl, ket:r.ket||'keluar',
         mQty:'', mHarga:'', mJml:'',
         kQty:r.qty, kHarga:hppPerUnit, kJml:hppBatch,
-        kHargaJual: r.hargaJual||0, kLaba: labaBatch,
         keluarLayers, // detail FIFO/LIFO per layer
         saldoLayers
       });
@@ -10492,7 +10499,6 @@ function hitungPersediaan() {
 
   const akhirQty = stock.reduce((s,x)=>s+x.qty,0);
   const akhirVal = stock.reduce((s,x)=>s+x.qty*x.harga,0);
-  const labaKotor = totalPendapatan - hpp;
 
   document.getElementById('inv-result').style.display='block';
   const mLabel = {fifo:'FIFO',lifo:'LIFO',wa:'Weighted Average',mwa:'Moving WA'};
@@ -10501,16 +10507,9 @@ function hitungPersediaan() {
   document.getElementById('inv-hpp').textContent = rp(hpp);
   document.getElementById('inv-qty').textContent = akhirQty.toLocaleString('id-ID');
 
-  // Tampilkan summary penjualan jika ada harga jual
+  // Sembunyikan summary penjualan (sudah tidak ada harga jual di input)
   const summaryEl = document.getElementById('inv-penjualan-summary');
-  if(adaHargaJual) {
-    summaryEl.style.display = 'grid';
-    document.getElementById('inv-pendapatan').textContent = rp(totalPendapatan);
-    document.getElementById('inv-hpp-terjual').textContent = rp(hpp);
-    document.getElementById('inv-laba').textContent = rp(labaKotor);
-  } else {
-    summaryEl.style.display = 'none';
-  }
+  if(summaryEl) summaryEl.style.display = 'none';
 
   // Render kartu persediaan — FIFO/LIFO tampilkan saldo per layer
   const isLayered = (metode === 'fifo' || metode === 'lifo');
@@ -10528,8 +10527,6 @@ function hitungPersediaan() {
         <td rowspan="${rowspan}" class="debit">${rp(k.mJml)}</td>
         <td rowspan="${rowspan}" style="border-left:1px solid var(--border)" class="num"></td>
         <td rowspan="${rowspan}" class="num"></td>
-        <td rowspan="${rowspan}" class="num"></td>
-        <td rowspan="${rowspan}" class="num"></td>
         <td style="border-left:1px solid var(--border)" class="num">${saldoRows[0]?.qty||0}</td>
         <td class="num">${rp(saldoRows[0]?.harga||0)}</td>
         <td class="num">${rp((saldoRows[0]?.qty||0)*(saldoRows[0]?.harga||0))}</td>
@@ -10546,8 +10543,6 @@ function hitungPersediaan() {
       const keluarRows = (isLayered && k.keluarLayers && k.keluarLayers.length > 1) ? k.keluarLayers : null;
       const saldoRows = isLayered ? k.saldoLayers : [{qty: k.saldoLayers.reduce((s,x)=>s+x.qty,0), harga: k.saldoLayers.length ? k.saldoLayers.reduce((s,x)=>s+x.qty*x.harga,0)/k.saldoLayers.reduce((s,x)=>s+x.qty,0) : 0}];
       const maxRows = Math.max(keluarRows ? keluarRows.length : 1, saldoRows.length || 1);
-      const labaStr = k.kHargaJual ? `<span style="color:var(--accent)">${rp(k.kLaba)}</span>` : '-';
-      const hargaJualStr = k.kHargaJual ? rp(k.kHargaJual) : '<span style="color:var(--muted);font-size:11px">-</span>';
       if(!keluarRows) {
         // Satu baris keluar (keluar dari 1 layer atau WA)
         const rowspan = saldoRows.length || 1;
@@ -10559,8 +10554,6 @@ function hitungPersediaan() {
           <td rowspan="${rowspan}" class="num"></td>
           <td rowspan="${rowspan}" style="border-left:1px solid var(--border)" class="num">${k.kQty}</td>
           <td rowspan="${rowspan}" class="num kredit">${rp(k.kHarga)}</td>
-          <td rowspan="${rowspan}" class="num">${hargaJualStr}</td>
-          <td rowspan="${rowspan}" class="num">${labaStr}</td>
           <td style="border-left:1px solid var(--border)" class="num">${saldoRows[0]?.qty||0}</td>
           <td class="num">${rp(saldoRows[0]?.harga||0)}</td>
           <td class="num">${rp((saldoRows[0]?.qty||0)*(saldoRows[0]?.harga||0))}</td>
@@ -10575,7 +10568,6 @@ function hitungPersediaan() {
       } else {
         // Multi baris keluar (FIFO/LIFO ambil dari beberapa layer)
         const rowspan = maxRows;
-        const labaTotal = k.kHargaJual ? `<span style="color:var(--accent)">${rp(k.kLaba)}</span>` : '-';
         kartuHtml += `<tr>
           <td rowspan="${rowspan}" style="font-size:11px">${k.tgl}</td>
           <td rowspan="${rowspan}" style="font-size:12px">${k.ket}</td>
@@ -10584,8 +10576,6 @@ function hitungPersediaan() {
           <td rowspan="${rowspan}" class="num"></td>
           <td style="border-left:1px solid var(--border)" class="num">${keluarRows[0].qty}</td>
           <td class="num kredit">${rp(keluarRows[0].harga)}</td>
-          <td rowspan="${rowspan}" class="num">${hargaJualStr}</td>
-          <td rowspan="${rowspan}" class="num">${labaTotal}</td>
           <td style="border-left:1px solid var(--border)" class="num">${saldoRows[0]?.qty||''}</td>
           <td class="num">${saldoRows[0]?.harga?rp(saldoRows[0].harga):''}</td>
           <td class="num">${saldoRows[0]?.qty?rp(saldoRows[0].qty*saldoRows[0].harga):''}</td>
@@ -10606,17 +10596,384 @@ function hitungPersediaan() {
   });
   document.getElementById('inv-kartu-body').innerHTML = kartuHtml;
 
-  // Simpan data untuk input jurnal (pendapatan per keluar)
+  // Simpan data untuk kartu stock
   window._invHpp = hpp;
-  window._invPendapatan = totalPendapatan;
-  window._invLaba = labaKotor;
   window._invKartu = kartu;
-  window._invAdaHargaJual = adaHargaJual;
   window._invMetode = metode;
+  window._invStockLayers = stock.map(x=>({...x}));
 
-  // Auto-add input button
+  // Auto-add input button (ke kartu stock)
   setTimeout(addInputBtnToPersediaan, 80);
 }
+
+// ===== KARTU STOCK / CATATAN PERSEDIAAN =====
+// Struktur storage: kartuStockData[metode] = [{tgl, ket, mQty, mHarga, kQty, kHarga, saldoQty, saldoHarga, keluarLayers, saldoLayers, id}]
+let kartuStockData = { fifo:[], lifo:[], wa:[], mwa:[] };
+let kartuStockTab = 'fifo';
+let kartuStockIdCounter = 0;
+
+function switchKartuStockTab(tab, el) {
+  kartuStockTab = tab;
+  document.querySelectorAll('#kartu-stock-tabs button').forEach(b => {
+    b.style.background = 'var(--surface2)';
+    b.style.border = '1px solid var(--border)';
+    b.style.color = 'var(--muted)';
+  });
+  el.style.background = 'rgba(74,222,128,0.1)';
+  el.style.border = '1px solid var(--accent)';
+  el.style.color = 'var(--accent)';
+  const lbl = {fifo:'FIFO',lifo:'LIFO',wa:'Weighted Average',mwa:'Moving Weighted Avg'};
+  document.getElementById('ks-active-tab-label').textContent = 'Metode: ' + (lbl[tab]||tab);
+  renderKartuStock();
+}
+
+function inputKeKartuStock() {
+  const kartu = window._invKartu;
+  const metode = window._invMetode;
+  if(!kartu || !kartu.length) { showAlert('Hitung persediaan dulu!'); return; }
+
+  const storage = kartuStockData[metode];
+  // Rebuild stock dari existing kartu stock untuk validasi saldo awal
+  // Kita append semua entri baru ke storage
+  let runningStock = rebuildStockFromKartu(storage, metode);
+
+  kartu.forEach(k => {
+    const id = kartuStockIdCounter++;
+    if(k.mQty !== '') {
+      // MASUK — process into running stock
+      if(metode === 'wa') {
+        const tq = runningStock.reduce((s,x)=>s+x.qty,0) + k.mQty;
+        const tv = runningStock.reduce((s,x)=>s+x.qty*x.harga,0) + k.mQty*k.mHarga;
+        runningStock = [{qty:tq, harga:tv/tq}];
+      } else if(metode === 'mwa') {
+        const tq = runningStock.reduce((s,x)=>s+x.qty,0) + k.mQty;
+        const tv = runningStock.reduce((s,x)=>s+x.qty*x.harga,0) + k.mQty*k.mHarga;
+        runningStock = [{qty:tq, harga:tq?tv/tq:0}];
+      } else {
+        runningStock.push({qty:k.mQty, harga:k.mHarga});
+      }
+      const sl = runningStock.filter(x=>x.qty>0).map(x=>({...x}));
+      storage.push({id, tgl:k.tgl, ket:k.ket, mQty:k.mQty, mHarga:k.mHarga, kQty:0, kHarga:0, kJml:0, saldoLayers:sl, jurnalDone:false});
+    } else {
+      // KELUAR — re-process from running stock
+      let qSisa = k.kQty;
+      let hppBatch = 0;
+      let keluarLayers = [];
+      if(metode === 'fifo') {
+        while(qSisa > 0 && runningStock.length) {
+          const layer = runningStock[0];
+          const ambil = Math.min(layer.qty, qSisa);
+          hppBatch += ambil * layer.harga;
+          keluarLayers.push({qty:ambil, harga:layer.harga});
+          layer.qty -= ambil; qSisa -= ambil;
+          if(layer.qty <= 0) runningStock.shift();
+        }
+      } else if(metode === 'lifo') {
+        while(qSisa > 0 && runningStock.length) {
+          const layer = runningStock[runningStock.length-1];
+          const ambil = Math.min(layer.qty, qSisa);
+          hppBatch += ambil * layer.harga;
+          keluarLayers.push({qty:ambil, harga:layer.harga});
+          layer.qty -= ambil; qSisa -= ambil;
+          if(layer.qty <= 0) runningStock.pop();
+        }
+      } else {
+        const tq = runningStock.reduce((s,x)=>s+x.qty,0);
+        const tv = runningStock.reduce((s,x)=>s+x.qty*x.harga,0);
+        const ha = tq ? tv/tq : 0;
+        hppBatch = ha * k.kQty;
+        keluarLayers = [{qty:k.kQty, harga:ha}];
+        let sisa2 = k.kQty;
+        for(let i=0;i<runningStock.length&&sisa2>0;i++) {
+          const ambil = Math.min(runningStock[i].qty, sisa2);
+          runningStock[i].qty -= ambil; sisa2 -= ambil;
+        }
+        runningStock = runningStock.filter(x=>x.qty>0);
+      }
+      const sl = runningStock.filter(x=>x.qty>0).map(x=>({...x}));
+      const hppPerUnit = k.kQty ? hppBatch/k.kQty : 0;
+      storage.push({id, tgl:k.tgl, ket:k.ket, mQty:0, mHarga:0, kQty:k.kQty, kHarga:hppPerUnit, kJml:hppBatch, keluarLayers, saldoLayers:sl, jurnalDone:false});
+    }
+  });
+
+  // Switch ke tab metode yg baru diinput
+  kartuStockTab = metode;
+  const tabEl = document.getElementById('ks-tab-'+metode);
+  if(tabEl) switchKartuStockTab(metode, tabEl);
+  else renderKartuStock();
+
+  showAlert('✅ Berhasil disimpan ke Kartu Stock ('+metode.toUpperCase()+')!');
+  // Scroll to kartu
+  setTimeout(()=>{ const el=document.getElementById('catatan-persediaan-wrap'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }, 200);
+}
+
+function rebuildStockFromKartu(storage, metode) {
+  let stock = [];
+  storage.forEach(e => {
+    if(e.mQty > 0) {
+      if(metode==='wa'||metode==='mwa') {
+        const tq = stock.reduce((s,x)=>s+x.qty,0)+e.mQty;
+        const tv = stock.reduce((s,x)=>s+x.qty*x.harga,0)+e.mQty*e.mHarga;
+        stock = [{qty:tq,harga:tq?tv/tq:0}];
+      } else { stock.push({qty:e.mQty,harga:e.mHarga}); }
+    } else if(e.kQty > 0) {
+      let sisa=e.kQty;
+      if(metode==='fifo') { while(sisa>0&&stock.length){const l=stock[0];const a=Math.min(l.qty,sisa);l.qty-=a;sisa-=a;if(l.qty<=0)stock.shift();} }
+      else if(metode==='lifo') { while(sisa>0&&stock.length){const l=stock[stock.length-1];const a=Math.min(l.qty,sisa);l.qty-=a;sisa-=a;if(l.qty<=0)stock.pop();} }
+      else { let s2=sisa;for(let i=0;i<stock.length&&s2>0;i++){const a=Math.min(stock[i].qty,s2);stock[i].qty-=a;s2-=a;}stock=stock.filter(x=>x.qty>0); }
+    }
+  });
+  return stock;
+}
+
+function renderKartuStock() {
+  const storage = kartuStockData[kartuStockTab] || [];
+  const tbody = document.getElementById('ks-table-body');
+  const isLayered = (kartuStockTab==='fifo'||kartuStockTab==='lifo');
+  if(!storage.length) {
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Belum ada catatan untuk metode ini.</td></tr>';
+    document.getElementById('ks-stock-summary').style.display='none';
+    _attachKartuStockEvents(tbody);
+    return;
+  }
+  let html = '';
+  storage.forEach((e, idx) => {
+    const saldoRows = isLayered ? e.saldoLayers : [{qty:e.saldoLayers.reduce((s,x)=>s+x.qty,0), harga:e.saldoLayers.length?e.saldoLayers.reduce((s,x)=>s+x.qty*x.harga,0)/e.saldoLayers.reduce((s,x)=>s+x.qty,0):0}];
+    if(e.mQty > 0) {
+      const rowspan = Math.max(saldoRows.length, 1);
+      html += `<tr>
+        <td rowspan="${rowspan}" style="font-size:11px">${e.tgl}</td>
+        <td rowspan="${rowspan}" style="font-size:12px">${e.ket||'masuk'}</td>
+        <td rowspan="${rowspan}" style="border-left:1px solid var(--border)" class="num debit">${e.mQty}</td>
+        <td rowspan="${rowspan}" class="num">${rp(e.mHarga)}</td>
+        <td rowspan="${rowspan}" class="debit">${rp(e.mQty*e.mHarga)}</td>
+        <td rowspan="${rowspan}" style="border-left:1px solid var(--border)" class="num"></td>
+        <td rowspan="${rowspan}" class="num"></td>
+        <td rowspan="${rowspan}" class="num"></td>
+        <td style="border-left:1px solid var(--border)" class="num">${saldoRows[0]?.qty||0}</td>
+        <td class="num">${rp(saldoRows[0]?.harga||0)}</td>
+        <td class="num">${rp((saldoRows[0]?.qty||0)*(saldoRows[0]?.harga||0))}</td>
+        <td rowspan="${rowspan}" style="text-align:center"><button class="ks-hapus-btn" data-idx="${idx}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px 8px;" title="Hapus baris">🗑️</button></td>
+      </tr>`;
+      for(let i=1;i<saldoRows.length;i++) {
+        html += `<tr><td style="border-left:1px solid var(--border)" class="num">${saldoRows[i].qty}</td><td class="num">${rp(saldoRows[i].harga)}</td><td class="num">${rp(saldoRows[i].qty*saldoRows[i].harga)}</td></tr>`;
+      }
+    } else {
+      const keluarRows = (isLayered && e.keluarLayers && e.keluarLayers.length > 1) ? e.keluarLayers : null;
+      const maxRows = Math.max(keluarRows?keluarRows.length:1, saldoRows.length||1);
+      const jurnalBadge = e.jurnalDone
+        ? '<span style="color:var(--accent);font-size:10px;display:block;margin-bottom:4px;">✅jurnal</span>'
+        : `<button class="ks-jurnal-btn" data-idx="${idx}" style="background:rgba(34,211,238,0.1);border:1px solid var(--accent2);color:var(--accent2);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--sans);display:block;margin-bottom:4px;">📥 Jurnal</button>`;
+      if(!keluarRows) {
+        html += `<tr>
+          <td rowspan="${maxRows}" style="font-size:11px">${e.tgl}</td>
+          <td rowspan="${maxRows}" style="font-size:12px">${e.ket||'keluar'}</td>
+          <td rowspan="${maxRows}" style="border-left:1px solid var(--border)" class="num"></td>
+          <td rowspan="${maxRows}" class="num"></td>
+          <td rowspan="${maxRows}" class="num"></td>
+          <td rowspan="${maxRows}" style="border-left:1px solid var(--border)" class="num kredit">${e.kQty}</td>
+          <td rowspan="${maxRows}" class="num">${rp(e.kHarga)}</td>
+          <td rowspan="${maxRows}" class="num kredit">${rp(e.kJml)}</td>
+          <td style="border-left:1px solid var(--border)" class="num">${saldoRows[0]?.qty||0}</td>
+          <td class="num">${rp(saldoRows[0]?.harga||0)}</td>
+          <td class="num">${rp((saldoRows[0]?.qty||0)*(saldoRows[0]?.harga||0))}</td>
+          <td rowspan="${maxRows}" style="text-align:center;vertical-align:middle;padding:6px;">${jurnalBadge}<button class="ks-hapus-btn" data-idx="${idx}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px 8px;" title="Hapus">🗑️</button></td>
+        </tr>`;
+        for(let i=1;i<saldoRows.length;i++) {
+          html += `<tr><td style="border-left:1px solid var(--border)" class="num">${saldoRows[i].qty||0}</td><td class="num">${rp(saldoRows[i].harga||0)}</td><td class="num">${rp((saldoRows[i].qty||0)*(saldoRows[i].harga||0))}</td></tr>`;
+        }
+      } else {
+        html += `<tr>
+          <td rowspan="${maxRows}" style="font-size:11px">${e.tgl}</td>
+          <td rowspan="${maxRows}" style="font-size:12px">${e.ket||'keluar'}</td>
+          <td rowspan="${maxRows}" style="border-left:1px solid var(--border)" class="num"></td>
+          <td rowspan="${maxRows}" class="num"></td>
+          <td rowspan="${maxRows}" class="num"></td>
+          <td style="border-left:1px solid var(--border)" class="num kredit">${keluarRows[0].qty}</td>
+          <td class="num">${rp(keluarRows[0].harga)}</td>
+          <td class="num kredit">${rp(keluarRows[0].qty*keluarRows[0].harga)}</td>
+          <td style="border-left:1px solid var(--border)" class="num">${saldoRows[0]?.qty||''}</td>
+          <td class="num">${saldoRows[0]?.harga?rp(saldoRows[0].harga):''}</td>
+          <td class="num">${saldoRows[0]?.qty?rp(saldoRows[0].qty*saldoRows[0].harga):''}</td>
+          <td rowspan="${maxRows}" style="text-align:center;vertical-align:middle;padding:6px;">${jurnalBadge}<button class="ks-hapus-btn" data-idx="${idx}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px 8px;">🗑️</button></td>
+        </tr>`;
+        for(let i=1;i<maxRows;i++) {
+          const kr=keluarRows[i]||null; const sr=saldoRows[i]||null;
+          html += `<tr>
+            <td style="border-left:1px solid var(--border)" class="num kredit">${kr?kr.qty:''}</td>
+            <td class="num">${kr?rp(kr.harga):''}</td>
+            <td class="num kredit">${kr?rp(kr.qty*kr.harga):''}</td>
+            <td style="border-left:1px solid var(--border)" class="num">${sr?sr.qty:''}</td>
+            <td class="num">${sr?rp(sr.harga):''}</td>
+            <td class="num">${sr?rp(sr.qty*sr.harga):''}</td>
+          </tr>`;
+        }
+      }
+    }
+  });
+  tbody.innerHTML = html;
+  _attachKartuStockEvents(tbody);
+
+  // Update summary
+  const lastEntry = storage[storage.length-1];
+  const sl = lastEntry ? lastEntry.saldoLayers : [];
+  const saldoQty = sl.reduce((s,x)=>s+x.qty,0);
+  const saldoNilai = sl.reduce((s,x)=>s+x.qty*x.harga,0);
+  const totalHppTercatat = storage.filter(e=>e.kQty>0).reduce((s,e)=>s+e.kJml,0);
+  document.getElementById('ks-saldo-qty').textContent = saldoQty.toLocaleString('id-ID');
+  document.getElementById('ks-saldo-nilai').textContent = rp(saldoNilai);
+  document.getElementById('ks-total-hpp').textContent = rp(totalHppTercatat);
+  document.getElementById('ks-stock-summary').style.display='block';
+}
+
+function _ksConfirm(msg, icon, onOk) {
+  const modal = document.getElementById('ks-confirm-modal');
+  document.getElementById('ks-confirm-msg').textContent = msg;
+  document.getElementById('ks-confirm-icon').textContent = icon || '⚠️';
+  modal.style.display = 'flex';
+  // clone buttons to remove old listeners
+  const okBtn = document.getElementById('ks-confirm-ok');
+  const cancelBtn = document.getElementById('ks-confirm-cancel');
+  const newOk = okBtn.cloneNode(true);
+  const newCancel = cancelBtn.cloneNode(true);
+  okBtn.parentNode.replaceChild(newOk, okBtn);
+  cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+  newOk.addEventListener('click', function() {
+    modal.style.display = 'none';
+    onOk();
+  });
+  newCancel.addEventListener('click', function() {
+    modal.style.display = 'none';
+  });
+}
+
+function _attachKartuStockEvents(tbody) {
+  tbody.querySelectorAll('.ks-hapus-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const idx = parseInt(this.getAttribute('data-idx'));
+      if(isNaN(idx)) return;
+      _ksConfirm('Hapus entri ini dari Kartu Stock?', '🗑️', function() {
+        kartuStockData[kartuStockTab].splice(idx, 1);
+        renderKartuStock();
+      });
+    });
+  });
+  tbody.querySelectorAll('.ks-jurnal-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const idx = parseInt(this.getAttribute('data-idx'));
+      if(!isNaN(idx)) bukaPopupJurnalSingle(idx);
+    });
+  });
+}
+
+function clearKartuStock() {
+  _ksConfirm('Hapus semua catatan metode ' + kartuStockTab.toUpperCase() + '?', '🗑️', function() {
+    kartuStockData[kartuStockTab] = [];
+    renderKartuStock();
+  });
+}
+
+function bukaPopupJurnalSingle(idx) {
+  // Buka popup dengan 1 transaksi keluar yang dipilih
+  const popup = document.getElementById('ks-jurnal-popup');
+  const list = document.getElementById('ks-jurnal-popup-list');
+  const e = kartuStockData[kartuStockTab][idx];
+  if(!e) return;
+  list.innerHTML = `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;">${e.tgl} — ${e.ket||'keluar'}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Qty Keluar: <b>${e.kQty}</b> unit | HPP Total: <b>${rp(e.kJml)}</b></div>
+        </div>
+        <span style="color:var(--accent2);font-size:12px;font-weight:700;">${kartuStockTab.toUpperCase()}</span>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="ks-j-check-single" checked style="width:16px;height:16px;accent-color:var(--accent);">
+        <span style="font-size:13px;">Konfirmasi input ke Jurnal</span>
+      </label>
+    </div>`;
+  popup.dataset.singleIdx = idx;
+  popup.style.display = 'flex';
+}
+
+function bukaPopupJurnalSemua() {
+  const storage = kartuStockData[kartuStockTab];
+  const keluarList = storage.filter(e=>e.kQty>0 && !e.jurnalDone);
+  const popup = document.getElementById('ks-jurnal-popup');
+  const list = document.getElementById('ks-jurnal-popup-list');
+  delete popup.dataset.singleIdx;
+  if(!keluarList.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Semua transaksi keluar sudah diinput ke jurnal.</div>';
+    popup.style.display='flex';
+    return;
+  }
+  list.innerHTML = keluarList.map((e,i) => {
+    const origIdx = storage.indexOf(e);
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+      <label style="display:flex;gap:10px;cursor:pointer;align-items:flex-start;">
+        <input type="checkbox" class="ks-j-check" data-idx="${origIdx}" checked style="width:16px;height:16px;accent-color:var(--accent);flex-shrink:0;margin-top:2px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;">${e.tgl} — ${e.ket||'keluar'}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Qty Keluar: <b>${e.kQty}</b> unit | HPP Total: <b>${rp(e.kJml)}</b></div>
+        </div>
+      </label>
+    </div>`;
+  }).join('');
+  popup.style.display='flex';
+}
+
+function konfirmasiInputJurnalKartu() {
+  const popup = document.getElementById('ks-jurnal-popup');
+  const storage = kartuStockData[kartuStockTab];
+  const metode = kartuStockTab;
+  let selectedEntries = [];
+
+  if(popup.dataset.singleIdx !== undefined) {
+    // Single mode
+    const chk = document.getElementById('ks-j-check-single');
+    if(chk && chk.checked) selectedEntries.push(parseInt(popup.dataset.singleIdx));
+  } else {
+    // Multi mode
+    document.querySelectorAll('.ks-j-check:checked').forEach(chk => {
+      selectedEntries.push(parseInt(chk.dataset.idx));
+    });
+  }
+
+  if(!selectedEntries.length) { showAlert('Pilih minimal 1 transaksi.'); return; }
+
+  const kode = nextKode('INV');
+  const today = new Date().toISOString().split('T')[0];
+  const jurnals = [];
+
+  selectedEntries.forEach(idx => {
+    const e = storage[idx];
+    if(!e || e.kJml <= 0) return;
+    jurnals.push({
+      tanggal: e.tgl || today,
+      ket: `Pengakuan HPP ${metode.toUpperCase()} - ${e.ket||'keluar'} [${kode}]`,
+      jenis: 'Manual',
+      lines: [
+        { akun:'5101', ket:'HPP - Harga Pokok Penjualan', debit:e.kJml, kredit:0 },
+        { akun:'1301', ket:'Persediaan Barang Dagangan', debit:0, kredit:e.kJml }
+      ]
+    });
+    e.jurnalDone = true;
+  });
+
+  if(!jurnals.length) { showAlert('Tidak ada transaksi valid.'); return; }
+
+  checkAndInputKalkulator(kode, jurnals,
+    `Jurnal HPP ${metode.toUpperCase()} dari Kartu Stock (${selectedEntries.length} transaksi) diinput`,
+    (k) => { lastKalkInput = {kode:k, jurnalIndices:[]}; }
+  );
+
+  popup.style.display='none';
+  renderKartuStock();
+  showAlert(`✅ ${selectedEntries.length} jurnal HPP berhasil diinput!`);
+}
+
+// ===== END KARTU STOCK =====
 
 // BUNGA
 function switchBungaTab(id, el) {
@@ -12882,6 +13239,19 @@ function startTutorial() { showPage('tutorial'); }
   resetInv();
   // set default dates
   ['py-tgl'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
+
+  // === Kartu Stock button wiring ===
+  var clearBtn = document.getElementById('ks-clear-btn');
+  if(clearBtn) clearBtn.addEventListener('click', clearKartuStock);
+
+  var jurnalClose = document.getElementById('ks-jurnal-popup-close');
+  if(jurnalClose) jurnalClose.addEventListener('click', function(){ document.getElementById('ks-jurnal-popup').style.display='none'; });
+
+  var jurnalBatal = document.getElementById('ks-jurnal-popup-batal');
+  if(jurnalBatal) jurnalBatal.addEventListener('click', function(){ document.getElementById('ks-jurnal-popup').style.display='none'; });
+
+  var jurnalOk = document.getElementById('ks-jurnal-popup-ok');
+  if(jurnalOk) jurnalOk.addEventListener('click', konfirmasiInputJurnalKartu);
 })();
 
 </script>
