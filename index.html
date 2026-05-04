@@ -1304,6 +1304,135 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
 .bhp-cal-my-item.selected { background: rgba(74,222,128,0.12); border-color: var(--accent); color: var(--accent); }
 .bhp-cal-year-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .bhp-cal-year-label { font-size: 14px; font-weight: 700; color: var(--text); }
+
+/* ── GLOBAL OPERATION SPINNER ── */
+#op-spinner-overlay {
+  display: none; position: fixed; inset: 0; z-index: 99999;
+  pointer-events: all;
+}
+#op-spinner-overlay.active { display: flex; align-items: center; justify-content: center; }
+#op-spinner-overlay::before {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(13,15,20,0.55); backdrop-filter: blur(2px);
+}
+#op-spinner-card {
+  position: relative; z-index: 1;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 18px; padding: 28px 36px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+  min-width: 200px;
+  animation: opSpinnerIn 0.2s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes opSpinnerIn {
+  from { opacity:0; transform: scale(0.85); }
+  to   { opacity:1; transform: scale(1); }
+}
+#op-spinner-ring {
+  width: 44px; height: 44px; position: relative;
+}
+#op-spinner-ring svg { width: 44px; height: 44px; animation: opRingSpin 0.9s linear infinite; }
+@keyframes opRingSpin { to { transform: rotate(360deg); } }
+#op-spinner-ring svg circle.track {
+  stroke: var(--border); fill: none; stroke-width: 3.5;
+}
+#op-spinner-ring svg circle.arc {
+  fill: none; stroke-width: 3.5; stroke-linecap: round;
+  stroke: url(#op-grad);
+  stroke-dasharray: 90 200;
+  animation: opArcDash 1.4s ease-in-out infinite;
+}
+@keyframes opArcDash {
+  0%   { stroke-dasharray: 15 200; stroke-dashoffset: 0; }
+  50%  { stroke-dasharray: 110 200; stroke-dashoffset: -45; }
+  100% { stroke-dasharray: 110 200; stroke-dashoffset: -150; }
+}
+#op-spinner-label {
+  font-size: 13px; font-weight: 600; font-family: var(--sans);
+  color: var(--text); text-align: center; max-width: 180px;
+}
+#op-spinner-sub {
+  font-size: 11px; color: var(--muted); font-family: var(--sans);
+  text-align: center; margin-top: -6px;
+}
+/* Dots pulse */
+#op-spinner-dots { display: flex; gap: 5px; margin-top: 2px; }
+#op-spinner-dots span {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent); opacity: 0.3;
+  animation: opDotPulse 1.2s ease-in-out infinite;
+}
+#op-spinner-dots span:nth-child(2) { animation-delay: 0.2s; }
+#op-spinner-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes opDotPulse { 0%,80%,100% { opacity:0.25; transform:scale(0.9); } 40% { opacity:1; transform:scale(1.2); } }
+
+/* ── PERIOD POPUP (tengah layar) ── */
+#an-period-popup-overlay {
+  display: none; position: fixed; inset: 0; z-index: 9000;
+  background: rgba(13,15,20,0.65); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+}
+#an-period-popup-overlay.open {
+  display: flex;
+  animation: fadeInOverlay 0.18s ease both;
+}
+@keyframes fadeInOverlay { from { opacity:0; } to { opacity:1; } }
+#an-period-popup {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 20px; padding: 8px;
+  width: min(340px, 90vw);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+  animation: popupSlideIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes popupSlideIn {
+  from { opacity:0; transform: scale(0.88) translateY(12px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+.an-period-popup-header {
+  padding: 14px 16px 10px; display: flex; align-items: center; justify-content: space-between;
+}
+.an-period-popup-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.09em;
+  color: var(--muted); text-transform: uppercase; font-family: var(--sans);
+}
+.an-period-popup-close {
+  width: 26px; height: 26px; border-radius: 8px; border: none;
+  background: var(--surface2); color: var(--muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; transition: all 0.15s;
+}
+.an-period-popup-close:hover { background: var(--border); color: var(--text); }
+.an-period-popup-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 12px; border-radius: 12px; cursor: pointer;
+  transition: background 0.15s; margin-bottom: 2px;
+}
+.an-period-popup-item:hover { background: var(--surface2); }
+.an-period-popup-item.active { background: rgba(74,222,128,0.08); }
+.an-period-popup-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.an-period-popup-texts { flex: 1; }
+.an-period-popup-name { font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--sans); }
+.an-period-popup-desc { font-size: 11px; color: var(--muted); font-family: var(--sans); margin-top: 1px; }
+.an-period-popup-check {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent); display: flex; align-items: center;
+  justify-content: center; font-size: 10px; color: #000; font-weight: 800;
+  flex-shrink: 0; opacity: 0; transition: opacity 0.15s, transform 0.15s;
+  transform: scale(0.7);
+}
+.an-period-popup-item.active .an-period-popup-check { opacity: 1; transform: scale(1); }
+.an-period-popup-divider { height: 1px; background: var(--border); margin: 4px 8px; }
+
+/* ── REFRESH BUTTON SPIN ── */
+@keyframes spinOnce {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.btn-refresh-spinning #an-refresh-icon { animation: spinOnce 0.6s ease-out; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -2041,13 +2170,15 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
       <div class="section-sub">Pendapatan · Laba · Arus Kas · Aset · Rasio · Perbandingan Periode</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <select id="analitik-period" onchange="renderAnalitik()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);font-size:13px;font-family:var(--sans);">
-        <option value="6">6 Bulan Terakhir</option>
-        <option value="12" selected>12 Bulan Terakhir</option>
-        <option value="24">24 Bulan Terakhir</option>
-        <option value="all">Semua Data</option>
-      </select>
-      <button onclick="renderAnalitik()" style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;">🔄 Refresh</button>
+      <button id="an-period-btn" onclick="openAnPeriodPopup()" style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:7px 14px;color:var(--text);font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;min-width:170px;justify-content:space-between;transition:border-color 0.2s,box-shadow 0.2s;" onmouseover="this.style.borderColor='var(--accent2)';this.style.boxShadow='0 0 0 3px rgba(34,211,238,0.12)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
+          <span id="an-period-label">12 Bulan Terakhir</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="opacity:0.6;flex-shrink:0;"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <input type="hidden" id="analitik-period" value="12">
+      <button id="an-refresh-btn" onclick="triggerAnalitikRefresh(this)" style="background:var(--accent);color:#000;border:none;border-radius:10px;padding:7px 16px;font-size:13px;font-family:var(--sans);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:opacity 0.2s;">
+          <svg id="an-refresh-icon" width="15" height="15" viewBox="0 0 15 15" fill="none" style="flex-shrink:0;"><path d="M13.5 7.5a6 6 0 1 1-1.757-4.243" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M13.5 2.5v3h-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Refresh
+        </button>
     </div>
   </div>
 
@@ -6421,9 +6552,11 @@ async function doResetAll() {
   // Hapus dari Supabase jika ada company aktif
   if (typeof currentCompany !== 'undefined' && currentCompany && typeof _supa !== 'undefined' && _supa) {
     try {
-      showAlert('⏳ Menghapus data dari cloud...');
+      showOpSpinner('Menghapus semua data...', 'Membersihkan cloud & lokal');
       await _supa.from('jurnal_entries').delete().eq('company_id', currentCompany.id);
+      hideOpSpinner();
     } catch(e) {
+      hideOpSpinner();
       console.error('Reset Supabase error:', e);
     }
   }
@@ -7977,6 +8110,67 @@ function filterJurnalByPeriod(from, to) {
 // ═══════════════════════════════════════
 // ANALITIK — ENGINE LENGKAP
 // ═══════════════════════════════════════
+// ── Analitik Period POPUP (tengah layar) ──
+function openAnPeriodPopup() {
+  document.getElementById('an-period-popup-overlay').classList.add('open');
+}
+function closeAnPeriodPopup(e) {
+  if(e.target === document.getElementById('an-period-popup-overlay')) closeAnPeriodPopupDirect();
+}
+function closeAnPeriodPopupDirect() {
+  document.getElementById('an-period-popup-overlay').classList.remove('open');
+}
+function setAnPeriodPopup(el) {
+  const val = el.dataset.val;
+  const label = el.dataset.label;
+  document.getElementById('analitik-period').value = val;
+  document.getElementById('an-period-label').textContent = label;
+  // Update active state
+  document.querySelectorAll('.an-period-popup-item').forEach(item => item.classList.remove('active'));
+  el.classList.add('active');
+  closeAnPeriodPopupDirect();
+  triggerAnalitikRefresh(document.getElementById('an-refresh-btn'));
+}
+
+// ── Refresh button with spin animation ──
+function triggerAnalitikRefresh(btn) {
+  const icon = document.getElementById('an-refresh-icon');
+  if(icon) {
+    icon.style.animation = 'none';
+    icon.offsetHeight; // reflow
+    icon.style.animation = 'spinOnce 0.6s ease-out';
+  }
+  renderAnalitik();
+}
+
+// ── GLOBAL OPERATION SPINNER ──
+let _opSpinnerDepth = 0;
+let _opSpinnerTimer = null;
+function showOpSpinner(label, sub) {
+  _opSpinnerDepth++;
+  if(_opSpinnerTimer) { clearTimeout(_opSpinnerTimer); _opSpinnerTimer = null; }
+  const overlay = document.getElementById('op-spinner-overlay');
+  const labelEl = document.getElementById('op-spinner-label');
+  const subEl = document.getElementById('op-spinner-sub');
+  if(labelEl) labelEl.textContent = label || 'Memproses...';
+  if(subEl) subEl.textContent = sub || '';
+  if(overlay) overlay.classList.add('active');
+}
+function hideOpSpinner() {
+  _opSpinnerDepth = Math.max(0, _opSpinnerDepth - 1);
+  if(_opSpinnerDepth > 0) return;
+  const overlay = document.getElementById('op-spinner-overlay');
+  if(overlay) {
+    const card = document.getElementById('op-spinner-card');
+    if(card) card.style.animation = 'opSpinnerIn 0.15s ease reverse both';
+    _opSpinnerTimer = setTimeout(() => {
+      if(overlay) overlay.classList.remove('active');
+      if(card) card.style.animation = '';
+      _opSpinnerTimer = null;
+    }, 150);
+  }
+}
+
 function renderAnalitik() {
   const periodSel = document.getElementById('analitik-period')?.value || '12';
   const now = new Date();
@@ -7993,13 +8187,13 @@ function renderAnalitik() {
     let cur = new Date(first.getFullYear(), first.getMonth(), 1);
     const end = new Date(last.getFullYear(), last.getMonth(), 1);
     while(cur <= end) {
-      months.push({ year: cur.getFullYear(), month: cur.getMonth(), label: cur.toLocaleDateString('id-ID',{month:'short',year:'2-digit'}) });
+      months.push({ year: cur.getFullYear(), month: cur.getMonth(), label: cur.toLocaleDateString('id-ID',{month:'short',year:'numeric'}) });
       cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
     }
   } else {
     for(let i=nBulan-1; i>=0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-      months.push({ year: d.getFullYear(), month: d.getMonth(), label: d.toLocaleDateString('id-ID',{month:'short',year:'2-digit'}) });
+      months.push({ year: d.getFullYear(), month: d.getMonth(), label: d.toLocaleDateString('id-ID',{month:'short',year:'numeric'}) });
     }
   }
 
@@ -8182,9 +8376,12 @@ function renderAnalitikEmpty() {
 function anDrawGroupedBar(id, labels, datasets, textClr, gridClr) {
   const el = document.getElementById(id); if(!el) return;
   const par = el.parentElement;
+  const dpr = window.devicePixelRatio || 1;
   const W = par.offsetWidth - 24 || 400; const H = parseInt(el.getAttribute('height'))||180;
-  el.width = W; el.height = H;
+  el.width = W * dpr; el.height = H * dpr;
+  el.style.width = W + 'px'; el.style.height = H + 'px';
   const ctx = el.getContext('2d');
+  ctx.scale(dpr, dpr);
   ctx.clearRect(0,0,W,H);
   const pad = {l:52,r:12,t:16,b:32};
   const cW = W-pad.l-pad.r; const cH = H-pad.t-pad.b;
@@ -8225,9 +8422,12 @@ function anDrawGroupedBar(id, labels, datasets, textClr, gridClr) {
 function anDrawLine(id, labels, datasets, textClr, gridClr) {
   const el = document.getElementById(id); if(!el) return;
   const par = el.parentElement;
+  const dpr = window.devicePixelRatio || 1;
   const W = par.offsetWidth - 24 || 400; const H = parseInt(el.getAttribute('height'))||180;
-  el.width = W; el.height = H;
+  el.width = W * dpr; el.height = H * dpr;
+  el.style.width = W + 'px'; el.style.height = H + 'px';
   const ctx = el.getContext('2d');
+  ctx.scale(dpr, dpr);
   ctx.clearRect(0,0,W,H);
   const pad = {l:52,r:12,t:16,b:32};
   const cW = W-pad.l-pad.r; const cH = H-pad.t-pad.b;
@@ -8281,9 +8481,12 @@ function anDrawLine(id, labels, datasets, textClr, gridClr) {
 function anDrawBarSignedColor(id, labels, data, textClr, gridClr, isPercent=false) {
   const el = document.getElementById(id); if(!el) return;
   const par = el.parentElement;
+  const dpr = window.devicePixelRatio || 1;
   const W = par.offsetWidth - 24 || 400; const H = parseInt(el.getAttribute('height'))||180;
-  el.width = W; el.height = H;
+  el.width = W * dpr; el.height = H * dpr;
+  el.style.width = W + 'px'; el.style.height = H + 'px';
   const ctx = el.getContext('2d');
+  ctx.scale(dpr, dpr);
   ctx.clearRect(0,0,W,H);
   const pad = {l:52,r:12,t:16,b:32};
   const cW = W-pad.l-pad.r; const cH = H-pad.t-pad.b;
@@ -8322,9 +8525,12 @@ function anDrawBarSignedColor(id, labels, data, textClr, gridClr, isPercent=fals
 function anDrawBebanDonut(id, textClr) {
   const el = document.getElementById(id); if(!el) return;
   const par = el.parentElement;
+  const dpr = window.devicePixelRatio || 1;
   const W = par.offsetWidth - 24 || 300; const H = 200;
-  el.width = W; el.height = H;
+  el.width = W * dpr; el.height = H * dpr;
+  el.style.width = W + 'px'; el.style.height = H + 'px';
   const ctx = el.getContext('2d');
+  ctx.scale(dpr, dpr);
   ctx.clearRect(0,0,W,H);
 
   // Hitung beban per akun
@@ -8391,9 +8597,12 @@ function anDrawRasio(lastM, months) {
 function anDrawWaterfall(id, m, textClr, gridClr) {
   const el = document.getElementById(id); if(!el) return;
   const par = el.parentElement;
+  const dpr = window.devicePixelRatio || 1;
   const W = par.offsetWidth-24||400; const H = 200;
-  el.width=W; el.height=H;
+  el.width=W*dpr; el.height=H*dpr;
+  el.style.width=W+'px'; el.style.height=H+'px';
   const ctx = el.getContext('2d');
+  ctx.scale(dpr,dpr);
   ctx.clearRect(0,0,W,H);
   const items = [
     { label:'Pendapatan', val: m.pendapatan||0, type:'pos' },
@@ -8438,9 +8647,12 @@ function anDrawWaterfall(id, m, textClr, gridClr) {
 function anDrawTopAkun(id, textClr, gridClr) {
   const el = document.getElementById(id); if(!el) return;
   const par = el.parentElement;
+  const dpr = window.devicePixelRatio || 1;
   const W = par.offsetWidth-24||400; const H = parseInt(el.getAttribute('height'))||220;
-  el.width=W; el.height=H;
+  el.width=W*dpr; el.height=H*dpr;
+  el.style.width=W+'px'; el.style.height=H+'px';
   const ctx = el.getContext('2d');
+  ctx.scale(dpr,dpr);
   ctx.clearRect(0,0,W,H);
 
   const snap = {};
@@ -8496,9 +8708,12 @@ function anDrawProyeksi(id, months, labels, textClr, gridClr) {
   const projected = [...new Array(n).fill(null), ...proj];
 
   const par = el.parentElement;
+  const dpr = window.devicePixelRatio || 1;
   const W = par.offsetWidth-24||400; const H = parseInt(el.getAttribute('height'))||180;
-  el.width=W; el.height=H;
+  el.width=W*dpr; el.height=H*dpr;
+  el.style.width=W+'px'; el.style.height=H+'px';
   const ctx = el.getContext('2d');
+  ctx.scale(dpr,dpr);
   ctx.clearRect(0,0,W,H);
   const pad={l:52,r:12,t:16,b:32};
   const cW=W-pad.l-pad.r; const cH=H-pad.t-pad.b;
@@ -13802,6 +14017,70 @@ function startTutorial() { showPage('tutorial'); }
   <span id="autosave-toast-msg">Data tersimpan otomatis</span>
 </div>
 
+<!-- GLOBAL OPERATION SPINNER OVERLAY -->
+<div id="op-spinner-overlay">
+  <div id="op-spinner-card">
+    <div id="op-spinner-ring">
+      <svg viewBox="0 0 44 44">
+        <defs>
+          <linearGradient id="op-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#4ade80"/>
+            <stop offset="100%" style="stop-color:#22d3ee"/>
+          </linearGradient>
+        </defs>
+        <circle class="track" cx="22" cy="22" r="18"/>
+        <circle class="arc" cx="22" cy="22" r="18" transform="rotate(-90 22 22)"/>
+      </svg>
+    </div>
+    <div id="op-spinner-label">Memproses...</div>
+    <div id="op-spinner-sub"></div>
+    <div id="op-spinner-dots"><span></span><span></span><span></span></div>
+  </div>
+</div>
+
+<!-- ANALITIK PERIOD POPUP -->
+<div id="an-period-popup-overlay" onclick="closeAnPeriodPopup(event)">
+  <div id="an-period-popup">
+    <div class="an-period-popup-header">
+      <span class="an-period-popup-title">Rentang Waktu Analitik</span>
+      <button class="an-period-popup-close" onclick="closeAnPeriodPopupDirect()">✕</button>
+    </div>
+    <div class="an-period-popup-item" data-val="6" data-label="6 Bulan Terakhir" onclick="setAnPeriodPopup(this)">
+      <div class="an-period-popup-icon" style="background:rgba(74,222,128,0.12);">📅</div>
+      <div class="an-period-popup-texts">
+        <div class="an-period-popup-name">6 Bulan Terakhir</div>
+        <div class="an-period-popup-desc">Tren 6 bulan ke belakang</div>
+      </div>
+      <div class="an-period-popup-check">✓</div>
+    </div>
+    <div class="an-period-popup-item active" data-val="12" data-label="12 Bulan Terakhir" onclick="setAnPeriodPopup(this)">
+      <div class="an-period-popup-icon" style="background:rgba(34,211,238,0.12);">📊</div>
+      <div class="an-period-popup-texts">
+        <div class="an-period-popup-name">12 Bulan Terakhir</div>
+        <div class="an-period-popup-desc">Analisis setahun penuh</div>
+      </div>
+      <div class="an-period-popup-check">✓</div>
+    </div>
+    <div class="an-period-popup-item" data-val="24" data-label="24 Bulan Terakhir" onclick="setAnPeriodPopup(this)">
+      <div class="an-period-popup-icon" style="background:rgba(245,158,11,0.12);">📈</div>
+      <div class="an-period-popup-texts">
+        <div class="an-period-popup-name">24 Bulan Terakhir</div>
+        <div class="an-period-popup-desc">Tren jangka panjang 2 tahun</div>
+      </div>
+      <div class="an-period-popup-check">✓</div>
+    </div>
+    <div class="an-period-popup-divider"></div>
+    <div class="an-period-popup-item" data-val="all" data-label="Semua Data" onclick="setAnPeriodPopup(this)">
+      <div class="an-period-popup-icon" style="background:rgba(167,139,250,0.12);">🔭</div>
+      <div class="an-period-popup-texts">
+        <div class="an-period-popup-name">Semua Data</div>
+        <div class="an-period-popup-desc">Sejak transaksi pertama</div>
+      </div>
+      <div class="an-period-popup-check">✓</div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: TEMPLATE BISNIS -->
 <div class="modal-backdrop" id="modal-template">
   <div class="modal" style="max-width:580px;">
@@ -15795,7 +16074,9 @@ async function doLogin() {
   const pw = document.getElementById('auth-password').value;
   if (!email || !pw) { showAuthMsg('Isi email dan password dulu'); return; }
   setAuthLoading('btn-login', true); clearAuthMsg();
+  showOpSpinner('Masuk ke akun...', 'Verifikasi kredensial');
   const { error } = await _supa.auth.signInWithPassword({ email, password: pw });
+  hideOpSpinner();
   setAuthLoading('btn-login', false);
   if (error) showAuthMsg(error.message === 'Invalid login credentials' ? '❌ Email atau password salah' : '❌ ' + error.message);
 }
@@ -15899,6 +16180,7 @@ async function doForgotPassword() {
 }
 
 async function doLogout() {
+  showOpSpinner('Keluar dari akun...', 'Membersihkan sesi');
   try {
     await _supa.auth.signOut({ scope: 'global' });
   } catch(e) {
@@ -16405,6 +16687,7 @@ function updateUserChip() {
 // LOAD DATA
 async function loadDataFromSupabase() {
   if (!currentCompany) return;
+  showOpSpinner('Memuat data bisnis...', 'Mengambil dari cloud');
   const companyId = currentCompany.id;
 
   // Load jurnal entries
@@ -16462,6 +16745,7 @@ async function loadDataFromSupabase() {
   }
 
   updateSaveIndicator('saved');
+  hideOpSpinner();
 }
 
 function getDefaultAkuns() {
@@ -16500,7 +16784,14 @@ async function updateJurnalInSupabase(entry) {
 
 async function deleteJurnalFromSupabase(entry) {
   if (!currentCompany || !entry._id) return;
-  await _supa.from('jurnal_entries').delete().eq('id', entry._id);
+  showOpSpinner('Menghapus jurnal...', 'Sinkronisasi ke cloud');
+  try {
+    await _supa.from('jurnal_entries').delete().eq('id', entry._id);
+    hideOpSpinner();
+  } catch(e) {
+    hideOpSpinner();
+    throw e;
+  }
 }
 
 // SAVE AKUNS
@@ -16596,6 +16887,7 @@ async function saveToStorage(showToast = true) {
     // Fallback ke localStorage jika belum login
     return _origSaveToStorage(showToast);
   }
+  showOpSpinner('Menyimpan data...', 'Mengunggah ke cloud');
   try {
     // Save semua jurnal baru (yang belum punya _id)
     let saved = 0;
@@ -16612,8 +16904,10 @@ async function saveToStorage(showToast = true) {
     updateSaveIndicator('saved');
     if (showToast) showAutoSaveToast('☁️ Tersimpan ke cloud!', false);
     else showAutoSaveToast('☁️ Auto-saved', true);
+    hideOpSpinner();
     return true;
   } catch(e) {
+    hideOpSpinner();
     updateSaveIndicator('error');
     console.error('Supabase save error:', e);
     return false;
@@ -16627,7 +16921,8 @@ function addJurnal(entry) {
   entry.no = 'JRN-' + String(jurnalCounter++).padStart(3,'0');
   jurnalEntries.push(entry);
   if (currentCompany) {
-    saveJurnalToSupabase(entry);
+    showOpSpinner('Menyimpan jurnal...', 'Mengunggah ke cloud');
+    saveJurnalToSupabase(entry).then(() => hideOpSpinner()).catch(() => hideOpSpinner());
   }
   if(typeof markDirty === 'function') markDirty();
 }
@@ -16637,16 +16932,21 @@ function addJurnal(entry) {
 const _origManualSave = manualSave;
 async function manualSave() {
   if (!currentCompany) {
+    showOpSpinner('Menyimpan...', 'Menyimpan ke penyimpanan lokal');
     _origManualSave();
+    setTimeout(hideOpSpinner, 400);
     return;
   }
+  showOpSpinner('Menyimpan ke cloud...', 'Mohon tunggu sebentar');
   updateSaveIndicator('saving');
   try {
     await saveToStorage(false);
+    hideOpSpinner();
     updateSaveIndicator('saved');
     showAlert('✅ Data berhasil disimpan ke cloud!');
     if(typeof renderStorageSlots === 'function') renderStorageSlots();
   } catch(e) {
+    hideOpSpinner();
     updateSaveIndicator('error');
     showAlert('❌ Gagal menyimpan: ' + (e.message || e));
   }
