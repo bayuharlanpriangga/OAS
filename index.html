@@ -1419,12 +1419,21 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
 .an-period-popup-desc { font-size: 11px; color: var(--muted); font-family: var(--sans); margin-top: 1px; }
 .an-period-popup-check {
   width: 20px; height: 20px; border-radius: 50%;
-  background: var(--accent); display: flex; align-items: center;
-  justify-content: center; font-size: 10px; color: #000; font-weight: 800;
+  border: 2px solid var(--border);
+  display: flex; align-items: center;
+  justify-content: center;
   flex-shrink: 0; opacity: 0; transition: opacity 0.15s, transform 0.15s;
   transform: scale(0.7);
 }
-.an-period-popup-item.active .an-period-popup-check { opacity: 1; transform: scale(1); }
+.an-period-popup-item.active .an-period-popup-check {
+  opacity: 1; transform: scale(1);
+  background: var(--accent); border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(74,222,128,0.4);
+}
+.an-period-popup-item.active .an-period-popup-check::after {
+  content: ''; display: block; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--bg);
+}
 .an-period-popup-divider { height: 1px; background: var(--border); margin: 4px 8px; }
 
 /* ── REFRESH BUTTON SPIN ── */
@@ -2174,11 +2183,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
           <span id="an-period-label">12 Bulan Terakhir</span>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="opacity:0.6;flex-shrink:0;"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <input type="hidden" id="analitik-period" value="12">
-      <button id="an-refresh-btn" onclick="triggerAnalitikRefresh(this)" style="background:var(--accent);color:#000;border:none;border-radius:10px;padding:7px 16px;font-size:13px;font-family:var(--sans);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:opacity 0.2s;">
-          <svg id="an-refresh-icon" width="15" height="15" viewBox="0 0 15 15" fill="none" style="flex-shrink:0;"><path d="M13.5 7.5a6 6 0 1 1-1.757-4.243" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M13.5 2.5v3h-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Refresh
-        </button>
+      <input type="hidden" id="analitik-period" value="12">
     </div>
   </div>
 
@@ -7981,27 +7986,59 @@ function loadProfil() {
   }
 }
 function saveProfil() {
-  const p = {
-    nama: document.getElementById('prof-nama').value.trim(),
-    jenis: document.getElementById('prof-jenis').value.trim(),
-    alamat: document.getElementById('prof-alamat').value.trim(),
-    telp: document.getElementById('prof-telp').value.trim(),
-    npwp: document.getElementById('prof-npwp').value.trim(),
-    email: document.getElementById('prof-email').value.trim(),
-    tahunBuku: document.getElementById('prof-tahun-buku').value,
-    matauang: document.getElementById('prof-mata-uang').value,
-  };
-  localStorage.setItem(PROFIL_KEY, JSON.stringify(p));
-  // Update sidebar name
-  const logoEl = document.querySelector('.logo');
-  if(logoEl && p.nama) {
-    const words = p.nama.split(' ');
-    const short = words.length >= 3 ? words.slice(0,2).join(' ') : p.nama;
-    logoEl.innerHTML = `${short.split(' ')[0]}<span>${short.split(' ').slice(1).join(' ')}</span>`;
+  const btn = document.querySelector('#modal-profil .btn-primary');
+  const origHTML = btn ? btn.innerHTML : '';
+  // Show spinner on button
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2.5px solid rgba(0,0,0,0.2);border-top-color:#000;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:6px;"></span>Menyimpan...';
   }
-  closeModal('modal-profil');
-  showAlert('✅ Profil perusahaan disimpan!');
-  markDirty();
+  setTimeout(function() {
+    const p = {
+      nama: document.getElementById('prof-nama').value.trim(),
+      jenis: document.getElementById('prof-jenis').value.trim(),
+      alamat: document.getElementById('prof-alamat').value.trim(),
+      telp: document.getElementById('prof-telp').value.trim(),
+      npwp: document.getElementById('prof-npwp').value.trim(),
+      email: document.getElementById('prof-email').value.trim(),
+      tahunBuku: document.getElementById('prof-tahun-buku').value,
+      matauang: document.getElementById('prof-mata-uang').value,
+    };
+    localStorage.setItem(PROFIL_KEY, JSON.stringify(p));
+    // Update sidebar name
+    const logoEl = document.querySelector('.logo');
+    if(logoEl && p.nama) {
+      const words = p.nama.split(' ');
+      const short = words.length >= 3 ? words.slice(0,2).join(' ') : p.nama;
+      logoEl.innerHTML = `${short.split(' ')[0]}<span>${short.split(' ').slice(1).join(' ')}</span>`;
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = origHTML; }
+    closeModal('modal-profil');
+    markDirty();
+    // Show success popup
+    showSaveProfilSuccess();
+  }, 900);
+}
+
+function showSaveProfilSuccess() {
+  // Remove existing if any
+  const old = document.getElementById('profil-success-popup');
+  if (old) old.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'profil-success-popup';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);animation:fadeInOverlay 0.2s ease both;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border:1.5px solid rgba(74,222,128,0.4);border-radius:20px;padding:32px 36px;text-align:center;width:min(320px,88vw);box-shadow:0 24px 60px rgba(0,0,0,0.5);animation:popupSlideIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;">
+      <div style="width:56px;height:56px;background:rgba(74,222,128,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;border:2px solid rgba(74,222,128,0.35);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">Profil Tersimpan!</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Data profil perusahaan berhasil disimpan.</div>
+      <button onclick="document.getElementById('profil-success-popup').remove()" style="background:var(--accent);color:#000;border:none;border-radius:10px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">OK</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(e) { if(e.target===overlay) overlay.remove(); });
+  setTimeout(function() { if(overlay.parentNode) overlay.remove(); }, 4000);
 }
 function openModal(id) { document.getElementById(id)?.classList.add('open'); }
 
@@ -8139,7 +8176,7 @@ function setAnPeriodPopup(el) {
   document.querySelectorAll('.an-period-popup-item').forEach(item => item.classList.remove('active'));
   el.classList.add('active');
   closeAnPeriodPopupDirect();
-  triggerAnalitikRefresh(document.getElementById('an-refresh-btn'));
+  triggerAnalitikRefresh(null);
 }
 
 // ── Refresh button with spin animation ──
@@ -14061,7 +14098,7 @@ function startTutorial() { showPage('tutorial'); }
         <div class="an-period-popup-name">6 Bulan Terakhir</div>
         <div class="an-period-popup-desc">Tren 6 bulan ke belakang</div>
       </div>
-      <div class="an-period-popup-check">✓</div>
+      <div class="an-period-popup-check"></div>
     </div>
     <div class="an-period-popup-item active" data-val="12" data-label="12 Bulan Terakhir" onclick="setAnPeriodPopup(this)">
       <div class="an-period-popup-icon" style="background:rgba(34,211,238,0.12);">📊</div>
@@ -14069,7 +14106,7 @@ function startTutorial() { showPage('tutorial'); }
         <div class="an-period-popup-name">12 Bulan Terakhir</div>
         <div class="an-period-popup-desc">Analisis setahun penuh</div>
       </div>
-      <div class="an-period-popup-check">✓</div>
+      <div class="an-period-popup-check"></div>
     </div>
     <div class="an-period-popup-item" data-val="24" data-label="24 Bulan Terakhir" onclick="setAnPeriodPopup(this)">
       <div class="an-period-popup-icon" style="background:rgba(245,158,11,0.12);">📈</div>
@@ -14077,7 +14114,7 @@ function startTutorial() { showPage('tutorial'); }
         <div class="an-period-popup-name">24 Bulan Terakhir</div>
         <div class="an-period-popup-desc">Tren jangka panjang 2 tahun</div>
       </div>
-      <div class="an-period-popup-check">✓</div>
+      <div class="an-period-popup-check"></div>
     </div>
     <div class="an-period-popup-divider"></div>
     <div class="an-period-popup-item" data-val="all" data-label="Semua Data" onclick="setAnPeriodPopup(this)">
@@ -14086,7 +14123,7 @@ function startTutorial() { showPage('tutorial'); }
         <div class="an-period-popup-name">Semua Data</div>
         <div class="an-period-popup-desc">Sejak transaksi pertama</div>
       </div>
-      <div class="an-period-popup-check">✓</div>
+      <div class="an-period-popup-check"></div>
     </div>
   </div>
 </div>
@@ -17741,10 +17778,15 @@ function closeInvMetodeSheet() {
 .bhp-picker-option .opt-check {
   width:22px; height:22px; border-radius:50%; border:2px solid var(--border);
   display:flex; align-items:center; justify-content:center; flex-shrink:0;
-  font-size:12px; transition:all 0.15s; color:transparent;
+  transition:all 0.18s;
 }
 .bhp-picker-option.selected .opt-check {
-  background:var(--accent); border-color:var(--accent); color:#000;
+  background:var(--accent); border-color:var(--accent);
+  box-shadow:0 0 8px rgba(74,222,128,0.4);
+}
+.bhp-picker-option.selected .opt-check::after {
+  content:''; display:block; width:8px; height:8px; border-radius:50%;
+  background:var(--bg);
 }
 </style>
 
@@ -17767,7 +17809,7 @@ function openTahunBukuPicker() {
         <span class="opt-label">${m.label}</span>
         <span class="opt-sub">${m.sub}</span>
       </span>
-      <span class="opt-check">${val===m.value?'✓':''}</span>
+      <span class="opt-check"></span>
     </button>`).join('');
   const bd = document.getElementById('bhp-tahun-buku-backdrop');
   bd.style.display = 'flex';
@@ -17802,7 +17844,7 @@ function openMataUangPicker() {
         <span class="opt-label">${m.label}</span>
         <span class="opt-sub">${m.sub}</span>
       </span>
-      <span class="opt-check">${val===m.value?'✓':''}</span>
+      <span class="opt-check"></span>
     </button>`).join('');
   const bd = document.getElementById('bhp-mata-uang-backdrop');
   bd.style.display = 'flex';
