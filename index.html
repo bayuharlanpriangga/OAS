@@ -2092,12 +2092,11 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   <div class="table-card">
     <div class="table-header">
       <div class="table-title">⚙️ Metode & Transaksi</div>
-      <select id="inv-metode" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;">
-        <option value="fifo">FIFO (First In First Out)</option>
-        <option value="lifo">LIFO (Last In First Out)</option>
-        <option value="wa">Weighted Average</option>
-        <option value="mwa">Moving Weighted Average</option>
-      </select>
+      <button id="inv-metode-btn" onclick="openInvMetodeSheet()" style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;color:var(--text);font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;min-width:200px;justify-content:space-between;">
+        <span id="inv-metode-label-btn">FIFO (First In First Out)</span>
+        <span style="color:var(--muted);font-size:10px;">▼</span>
+      </button>
+      <input type="hidden" id="inv-metode" value="fifo">
     </div>
     <div class="modal-body">
       <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
@@ -6164,19 +6163,29 @@ function importBackupJSON(input) {
 
 // PATCH doResetAll to also clear storage
 // doResetAll handled by storage system
-function doResetAll() {
+async function doResetAll() {
   const val = document.getElementById('reset-confirm-input')?.value?.trim()?.toUpperCase();
   if(val !== 'RESET') {
     document.getElementById('reset-confirm-input').style.borderColor = 'var(--red)';
     setTimeout(() => { document.getElementById('reset-confirm-input').style.borderColor = 'var(--border)'; }, 1500);
     return;
   }
+  closeModal('modal-reset-all');
+
+  // Hapus dari Supabase jika ada company aktif
+  if (typeof currentCompany !== 'undefined' && currentCompany && typeof _supa !== 'undefined' && _supa) {
+    try {
+      showAlert('⏳ Menghapus data dari cloud...');
+      await _supa.from('jurnal_entries').delete().eq('company_id', currentCompany.id);
+    } catch(e) {
+      console.error('Reset Supabase error:', e);
+    }
+  }
+
   jurnalEntries = [];
   jurnalCounter = 1;
-  closeModal('modal-reset-all');
   // Also clear auto-save storage
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(META_KEY);
+  try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(META_KEY); } catch(e) {}
   hasUnsavedChanges = false;
   updateSaveIndicator('saved');
   renderDashboard();
@@ -7128,13 +7137,26 @@ function inputPPH21Jurnal() {
   const pph21 = Math.round(stored.pph);
   if (!gaji || !pph21) { showAlert('Nilai PPh 21 atau gaji tidak valid.'); return; }
 
+  // Pilih akun beban sesuai kategori penerima
+  const kat = stored.kategori || 'tetap';
+  const bebanMap = {
+    'tetap':          { akun: '6101', nama: 'Beban Gaji & Upah' },
+    'tidak-tetap':    { akun: '6101', nama: 'Beban Gaji & Upah' },
+    'komisaris':      { akun: '6108', nama: 'Beban Honorarium Komisaris' },
+    'bukan-pegawai':  { akun: '6109', nama: 'Beban Jasa Profesional' },
+    'peserta-kegiatan': { akun: '6110', nama: 'Beban Hadiah & Kegiatan' },
+    'pensiun':        { akun: '6111', nama: 'Beban Tunjangan Pensiun' },
+    'mantan-pegawai': { akun: '6112', nama: 'Beban Tantiem & Gratifikasi' },
+  };
+  const beban = bebanMap[kat] || bebanMap['tetap'];
+
   const kode = nextKode('P21');
   const today = new Date().toISOString().split('T')[0];
 
   const jurnal = {
-    tanggal: today, ket: `Gaji karyawan & PPh 21 [${kode}]`, jenis: 'Manual',
+    tanggal: today, ket: `${beban.nama} & PPh 21 [${kode}]`, jenis: 'Manual',
     lines: [
-      { akun: '6101', ket: 'Beban Gaji & Upah', debit: gaji, kredit: 0 },
+      { akun: beban.akun, ket: beban.nama, debit: gaji, kredit: 0 },
       { akun: '2302', ket: 'Utang PPh 21 (Karyawan)', debit: 0, kredit: pph21 },
       { akun: '2201', ket: 'Utang Gaji', debit: 0, kredit: gaji - pph21 }
     ]
@@ -7142,10 +7164,10 @@ function inputPPH21Jurnal() {
 
   const beforeCount = jurnalEntries.length;
   checkAndInputKalkulator(kode, [jurnal],
-    `Jurnal gaji Rp${gaji.toLocaleString('id-ID')} & PPh21 Rp${pph21.toLocaleString('id-ID')} diinput`,
+    `Jurnal ${beban.nama} Rp${gaji.toLocaleString('id-ID')} & PPh21 Rp${pph21.toLocaleString('id-ID')} diinput`,
     (k) => {
       lastKalkInput = { kode: k, jurnalIndices: [beforeCount] };
-      showKalkUndoBar(`PPh21: Gaji Rp${gaji.toLocaleString('id-ID')}`, k);
+      showKalkUndoBar(`PPh21: ${beban.nama} Rp${gaji.toLocaleString('id-ID')}`, k);
     }
   );
 }
@@ -9541,12 +9563,16 @@ function hitungPersediaan() {
   const metode = document.getElementById('inv-metode').value;
   const rows = [];
   document.querySelectorAll('#inv-input-body tr').forEach(tr => {
-    const ins = tr.querySelectorAll('input');
-    const jenis = tr.querySelector('input[type=hidden]').value;
-    const tgl = ins[0].value;
-    const qty = parseFloat(ins[1].value)||0;
-    const harga = parseFloat(ins[2].value)||0;
-    const ket = ins[3].value;
+    // Gunakan selector spesifik agar tidak terganggu oleh bhpDatePicker yang menambah wrapper input
+    const hiddenJenis = tr.querySelector('input[type=hidden]');
+    const allInputs = tr.querySelectorAll('input:not([type=hidden])');
+    // allInputs[0] = date (text setelah upgrade picker), allInputs[1] = qty, allInputs[2] = harga, allInputs[3] = ket
+    if (!hiddenJenis || allInputs.length < 2) return;
+    const jenis = hiddenJenis.value;
+    const tgl = allInputs[0].value;
+    const qty = parseFloat(allInputs[1].value) || 0;
+    const harga = parseFloat(allInputs[2]?.value) || 0;
+    const ket = allInputs[3]?.value || '';
     if(qty) rows.push({tgl, jenis, qty, harga, ket});
   });
   if(!rows.length) { showAlert('Tambah data transaksi dulu!'); return; }
@@ -10348,7 +10374,7 @@ function hitungPPh21() {
     const pphBulan = Math.round(penghasilanBrutoBulan * tarif);
 
     const tarifPct = (tarif*100).toFixed(2);
-    window._lastPPh21 = { gaji: penghasilanBrutoBulan, pph: pphBulan, jht: jhtBulan+bpjsBulan+jpBulan };
+    window._lastPPh21 = { gaji: penghasilanBrutoBulan, pph: pphBulan, jht: jhtBulan+bpjsBulan+jpBulan, kategori: 'tetap' };
 
     // REKONSILIASI DESEMBER — Otomatis & Detail
     let rekonsiliasi = '';
@@ -10427,7 +10453,7 @@ function hitungPPh21() {
       document.getElementById('p21-tabel-body').innerHTML = lapisanRowsRekon.join('');
 
       // Override _lastPPh21 dengan nilai rekonsiliasi
-      window._lastPPh21 = { gaji: penghasilanBrutoBulan, pph: Math.max(0,pphDesSemestinya), jht: jhtBulan+bpjsBulan+jpBulan };
+      window._lastPPh21 = { gaji: penghasilanBrutoBulan, pph: Math.max(0,pphDesSemestinya), jht: jhtBulan+bpjsBulan+jpBulan, kategori: 'tetap' };
     } else {
       tw.style.display = 'block';
       document.getElementById('p21-tabel-title').textContent = 'Tabel TER Bulan ke-' + bulan + ' (' + ptkpKode + ')';
@@ -10540,8 +10566,7 @@ function hitungPPh21TidakTetapBulanan() {
   const tarif = getTERTarif(upahBulan, ptkpKode);
   const pph21 = Math.round(upahBulan * tarif * multiplier);
 
-  window._lastPPh21 = { gaji: upahBulan, pph: pph21, jht: 0 };
-  el.innerHTML = resRow('Upah Bulanan', rp(upahBulan))
+  window._lastPPh21 = { gaji: upahBulan, pph: pph21, jht: 0, kategori: 'tidak-tetap' };
     + resRow('Tarif TER (' + ptkpKode + ')', (tarif*100).toFixed(2) + '%')
     + (npwp==='tidak' ? resRow('Koreksi Non-NPWP (+20%)', '+20%') : '')
     + resRow('PPh 21 Bulan Ini', '<span class="kredit" style="font-size:18px">' + rp(pph21) + '</span>')
@@ -10593,8 +10618,7 @@ function hitungPPh21TidakTetap() {
   const multiplier = npwp === 'tidak' ? 1.2 : 1;
   const pajakFinal = Math.round(pajakBulan * multiplier);
 
-  window._lastPPh21 = { gaji: upahBulan, pph: pajakFinal, jht: 0 };
-  el.innerHTML = resRow('Upah Harian', rp(upahHarian))
+  window._lastPPh21 = { gaji: upahBulan, pph: pajakFinal, jht: 0, kategori: 'tidak-tetap' };
     + resRow('Hari Kerja', hariKerja + ' hari')
     + resRow('Upah Bulanan', rp(upahBulan))
     + resRow('Aturan PMK 168', `<span style="color:var(--accent2);font-size:12px">${catatan}</span>`)
@@ -10629,8 +10653,7 @@ function hitungPPh21Komisaris() {
   const tarif = getTERTarif(honor, ptkpKode);
   const pph21 = Math.round(honor * tarif);
 
-  window._lastPPh21 = { gaji: honor, pph: pph21, jht: 0 };
-  el.innerHTML = resRow('Penghasilan Bruto (Honor/Tantiem)', rp(honor))
+  window._lastPPh21 = { gaji: honor, pph: pph21, jht: 0, kategori: 'komisaris' };
     + resRow('Tarif TER Bulanan (' + ptkpKode + ')', (tarif*100).toFixed(2) + '%')
     + resRow('PPh 21 (TER Bulanan)', '<span class="kredit" style="font-size:18px">' + rp(pph21) + '</span>')
     + resRow('Penghasilan Diterima (Netto)', rp(honor - pph21));
@@ -10680,9 +10703,7 @@ function hitungPPh21BukanPegawai() {
     pph21 = Math.round(pajakPeriode * multiplier);
   }
 
-  window._lastPPh21 = { gaji: honor, pph: pph21, jht: 0 };
-  el.innerHTML = resRow('Penghasilan Bruto', rp(honor))
-    + resRow('Dasar Pengenaan (50% × Bruto)', rp(dasarPengenaan))
+  window._lastPPh21 = { gaji: honor, pph: pph21, jht: 0, kategori: 'bukan-pegawai' };
     + (isBerk && kumulatifEfektif ? resRow('Kumulatif Bruto s.d. sebelumnya', rp(kumulatifEfektif)) : '')
     + resRow('Tarif Ps.17 (Progresif)', isBerk ? 'Berdasarkan PKP kumulatif' : 'Per pembayaran')
     + (npwp==='tidak' ? resRow('Koreksi Non-NPWP (+20%)', '+20%') : '')
@@ -10729,8 +10750,7 @@ function hitungPPh21PesertaKegiatan() {
   const multiplier = npwp === 'tidak' ? 1.2 : 1;
   const pph21 = Math.round(pajakPeriode * multiplier);
 
-  window._lastPPh21 = { gaji: honor, pph: pph21, jht: 0 };
-  el.innerHTML = resRow('Hadiah / Imbalan Kegiatan', rp(honor))
+  window._lastPPh21 = { gaji: honor, pph: pph21, jht: 0, kategori: 'peserta-kegiatan' };
     + (kumulatif ? resRow('Kumulatif s.d. sebelumnya', rp(kumulatif)) : '')
     + resRow('Dasar Pengenaan', rp(honor) + ' (100% bruto)')
     + resRow('Tarif Ps.17 (Progresif)', 'Berdasarkan PKP kumulatif')
@@ -10771,8 +10791,7 @@ function hitungPPh21Pensiun() {
   const pajakTotal = hitungTarifProgresif(pkpSekarang);
   const pph21 = Math.round(Math.max(0, pajakTotal - pajakKumulatif));
 
-  window._lastPPh21 = { gaji: bruto, pph: pph21, jht: 0 };
-  el.innerHTML = resRow('Jumlah Penarikan Dana Pensiun', rp(bruto))
+  window._lastPPh21 = { gaji: bruto, pph: pph21, jht: 0, kategori: 'pensiun' };
     + (kumulatif ? resRow('Kumulatif Penarikan s.d. sebelumnya', rp(kumulatif)) : '')
     + resRow('Tarif Ps.17 (Progresif)', 'Berdasarkan kumulatif penarikan')
     + resRow('PPh 21 Masa Ini', '<span class="kredit" style="font-size:18px">' + rp(pph21) + '</span>')
@@ -10813,8 +10832,7 @@ function hitungPPh21MantanPegawai() {
   const multiplier = npwp === 'tidak' ? 1.2 : 1;
   const pph21 = Math.round(pajakPeriode * multiplier);
 
-  window._lastPPh21 = { gaji: bruto, pph: pph21, jht: 0 };
-  el.innerHTML = resRow('Jasa Produksi / Bonus / Gratifikasi', rp(bruto))
+  window._lastPPh21 = { gaji: bruto, pph: pph21, jht: 0, kategori: 'mantan-pegawai' };
     + (kumulatif ? resRow('Kumulatif s.d. sebelumnya', rp(kumulatif)) : '')
     + resRow('Dasar Pengenaan', rp(bruto) + ' (100% bruto)')
     + resRow('Tarif Ps.17 (Progresif)', 'Berdasarkan PKP kumulatif')
@@ -14550,13 +14568,15 @@ function showCompanyPickerScreen(companies) {
   document.getElementById('cp-add-form').style.display = 'none';
   document.getElementById('cp-new-name').value = '';
 
-  // Update chip sementara (menunggu pilih bisnis)
-  const chipAvatar = document.getElementById('chip-avatar');
-  const chipName   = document.getElementById('chip-company-name');
-  const chipSub    = document.getElementById('chip-sub');
-  if (chipAvatar) { chipAvatar.textContent = currentUser?.email?.charAt(0)?.toUpperCase() || '?'; chipAvatar.style.background = 'linear-gradient(135deg,var(--accent2),var(--accent))'; }
-  if (chipName)   chipName.textContent = 'Pilih Bisnis';
-  if (chipSub)    chipSub.textContent  = currentUser?.email || '';
+  // Update chip sementara HANYA jika belum ada bisnis aktif
+  if (!currentCompany) {
+    const chipAvatar = document.getElementById('chip-avatar');
+    const chipName   = document.getElementById('chip-company-name');
+    const chipSub    = document.getElementById('chip-sub');
+    if (chipAvatar) { chipAvatar.textContent = currentUser?.email?.charAt(0)?.toUpperCase() || '?'; chipAvatar.style.background = 'linear-gradient(135deg,var(--accent2),var(--accent))'; }
+    if (chipName)   chipName.textContent = 'Pilih Bisnis';
+    if (chipSub)    chipSub.textContent  = currentUser?.email || '';
+  }
 
   renderCompanyList(companies);
 }
@@ -15752,6 +15772,62 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
+
+<!-- INV METODE SHEET -->
+<div id="inv-metode-sheet-backdrop" onclick="if(event.target===this)closeInvMetodeSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);z-index:99998;align-items:flex-end;justify-content:center;">
+  <div style="background:var(--surface);width:100%;max-width:480px;border-radius:24px 24px 0 0;padding-bottom:env(safe-area-inset-bottom,16px);box-shadow:0 -12px 48px rgba(0,0,0,0.5);animation:slideUpSheet 0.28s cubic-bezier(0.34,1.2,0.64,1);">
+    <div style="width:38px;height:4px;border-radius:2px;background:var(--border);margin:12px auto 8px;"></div>
+    <div style="padding:12px 20px 14px;border-bottom:1px solid var(--border);">
+      <div style="font-size:15px;font-weight:700;">⚙️ Pilih Metode Persediaan</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px;">Pilih metode valuasi yang sesuai</div>
+    </div>
+    <div style="padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;" id="inv-metode-options">
+    </div>
+  </div>
+</div>
+
+<script>
+// INV METODE CUSTOM SELECT
+const _invMetodeList = [
+  { value:'fifo', label:'FIFO', sub:'First In First Out', icon:'📥' },
+  { value:'lifo', label:'LIFO', sub:'Last In First Out', icon:'📤' },
+  { value:'wa',   label:'Weighted Average', sub:'Rata-rata Tertimbang', icon:'⚖️' },
+  { value:'mwa',  label:'Moving Weighted Average', sub:'Rata-rata Bergerak', icon:'📈' },
+];
+let _invMetodeVal = 'fifo';
+
+function openInvMetodeSheet() {
+  const optEl = document.getElementById('inv-metode-options');
+  if (!optEl) return;
+  optEl.innerHTML = _invMetodeList.map(m => `
+    <button onclick="selectInvMetode('${m.value}')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;border:${_invMetodeVal===m.value?'2px solid var(--accent)':'1px solid var(--border)'};background:${_invMetodeVal===m.value?'rgba(74,222,128,0.08)':'var(--surface2)'};cursor:pointer;font-family:var(--sans);width:100%;text-align:left;transition:all 0.15s;">
+      <span style="font-size:22px;flex-shrink:0;">${m.icon}</span>
+      <span style="flex:1;min-width:0;">
+        <span style="display:block;font-size:14px;font-weight:700;color:${_invMetodeVal===m.value?'var(--accent)':'var(--text)'};">${m.label}</span>
+        <span style="display:block;font-size:11px;color:var(--muted);margin-top:1px;">${m.sub}</span>
+      </span>
+      ${_invMetodeVal===m.value?'<span style="color:var(--accent);font-size:18px;">✓</span>':''}
+    </button>`).join('');
+  const bd = document.getElementById('inv-metode-sheet-backdrop');
+  bd.style.display = 'flex';
+  requestAnimationFrame(() => bd.style.display = 'flex');
+}
+
+function selectInvMetode(val) {
+  _invMetodeVal = val;
+  const hidden = document.getElementById('inv-metode');
+  if (hidden) hidden.value = val;
+  const found = _invMetodeList.find(m => m.value === val);
+  const btn = document.getElementById('inv-metode-label-btn');
+  if (btn && found) btn.textContent = found.label + (found.sub ? ' — ' + found.sub : '');
+  closeInvMetodeSheet();
+}
+
+function closeInvMetodeSheet() {
+  const bd = document.getElementById('inv-metode-sheet-backdrop');
+  if (bd) bd.style.display = 'none';
+}
+</script>
 <!-- SHARED BHP SELECT POPUP -->
 
 </body>
