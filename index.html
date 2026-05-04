@@ -16999,15 +16999,16 @@ async function manualSave() {
 }
 
 // OVERRIDE saveProfil — juga save ke Supabase
-
-const _origSaveProfil = saveProfil;
-function saveProfil() {
-  _origSaveProfil();
-  if (currentCompany) {
-    const p = JSON.parse(localStorage.getItem('bhp_profil_v1') || '{}');
-    saveProfilToSupabase(p);
-  }
-}
+(function() {
+  var _origSaveProfil = saveProfil;
+  window.saveProfil = function() {
+    _origSaveProfil();
+    if (currentCompany) {
+      const p = JSON.parse(localStorage.getItem('bhp_profil_v1') || '{}');
+      saveProfilToSupabase(p);
+    }
+  };
+})();
 
 // OVERRIDE handleAttachFile — save attachment ke Supabase
 
