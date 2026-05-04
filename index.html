@@ -1392,6 +1392,9 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
       <div class="nav-card" onclick="showPage('neraca')" data-page="neraca">
         <span class="nav-card-icon">🏦</span>Neraca
       </div>
+      <div class="nav-card" onclick="showPage('analitik')" data-page="analitik">
+        <span class="nav-card-icon">🔬</span>Analitik
+      </div>
     </div>
 
     <div class="nav-group-label">Master</div>
@@ -2029,6 +2032,122 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
+
+<!-- ANALITIK -->
+<div class="page" id="page-analitik">
+  <div class="section-header" style="flex-wrap:wrap;gap:12px;">
+    <div>
+      <div class="section-title">🔬 Analitik & Tren Bisnis</div>
+      <div class="section-sub">Pendapatan · Laba · Arus Kas · Aset · Rasio · Perbandingan Periode</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <select id="analitik-period" onchange="renderAnalitik()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);font-size:13px;font-family:var(--sans);">
+        <option value="6">6 Bulan Terakhir</option>
+        <option value="12" selected>12 Bulan Terakhir</option>
+        <option value="24">24 Bulan Terakhir</option>
+        <option value="all">Semua Data</option>
+      </select>
+      <button onclick="renderAnalitik()" style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;">🔄 Refresh</button>
+    </div>
+  </div>
+
+  <!-- KPI Summary Row -->
+  <div id="analitik-kpi" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;"></div>
+
+  <!-- Row 1: Pendapatan vs Beban + Laba Bersih Trend -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;" class="kalk-grid">
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">📊 Pendapatan vs Beban per Bulan</div><div id="an-pend-legend" style="font-size:11px;color:var(--muted);display:flex;gap:10px;"></div></div>
+      <div style="padding:12px;"><canvas id="an-chart-pend-beban" height="180"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">📈 Tren Laba Bersih</div></div>
+      <div style="padding:12px;"><canvas id="an-chart-laba" height="180"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Row 2: Arus Kas + Komposisi Pendapatan -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;" class="kalk-grid">
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">💵 Arus Kas Bersih per Bulan</div></div>
+      <div style="padding:12px;"><canvas id="an-chart-kas" height="180"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">🍩 Komposisi Beban</div></div>
+      <div style="padding:12px;position:relative;height:220px;"><canvas id="an-chart-beban-donut"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Row 3: Akumulasi Aset + Ekuitas + Liabilitas -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;" class="kalk-grid">
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">🏦 Tren Posisi Keuangan (Aset · Liabilitas · Ekuitas)</div></div>
+      <div style="padding:12px;"><canvas id="an-chart-posisi" height="180"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">📐 Rasio Keuangan Otomatis</div></div>
+      <div style="padding:16px;" id="an-rasio-grid"></div>
+    </div>
+  </div>
+
+  <!-- Row 4: Waterfall Laba + Pertumbuhan MoM -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;" class="kalk-grid">
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">🌊 Waterfall Laba Rugi (Periode Ini)</div></div>
+      <div style="padding:12px;"><canvas id="an-chart-waterfall" height="200"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">📉 Pertumbuhan MoM (%)</div></div>
+      <div style="padding:12px;"><canvas id="an-chart-growth" height="200"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Row 5: Heatmap Aktivitas + Top Akun -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;" class="kalk-grid">
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">🔥 Heatmap Aktivitas Jurnal per Hari</div></div>
+      <div style="padding:12px;" id="an-heatmap"></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">🏆 Top 8 Akun Terbesar (Saldo)</div></div>
+      <div style="padding:12px;"><canvas id="an-chart-top-akun" height="220"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Row 6: Margin Analysis + Proyeksi -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;" class="kalk-grid">
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">💹 Margin Laba Kotor & Bersih per Bulan (%)</div></div>
+      <div style="padding:12px;"><canvas id="an-chart-margin" height="180"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">🔮 Proyeksi 3 Bulan ke Depan (Linear Regression)</div></div>
+      <div style="padding:12px;"><canvas id="an-chart-proyeksi" height="180"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Row 7: Cashflow Kumulatif + Perbandingan Periode -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;" class="kalk-grid">
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">💰 Kas Kumulatif Sepanjang Waktu</div></div>
+      <div style="padding:12px;"><canvas id="an-chart-kas-kumulatif" height="180"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">⚖️ Perbandingan Periode: Sekarang vs Sebelumnya</div></div>
+      <div style="padding:16px;" id="an-period-compare"></div>
+    </div>
+  </div>
+
+  <!-- Tabel ringkasan per bulan -->
+  <div class="table-card">
+    <div class="table-header"><div class="table-title">📋 Tabel Ringkasan Per Bulan</div></div>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Bulan</th><th>Pendapatan</th><th>HPP</th><th>Laba Kotor</th><th>Beban</th><th>Laba Bersih</th><th>Kas Masuk</th><th>Kas Keluar</th><th>Arus Kas</th><th>Margin%</th></tr></thead>
+      <tbody id="an-tabel-bulan"></tbody>
+    </table></div>
+  </div>
+</div>
+
 <!-- KALKULATOR: PENYUSUTAN -->
 <div class="page" id="page-kalk-penyusutan">
   <div class="section-header">
@@ -2106,7 +2225,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
         <button class="btn btn-danger btn-sm" onclick="resetInv()">Reset</button>
       </div>
       <div class="table-scroll"><table>
-        <thead><tr><th>No</th><th>Tanggal</th><th>Jenis</th><th>Qty</th><th>Harga/Unit (Rp)</th><th>Keterangan</th><th></th></tr></thead>
+        <thead><tr><th>No</th><th>Tanggal</th><th>Jenis</th><th>Qty</th><th>Harga/Unit (Rp)</th><th style="color:var(--accent2)">Harga Jual ke Pasar <small style="color:var(--muted)">(khusus Keluar)</small></th><th>Keterangan</th><th></th></tr></thead>
         <tbody id="inv-input-body"></tbody>
       </table></div>
     </div>
@@ -2115,8 +2234,8 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
     <div class="table-card">
       <div class="table-header"><div class="table-title">📊 Kartu Persediaan</div><div id="inv-metode-label" style="font-size:12px;color:var(--accent);"></div></div>
       <div class="table-scroll"><table>
-        <thead><tr><th>Tgl</th><th>Ket</th><th colspan="3" style="text-align:center;border-left:1px solid var(--border)">MASUK</th><th colspan="3" style="text-align:center;border-left:1px solid var(--border)">KELUAR</th><th colspan="3" style="text-align:center;border-left:1px solid var(--border)">SALDO</th></tr>
-        <tr><th></th><th></th><th style="border-left:1px solid var(--border)">Qty</th><th>Hrg</th><th>Jumlah</th><th style="border-left:1px solid var(--border)">Qty</th><th>Hrg</th><th>Jumlah</th><th style="border-left:1px solid var(--border)">Qty</th><th>Hrg</th><th>Jumlah</th></tr></thead>
+        <thead><tr><th>Tgl</th><th>Ket</th><th colspan="3" style="text-align:center;border-left:1px solid var(--border)">MASUK</th><th colspan="4" style="text-align:center;border-left:1px solid var(--border)">KELUAR</th><th colspan="3" style="text-align:center;border-left:1px solid var(--border)">SALDO</th></tr>
+        <tr><th></th><th></th><th style="border-left:1px solid var(--border)">Qty</th><th>Hrg Beli</th><th>Jumlah</th><th style="border-left:1px solid var(--border)">Qty</th><th>HPP/Unit</th><th>Hrg Jual/Unit</th><th>Laba</th><th style="border-left:1px solid var(--border)">Qty</th><th>Hrg</th><th>Jumlah</th></tr></thead>
         <tbody id="inv-kartu-body"></tbody>
       </table></div>
     </div>
@@ -2124,6 +2243,11 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
       <div class="stat-card green"><div class="stat-label">Nilai Persediaan Akhir</div><div class="stat-value" id="inv-akhir">Rp 0</div></div>
       <div class="stat-card blue"><div class="stat-label">Total HPP</div><div class="stat-value" id="inv-hpp">Rp 0</div></div>
       <div class="stat-card yellow"><div class="stat-label">Qty Akhir</div><div class="stat-value" id="inv-qty">0</div></div>
+    </div>
+    <div id="inv-penjualan-summary" style="display:none;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px;" class="kalk-grid">
+      <div class="stat-card green"><div class="stat-label">Total Pendapatan Penjualan</div><div class="stat-value" id="inv-pendapatan">Rp 0</div></div>
+      <div class="stat-card blue"><div class="stat-label">Total HPP Terjual</div><div class="stat-value" id="inv-hpp-terjual">Rp 0</div></div>
+      <div class="stat-card yellow"><div class="stat-label">Laba Kotor</div><div class="stat-value" id="inv-laba">Rp 0</div></div>
     </div>
   </div>
 </div>
@@ -3176,6 +3300,7 @@ const pageTitles = {
   'kalk-ppn':['PPN & PPh','PPN 12% · PPh 21 · PPh 23 · PPh Badan'],
   'ai-assistant':['Orias Assisten','Asisten keuangan berbasis AI'],
   'tutorial':['Tutorial','Panduan penggunaan software langkah demi langkah'],
+  'analitik':['Analitik & Tren Bisnis','Pendapatan · Laba · Arus Kas · Posisi Keuangan · Proyeksi'],
 };
 
 let currentPage = 'dashboard';
@@ -3221,6 +3346,7 @@ function showPage(id) {
   if(id==='neraca') renderNeraca();
   if(id==='akun') renderAkun();
   if(id==='transaksi') initTransaksiForm();
+  if(id==='analitik') setTimeout(renderAnalitik, 80);
 }
 
 function handleAddBtn() {
@@ -6473,7 +6599,7 @@ if(!inIframe) {
     const validPages = ['dashboard','transaksi','jurnal-umum','jurnal-kas','jurnal-penjualan',
       'jurnal-pembelian','buku-besar','neraca-saldo','laba-rugi','neraca','akun',
       'kalk-penyusutan','kalk-persediaan','kalk-bunga','kalk-rasio','kalk-bep','kalk-ppn',
-      'ai-assistant','tutorial'];
+      'ai-assistant','tutorial','analitik'];
     if(hash && validPages.includes(hash)) {
       showPage(hash);
     }
@@ -7069,29 +7195,65 @@ function inputAnuitasJurnal() {
 
 // PERSEDIAAN → INPUT JURNAL
 function inputPersediaanJurnal() {
-  const hpp = parseFloat(document.getElementById('inv-hpp')?.textContent?.replace(/[^0-9]/g,''))||0;
-  const akhir = parseFloat(document.getElementById('inv-akhir')?.textContent?.replace(/[^0-9]/g,''))||0;
-  const metode = document.getElementById('inv-metode')?.value || 'fifo';
+  const hpp = window._invHpp || (parseFloat(document.getElementById('inv-hpp')?.textContent?.replace(/[^0-9]/g,''))||0);
+  const pendapatan = window._invPendapatan || 0;
+  const metode = window._invMetode || document.getElementById('inv-metode')?.value || 'fifo';
+  const adaHargaJual = window._invAdaHargaJual || false;
 
   if(!hpp) { showAlert('Hitung persediaan dulu!'); return; }
 
   const kode = nextKode('INV');
   const today = new Date().toISOString().split('T')[0];
+  const jurnals = [];
 
-  const jurnal = {
-    tanggal: today, ket: `Pengakuan HPP persediaan ${metode.toUpperCase()} [${kode}]`, jenis: 'Manual',
-    lines: [
-      { akun: '5101', ket: 'HPP - Harga Pokok Penjualan', debit: hpp, kredit: 0 },
-      { akun: '1301', ket: 'Persediaan Barang Dagangan', debit: 0, kredit: hpp }
-    ]
-  };
+  if(adaHargaJual && pendapatan > 0) {
+    // Jurnal 1: Penjualan (Pendapatan)
+    jurnals.push({
+      tanggal: today,
+      ket: `Penjualan barang dagangan ${metode.toUpperCase()} [${kode}]`,
+      jenis: 'Penjualan',
+      lines: [
+        { akun: '1101', ket: 'Kas / Piutang penjualan', debit: pendapatan, kredit: 0 },
+        { akun: '4101', ket: 'Pendapatan Penjualan', debit: 0, kredit: pendapatan }
+      ]
+    });
+    // Jurnal 2: HPP
+    jurnals.push({
+      tanggal: today,
+      ket: `Pengakuan HPP persediaan ${metode.toUpperCase()} [${kode}]`,
+      jenis: 'Manual',
+      lines: [
+        { akun: '5101', ket: 'HPP - Harga Pokok Penjualan', debit: hpp, kredit: 0 },
+        { akun: '1301', ket: 'Persediaan Barang Dagangan', debit: 0, kredit: hpp }
+      ]
+    });
+  } else {
+    // Hanya jurnal HPP saja (tanpa harga jual)
+    jurnals.push({
+      tanggal: today,
+      ket: `Pengakuan HPP persediaan ${metode.toUpperCase()} [${kode}]`,
+      jenis: 'Manual',
+      lines: [
+        { akun: '5101', ket: 'HPP - Harga Pokok Penjualan', debit: hpp, kredit: 0 },
+        { akun: '1301', ket: 'Persediaan Barang Dagangan', debit: 0, kredit: hpp }
+      ]
+    });
+  }
 
   const beforeCount = jurnalEntries.length;
-  checkAndInputKalkulator(kode, [jurnal],
-    `Jurnal HPP persediaan ${metode.toUpperCase()} Rp${hpp.toLocaleString('id-ID')} diinput`,
+  const indices = jurnals.map((_,i)=>beforeCount+i);
+  const labaKotor = pendapatan - hpp;
+  const labelBar = adaHargaJual
+    ? `Persediaan ${metode.toUpperCase()}: Pendapatan ${rp(pendapatan)} | HPP ${rp(hpp)} | Laba ${rp(labaKotor)}`
+    : `Persediaan ${metode.toUpperCase()}: HPP Rp${hpp.toLocaleString('id-ID')}`;
+
+  checkAndInputKalkulator(kode, jurnals,
+    adaHargaJual
+      ? `Jurnal penjualan + HPP persediaan ${metode.toUpperCase()} diinput (Pendapatan ${rp(pendapatan)}, HPP ${rp(hpp)})`
+      : `Jurnal HPP persediaan ${metode.toUpperCase()} Rp${hpp.toLocaleString('id-ID')} diinput`,
     (k) => {
-      lastKalkInput = { kode: k, jurnalIndices: [beforeCount] };
-      showKalkUndoBar(`Persediaan ${metode.toUpperCase()}: HPP Rp${hpp.toLocaleString('id-ID')}`, k);
+      lastKalkInput = { kode: k, jurnalIndices: indices };
+      showKalkUndoBar(labelBar, k);
     }
   );
 }
@@ -7280,7 +7442,9 @@ function addKalkButtonsIfNeeded() {
   }
   const invRes = document.getElementById('inv-result');
   if(invRes && invRes.style.display !== 'none' && !document.getElementById('inv-input-btn-bar')) {
-    const bar = createKalkBar([{label:'📥 Input Jurnal HPP Persediaan', fn:'inputPersediaanJurnal()', color:'green'}]);
+    const adaHJ = window._invAdaHargaJual || false;
+    const lbl = adaHJ ? '📥 Input Jurnal Penjualan + HPP Persediaan' : '📥 Input Jurnal HPP Persediaan';
+    const bar = createKalkBar([{label:lbl, fn:'inputPersediaanJurnal()', color:'green'}]);
     bar.id = 'inv-input-btn-bar';
     invRes.appendChild(bar);
   }
@@ -7578,7 +7742,11 @@ function addInputBtnToAnuitas() {
 function addInputBtnToPersediaan() {
   const res = document.getElementById('inv-result');
   if(!res || res.style.display==='none' || document.getElementById('inv-input-btn-bar')) return;
-  const bar = createKalkBar([{label:'📥 Input Jurnal HPP Persediaan', fn:'inputPersediaanJurnal()', color:'green'}]);
+  const adaHargaJual = window._invAdaHargaJual || false;
+  const label = adaHargaJual
+    ? '📥 Input Jurnal Penjualan + HPP Persediaan'
+    : '📥 Input Jurnal HPP Persediaan';
+  const bar = createKalkBar([{label, fn:'inputPersediaanJurnal()', color:'green'}]);
   bar.id = 'inv-input-btn-bar';
   res.appendChild(bar);
 }
@@ -7746,6 +7914,652 @@ function filterJurnalByPeriod(from, to) {
     if(to && d > to) return false;
     return true;
   });
+}
+
+
+// ═══════════════════════════════════════
+// ANALITIK — ENGINE LENGKAP
+// ═══════════════════════════════════════
+function renderAnalitik() {
+  const periodSel = document.getElementById('analitik-period')?.value || '12';
+  const now = new Date();
+  let nBulan = parseInt(periodSel) || 12;
+
+  // Bangun array bulan
+  let months = [];
+  if(periodSel === 'all') {
+    // Ambil rentang dari jurnal terlama
+    if(!jurnalEntries.length) { renderAnalitikEmpty(); return; }
+    const tanggals = jurnalEntries.map(j=>j.tanggal).sort();
+    const first = new Date(tanggals[0]);
+    const last = new Date(tanggals[tanggals.length-1]);
+    let cur = new Date(first.getFullYear(), first.getMonth(), 1);
+    const end = new Date(last.getFullYear(), last.getMonth(), 1);
+    while(cur <= end) {
+      months.push({ year: cur.getFullYear(), month: cur.getMonth(), label: cur.toLocaleDateString('id-ID',{month:'short',year:'2-digit'}) });
+      cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
+    }
+  } else {
+    for(let i=nBulan-1; i>=0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+      months.push({ year: d.getFullYear(), month: d.getMonth(), label: d.toLocaleDateString('id-ID',{month:'short',year:'2-digit'}) });
+    }
+  }
+
+  // Inisialisasi data per bulan
+  months.forEach(m => {
+    m.pendapatan = 0; m.hpp = 0; m.beban = 0; m.kasIn = 0; m.kasOut = 0;
+    m.aset = 0; m.liabilitas = 0; m.ekuitas = 0;
+  });
+
+  // Hitung per bulan dari jurnal
+  // Saldo akumulatif untuk aset/liabilitas/ekuitas
+  const saldoMap = {}; // kode -> saldo berjalan sampai akhir bulan ini
+  const allTgl = [...new Set(jurnalEntries.map(j=>j.tanggal))].sort();
+
+  jurnalEntries.forEach(j => {
+    const d = new Date(j.tanggal);
+    const mi = months.findIndex(m => m.year===d.getFullYear() && m.month===d.getMonth());
+    j.lines.forEach(l => {
+      const a = akuns.find(x=>x.kode===l.akun);
+      if(!a) return;
+      const db = l.debit||0, kr = l.kredit||0;
+      if(mi >= 0) {
+        if(a.tipe==='Pendapatan') months[mi].pendapatan += kr;
+        if(a.tipe==='HPP') months[mi].hpp += db;
+        if(a.tipe==='Beban') months[mi].beban += db;
+        if(l.akun==='1101') { months[mi].kasIn += db; months[mi].kasOut += kr; }
+      }
+    });
+  });
+
+  // Hitung saldo akun per bulan untuk posisi keuangan
+  months.forEach((m,mi) => {
+    const endDate = new Date(m.year, m.month+1, 0).toISOString().split('T')[0];
+    let aset=0, liab=0, ekuitas=0;
+    const snap = {};
+    jurnalEntries.forEach(j => {
+      if(j.tanggal > endDate) return;
+      j.lines.forEach(l => {
+        if(!snap[l.akun]) snap[l.akun] = 0;
+        snap[l.akun] += (l.debit||0) - (l.kredit||0);
+      });
+    });
+    Object.keys(snap).forEach(kode => {
+      const a = akuns.find(x=>x.kode===kode);
+      if(!a) return;
+      const saldo = a.normal==='D' ? snap[kode] : -snap[kode];
+      if(a.tipe==='Aset') aset += Math.max(0,saldo);
+      if(a.tipe==='Liabilitas') liab += Math.max(0,saldo);
+      if(a.tipe==='Ekuitas') ekuitas += Math.max(0,saldo);
+    });
+    m.aset = aset; m.liabilitas = liab; m.ekuitas = ekuitas;
+    m.labaKotor = m.pendapatan - m.hpp;
+    m.labaBersih = m.pendapatan - m.hpp - m.beban;
+    m.aruKas = m.kasIn - m.kasOut;
+    m.marginKotor = m.pendapatan ? (m.labaKotor/m.pendapatan*100) : 0;
+    m.marginBersih = m.pendapatan ? (m.labaBersih/m.pendapatan*100) : 0;
+  });
+
+  const labels = months.map(m=>m.label);
+  const isDark = !document.body.classList.contains('light-mode');
+  const textClr = isDark ? 'rgba(226,232,240,0.7)' : 'rgba(15,23,42,0.6)';
+  const gridClr = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+
+  // ── KPI Cards ──
+  const totPend = months.reduce((s,m)=>s+m.pendapatan,0);
+  const totLaba = months.reduce((s,m)=>s+m.labaBersih,0);
+  const totKas = months.reduce((s,m)=>s+m.aruKas,0);
+  const lastM = months[months.length-1] || {};
+  const kpiData = [
+    { label:'Total Pendapatan', val: rp(totPend), icon:'💰', clr:'var(--accent)' },
+    { label:'Laba Bersih Periode', val: rp(totLaba), icon:'📈', clr: totLaba>=0?'var(--accent)':'var(--red)' },
+    { label:'Arus Kas Bersih', val: rp(totKas), icon:'💵', clr: totKas>=0?'var(--accent)':'var(--red)' },
+    { label:'Aset Akhir', val: rp(lastM.aset||0), icon:'🏦', clr:'var(--accent2)' },
+    { label:'Liabilitas Akhir', val: rp(lastM.liabilitas||0), icon:'📋', clr:'var(--accent3)' },
+    { label:'Ekuitas Akhir', val: rp(lastM.ekuitas||0), icon:'💎', clr:'var(--accent2)' },
+    { label:'Margin Bersih Rata²', val: (months.filter(m=>m.pendapatan).reduce((s,m)=>s+m.marginBersih,0)/(months.filter(m=>m.pendapatan).length||1)).toFixed(1)+'%', icon:'%', clr:'var(--accent3)' },
+    { label:'Jumlah Jurnal', val: jurnalEntries.length, icon:'📒', clr:'var(--muted)' },
+  ];
+  document.getElementById('analitik-kpi').innerHTML = kpiData.map(k=>`
+    <div class="stat-card" style="padding:14px 16px;">
+      <div style="font-size:22px;margin-bottom:4px;">${k.icon}</div>
+      <div class="stat-label">${k.label}</div>
+      <div style="font-size:16px;font-weight:700;color:${k.clr};font-family:var(--mono);margin-top:4px;">${k.val}</div>
+    </div>`).join('');
+
+  // Helper: clear dan buat context canvas
+  function getCtx(id) {
+    const c = document.getElementById(id);
+    if(!c) return null;
+    const par = c.parentElement;
+    const w = par.offsetWidth - 24 || 400;
+    c.width = w; c.height = parseInt(c.getAttribute('height'))||200;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0,0,c.width,c.height);
+    return { ctx, w: c.width, h: c.height, c };
+  }
+
+  // ── Chart 1: Pendapatan vs Beban (Bar grouped) ──
+  anDrawGroupedBar('an-chart-pend-beban', labels,
+    [{ label:'Pendapatan', data: months.map(m=>m.pendapatan), color:'rgba(74,222,128,' },
+     { label:'HPP+Beban', data: months.map(m=>m.hpp+m.beban), color:'rgba(248,113,113,' }],
+    textClr, gridClr);
+
+  // ── Chart 2: Tren Laba Bersih (Line with fill) ──
+  anDrawLine('an-chart-laba', labels, [{ data: months.map(m=>m.labaBersih), color:'#22d3ee', fill:true }], textClr, gridClr);
+
+  // ── Chart 3: Arus Kas (Bar, negatif merah) ──
+  anDrawBarSignedColor('an-chart-kas', labels, months.map(m=>m.aruKas), textClr, gridClr);
+
+  // ── Chart 4: Donut Komposisi Beban per akun ──
+  anDrawBebanDonut('an-chart-beban-donut', textClr);
+
+  // ── Chart 5: Posisi Keuangan (Stacked area line) ──
+  anDrawLine('an-chart-posisi', labels, [
+    { data: months.map(m=>m.aset), color:'#4ade80', fill:false, label:'Aset' },
+    { data: months.map(m=>m.liabilitas), color:'#f87171', fill:false, label:'Liabilitas' },
+    { data: months.map(m=>m.ekuitas), color:'#22d3ee', fill:false, label:'Ekuitas' },
+  ], textClr, gridClr);
+
+  // ── Chart 6: Rasio Keuangan ──
+  anDrawRasio(lastM, months);
+
+  // ── Chart 7: Waterfall Laba Rugi ──
+  anDrawWaterfall('an-chart-waterfall', lastM, textClr, gridClr);
+
+  // ── Chart 8: Pertumbuhan MoM % ──
+  const growthData = months.map((m,i) => {
+    if(i===0 || !months[i-1].pendapatan) return 0;
+    return ((m.pendapatan - months[i-1].pendapatan)/months[i-1].pendapatan*100);
+  });
+  anDrawBarSignedColor('an-chart-growth', labels, growthData, textClr, gridClr, true);
+
+  // ── Chart 9: Heatmap Aktivitas ──
+  anDrawHeatmap(months);
+
+  // ── Chart 10: Top 8 Akun ──
+  anDrawTopAkun('an-chart-top-akun', textClr, gridClr);
+
+  // ── Chart 11: Margin % ──
+  anDrawLine('an-chart-margin', labels, [
+    { data: months.map(m=>m.marginKotor), color:'#4ade80', fill:false, label:'Margin Kotor' },
+    { data: months.map(m=>m.marginBersih), color:'#22d3ee', fill:false, label:'Margin Bersih' },
+  ], textClr, gridClr);
+
+  // ── Chart 12: Proyeksi Linear Regression ──
+  anDrawProyeksi('an-chart-proyeksi', months, labels, textClr, gridClr);
+
+  // ── Chart 13: Kas Kumulatif ──
+  let kasKum = 0;
+  const kasKumData = months.map(m => { kasKum += m.aruKas; return kasKum; });
+  anDrawLine('an-chart-kas-kumulatif', labels, [{ data: kasKumData, color:'#f59e0b', fill:true }], textClr, gridClr);
+
+  // ── Period Compare ──
+  anDrawPeriodCompare(months);
+
+  // ── Tabel Ringkasan ──
+  const tbody = document.getElementById('an-tabel-bulan');
+  if(tbody) {
+    tbody.innerHTML = months.map(m=>`<tr>
+      <td style="font-weight:600">${m.label}</td>
+      <td class="debit">${rp(m.pendapatan)}</td>
+      <td class="num">${rp(m.hpp)}</td>
+      <td style="color:${m.labaKotor>=0?'var(--accent)':'var(--red)'}">${rp(m.labaKotor)}</td>
+      <td class="kredit">${rp(m.beban)}</td>
+      <td style="color:${m.labaBersih>=0?'var(--accent)':'var(--red)'};">${rp(m.labaBersih)}</td>
+      <td class="debit">${rp(m.kasIn)}</td>
+      <td class="kredit">${rp(m.kasOut)}</td>
+      <td style="color:${m.aruKas>=0?'var(--accent)':'var(--red)'}">${rp(m.aruKas)}</td>
+      <td style="color:${m.marginBersih>=0?'var(--accent)':'var(--red)'}">${m.marginBersih.toFixed(1)}%</td>
+    </tr>`).join('');
+  }
+}
+
+function renderAnalitikEmpty() {
+  document.getElementById('analitik-kpi').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">Belum ada data jurnal. Input transaksi terlebih dahulu.</div>`;
+}
+
+// ── DRAWING HELPERS ──────────────────────────────
+
+function anDrawGroupedBar(id, labels, datasets, textClr, gridClr) {
+  const el = document.getElementById(id); if(!el) return;
+  const par = el.parentElement;
+  const W = par.offsetWidth - 24 || 400; const H = parseInt(el.getAttribute('height'))||180;
+  el.width = W; el.height = H;
+  const ctx = el.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const pad = {l:52,r:12,t:16,b:32};
+  const cW = W-pad.l-pad.r; const cH = H-pad.t-pad.b;
+  const n = labels.length;
+  const ds = datasets.length;
+  const gW = cW/n; const bW = Math.min(gW*0.35, 28);
+  const allVals = datasets.flatMap(d=>d.data);
+  const maxV = Math.max(...allVals,1);
+
+  // Grid
+  for(let g=0;g<=4;g++) {
+    const y = pad.t + (g/4)*cH;
+    ctx.strokeStyle = gridClr; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    ctx.fillStyle = textClr; ctx.font='10px sans-serif'; ctx.textAlign='right';
+    ctx.fillText(anFmtShort(maxV*(4-g)/4), pad.l-4, y+3);
+  }
+
+  datasets.forEach((ds_,di) => {
+    ds_.data.forEach((v,i) => {
+      const x = pad.l + i*gW + gW*0.15 + di*(bW+2);
+      const bH = (v/maxV)*cH;
+      const grad = ctx.createLinearGradient(0,pad.t+cH-bH,0,pad.t+cH);
+      grad.addColorStop(0, ds_.color+'0.85)'); grad.addColorStop(1, ds_.color+'0.2)');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.roundRect(x, pad.t+cH-bH, bW, Math.max(bH,2), [3,3,0,0]); ctx.fill();
+    });
+  });
+
+  // X labels
+  ctx.fillStyle = textClr; ctx.font='10px sans-serif'; ctx.textAlign='center';
+  labels.forEach((l,i) => {
+    const x = pad.l + i*gW + gW/2;
+    ctx.fillText(l, x, H-8);
+  });
+}
+
+function anDrawLine(id, labels, datasets, textClr, gridClr) {
+  const el = document.getElementById(id); if(!el) return;
+  const par = el.parentElement;
+  const W = par.offsetWidth - 24 || 400; const H = parseInt(el.getAttribute('height'))||180;
+  el.width = W; el.height = H;
+  const ctx = el.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const pad = {l:52,r:12,t:16,b:32};
+  const cW = W-pad.l-pad.r; const cH = H-pad.t-pad.b;
+  const n = labels.length;
+
+  const allVals = datasets.flatMap(d=>d.data);
+  const maxV = Math.max(...allVals,1);
+  const minV = Math.min(...allVals,0);
+  const range = maxV-minV || 1;
+
+  for(let g=0;g<=4;g++) {
+    const y = pad.t + (g/4)*cH;
+    ctx.strokeStyle = gridClr; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    ctx.fillStyle = textClr; ctx.font='10px sans-serif'; ctx.textAlign='right';
+    ctx.fillText(anFmtShort(maxV - (maxV-minV)*(g/4)), pad.l-4, y+3);
+  }
+
+  const toY = v => pad.t + cH - ((v-minV)/range)*cH;
+  const toX = i => n<=1 ? pad.l+cW/2 : pad.l + (i/(n-1))*cW;
+
+  datasets.forEach(ds => {
+    const pts = ds.data.map((v,i)=>({x:toX(i),y:toY(v)}));
+    if(ds.fill && pts.length) {
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pad.t+cH);
+      pts.forEach(p=>ctx.lineTo(p.x,p.y));
+      ctx.lineTo(pts[pts.length-1].x, pad.t+cH);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0,pad.t,0,pad.t+cH);
+      grad.addColorStop(0, ds.color.replace('#','').length===6 ? hexToRgba(ds.color,0.25) : ds.color+'40');
+      grad.addColorStop(1, ds.color.replace('#','').length===6 ? hexToRgba(ds.color,0.02) : ds.color+'05');
+      ctx.fillStyle = grad; ctx.fill();
+    }
+    if(pts.length) {
+      ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+      pts.forEach(p=>ctx.lineTo(p.x,p.y));
+      ctx.strokeStyle = ds.color; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.stroke();
+      // Dots
+      pts.forEach(p=>{
+        ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2);
+        ctx.fillStyle=ds.color; ctx.fill();
+      });
+    }
+  });
+
+  ctx.fillStyle = textClr; ctx.font='10px sans-serif'; ctx.textAlign='center';
+  labels.forEach((l,i)=>ctx.fillText(l, toX(i), H-8));
+}
+
+function anDrawBarSignedColor(id, labels, data, textClr, gridClr, isPercent=false) {
+  const el = document.getElementById(id); if(!el) return;
+  const par = el.parentElement;
+  const W = par.offsetWidth - 24 || 400; const H = parseInt(el.getAttribute('height'))||180;
+  el.width = W; el.height = H;
+  const ctx = el.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const pad = {l:52,r:12,t:16,b:32};
+  const cW = W-pad.l-pad.r; const cH = H-pad.t-pad.b;
+  const n = labels.length;
+  const maxV = Math.max(...data.map(Math.abs),1);
+  const bW = Math.min(cW/n*0.55, 36);
+  const zeroY = pad.t + cH/2;
+
+  ctx.strokeStyle = gridClr; ctx.lineWidth=1;
+  for(let g=0;g<=4;g++) {
+    const y = pad.t+(g/4)*cH;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    const v = maxV*(2-g*1)/2;
+    ctx.fillStyle = textClr; ctx.font='10px sans-serif'; ctx.textAlign='right';
+    if(g===2) { ctx.fillText('0', pad.l-4, y+3); }
+    else ctx.fillText((isPercent?'':'')+(anFmtShort(v*(g<2?1:-1)))+(isPercent?'%':''), pad.l-4, y+3);
+  }
+  // Zero line
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(pad.l,zeroY); ctx.lineTo(W-pad.r,zeroY); ctx.stroke();
+
+  data.forEach((v,i) => {
+    const x = pad.l + i*(cW/n) + (cW/n - bW)/2;
+    const bH = Math.abs(v)/maxV * (cH/2);
+    const y = v>=0 ? zeroY-bH : zeroY;
+    const clr = v>=0 ? '#4ade80' : '#f87171';
+    const grad = ctx.createLinearGradient(0,y,0,y+bH);
+    grad.addColorStop(0,clr+'CC'); grad.addColorStop(1,clr+'33');
+    ctx.fillStyle=grad;
+    ctx.beginPath(); ctx.roundRect(x,y,bW,Math.max(bH,2),[3,3,0,0]); ctx.fill();
+  });
+  ctx.fillStyle=textClr; ctx.font='10px sans-serif'; ctx.textAlign='center';
+  labels.forEach((l,i)=>ctx.fillText(l, pad.l+(i+0.5)*(cW/n), H-8));
+}
+
+function anDrawBebanDonut(id, textClr) {
+  const el = document.getElementById(id); if(!el) return;
+  const par = el.parentElement;
+  const W = par.offsetWidth - 24 || 300; const H = 200;
+  el.width = W; el.height = H;
+  const ctx = el.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  // Hitung beban per akun
+  const bebanAkun = {};
+  jurnalEntries.forEach(j=>j.lines.forEach(l=>{
+    const a = akuns.find(x=>x.kode===l.akun);
+    if(a && (a.tipe==='Beban'||a.tipe==='HPP') && l.debit>0) {
+      bebanAkun[a.nama] = (bebanAkun[a.nama]||0) + l.debit;
+    }
+  }));
+  const sorted = Object.entries(bebanAkun).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  if(!sorted.length) { ctx.fillStyle=textClr; ctx.font='13px sans-serif'; ctx.textAlign='center'; ctx.fillText('Belum ada beban', W/2, H/2); return; }
+  const total = sorted.reduce((s,[,v])=>s+v,0);
+  const colors = ['#4ade80','#22d3ee','#f59e0b','#f87171','#a78bfa','#fb923c','#34d399'];
+  const cx=W/2-40, cy=H/2, r=Math.min(cx,cy)-20, rIn=r*0.55;
+  let angle=-Math.PI/2;
+  sorted.forEach(([name,val],i)=>{
+    const sweep = (val/total)*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,angle,angle+sweep); ctx.closePath();
+    ctx.fillStyle=colors[i%colors.length]; ctx.fill();
+    angle+=sweep;
+  });
+  ctx.beginPath(); ctx.arc(cx,cy,rIn,0,Math.PI*2); ctx.fillStyle='var(--surface)'; ctx.fill();
+  ctx.fillStyle=textClr; ctx.font='bold 12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('Beban', cx, cy-7); ctx.fillText('Total', cx, cy+7);
+
+  // Legend
+  const lx = W/2 + 25; let ly = 20;
+  sorted.forEach(([name,val],i)=>{
+    ctx.fillStyle=colors[i%colors.length]; ctx.fillRect(lx,ly,10,10);
+    ctx.fillStyle=textClr; ctx.font='10px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='top';
+    const pct = (val/total*100).toFixed(0)+'%';
+    ctx.fillText(name.length>14?name.slice(0,12)+'…':name, lx+14, ly);
+    ctx.fillStyle='rgba(100,116,139,0.8)'; ctx.fillText(pct, lx+14, ly+12);
+    ly += 26;
+  });
+}
+
+function anDrawRasio(lastM, months) {
+  const el = document.getElementById('an-rasio-grid'); if(!el) return;
+  const currentRatio = lastM.liabilitas ? (lastM.aset/lastM.liabilitas) : null;
+  const debtToEquity = lastM.ekuitas ? (lastM.liabilitas/lastM.ekuitas) : null;
+  const avgPend = months.filter(m=>m.pendapatan).reduce((s,m)=>s+m.pendapatan,0)/(months.filter(m=>m.pendapatan).length||1);
+  const avgLaba = months.filter(m=>m.pendapatan).reduce((s,m)=>s+m.labaBersih,0)/(months.filter(m=>m.pendapatan).length||1);
+  const npm = avgPend ? (avgLaba/avgPend*100) : 0;
+  const gpm = avgPend ? (months.filter(m=>m.pendapatan).reduce((s,m)=>s+m.labaKotor,0)/(months.filter(m=>m.pendapatan).length||1)/avgPend*100) : 0;
+
+  const rasios = [
+    { label:'Current Ratio', val: currentRatio ? currentRatio.toFixed(2)+'x' : '-', note:'Aset ÷ Liabilitas', ok: currentRatio && currentRatio>=2, warn: currentRatio && currentRatio<1 },
+    { label:'Debt to Equity', val: debtToEquity ? debtToEquity.toFixed(2)+'x' : '-', note:'Liabilitas ÷ Ekuitas', ok: debtToEquity && debtToEquity<0.5, warn: debtToEquity && debtToEquity>2 },
+    { label:'Net Profit Margin', val: npm.toFixed(1)+'%', note:'Laba Bersih ÷ Pendapatan', ok: npm>10, warn: npm<0 },
+    { label:'Gross Profit Margin', val: gpm.toFixed(1)+'%', note:'Laba Kotor ÷ Pendapatan', ok: gpm>30, warn: gpm<10 },
+    { label:'Aset Lancar', val: rp(lastM.aset||0), note:'Total nilai aset', ok: true, warn: false },
+    { label:'Total Ekuitas', val: rp(lastM.ekuitas||0), note:'Modal pemilik bersih', ok: lastM.ekuitas>0, warn: lastM.ekuitas<=0 },
+  ];
+  el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">` +
+    rasios.map(r=>`<div style="background:var(--surface2);border-radius:10px;padding:12px;border:1px solid var(--border);">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:2px;">${r.label}</div>
+      <div style="font-size:18px;font-weight:700;color:${r.warn?'var(--red)':r.ok?'var(--accent)':'var(--accent3)'};font-family:var(--mono);">${r.val}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px;">${r.note}</div>
+    </div>`).join('') + `</div>`;
+}
+
+function anDrawWaterfall(id, m, textClr, gridClr) {
+  const el = document.getElementById(id); if(!el) return;
+  const par = el.parentElement;
+  const W = par.offsetWidth-24||400; const H = 200;
+  el.width=W; el.height=H;
+  const ctx = el.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const items = [
+    { label:'Pendapatan', val: m.pendapatan||0, type:'pos' },
+    { label:'HPP', val: -(m.hpp||0), type:'neg' },
+    { label:'Laba Kotor', val: m.labaKotor||0, type:'total' },
+    { label:'Beban', val: -(m.beban||0), type:'neg' },
+    { label:'Laba Bersih', val: m.labaBersih||0, type:'total' },
+  ];
+  const pad={l:12,r:12,t:20,b:36};
+  const cW=W-pad.l-pad.r; const cH=H-pad.t-pad.b;
+  const n=items.length; const bW=Math.min(cW/n*0.55,40);
+  const allVals = items.map(x=>Math.abs(x.val));
+  const maxV = Math.max(...allVals, 1);
+  const baseY = pad.t + cH;
+  let running = 0;
+
+  items.forEach((item,i)=>{
+    const x = pad.l + i*(cW/n) + (cW/n-bW)/2;
+    let startY, bH;
+    if(item.type==='total') {
+      bH = Math.abs(item.val)/maxV*cH;
+      startY = item.val>=0 ? baseY-bH : baseY;
+      running = item.val;
+    } else {
+      const from = running;
+      const to = running + item.val;
+      bH = Math.abs(item.val)/maxV*cH;
+      startY = item.val>=0 ? baseY-to/maxV*cH-bH : baseY-from/maxV*cH;
+      running = to;
+    }
+    const clr = item.type==='total' ? '#22d3ee' : item.val>=0 ? '#4ade80' : '#f87171';
+    const grad = ctx.createLinearGradient(0,startY,0,startY+bH);
+    grad.addColorStop(0,clr+'CC'); grad.addColorStop(1,clr+'44');
+    ctx.fillStyle=grad;
+    ctx.beginPath(); ctx.roundRect(x,startY,bW,Math.max(bH,3),[3,3,0,0]); ctx.fill();
+    ctx.fillStyle=textClr; ctx.font='10px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(anFmtShort(Math.abs(item.val)), x+bW/2, startY-4);
+    ctx.fillText(item.label, x+bW/2, H-8);
+  });
+}
+
+function anDrawTopAkun(id, textClr, gridClr) {
+  const el = document.getElementById(id); if(!el) return;
+  const par = el.parentElement;
+  const W = par.offsetWidth-24||400; const H = parseInt(el.getAttribute('height'))||220;
+  el.width=W; el.height=H;
+  const ctx = el.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  const snap = {};
+  jurnalEntries.forEach(j=>j.lines.forEach(l=>{
+    if(!snap[l.akun]) snap[l.akun]=0;
+    snap[l.akun] += (l.debit||0)-(l.kredit||0);
+  }));
+  const items = Object.entries(snap).map(([kode,raw])=>{
+    const a = akuns.find(x=>x.kode===kode);
+    if(!a) return null;
+    const saldo = a.normal==='D' ? raw : -raw;
+    return { nama: a.nama, saldo: Math.abs(saldo), tipe: a.tipe };
+  }).filter(Boolean).sort((a,b)=>b.saldo-a.saldo).slice(0,8);
+  if(!items.length) return;
+
+  const pad={l:130,r:16,t:12,b:12}; const cW=W-pad.l-pad.r; const cH=H-pad.t-pad.b;
+  const bH = cH/items.length*0.65;
+  const maxV = items[0].saldo;
+  const colors = { Aset:'#4ade80', Liabilitas:'#f87171', Ekuitas:'#22d3ee', Pendapatan:'#a78bfa', Beban:'#fb923c', HPP:'#f59e0b' };
+
+  items.forEach((item,i)=>{
+    const y = pad.t + i*(cH/items.length) + (cH/items.length-bH)/2;
+    const bW = (item.saldo/maxV)*cW;
+    const clr = colors[item.tipe] || '#64748b';
+    const grad = ctx.createLinearGradient(pad.l,0,pad.l+bW,0);
+    grad.addColorStop(0,clr+'CC'); grad.addColorStop(1,clr+'44');
+    ctx.fillStyle=grad;
+    ctx.beginPath(); ctx.roundRect(pad.l,y,Math.max(bW,3),bH,[0,3,3,0]); ctx.fill();
+    ctx.fillStyle=textClr; ctx.font='11px sans-serif'; ctx.textAlign='right';
+    const nama = item.nama.length>16?item.nama.slice(0,14)+'…':item.nama;
+    ctx.fillText(nama, pad.l-6, y+bH/2+4);
+    ctx.font='10px sans-serif'; ctx.fillStyle='rgba(100,116,139,0.8)'; ctx.textAlign='left';
+    ctx.fillText(anFmtShort(item.saldo), pad.l+bW+4, y+bH/2+4);
+  });
+}
+
+function anDrawProyeksi(id, months, labels, textClr, gridClr) {
+  const el = document.getElementById(id); if(!el) return;
+  const data = months.map(m=>m.pendapatan);
+  const n = data.length;
+  if(n<2) { return; }
+
+  // Linear regression
+  const xs = data.map((_,i)=>i);
+  const mx = xs.reduce((s,x)=>s+x,0)/n;
+  const my = data.reduce((s,y)=>s+y,0)/n;
+  const slope = xs.reduce((s,x,i)=>s+(x-mx)*(data[i]-my),0) / (xs.reduce((s,x)=>s+(x-mx)**2,0)||1);
+  const intercept = my - slope*mx;
+  const proj = [0,1,2].map(k=>Math.max(0, intercept + slope*(n+k)));
+
+  const extLabels = [...labels, '+1', '+2', '+3'];
+  const extData = [...data, ...proj];
+  const projected = [...new Array(n).fill(null), ...proj];
+
+  const par = el.parentElement;
+  const W = par.offsetWidth-24||400; const H = parseInt(el.getAttribute('height'))||180;
+  el.width=W; el.height=H;
+  const ctx = el.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const pad={l:52,r:12,t:16,b:32};
+  const cW=W-pad.l-pad.r; const cH=H-pad.t-pad.b;
+  const nn=extLabels.length;
+  const maxV=Math.max(...extData,1);
+  const toX=i=>pad.l+(i/(nn-1))*cW;
+  const toY=v=>pad.t+cH-(v/maxV)*cH;
+
+  for(let g=0;g<=4;g++){
+    const y=pad.t+(g/4)*cH;
+    ctx.strokeStyle=gridClr;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+    ctx.fillStyle=textClr;ctx.font='10px sans-serif';ctx.textAlign='right';
+    ctx.fillText(anFmtShort(maxV*(4-g)/4),pad.l-4,y+3);
+  }
+
+  // Actual line
+  ctx.beginPath(); ctx.moveTo(toX(0),toY(data[0]));
+  data.forEach((v,i)=>ctx.lineTo(toX(i),toY(v)));
+  ctx.strokeStyle='#4ade80'; ctx.lineWidth=2; ctx.stroke();
+
+  // Projection line dashed
+  ctx.setLineDash([5,4]);
+  ctx.beginPath(); ctx.moveTo(toX(n-1),toY(data[n-1]));
+  proj.forEach((v,i)=>ctx.lineTo(toX(n+i),toY(v)));
+  ctx.strokeStyle='#f59e0b'; ctx.lineWidth=2; ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Projection area fill
+  ctx.beginPath();
+  ctx.moveTo(toX(n-1), pad.t+cH);
+  ctx.lineTo(toX(n-1), toY(data[n-1]));
+  proj.forEach((v,i)=>ctx.lineTo(toX(n+i),toY(v)));
+  ctx.lineTo(toX(n+2), pad.t+cH); ctx.closePath();
+  ctx.fillStyle='rgba(245,158,11,0.1)'; ctx.fill();
+
+  ctx.fillStyle=textClr; ctx.font='10px sans-serif'; ctx.textAlign='center';
+  extLabels.forEach((l,i)=>{
+    if(i%Math.ceil(nn/10)===0 || i>=n) ctx.fillText(l, toX(i), H-8);
+  });
+  // Legend
+  ctx.fillStyle='#4ade80'; ctx.fillRect(pad.l,4,24,3);
+  ctx.fillStyle=textClr; ctx.font='10px sans-serif'; ctx.textAlign='left'; ctx.fillText('Aktual',pad.l+28,8);
+  ctx.fillStyle='#f59e0b'; ctx.fillRect(pad.l+90,4,24,3);
+  ctx.fillStyle=textClr; ctx.fillText('Proyeksi',pad.l+118,8);
+}
+
+function anDrawHeatmap(months) {
+  const el = document.getElementById('an-heatmap'); if(!el) return;
+  // Count jurnal per hari (30 hari terakhir)
+  const now = new Date();
+  const days = [];
+  for(let i=29;i>=0;i--) {
+    const d = new Date(now.getFullYear(),now.getMonth(),now.getDate()-i);
+    const key = d.toISOString().split('T')[0];
+    days.push({key, label: d.toLocaleDateString('id-ID',{weekday:'short',day:'numeric'}), count:0});
+  }
+  jurnalEntries.forEach(j=>{
+    const d = days.find(x=>x.key===j.tanggal);
+    if(d) d.count++;
+  });
+  const max = Math.max(...days.map(d=>d.count),1);
+  el.innerHTML = `<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">30 Hari Terakhir — lebih gelap = lebih banyak jurnal</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;">` +
+    days.map(d=>{
+      const intensity = d.count/max;
+      const alpha = 0.1 + intensity*0.85;
+      const bg = d.count===0 ? 'var(--surface2)' : `rgba(74,222,128,${alpha})`;
+      return `<div title="${d.label}: ${d.count} jurnal" style="width:28px;height:28px;border-radius:5px;background:${bg};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:9px;color:${d.count?'#000':'var(--muted)'};">${d.count||''}</div>`;
+    }).join('') + `</div>`;
+}
+
+function anDrawPeriodCompare(months) {
+  const el = document.getElementById('an-period-compare'); if(!el) return;
+  const half = Math.floor(months.length/2);
+  if(half<1) { el.innerHTML='<div style="color:var(--muted);font-size:13px;">Butuh minimal 2 bulan data.</div>'; return; }
+  const prev = months.slice(0,half);
+  const curr = months.slice(half);
+  const sum = arr => ({
+    pend: arr.reduce((s,m)=>s+m.pendapatan,0),
+    laba: arr.reduce((s,m)=>s+m.labaBersih,0),
+    kas: arr.reduce((s,m)=>s+m.aruKas,0),
+    beban: arr.reduce((s,m)=>s+m.beban,0),
+  });
+  const p = sum(prev), c = sum(curr);
+  const pct = (a,b) => b===0?'-':((a-b)/Math.abs(b)*100).toFixed(1)+'%';
+  const rows = [
+    ['Pendapatan', c.pend, p.pend],
+    ['Laba Bersih', c.laba, p.laba],
+    ['Arus Kas', c.kas, p.kas],
+    ['Total Beban', c.beban, p.beban],
+  ];
+  el.innerHTML = `<div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Membandingkan ${curr.length} bulan terakhir vs ${prev.length} bulan sebelumnya</div>
+  <div style="display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px 14px;align-items:center;">
+    <div style="font-size:11px;color:var(--muted);font-weight:600;">Metrik</div>
+    <div style="font-size:11px;color:var(--muted);">Sekarang</div>
+    <div style="font-size:11px;color:var(--muted);">Sebelumnya</div>
+    <div style="font-size:11px;color:var(--muted);">Δ</div>` +
+    rows.map(([label,cur,prv])=>{
+      const delta = cur-prv;
+      const dPct = pct(cur,prv);
+      const clr = delta>=0?'var(--accent)':'var(--red)';
+      const arrow = delta>=0?'▲':'▼';
+      return `<div style="font-size:12px;font-weight:600;">${label}</div>
+        <div style="font-size:13px;font-family:var(--mono);color:var(--text);">${rp(cur)}</div>
+        <div style="font-size:13px;font-family:var(--mono);color:var(--muted);">${rp(prv)}</div>
+        <div style="font-size:12px;color:${clr};font-weight:700;">${arrow} ${dPct}</div>`;
+    }).join('') + `</div>`;
+}
+
+function anFmtShort(v) {
+  if(Math.abs(v)>=1e9) return (v/1e9).toFixed(1)+'M';
+  if(Math.abs(v)>=1e6) return (v/1e6).toFixed(1)+'jt';
+  if(Math.abs(v)>=1e3) return (v/1e3).toFixed(0)+'rb';
+  return Math.round(v).toString();
+}
+function hexToRgba(hex,alpha) {
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 // REMINDERS
@@ -9547,7 +10361,8 @@ function addInvRow(jenis) {
     <td><input type="date" value="${today}" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px;color:var(--text);font-size:12px;width:120px"></td>
     <td><span class="badge ${jenis==='masuk'?'badge-green':'badge-red'}">${jenis==='masuk'?'Masuk':'Keluar'}</span><input type="hidden" value="${jenis}"></td>
     <td><input type="number" placeholder="0" min="0" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px;color:var(--text);font-size:12px;width:80px"></td>
-    <td><input type="number" placeholder="${jenis==='keluar'?'(auto)':'0'}" min="0" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px;color:var(--text);font-size:12px;width:100px" ${jenis==='keluar'?'readonly':''}></td>
+    <td><input type="number" placeholder="${jenis==='keluar'?'(auto-HPP)':'0'}" min="0" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px;color:var(--text);font-size:12px;width:100px" ${jenis==='keluar'?'readonly':''}></td>
+    <td><input type="number" placeholder="${jenis==='keluar'?'Harga jual ke pasar':'-'}" min="0" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px;color:${jenis==='keluar'?'var(--text)':'var(--muted)'};font-size:12px;width:120px;${jenis==='masuk'?'opacity:0.35;cursor:not-allowed;':''}" ${jenis==='masuk'?'readonly tabindex="-1" title="Harga jual hanya diisi untuk baris Keluar"':''}></td>
     <td><input type="text" placeholder="Keterangan" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px;color:var(--text);font-size:12px;width:120px"></td>
     <td><button onclick="document.getElementById('invr-${id}').remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;">✕</button></td>`;
   tbody.appendChild(tr);
@@ -9555,6 +10370,12 @@ function addInvRow(jenis) {
 function resetInv() {
   document.getElementById('inv-input-body').innerHTML = '';
   document.getElementById('inv-result').style.display = 'none';
+  const summaryEl = document.getElementById('inv-penjualan-summary');
+  if(summaryEl) summaryEl.style.display = 'none';
+  const btnBar = document.getElementById('inv-input-btn-bar');
+  if(btnBar) btnBar.remove();
+  window._invHpp = 0; window._invPendapatan = 0; window._invLaba = 0;
+  window._invAdaHargaJual = false; window._invKartu = [];
   invRowId = 0;
   // seed default
   addInvRow('masuk'); addInvRow('masuk'); addInvRow('keluar');
@@ -9563,73 +10384,84 @@ function hitungPersediaan() {
   const metode = document.getElementById('inv-metode').value;
   const rows = [];
   document.querySelectorAll('#inv-input-body tr').forEach(tr => {
-    // Gunakan selector spesifik agar tidak terganggu oleh bhpDatePicker yang menambah wrapper input
     const hiddenJenis = tr.querySelector('input[type=hidden]');
     const allInputs = tr.querySelectorAll('input:not([type=hidden])');
-    // allInputs[0] = date (text setelah upgrade picker), allInputs[1] = qty, allInputs[2] = harga, allInputs[3] = ket
+    // allInputs[0]=date, [1]=qty, [2]=harga beli, [3]=harga jual, [4]=ket
     if (!hiddenJenis || allInputs.length < 2) return;
     const jenis = hiddenJenis.value;
     const tgl = allInputs[0].value;
     const qty = parseFloat(allInputs[1].value) || 0;
     const harga = parseFloat(allInputs[2]?.value) || 0;
-    const ket = allInputs[3]?.value || '';
-    if(qty) rows.push({tgl, jenis, qty, harga, ket});
+    const hargaJual = parseFloat(allInputs[3]?.value) || 0;
+    const ket = allInputs[4]?.value || '';
+    if(qty) rows.push({tgl, jenis, qty, harga, hargaJual, ket});
   });
   if(!rows.length) { showAlert('Tambah data transaksi dulu!'); return; }
 
-  let stock = []; // {qty, harga}
+  let stock = []; // {qty, harga} — selalu per layer untuk semua metode
   let hpp = 0;
+  let totalPendapatan = 0;
   let kartu = [];
+  let adaHargaJual = false;
 
   rows.forEach(r => {
     if(r.jenis === 'masuk') {
-      if(metode === 'wa' || metode === 'mwa') {
+      if(metode === 'wa') {
+        // Weighted Average periodic: gabung jadi satu layer rata-rata
         const totalQty = stock.reduce((s,x)=>s+x.qty,0) + r.qty;
         const totalVal = stock.reduce((s,x)=>s+x.qty*x.harga,0) + r.qty*r.harga;
         const hargaWA = totalVal / totalQty;
-        if(metode === 'mwa') {
-          stock = [{qty: totalQty, harga: hargaWA}];
-        } else {
-          stock.push({qty: r.qty, harga: r.harga});
-        }
+        stock = [{qty: totalQty, harga: hargaWA}];
+      } else if(metode === 'mwa') {
+        // Moving WA: setiap masuk langsung rata-ratakan
+        const totalQty = stock.reduce((s,x)=>s+x.qty,0) + r.qty;
+        const totalVal = stock.reduce((s,x)=>s+x.qty*x.harga,0) + r.qty*r.harga;
+        stock = [{qty: totalQty, harga: totalVal/totalQty}];
       } else {
+        // FIFO & LIFO: simpan per layer terpisah
         stock.push({qty: r.qty, harga: r.harga});
       }
-      const saldoQty = stock.reduce((s,x)=>s+x.qty,0);
-      const saldoVal = stock.reduce((s,x)=>s+x.qty*x.harga,0);
-      const hargaAvg = saldoQty ? saldoVal/saldoQty : 0;
-      kartu.push({...r, mQty:r.qty, mHarga:r.harga, mJml:r.qty*r.harga, kQty:'',kHarga:'',kJml:'', sQty:saldoQty, sHarga:hargaAvg, sJml:saldoVal});
+      // Snapshot saldo setelah masuk
+      const saldoLayers = stock.filter(x=>x.qty>0).map(x=>({...x}));
+      kartu.push({
+        tgl:r.tgl, ket:r.ket||'masuk',
+        mQty:r.qty, mHarga:r.harga, mJml:r.qty*r.harga,
+        kQty:'', kHarga:'', kJml:'', kHargaJual:'', kLaba:'',
+        saldoLayers
+      });
     } else {
-      // keluar
+      // KELUAR
       let qKeluarSisa = r.qty;
       let hppBatch = 0;
-      let hargaKeluar = 0;
+      // Detail keluar per layer untuk ditampilkan di kartu
+      let keluarLayers = []; // [{qty, hargaBeli}]
+
       if(metode === 'fifo') {
         while(qKeluarSisa > 0 && stock.length) {
           const layer = stock[0];
           const ambil = Math.min(layer.qty, qKeluarSisa);
           hppBatch += ambil * layer.harga;
+          keluarLayers.push({qty: ambil, harga: layer.harga});
           layer.qty -= ambil;
           qKeluarSisa -= ambil;
           if(layer.qty <= 0) stock.shift();
         }
-        hargaKeluar = r.qty ? hppBatch / r.qty : 0;
       } else if(metode === 'lifo') {
         while(qKeluarSisa > 0 && stock.length) {
           const layer = stock[stock.length-1];
           const ambil = Math.min(layer.qty, qKeluarSisa);
           hppBatch += ambil * layer.harga;
+          keluarLayers.push({qty: ambil, harga: layer.harga});
           layer.qty -= ambil;
           qKeluarSisa -= ambil;
           if(layer.qty <= 0) stock.pop();
         }
-        hargaKeluar = r.qty ? hppBatch / r.qty : 0;
       } else if(metode === 'wa' || metode === 'mwa') {
         const totalQty = stock.reduce((s,x)=>s+x.qty,0);
         const totalVal = stock.reduce((s,x)=>s+x.qty*x.harga,0);
-        hargaKeluar = totalQty ? totalVal/totalQty : 0;
-        hppBatch = hargaKeluar * r.qty;
-        // deduct
+        const hargaWA = totalQty ? totalVal/totalQty : 0;
+        hppBatch = hargaWA * r.qty;
+        keluarLayers = [{qty: r.qty, harga: hargaWA}];
         let sisa2 = r.qty;
         for(let i=0;i<stock.length&&sisa2>0;i++) {
           const ambil = Math.min(stock[i].qty, sisa2);
@@ -9637,38 +10469,150 @@ function hitungPersediaan() {
         }
         stock = stock.filter(x=>x.qty>0);
       }
+
       hpp += hppBatch;
-      const saldoQty = stock.reduce((s,x)=>s+x.qty,0);
-      const saldoVal = stock.reduce((s,x)=>s+x.qty*x.harga,0);
-      const hargaAvg = saldoQty ? saldoVal/saldoQty : 0;
-      kartu.push({...r, mQty:'',mHarga:'',mJml:'', kQty:r.qty,kHarga:hargaKeluar,kJml:hppBatch, sQty:saldoQty, sHarga:hargaAvg, sJml:saldoVal});
+      // Harga rata-rata HPP per unit untuk display
+      const hppPerUnit = r.qty ? hppBatch / r.qty : 0;
+      // Harga jual & laba
+      const pendapatanBatch = r.hargaJual ? r.hargaJual * r.qty : 0;
+      const labaBatch = pendapatanBatch ? pendapatanBatch - hppBatch : 0;
+      if(r.hargaJual) { adaHargaJual = true; totalPendapatan += pendapatanBatch; }
+
+      const saldoLayers = stock.filter(x=>x.qty>0).map(x=>({...x}));
+      kartu.push({
+        tgl:r.tgl, ket:r.ket||'keluar',
+        mQty:'', mHarga:'', mJml:'',
+        kQty:r.qty, kHarga:hppPerUnit, kJml:hppBatch,
+        kHargaJual: r.hargaJual||0, kLaba: labaBatch,
+        keluarLayers, // detail FIFO/LIFO per layer
+        saldoLayers
+      });
     }
   });
 
   const akhirQty = stock.reduce((s,x)=>s+x.qty,0);
   const akhirVal = stock.reduce((s,x)=>s+x.qty*x.harga,0);
+  const labaKotor = totalPendapatan - hpp;
 
   document.getElementById('inv-result').style.display='block';
-  document.getElementById('inv-metode-label').textContent = metode.toUpperCase();
+  const mLabel = {fifo:'FIFO',lifo:'LIFO',wa:'Weighted Average',mwa:'Moving WA'};
+  document.getElementById('inv-metode-label').textContent = 'Metode: ' + (mLabel[metode]||metode);
   document.getElementById('inv-akhir').textContent = rp(akhirVal);
   document.getElementById('inv-hpp').textContent = rp(hpp);
   document.getElementById('inv-qty').textContent = akhirQty.toLocaleString('id-ID');
 
-  const mLabel = {fifo:'FIFO',lifo:'LIFO',wa:'Weighted Average',mwa:'Moving WA'};
-  document.getElementById('inv-metode-label').textContent = 'Metode: ' + (mLabel[metode]||metode);
+  // Tampilkan summary penjualan jika ada harga jual
+  const summaryEl = document.getElementById('inv-penjualan-summary');
+  if(adaHargaJual) {
+    summaryEl.style.display = 'grid';
+    document.getElementById('inv-pendapatan').textContent = rp(totalPendapatan);
+    document.getElementById('inv-hpp-terjual').textContent = rp(hpp);
+    document.getElementById('inv-laba').textContent = rp(labaKotor);
+  } else {
+    summaryEl.style.display = 'none';
+  }
 
-  document.getElementById('inv-kartu-body').innerHTML = kartu.map(k => `<tr>
-    <td style="font-size:11px">${k.tgl}</td><td style="font-size:12px">${k.ket||k.jenis}</td>
-    <td style="border-left:1px solid var(--border)" class="num">${k.mQty||''}</td>
-    <td class="num">${k.mHarga?rp(k.mHarga):''}</td>
-    <td class="debit">${k.mJml?rp(k.mJml):''}</td>
-    <td style="border-left:1px solid var(--border)" class="num">${k.kQty||''}</td>
-    <td class="num">${k.kHarga?rp(k.kHarga):''}</td>
-    <td class="kredit">${k.kJml?rp(k.kJml):''}</td>
-    <td style="border-left:1px solid var(--border)" class="num">${k.sQty}</td>
-    <td class="num">${rp(k.sHarga)}</td>
-    <td class="num">${rp(k.sJml)}</td>
-  </tr>`).join('');
+  // Render kartu persediaan — FIFO/LIFO tampilkan saldo per layer
+  const isLayered = (metode === 'fifo' || metode === 'lifo');
+  let kartuHtml = '';
+  kartu.forEach(k => {
+    if(k.mQty !== '') {
+      // Baris MASUK
+      const saldoRows = isLayered ? k.saldoLayers : [{qty: k.saldoLayers.reduce((s,x)=>s+x.qty,0), harga: k.saldoLayers.length ? k.saldoLayers.reduce((s,x)=>s+x.qty*x.harga,0)/k.saldoLayers.reduce((s,x)=>s+x.qty,0) : 0}];
+      const rowspan = saldoRows.length || 1;
+      kartuHtml += `<tr>
+        <td rowspan="${rowspan}" style="font-size:11px">${k.tgl}</td>
+        <td rowspan="${rowspan}" style="font-size:12px">${k.ket}</td>
+        <td rowspan="${rowspan}" style="border-left:1px solid var(--border)" class="num">${k.mQty}</td>
+        <td rowspan="${rowspan}" class="num">${rp(k.mHarga)}</td>
+        <td rowspan="${rowspan}" class="debit">${rp(k.mJml)}</td>
+        <td rowspan="${rowspan}" style="border-left:1px solid var(--border)" class="num"></td>
+        <td rowspan="${rowspan}" class="num"></td>
+        <td rowspan="${rowspan}" class="num"></td>
+        <td rowspan="${rowspan}" class="num"></td>
+        <td style="border-left:1px solid var(--border)" class="num">${saldoRows[0]?.qty||0}</td>
+        <td class="num">${rp(saldoRows[0]?.harga||0)}</td>
+        <td class="num">${rp((saldoRows[0]?.qty||0)*(saldoRows[0]?.harga||0))}</td>
+      </tr>`;
+      for(let i=1;i<saldoRows.length;i++) {
+        kartuHtml += `<tr>
+          <td style="border-left:1px solid var(--border)" class="num">${saldoRows[i].qty}</td>
+          <td class="num">${rp(saldoRows[i].harga)}</td>
+          <td class="num">${rp(saldoRows[i].qty*saldoRows[i].harga)}</td>
+        </tr>`;
+      }
+    } else {
+      // Baris KELUAR — tampilkan per layer keluar jika FIFO/LIFO
+      const keluarRows = (isLayered && k.keluarLayers && k.keluarLayers.length > 1) ? k.keluarLayers : null;
+      const saldoRows = isLayered ? k.saldoLayers : [{qty: k.saldoLayers.reduce((s,x)=>s+x.qty,0), harga: k.saldoLayers.length ? k.saldoLayers.reduce((s,x)=>s+x.qty*x.harga,0)/k.saldoLayers.reduce((s,x)=>s+x.qty,0) : 0}];
+      const maxRows = Math.max(keluarRows ? keluarRows.length : 1, saldoRows.length || 1);
+      const labaStr = k.kHargaJual ? `<span style="color:var(--accent)">${rp(k.kLaba)}</span>` : '-';
+      const hargaJualStr = k.kHargaJual ? rp(k.kHargaJual) : '<span style="color:var(--muted);font-size:11px">-</span>';
+      if(!keluarRows) {
+        // Satu baris keluar (keluar dari 1 layer atau WA)
+        const rowspan = saldoRows.length || 1;
+        kartuHtml += `<tr>
+          <td rowspan="${rowspan}" style="font-size:11px">${k.tgl}</td>
+          <td rowspan="${rowspan}" style="font-size:12px">${k.ket}</td>
+          <td rowspan="${rowspan}" style="border-left:1px solid var(--border)" class="num"></td>
+          <td rowspan="${rowspan}" class="num"></td>
+          <td rowspan="${rowspan}" class="num"></td>
+          <td rowspan="${rowspan}" style="border-left:1px solid var(--border)" class="num">${k.kQty}</td>
+          <td rowspan="${rowspan}" class="num kredit">${rp(k.kHarga)}</td>
+          <td rowspan="${rowspan}" class="num">${hargaJualStr}</td>
+          <td rowspan="${rowspan}" class="num">${labaStr}</td>
+          <td style="border-left:1px solid var(--border)" class="num">${saldoRows[0]?.qty||0}</td>
+          <td class="num">${rp(saldoRows[0]?.harga||0)}</td>
+          <td class="num">${rp((saldoRows[0]?.qty||0)*(saldoRows[0]?.harga||0))}</td>
+        </tr>`;
+        for(let i=1;i<saldoRows.length;i++) {
+          kartuHtml += `<tr>
+            <td style="border-left:1px solid var(--border)" class="num">${saldoRows[i].qty}</td>
+            <td class="num">${rp(saldoRows[i].harga)}</td>
+            <td class="num">${rp(saldoRows[i].qty*saldoRows[i].harga)}</td>
+          </tr>`;
+        }
+      } else {
+        // Multi baris keluar (FIFO/LIFO ambil dari beberapa layer)
+        const rowspan = maxRows;
+        const labaTotal = k.kHargaJual ? `<span style="color:var(--accent)">${rp(k.kLaba)}</span>` : '-';
+        kartuHtml += `<tr>
+          <td rowspan="${rowspan}" style="font-size:11px">${k.tgl}</td>
+          <td rowspan="${rowspan}" style="font-size:12px">${k.ket}</td>
+          <td rowspan="${rowspan}" style="border-left:1px solid var(--border)" class="num"></td>
+          <td rowspan="${rowspan}" class="num"></td>
+          <td rowspan="${rowspan}" class="num"></td>
+          <td style="border-left:1px solid var(--border)" class="num">${keluarRows[0].qty}</td>
+          <td class="num kredit">${rp(keluarRows[0].harga)}</td>
+          <td rowspan="${rowspan}" class="num">${hargaJualStr}</td>
+          <td rowspan="${rowspan}" class="num">${labaTotal}</td>
+          <td style="border-left:1px solid var(--border)" class="num">${saldoRows[0]?.qty||''}</td>
+          <td class="num">${saldoRows[0]?.harga?rp(saldoRows[0].harga):''}</td>
+          <td class="num">${saldoRows[0]?.qty?rp(saldoRows[0].qty*saldoRows[0].harga):''}</td>
+        </tr>`;
+        for(let i=1;i<maxRows;i++) {
+          const kr = keluarRows[i] || null;
+          const sr = saldoRows[i] || null;
+          kartuHtml += `<tr>
+            <td style="border-left:1px solid var(--border)" class="num">${kr?kr.qty:''}</td>
+            <td class="num kredit">${kr?rp(kr.harga):''}</td>
+            <td style="border-left:1px solid var(--border)" class="num">${sr?sr.qty:''}</td>
+            <td class="num">${sr?rp(sr.harga):''}</td>
+            <td class="num">${sr?rp(sr.qty*sr.harga):''}</td>
+          </tr>`;
+        }
+      }
+    }
+  });
+  document.getElementById('inv-kartu-body').innerHTML = kartuHtml;
+
+  // Simpan data untuk input jurnal (pendapatan per keluar)
+  window._invHpp = hpp;
+  window._invPendapatan = totalPendapatan;
+  window._invLaba = labaKotor;
+  window._invKartu = kartu;
+  window._invAdaHargaJual = adaHargaJual;
+  window._invMetode = metode;
 
   // Auto-add input button
   setTimeout(addInputBtnToPersediaan, 80);
