@@ -18103,6 +18103,319 @@ function closeMataUangPicker() {
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════
+     PULL-TO-REFRESH — tarik dari atas untuk refresh halaman
+     ═══════════════════════════════════════════════════════════════ -->
+<style>
+#ptr-indicator {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 99998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  height: 0;
+  overflow: visible;
+}
+#ptr-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 16px 7px 10px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.04);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: var(--sans);
+  color: var(--muted);
+  transform: translateY(-60px);
+  transition: transform 0.25s cubic-bezier(0.34,1.4,0.64,1), opacity 0.2s;
+  opacity: 0;
+  white-space: nowrap;
+  margin-top: 12px;
+}
+#ptr-pill.ptr-visible {
+  opacity: 1;
+}
+#ptr-pill.ptr-ready {
+  color: var(--accent);
+  border-color: rgba(74,222,128,0.4);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(74,222,128,0.15);
+}
+#ptr-pill.ptr-refreshing {
+  color: var(--accent2);
+  border-color: rgba(34,211,238,0.4);
+}
+#ptr-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease, background 0.2s;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+#ptr-pill.ptr-ready #ptr-arrow {
+  background: rgba(74,222,128,0.12);
+  border-color: rgba(74,222,128,0.3);
+}
+#ptr-spinner-ring {
+  display: none;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+#ptr-spinner-ring svg {
+  width: 18px;
+  height: 18px;
+  animation: opRingSpin 0.8s linear infinite;
+}
+#ptr-spinner-ring svg circle.ptr-track {
+  stroke: var(--border); fill: none; stroke-width: 3;
+}
+#ptr-spinner-ring svg circle.ptr-arc {
+  fill: none; stroke-width: 3; stroke-linecap: round;
+  stroke: var(--accent2);
+  stroke-dasharray: 40 80;
+  animation: opArcDash 1.2s ease-in-out infinite;
+}
+#ptr-pill.ptr-refreshing #ptr-arrow { display: none; }
+#ptr-pill.ptr-refreshing #ptr-spinner-ring { display: flex; }
+
+/* Saat pull aktif: konten sedikit turun mengikuti */
+.main.ptr-pulling {
+  transition: transform 0.0s;
+}
+.main.ptr-snap-back {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+</style>
+
+<!-- Pull-to-Refresh Indicator HTML -->
+<div id="ptr-indicator">
+  <div id="ptr-pill">
+    <div id="ptr-arrow">↓</div>
+    <div id="ptr-spinner-ring">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <circle class="ptr-track" cx="12" cy="12" r="9"/>
+        <circle class="ptr-arc" cx="12" cy="12" r="9" stroke-dashoffset="0"/>
+      </svg>
+    </div>
+    <span id="ptr-label">Tarik untuk refresh</span>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var THRESHOLD      = 72;   // px tarik untuk trigger refresh
+  var MAX_PULL       = 110;  // px maks tarik
+  var RESIST         = 0.45; // faktor hambatan
+  var startY         = 0;
+  var currentY       = 0;
+  var isPulling      = false;
+  var isRefreshing   = false;
+  var touchStarted   = false;
+
+  var pill    = document.getElementById('ptr-pill');
+  var label   = document.getElementById('ptr-label');
+  var arrow   = document.getElementById('ptr-arrow');
+  var mainEl  = document.querySelector('.main');
+
+  function getScrollTop() {
+    return window.scrollY || document.documentElement.scrollTop || 0;
+  }
+
+  function setPillY(py) {
+    // py = pull distance (raw, sudah dengan resistansi)
+    pill.style.transform = 'translateY(' + (py - 4) + 'px)';
+  }
+
+  function setMainTranslate(py) {
+    if (mainEl) mainEl.style.transform = 'translateY(' + py + 'px)';
+  }
+
+  function resetMain() {
+    if (!mainEl) return;
+    mainEl.classList.remove('ptr-pulling');
+    mainEl.classList.add('ptr-snap-back');
+    mainEl.style.transform = '';
+    setTimeout(function() {
+      mainEl.classList.remove('ptr-snap-back');
+    }, 350);
+  }
+
+  function showPill() {
+    pill.classList.add('ptr-visible');
+  }
+
+  function hidePill() {
+    pill.classList.remove('ptr-visible', 'ptr-ready', 'ptr-refreshing');
+    pill.style.transform = 'translateY(-60px)';
+    if (label) label.textContent = 'Tarik untuk refresh';
+    if (arrow) arrow.style.transform = '';
+  }
+
+  function doRefresh() {
+    if (isRefreshing) return;
+    isRefreshing = true;
+
+    pill.classList.remove('ptr-ready');
+    pill.classList.add('ptr-refreshing');
+    if (label) label.textContent = 'Memuat ulang...';
+
+    // Tahan pill di posisi threshold
+    setPillY(THRESHOLD * RESIST + 8);
+    setMainTranslate(THRESHOLD * RESIST * 0.4);
+
+    // Fungsi refresh aktual: reload data dari Supabase atau render ulang halaman
+    function afterRefresh() {
+      isRefreshing = false;
+      isPulling    = false;
+
+      // Animasi selesai
+      pill.classList.remove('ptr-refreshing');
+      pill.classList.add('ptr-ready');
+      if (label) label.textContent = '✓ Diperbarui!';
+      if (arrow) arrow.textContent = '✓';
+      arrow.style.display = 'flex';
+
+      setTimeout(function() {
+        hidePill();
+        resetMain();
+      }, 700);
+    }
+
+    try {
+      var refreshPromise = null;
+
+      // Jika Supabase aktif: reload data dari cloud
+      if (typeof loadDataFromSupabase === 'function' && window.currentCompany) {
+        refreshPromise = loadDataFromSupabase();
+      } else {
+        // Lokal: render ulang halaman aktif
+        if (typeof currentPage !== 'undefined' && typeof showPage === 'function') {
+          try { showPage(currentPage); } catch(e) {}
+        }
+        refreshPromise = Promise.resolve();
+      }
+
+      if (refreshPromise && typeof refreshPromise.then === 'function') {
+        refreshPromise.then(afterRefresh).catch(afterRefresh);
+      } else {
+        setTimeout(afterRefresh, 600);
+      }
+    } catch(e) {
+      setTimeout(afterRefresh, 400);
+    }
+  }
+
+  // ── Touch events ─────────────────────────────────────────────
+
+  document.addEventListener('touchstart', function(e) {
+    if (isRefreshing) return;
+    // Hanya aktif jika scroll di paling atas
+    if (getScrollTop() > 2) return;
+    // Jangan aktifkan jika menyentuh elemen scrollable di dalam (modal, sheet, dll)
+    var target = e.target;
+    var isInScrollable = false;
+    var el = target;
+    while (el && el !== document.body) {
+      if (el.id && (el.id.includes('picker') || el.id.includes('modal') || el.id.includes('sheet') || el.id.includes('overlay'))) {
+        isInScrollable = true; break;
+      }
+      if (el.classList && (el.classList.contains('modal') || el.classList.contains('modal-backdrop') || el.classList.contains('sidebar'))) {
+        isInScrollable = true; break;
+      }
+      el = el.parentElement;
+    }
+    if (isInScrollable) return;
+
+    touchStarted = true;
+    startY = e.touches[0].clientY;
+    currentY = startY;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function(e) {
+    if (!touchStarted || isRefreshing) return;
+    if (getScrollTop() > 2) { touchStarted = false; return; }
+
+    currentY = e.touches[0].clientY;
+    var dy = currentY - startY;
+
+    if (dy <= 0) {
+      if (isPulling) {
+        isPulling = false;
+        hidePill();
+        resetMain();
+      }
+      return;
+    }
+
+    // Resistansi
+    var pull = Math.min(dy * RESIST, MAX_PULL * RESIST);
+
+    if (!isPulling) {
+      isPulling = true;
+      if (mainEl) mainEl.classList.add('ptr-pulling');
+    }
+
+    showPill();
+    setPillY(pull);
+    setMainTranslate(pull * 0.35);
+
+    // Rotasi arrow sesuai progress
+    var progress = Math.min(pull / (THRESHOLD * RESIST), 1);
+    var rot = progress * 180;
+    if (arrow) arrow.style.transform = 'rotate(' + rot + 'deg)';
+
+    if (pull >= THRESHOLD * RESIST) {
+      pill.classList.add('ptr-ready');
+      if (label) label.textContent = 'Lepas untuk refresh';
+    } else {
+      pill.classList.remove('ptr-ready');
+      if (label) label.textContent = 'Tarik untuk refresh';
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    if (!touchStarted) return;
+    touchStarted = false;
+
+    if (!isPulling) return;
+
+    var dy = currentY - startY;
+    var pull = Math.min(dy * RESIST, MAX_PULL * RESIST);
+
+    if (pull >= THRESHOLD * RESIST) {
+      doRefresh();
+    } else {
+      isPulling = false;
+      hidePill();
+      resetMain();
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', function() {
+    touchStarted = false;
+    if (isPulling) {
+      isPulling = false;
+      hidePill();
+      resetMain();
+    }
+  }, { passive: true });
+
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
      GLOBAL SPINNER WRAPPER — semua proses save/delete/input
      Durasi spinner menyesuaikan jaringan (tidak fixed timeout)
      ═══════════════════════════════════════════════════════════════ -->
