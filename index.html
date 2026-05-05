@@ -18101,4 +18101,446 @@ function closeMataUangPicker() {
 
 <!-- SHARED BHP SELECT POPUP -->
 </script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     GLOBAL SPINNER WRAPPER — semua proses save/delete/input
+     Durasi spinner menyesuaikan jaringan (tidak fixed timeout)
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+
+  // ── Label mapping untuk berbagai operasi ──────────────────────
+  const SPINNER_LABELS = {
+    simpanKas:        ['Menyimpan Jurnal Kas...', 'Mengunggah ke cloud'],
+    simpanPenjualan:  ['Menyimpan Jurnal Penjualan...', 'Mengunggah ke cloud'],
+    simpanPembelian:  ['Menyimpan Jurnal Pembelian...', 'Mengunggah ke cloud'],
+    simpanManualFn:   ['Menyimpan Jurnal Manual...', 'Memvalidasi & mengunggah'],
+    simpanAkun:       ['Menyimpan Akun...', 'Memperbarui chart of accounts'],
+    hapusAkun:        ['Menghapus Akun...', 'Memperbarui data'],
+    simpanSaldoAwal:  ['Menyimpan Saldo Awal...', 'Mengunggah ke cloud'],
+    saveJurnalFromAI: ['Menyimpan Jurnal dari AI...', 'Memproses & mengunggah'],
+    hapusJurnal:      ['Menghapus Jurnal...', 'Sinkronisasi ke cloud'],
+    createCompany:    ['Membuat Perusahaan...', 'Menyiapkan data bisnis'],
+    deleteCompany:    ['Menghapus Perusahaan...', 'Membersihkan semua data'],
+    buatJurnalPenutup:['Membuat Jurnal Penutup...', 'Memproses penutupan buku'],
+    buatJurnalDariBank:['Membuat Jurnal dari Bank...', 'Mengunggah ke cloud'],
+    deleteAttachment: ['Menghapus Lampiran...', 'Memperbarui data'],
+    accsUpdateProfile:['Memperbarui Profil...', 'Menyimpan ke akun'],
+    accsUpdatePassword:['Mengubah Kata Sandi...', 'Memproses keamanan'],
+    accsLinkProvider: ['Menghubungkan Akun...', 'Memproses autentikasi'],
+    accsUnlinkProvider:['Memutus Koneksi Akun...', 'Memproses'],
+    accsLogoutAll:    ['Keluar dari Semua Sesi...', 'Membersihkan sesi'],
+    saveKartuStock:   ['Menyimpan Kartu Stok...', 'Mengunggah ke cloud'],
+    exportData:       ['Mengekspor Data...', 'Menyiapkan file'],
+  };
+
+  // ── Helper: wrap fungsi async/sync dengan spinner ─────────────
+  function wrapWithSpinner(fnName, labelPair) {
+    const orig = window[fnName];
+    if (typeof orig !== 'function') return; // belum tersedia, coba lagi nanti
+
+    window[fnName] = async function() {
+      const label = labelPair[0];
+      const sub   = labelPair[1];
+
+      // Jalankan fungsi asli
+      const result = orig.apply(this, arguments);
+
+      // Jika fungsi membutuhkan validasi (return void/false sebelum async),
+      // kita show spinner HANYA jika tidak ada alert yang muncul karena validasi gagal.
+      // Triknya: tunda 0ms, jika ada alert-box.show maka spinner tidak perlu.
+      await new Promise(r => setTimeout(r, 0));
+      const alertBox = document.getElementById('alert-box');
+      const isValidationAlert = alertBox && alertBox.classList.contains('show') &&
+        (alertBox.textContent.startsWith('❌') || alertBox.textContent.startsWith('Lengkapi') ||
+         alertBox.textContent.startsWith('Isi') || alertBox.textContent.startsWith('Pilih') ||
+         alertBox.textContent.includes('wajib') || alertBox.textContent.includes('tidak bisa') ||
+         alertBox.textContent.includes('balance') || alertBox.textContent.includes('sudah ada'));
+      if (isValidationAlert) return result;
+
+      // Show spinner
+      if (typeof showOpSpinner === 'function') showOpSpinner(label, sub);
+
+      // Tunggu promise jika async, atau tunggu operasi selesai
+      try {
+        if (result && typeof result.then === 'function') {
+          await result;
+        }
+      } catch(e) {
+        // Error sudah ditangani di fungsi asli
+      } finally {
+        if (typeof hideOpSpinner === 'function') hideOpSpinner();
+      }
+      return result;
+    };
+  }
+
+  // ── Wrap fungsi-fungsi sinkron yang memanggil addJurnal ───────
+  // (addJurnal sendiri sudah di-override untuk show spinner saat Supabase,
+  //  tapi untuk local-only mode kita perlu spinner juga)
+  function wrapSyncSave(fnName, labelPair) {
+    const orig = window[fnName];
+    if (typeof orig !== 'function') return;
+
+    window[fnName] = function() {
+      // Jalankan dulu untuk validasi
+      const args = arguments;
+
+      // Cek apakah akan gagal validasi dengan mencoba tanpa spinner dulu
+      // Cara: jalankan, cek alert
+      orig.apply(this, args);
+
+      setTimeout(function() {
+        const alertBox = document.getElementById('alert-box');
+        const isError = alertBox && alertBox.classList.contains('show') &&
+          (alertBox.textContent.startsWith('❌') ||
+           alertBox.textContent.startsWith('Lengkapi') ||
+           alertBox.textContent.startsWith('Isi ') ||
+           alertBox.textContent.startsWith('Pilih') ||
+           alertBox.textContent.includes('wajib') ||
+           alertBox.textContent.includes('tidak bisa') ||
+           alertBox.textContent.includes('tidak balance') ||
+           alertBox.textContent.includes('sudah ada') ||
+           alertBox.textContent.includes('tidak balance'));
+
+        // Jika sukses (ada pesan ✓ atau ✅), spinner sudah ditangani oleh addJurnal
+        // untuk mode Supabase. Untuk local-only, tambahkan spinner singkat.
+        const isSuccess = alertBox && alertBox.classList.contains('show') &&
+          (alertBox.textContent.startsWith('✓') || alertBox.textContent.startsWith('✅'));
+
+        if (isSuccess && typeof window.currentCompany === 'undefined' || 
+            isSuccess && !window.currentCompany) {
+          // Local mode: tampilkan spinner singkat saat menyimpan ke localStorage
+          if (typeof showOpSpinner === 'function') {
+            showOpSpinner(labelPair[0], 'Menyimpan ke penyimpanan lokal');
+            setTimeout(function() {
+              if (typeof hideOpSpinner === 'function') hideOpSpinner();
+            }, 600);
+          }
+        }
+      }, 20);
+    };
+  }
+
+  // ── Override hapusAkun untuk tambah spinner di confirm ─────────
+  function wrapHapusAkun() {
+    const orig = window.hapusAkun;
+    if (typeof orig !== 'function') return;
+    window.hapusAkun = function(kode) {
+      const a = (window.akuns || []).find(x => x.kode === kode);
+      if (!a) return orig.apply(this, arguments);
+      // Intercept showCustomConfirmGeneral result
+      const origConfirm = window.showCustomConfirmGeneral;
+      if (typeof origConfirm !== 'function') return orig.apply(this, arguments);
+
+      // Wrap: ganti showCustomConfirmGeneral sementara
+      window.showCustomConfirmGeneral = function(opts) {
+        const origFn = origConfirm;
+        window.showCustomConfirmGeneral = origFn; // restore
+        return origFn(opts).then(ok => {
+          if (ok) {
+            showOpSpinner('Menghapus Akun...', 'Memperbarui chart of accounts');
+            setTimeout(function() {
+              if (typeof hideOpSpinner === 'function') hideOpSpinner();
+            }, typeof window.currentCompany !== 'undefined' && window.currentCompany ? 1200 : 400);
+          }
+          return ok;
+        });
+      };
+      return orig.apply(this, arguments);
+    };
+  }
+
+  // ── Override saveKartuStockToCloud ────────────────────────────
+  function wrapSaveKartuStock() {
+    const orig = window.saveKartuStockToCloud;
+    if (typeof orig !== 'function') return;
+    window.saveKartuStockToCloud = async function() {
+      showOpSpinner('Menyimpan Kartu Stok...', 'Mengunggah ke cloud');
+      try {
+        const r = await orig.apply(this, arguments);
+        return r;
+      } finally {
+        hideOpSpinner();
+      }
+    };
+  }
+
+  // ── Override saveJurnalFromAI ─────────────────────────────────
+  function wrapSaveJurnalFromAI() {
+    const orig = window.saveJurnalFromAI;
+    if (typeof orig !== 'function') return;
+    window.saveJurnalFromAI = async function() {
+      showOpSpinner('Menyimpan Jurnal dari AI...', 'Memproses & mengunggah');
+      try {
+        const r = orig.apply(this, arguments);
+        if (r && typeof r.then === 'function') await r;
+        return r;
+      } finally {
+        setTimeout(function() { if (typeof hideOpSpinner === 'function') hideOpSpinner(); }, 300);
+      }
+    };
+  }
+
+  // ── Override buatJurnalPenutup ────────────────────────────────
+  function wrapBuatJurnalPenutup() {
+    const orig = window.buatJurnalPenutup;
+    if (typeof orig !== 'function') return;
+    window.buatJurnalPenutup = async function() {
+      showOpSpinner('Membuat Jurnal Penutup...', 'Memproses penutupan buku');
+      try {
+        const r = orig.apply(this, arguments);
+        if (r && typeof r.then === 'function') await r;
+        return r;
+      } finally {
+        setTimeout(function() { if (typeof hideOpSpinner === 'function') hideOpSpinner(); }, 400);
+      }
+    };
+  }
+
+  // ── Override buatJurnalDariBankRow ────────────────────────────
+  function wrapBuatJurnalDariBankRow() {
+    const orig = window.buatJurnalDariBankRow;
+    if (typeof orig !== 'function') return;
+    window.buatJurnalDariBankRow = async function() {
+      showOpSpinner('Membuat Jurnal dari Bank...', 'Mengunggah ke cloud');
+      try {
+        const r = await orig.apply(this, arguments);
+        return r;
+      } finally {
+        hideOpSpinner();
+      }
+    };
+  }
+
+  // ── Override createCompany ────────────────────────────────────
+  function wrapCreateCompany() {
+    const orig = window.createCompany;
+    if (typeof orig !== 'function') return;
+    window.createCompany = async function() {
+      showOpSpinner('Membuat Perusahaan...', 'Menyiapkan data bisnis');
+      try {
+        const r = await orig.apply(this, arguments);
+        return r;
+      } finally {
+        hideOpSpinner();
+      }
+    };
+  }
+
+  // ── Override accsUpdateProfile ────────────────────────────────
+  function wrapAccsUpdateProfile() {
+    const orig = window.accsUpdateProfile;
+    if (typeof orig !== 'function') return;
+    window.accsUpdateProfile = async function() {
+      showOpSpinner('Memperbarui Profil...', 'Menyimpan ke akun');
+      try {
+        const r = await orig.apply(this, arguments);
+        return r;
+      } finally {
+        hideOpSpinner();
+      }
+    };
+  }
+
+  // ── Override accsUpdatePassword ──────────────────────────────
+  function wrapAccsUpdatePassword() {
+    const orig = window.accsUpdatePassword;
+    if (typeof orig !== 'function') return;
+    window.accsUpdatePassword = async function() {
+      showOpSpinner('Mengubah Kata Sandi...', 'Memproses keamanan');
+      try {
+        const r = await orig.apply(this, arguments);
+        return r;
+      } finally {
+        hideOpSpinner();
+      }
+    };
+  }
+
+  // ── Override accsLinkProvider ─────────────────────────────────
+  function wrapAccsLinkProvider() {
+    const orig = window.accsLinkProvider;
+    if (typeof orig !== 'function') return;
+    window.accsLinkProvider = async function() {
+      showOpSpinner('Menghubungkan Akun...', 'Memproses autentikasi');
+      try {
+        const r = await orig.apply(this, arguments);
+        return r;
+      } finally {
+        hideOpSpinner();
+      }
+    };
+  }
+
+  // ── Override accsUnlinkProvider ──────────────────────────────
+  function wrapAccsUnlinkProvider() {
+    const orig = window.accsUnlinkProvider;
+    if (typeof orig !== 'function') return;
+    window.accsUnlinkProvider = async function() {
+      showOpSpinner('Memutus Koneksi Akun...', 'Memproses');
+      try {
+        const r = await orig.apply(this, arguments);
+        return r;
+      } finally {
+        hideOpSpinner();
+      }
+    };
+  }
+
+  // ── Override simpanAkun (sync tapi butuh spinner) ─────────────
+  function wrapSimpanAkun() {
+    const orig = window.simpanAkun;
+    if (typeof orig !== 'function') return;
+    window.simpanAkun = function() {
+      const kode = document.getElementById('new-akun-kode')?.value?.trim();
+      const nama  = document.getElementById('new-akun-nama')?.value?.trim();
+      if (!kode || !nama) { orig.apply(this, arguments); return; }
+      if ((window.akuns || []).find(a => a.kode === kode)) { orig.apply(this, arguments); return; }
+
+      orig.apply(this, arguments);
+      // Spinner untuk cloud sync
+      if (typeof showOpSpinner === 'function') {
+        showOpSpinner('Menyimpan Akun...', 'Memperbarui chart of accounts');
+        const isSupa = typeof window.currentCompany !== 'undefined' && window.currentCompany;
+        const delay = isSupa ? 1000 : 400;
+        setTimeout(function() {
+          if (typeof hideOpSpinner === 'function') hideOpSpinner();
+        }, delay);
+      }
+    };
+  }
+
+  // ── Override simpanSaldoAwal ──────────────────────────────────
+  function wrapSimpanSaldoAwal() {
+    const orig = window.simpanSaldoAwal;
+    if (typeof orig !== 'function') return;
+    window.simpanSaldoAwal = function() {
+      const tgl = document.getElementById('saldo-awal-tgl')?.value;
+      if (!tgl) { orig.apply(this, arguments); return; }
+      const lines = [];
+      document.querySelectorAll('#saldo-awal-rows input').forEach(inp => {
+        if (parseFloat(inp.value) || 0) lines.push(inp);
+      });
+      if (!lines.length) { orig.apply(this, arguments); return; }
+
+      orig.apply(this, arguments);
+      if (typeof showOpSpinner === 'function') {
+        showOpSpinner('Menyimpan Saldo Awal...', 'Mengunggah ke cloud');
+        const isSupa = typeof window.currentCompany !== 'undefined' && window.currentCompany;
+        setTimeout(function() {
+          if (typeof hideOpSpinner === 'function') hideOpSpinner();
+        }, isSupa ? 1200 : 500);
+      }
+    };
+  }
+
+  // ── Override simpanKas ────────────────────────────────────────
+  function wrapSimpanKas() {
+    const orig = window.simpanKas;
+    if (typeof orig !== 'function') return;
+    window.simpanKas = function() {
+      const tanggal = document.getElementById('kas-tanggal')?.value;
+      const jumlah  = parseFloat(document.getElementById('kas-jumlah')?.value) || 0;
+      const akunKode= document.getElementById('kas-akun-lawan')?.value;
+      if (!tanggal || !jumlah || !akunKode) { orig.apply(this, arguments); return; }
+
+      if (typeof showOpSpinner === 'function') showOpSpinner('Menyimpan Jurnal Kas...', 'Mengunggah ke cloud');
+      orig.apply(this, arguments);
+      // Jika local mode: hide setelah 500ms, jika cloud: addJurnal akan trigger async hideOpSpinner
+      if (typeof window.currentCompany === 'undefined' || !window.currentCompany) {
+        setTimeout(function() { if (typeof hideOpSpinner === 'function') hideOpSpinner(); }, 500);
+      }
+    };
+  }
+
+  // ── Override simpanPenjualan ──────────────────────────────────
+  function wrapSimpanPenjualan() {
+    const orig = window.simpanPenjualan;
+    if (typeof orig !== 'function') return;
+    window.simpanPenjualan = function() {
+      const tanggal = document.getElementById('jual-tanggal')?.value;
+      const jumlah  = parseFloat(document.getElementById('jual-jumlah')?.value) || 0;
+      if (!tanggal || !jumlah) { orig.apply(this, arguments); return; }
+
+      if (typeof showOpSpinner === 'function') showOpSpinner('Menyimpan Jurnal Penjualan...', 'Mengunggah ke cloud');
+      orig.apply(this, arguments);
+      if (typeof window.currentCompany === 'undefined' || !window.currentCompany) {
+        setTimeout(function() { if (typeof hideOpSpinner === 'function') hideOpSpinner(); }, 500);
+      }
+    };
+  }
+
+  // ── Override simpanPembelian ──────────────────────────────────
+  function wrapSimpanPembelian() {
+    const orig = window.simpanPembelian;
+    if (typeof orig !== 'function') return;
+    window.simpanPembelian = function() {
+      const tanggal = document.getElementById('beli-tanggal')?.value;
+      const jumlah  = parseFloat(document.getElementById('beli-jumlah')?.value) || 0;
+      const akunKode= document.getElementById('beli-akun')?.value;
+      if (!tanggal || !jumlah || !akunKode) { orig.apply(this, arguments); return; }
+
+      if (typeof showOpSpinner === 'function') showOpSpinner('Menyimpan Jurnal Pembelian...', 'Mengunggah ke cloud');
+      orig.apply(this, arguments);
+      if (typeof window.currentCompany === 'undefined' || !window.currentCompany) {
+        setTimeout(function() { if (typeof hideOpSpinner === 'function') hideOpSpinner(); }, 500);
+      }
+    };
+  }
+
+  // ── Override simpanManual ─────────────────────────────────────
+  function wrapSimpanManual() {
+    const orig = window.simpanManual;
+    if (typeof orig !== 'function') return;
+    window.simpanManual = function() {
+      const tanggal = document.getElementById('man-tanggal')?.value;
+      const lines = [];
+      document.querySelectorAll('#manual-lines .jurnal-line-row').forEach(row => {
+        const inps = row.querySelectorAll('input[type=number]');
+        if ((parseFloat(inps[0]?.value)||0) || (parseFloat(inps[1]?.value)||0)) lines.push(1);
+      });
+      if (!tanggal || lines.length < 2) { orig.apply(this, arguments); return; }
+
+      if (typeof showOpSpinner === 'function') showOpSpinner('Menyimpan Jurnal Manual...', 'Memvalidasi & mengunggah');
+      orig.apply(this, arguments);
+      if (typeof window.currentCompany === 'undefined' || !window.currentCompany) {
+        setTimeout(function() { if (typeof hideOpSpinner === 'function') hideOpSpinner(); }, 500);
+      }
+    };
+  }
+
+  // ── Jalankan semua wrap setelah DOM + semua script siap ───────
+  function applyAllWraps() {
+    wrapSimpanKas();
+    wrapSimpanPenjualan();
+    wrapSimpanPembelian();
+    wrapSimpanManual();
+    wrapSimpanAkun();
+    wrapHapusAkun();
+    wrapSimpanSaldoAwal();
+    wrapSaveJurnalFromAI();
+    wrapBuatJurnalPenutup();
+    wrapBuatJurnalDariBankRow();
+    wrapCreateCompany();
+    wrapAccsUpdateProfile();
+    wrapAccsUpdatePassword();
+    wrapAccsLinkProvider();
+    wrapAccsUnlinkProvider();
+    wrapSaveKartuStock();
+  }
+
+  // Tunggu DOM siap, lalu terapkan setelah semua script dijalankan
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(applyAllWraps, 200);
+    });
+  } else {
+    setTimeout(applyAllWraps, 200);
+  }
+
+})();
+</script>
+
 </body></html>
