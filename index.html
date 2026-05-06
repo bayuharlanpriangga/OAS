@@ -3234,7 +3234,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
       <div class="modal-body">
         <div class="form-group">
           <label>Pilih Bank</label>
-          <select id="rekon-bank" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);">
+          <select id="rekon-bank" style="width:100%">
             <option value="bca">BCA</option><option value="mandiri">Mandiri</option>
             <option value="bni">BNI</option><option value="bri">BRI</option>
             <option value="cimb">CIMB Niaga</option><option value="generic">Lainnya (CSV Generic)</option>
@@ -3296,7 +3296,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
           </div>
           <div class="form-group">
             <label>Dari</label>
-            <select id="kurs-dari" onchange="hitungKonversi()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;">
+            <select id="kurs-dari" onchange="hitungKonversi()" style="width:100%">
               <option value="IDR">IDR — Rupiah</option>
               <option value="USD">USD — Dollar AS</option>
               <option value="SGD">SGD — Dollar Singapura</option>
@@ -3307,7 +3307,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
           </div>
           <div class="form-group">
             <label>Ke</label>
-            <select id="kurs-ke" onchange="hitungKonversi()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;">
+            <select id="kurs-ke" onchange="hitungKonversi()" style="width:100%">
               <option value="USD">USD — Dollar AS</option>
               <option value="IDR">IDR — Rupiah</option>
               <option value="SGD">SGD — Dollar Singapura</option>
@@ -3415,7 +3415,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
       <div class="table-header"><div class="table-title">🏢 PPh 23 (Jasa &amp; Royalti)</div></div>
       <div class="modal-body">
         <div class="form-group"><label>Jenis Penghasilan</label>
-          <select id="pph23-jenis" onchange="hitungPPh23Otomatis()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);">
+          <select id="pph23-jenis" onchange="hitungPPh23Otomatis()" style="width:100%">
             <option value="jasa">Jasa (2%)</option>
             <option value="royalti">Royalti (15%)</option>
             <option value="sewa">Sewa Harta (2%)</option>
@@ -9524,11 +9524,11 @@ function openModalInvoice(editId) {
 function renderInvoiceItems() {
   const el = document.getElementById('inv-items-list'); if(!el) return;
   el.innerHTML = _invItems.map((it,i)=>`
-    <div style="display:grid;grid-template-columns:1fr 80px 120px 32px;gap:8px;margin-bottom:8px;">
-      <input type="text" value="${it.nama}" placeholder="Nama item/jasa" oninput="_invItems[${i}].nama=this.value" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:12px;font-family:var(--sans);">
-      <input type="number" value="${it.qty}" min="1" oninput="_invItems[${i}].qty=+this.value;hitungTotalInvoice()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:12px;font-family:var(--sans);text-align:center;">
-      <input type="number" value="${it.harga}" placeholder="0" oninput="_invItems[${i}].harga=+this.value;hitungTotalInvoice()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:12px;font-family:var(--sans);">
-      <button onclick="_invItems.splice(${i},1);renderInvoiceItems();hitungTotalInvoice()" style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);border-radius:8px;color:var(--red);cursor:pointer;font-size:14px;">✕</button>
+    <div style="display:grid;grid-template-columns:1fr 72px 120px 32px;gap:8px;margin-bottom:8px;align-items:center;">
+      <input type="text" value="${it.nama}" placeholder="Nama item / jasa" oninput="_invItems[${i}].nama=this.value">
+      <input type="number" value="${it.qty}" min="1" oninput="_invItems[${i}].qty=+this.value;hitungTotalInvoice()" style="text-align:center;">
+      <input type="number" value="${it.harga}" placeholder="0" oninput="_invItems[${i}].harga=+this.value;hitungTotalInvoice()">
+      <button onclick="_invItems.splice(${i},1);renderInvoiceItems();hitungTotalInvoice()">✕</button>
     </div>`).join('');
   hitungTotalInvoice();
 }
@@ -9923,7 +9923,7 @@ function renderAlertForm() {
   const el = document.getElementById('alert-form-extra'); if(!el) return;
   if(tipe==='anggaran-terlampaui') el.innerHTML=`<div class="form-group"><label>Batas (%)</label><input type="number" id="alert-batas" value="90" placeholder="90"></div>`;
   else if(tipe==='invoice-jatuh-tempo') el.innerHTML=`<div class="form-group"><label>H- (hari sebelum jatuh tempo)</label><input type="number" id="alert-batas" value="3" placeholder="3"></div>`;
-  else if(tipe==='saldo-akun-bawah') el.innerHTML=`<div class="form-group"><label>Akun</label><select id="alert-akun" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);">${akuns.map(a=>`<option value="${a.kode}">${a.kode} - ${a.nama}</option>`).join('')}</select></div><div class="form-group"><label>Batas Saldo Minimum (Rp)</label><input type="number" id="alert-batas" placeholder="1000000"></div>`;
+  else if(tipe==='saldo-akun-bawah') el.innerHTML=`<div class="form-group"><label>Akun</label><select id="alert-akun" style="width:100%">${akuns.map(a=>`<option value="${a.kode}">${a.kode} - ${a.nama}</option>`).join('')}</select></div><div class="form-group"><label>Batas Saldo Minimum (Rp)</label><input type="number" id="alert-batas" placeholder="1000000"></div>`;
   else el.innerHTML='';
 }
 
@@ -12010,8 +12010,107 @@ kalkStyle.textContent = `
 .kalk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media(max-width:768px){ .kalk-grid { grid-template-columns: 1fr !important; } }
 
+/* All selects inside modal-body that are NOT already in .form-group get same treatment */
+.modal-body select,
+.modal-body input[type="number"],
+.modal-body input[type="text"],
+.modal-body input[type="date"],
+.modal-body input[type="month"],
+.modal-body textarea {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--sans);
+  transition: border 0.15s;
+  outline: none;
+}
+.modal-body select:focus,
+.modal-body input:focus,
+.modal-body textarea:focus { border-color: var(--accent); }
+.modal-body select option { background: var(--surface2); color: var(--text); }
+/* Chevron for all selects in modal-body */
+.modal-body select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px !important;
+  cursor: pointer;
+}
+
 /* Chart scroll wrapper */
 /* ═══ FITUR BARU — ANIMASI & STYLES ═══ */
+
+/* Ensure ALL selects & inputs inside form-group take full width consistently */
+.form-group select,
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="date"],
+.form-group input[type="month"],
+.form-group input[type="email"],
+.form-group textarea {
+  width: 100%;
+}
+
+/* Fix select appearance across browsers */
+.form-group select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px !important;
+  cursor: pointer;
+}
+.form-group select option {
+  background: var(--surface2);
+  color: var(--text);
+  padding: 8px;
+}
+
+/* Modal head alias (new modals use modal-head class now) */
+.modal-head {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Item rows in invoice */
+#inv-items-list input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: var(--text);
+  font-size: 12.5px;
+  font-family: var(--sans);
+  outline: none;
+  width: 100%;
+  transition: border 0.15s;
+}
+#inv-items-list input:focus { border-color: var(--accent); }
+#inv-items-list button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid rgba(248,113,113,0.25);
+  background: rgba(248,113,113,0.08);
+  color: var(--red);
+  cursor: pointer;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+#inv-items-list button:hover { background: rgba(248,113,113,0.18); }
 @keyframes fadeInUp {
   from { opacity:0; transform:translateY(12px); }
   to   { opacity:1; transform:translateY(0); }
@@ -20396,12 +20495,12 @@ function closeMataUangPicker() {
 ════════════════════════════════════════════════════════ -->
 <div class="modal-backdrop" id="modal-jb" onclick="if(event.target===this)closeModal('modal-jb')">
   <div class="modal" style="max-width:520px;">
-    <div class="modal-header"><div class="modal-title">🔄 Tambah Jurnal Berulang</div><button class="modal-close" onclick="closeModal('modal-jb')">✕</button></div>
+    <div class="modal-head"><div class="modal-title">🔄 Tambah Jurnal Berulang</div><button class="modal-close" onclick="closeModal('modal-jb')">✕</button></div>
     <div class="modal-body">
       <div class="form-group"><label>Nama Template</label><input type="text" id="jb-nama" placeholder="Gaji Karyawan Bulanan"></div>
       <div class="form-row">
         <div class="form-group"><label>Frekuensi</label>
-          <select id="jb-frekuensi" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;">
+          <select id="jb-frekuensi" style="width:100%">
             <option value="harian">Harian</option><option value="mingguan">Mingguan</option>
             <option value="bulanan" selected>Bulanan</option><option value="triwulan">Triwulanan</option>
             <option value="tahunan">Tahunan</option>
@@ -20410,8 +20509,8 @@ function closeMataUangPicker() {
         <div class="form-group"><label>Tanggal Mulai</label><input type="date" id="jb-tgl-mulai"></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Akun Debit</label><select id="jb-akun-debit" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;"></select></div>
-        <div class="form-group"><label>Akun Kredit</label><select id="jb-akun-kredit" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;"></select></div>
+        <div class="form-group"><label>Akun Debit</label><select id="jb-akun-debit" style="width:100%"></select></div>
+        <div class="form-group"><label>Akun Kredit</label><select id="jb-akun-kredit" style="width:100%"></select></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Nominal (Rp)</label><input type="number" id="jb-nominal" placeholder="5000000"></div>
@@ -20431,7 +20530,7 @@ function closeMataUangPicker() {
 ════════════════════════════════════════════════════════ -->
 <div class="modal-backdrop" id="modal-invoice" onclick="if(event.target===this)closeModal('modal-invoice')">
   <div class="modal" style="max-width:600px;">
-    <div class="modal-header"><div class="modal-title">🧾 Buat Invoice</div><button class="modal-close" onclick="closeModal('modal-invoice')">✕</button></div>
+    <div class="modal-head"><div class="modal-title">🧾 Buat Invoice</div><button class="modal-close" onclick="closeModal('modal-invoice')">✕</button></div>
     <div class="modal-body">
       <div class="form-row">
         <div class="form-group"><label>No. Invoice</label><input type="text" id="inv-no" placeholder="INV-2026-001"></div>
@@ -20441,7 +20540,7 @@ function closeMataUangPicker() {
         <div class="form-group"><label>Nama Pelanggan</label><input type="text" id="inv-pelanggan" placeholder="PT. Maju Bersama"></div>
         <div class="form-group"><label>Jatuh Tempo</label><input type="date" id="inv-jatuh-tempo"></div>
       </div>
-      <div class="form-group"><label>Keterangan / Deskripsi Jasa</label><textarea id="inv-deskripsi" rows="2" placeholder="Jasa konsultasi bulan Mei 2026" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);resize:vertical;"></textarea></div>
+      <div class="form-group"><label>Keterangan / Deskripsi Jasa</label><textarea id="inv-deskripsi" rows="2" placeholder="Jasa konsultasi bulan Mei 2026"></textarea></div>
       <div id="inv-items-wrap">
         <div style="display:grid;grid-template-columns:1fr 80px 120px 32px;gap:8px;margin-bottom:6px;">
           <span style="font-size:11px;color:var(--muted);font-weight:600;">ITEM</span>
@@ -20461,8 +20560,8 @@ function closeMataUangPicker() {
         <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px;"><span style="font-weight:700;">Total</span><span id="inv-total" style="font-family:var(--mono);font-weight:700;color:var(--accent);font-size:16px;">Rp 0</span></div>
       </div>
       <div class="form-row" style="margin-top:12px;">
-        <div class="form-group"><label>Akun Piutang</label><select id="inv-akun-piutang" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;"></select></div>
-        <div class="form-group"><label>Akun Pendapatan</label><select id="inv-akun-pend" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;"></select></div>
+        <div class="form-group"><label>Akun Piutang</label><select id="inv-akun-piutang" style="width:100%"></select></div>
+        <div class="form-group"><label>Akun Pendapatan</label><select id="inv-akun-pend" style="width:100%"></select></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -20476,12 +20575,12 @@ function closeMataUangPicker() {
 <!-- MODAL: TANDAI INVOICE LUNAS -->
 <div class="modal-backdrop" id="modal-inv-lunas" onclick="if(event.target===this)closeModal('modal-inv-lunas')">
   <div class="modal" style="max-width:420px;">
-    <div class="modal-header"><div class="modal-title">✅ Tandai Lunas</div><button class="modal-close" onclick="closeModal('modal-inv-lunas')">✕</button></div>
+    <div class="modal-head"><div class="modal-title">✅ Tandai Lunas</div><button class="modal-close" onclick="closeModal('modal-inv-lunas')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="inv-lunas-id">
       <div class="form-group"><label>Tanggal Pembayaran</label><input type="date" id="inv-lunas-tgl"></div>
       <div class="form-group"><label>Nominal Dibayar (Rp)</label><input type="number" id="inv-lunas-nominal"></div>
-      <div class="form-group"><label>Akun Kas/Bank Penerima</label><select id="inv-lunas-akun" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;"></select></div>
+      <div class="form-group"><label>Akun Kas/Bank Penerima</label><select id="inv-lunas-akun" style="width:100%"></select></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-inv-lunas')">Batal</button>
@@ -20493,11 +20592,11 @@ function closeMataUangPicker() {
 <!-- MODAL: ALERT BARU -->
 <div class="modal-backdrop" id="modal-alert-baru" onclick="if(event.target===this)closeModal('modal-alert-baru')">
   <div class="modal" style="max-width:440px;">
-    <div class="modal-header"><div class="modal-title">🔔 Tambah Alert</div><button class="modal-close" onclick="closeModal('modal-alert-baru')">✕</button></div>
+    <div class="modal-head"><div class="modal-title">🔔 Tambah Alert</div><button class="modal-close" onclick="closeModal('modal-alert-baru')">✕</button></div>
     <div class="modal-body">
       <div class="form-group"><label>Nama Alert</label><input type="text" id="alert-nama" placeholder="Peringatan Arus Kas Negatif"></div>
       <div class="form-group"><label>Tipe Alert</label>
-        <select id="alert-tipe" onchange="renderAlertForm()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;">
+        <select id="alert-tipe" onchange="renderAlertForm()" style="width:100%">
           <option value="arus-kas-negatif">Arus Kas Negatif</option>
           <option value="anggaran-terlampaui">Anggaran Terlampaui (%)</option>
           <option value="invoice-jatuh-tempo">Invoice Jatuh Tempo (H-X)</option>
@@ -20517,10 +20616,10 @@ function closeMataUangPicker() {
 <!-- MODAL: ANGGARAN -->
 <div class="modal-backdrop" id="modal-anggaran" onclick="if(event.target===this)closeModal('modal-anggaran')">
   <div class="modal" style="max-width:480px;">
-    <div class="modal-header"><div class="modal-title">🎯 Set Anggaran</div><button class="modal-close" onclick="closeModal('modal-anggaran')">✕</button></div>
+    <div class="modal-head"><div class="modal-title">🎯 Set Anggaran</div><button class="modal-close" onclick="closeModal('modal-anggaran')">✕</button></div>
     <div class="modal-body">
       <div class="form-row">
-        <div class="form-group"><label>Akun</label><select id="ang-akun" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;"></select></div>
+        <div class="form-group"><label>Akun</label><select id="ang-akun" style="width:100%"></select></div>
         <div class="form-group"><label>Periode (YYYY-MM)</label><input type="month" id="ang-periode"></div>
       </div>
       <div class="form-group"><label>Nominal Anggaran (Rp)</label><input type="number" id="ang-nominal" placeholder="10000000"></div>
