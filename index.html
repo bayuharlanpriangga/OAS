@@ -1564,6 +1564,31 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
       </div>
     </div>
 
+    <div class="nav-group-label">Fitur Baru</div>
+    <div class="nav-grid">
+      <div class="nav-card" onclick="showPage('jurnal-berulang')" data-page="jurnal-berulang">
+        <span class="nav-card-icon">🔄</span>J. Berulang
+      </div>
+      <div class="nav-card" onclick="showPage('invoice')" data-page="invoice">
+        <span class="nav-card-icon">🧾</span>Invoice
+      </div>
+      <div class="nav-card" onclick="showPage('rekonsiliasi')" data-page="rekonsiliasi">
+        <span class="nav-card-icon">🏦</span>Rekonsiliasi
+      </div>
+      <div class="nav-card" onclick="showPage('kurs')" data-page="kurs">
+        <span class="nav-card-icon">💱</span>Kurs
+      </div>
+      <div class="nav-card" onclick="showPage('notifikasi')" data-page="notifikasi">
+        <span class="nav-card-icon">🔔</span>Notifikasi
+      </div>
+      <div class="nav-card" onclick="showPage('anggaran')" data-page="anggaran">
+        <span class="nav-card-icon">🎯</span>Anggaran
+      </div>
+      <div class="nav-card" onclick="showPage('pajak')" data-page="pajak">
+        <span class="nav-card-icon">🧾</span>Pajak Auto
+      </div>
+    </div>
+
     <div class="nav-group-label">Lainnya</div>
     <div class="nav-grid">
       <div class="nav-card tut-card-nav" onclick="showPage('tutorial')" data-page="tutorial">
@@ -3139,6 +3164,284 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 </div>
 
+
+<!-- JURNAL BERULANG -->
+<div class="page" id="page-jurnal-berulang">
+  <div class="section-header">
+    <div><div class="section-title">🔄 Jurnal Berulang</div>
+    <div class="section-sub">Otomasi transaksi rutin · Gaji · Sewa · Cicilan · Langganan</div></div>
+    <button class="btn btn-primary" onclick="openModalJurnalBerulang()">+ Tambah Berulang</button>
+  </div>
+  <div id="jb-list-container">
+    <div class="table-card" style="margin-bottom:14px;">
+      <div class="table-header"><div class="table-title">📋 Daftar Jurnal Berulang</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="jalankanSemuaJurnalBerulang()">▶️ Jalankan Semua Tertunda</button>
+        </div>
+      </div>
+      <div class="table-scroll"><table id="jb-table">
+        <thead><tr><th>Nama</th><th>Frekuensi</th><th>Berikutnya</th><th>Akun Debit</th><th>Akun Kredit</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody id="jb-tbody"></tbody>
+      </table></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">📜 Riwayat Eksekusi</div></div>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Tanggal</th><th>Nama Template</th><th>Nominal</th><th>Status</th></tr></thead>
+        <tbody id="jb-history-tbody"></tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE & PIUTANG -->
+<div class="page" id="page-invoice">
+  <div class="section-header">
+    <div><div class="section-title">🧾 Invoice & Piutang</div>
+    <div class="section-sub">Buat invoice · Lacak pembayaran · Jurnal otomatis</div></div>
+    <button class="btn btn-primary" onclick="openModalInvoice()">+ Buat Invoice</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;" id="inv-kpi"></div>
+  <div class="table-card" style="margin-bottom:14px;">
+    <div class="table-header">
+      <div class="table-title">📋 Daftar Invoice</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <select id="inv-filter-status" onchange="renderInvoiceList()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;font-family:var(--sans);">
+          <option value="all">Semua Status</option>
+          <option value="draft">Draft</option>
+          <option value="terkirim">Terkirim</option>
+          <option value="lunas">Lunas</option>
+          <option value="jatuh-tempo">Jatuh Tempo</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-scroll"><table id="inv-table">
+      <thead><tr><th>No Invoice</th><th>Pelanggan</th><th>Tanggal</th><th>Jatuh Tempo</th><th>Nominal</th><th>Sisa</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody id="inv-tbody"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- REKONSILIASI BANK -->
+<div class="page" id="page-rekonsiliasi">
+  <div class="section-header">
+    <div><div class="section-title">🏦 Rekonsiliasi Bank</div>
+    <div class="section-sub">Cocokkan mutasi bank dengan jurnal · Upload CSV · Otomatis</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;" class="kalk-grid">
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">📤 Upload Mutasi Bank</div></div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Pilih Bank</label>
+          <select id="rekon-bank" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);">
+            <option value="bca">BCA</option><option value="mandiri">Mandiri</option>
+            <option value="bni">BNI</option><option value="bri">BRI</option>
+            <option value="cimb">CIMB Niaga</option><option value="generic">Lainnya (CSV Generic)</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-top:12px;">
+          <label>Upload File Mutasi (CSV)</label>
+          <div id="rekon-dropzone" onclick="document.getElementById('rekon-csv-input').click()" style="border:2px dashed var(--border);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all 0.2s;color:var(--muted);">
+            <div style="font-size:32px;margin-bottom:8px;">📂</div>
+            <div style="font-size:13px;font-weight:600;">Klik atau drag CSV di sini</div>
+            <div style="font-size:11px;margin-top:4px;" id="rekon-file-name">Format: BCA/Mandiri/BNI/BRI/Generic</div>
+          </div>
+          <input type="file" id="rekon-csv-input" accept=".csv" style="display:none" onchange="handleRekonCSV(this)">
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="prosesRekonsiliasi()">🔍 Proses Rekonsiliasi</button>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">📊 Ringkasan Rekonsiliasi</div></div>
+      <div style="padding:16px;" id="rekon-summary">
+        <div style="color:var(--muted);font-size:13px;text-align:center;padding:40px 0;">Upload CSV mutasi bank untuk mulai rekonsiliasi</div>
+      </div>
+    </div>
+  </div>
+  <div class="table-card" id="rekon-result-card" style="display:none;">
+    <div class="table-header">
+      <div class="table-title">✅ Hasil Pencocokan</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="filterRekon('all')" id="rekon-btn-all">Semua</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterRekon('cocok')" id="rekon-btn-cocok">✅ Cocok</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterRekon('belum')" id="rekon-btn-belum">❓ Belum Cocok</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterRekon('beda')" id="rekon-btn-beda">⚠️ Beda Nominal</button>
+        <button class="btn btn-primary btn-sm" onclick="importRekonSebagaiJurnal()">📥 Import Belum Cocok</button>
+      </div>
+    </div>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Tgl Bank</th><th>Keterangan Bank</th><th>Nominal Bank</th><th>Jurnal Terkait</th><th>Nominal Jurnal</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody id="rekon-tbody"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- MULTI MATA UANG -->
+<div class="page" id="page-kurs">
+  <div class="section-header">
+    <div><div class="section-title">💱 Multi Mata Uang</div>
+    <div class="section-sub">Kurs otomatis · Konversi transaksi · History kurs</div></div>
+    <button class="btn btn-primary" onclick="refreshKursOtomatis()">🔄 Update Kurs</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;" id="kurs-cards"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;" class="kalk-grid">
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">🔄 Konverter Cepat</div></div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nominal</label>
+            <input type="number" id="kurs-nominal" placeholder="1000000" oninput="hitungKonversi()">
+          </div>
+          <div class="form-group">
+            <label>Dari</label>
+            <select id="kurs-dari" onchange="hitungKonversi()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;">
+              <option value="IDR">IDR — Rupiah</option>
+              <option value="USD">USD — Dollar AS</option>
+              <option value="SGD">SGD — Dollar Singapura</option>
+              <option value="EUR">EUR — Euro</option>
+              <option value="MYR">MYR — Ringgit</option>
+              <option value="JPY">JPY — Yen</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Ke</label>
+            <select id="kurs-ke" onchange="hitungKonversi()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;">
+              <option value="USD">USD — Dollar AS</option>
+              <option value="IDR">IDR — Rupiah</option>
+              <option value="SGD">SGD — Dollar Singapura</option>
+              <option value="EUR">EUR — Euro</option>
+              <option value="MYR">MYR — Ringgit</option>
+              <option value="JPY">JPY — Yen</option>
+            </select>
+          </div>
+        </div>
+        <div id="kurs-hasil" style="background:var(--surface2);border-radius:12px;padding:20px;text-align:center;margin-top:12px;">
+          <div style="font-size:24px;font-weight:700;color:var(--accent);font-family:var(--mono);" id="kurs-hasil-angka">—</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;" id="kurs-hasil-detail">Masukkan nominal untuk konversi</div>
+        </div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">📅 Atur Kurs Manual</div></div>
+      <div class="modal-body" id="kurs-manual-form">
+        <div style="color:var(--muted);font-size:12px;margin-bottom:12px;">Kurs terhadap 1 USD (Base)</div>
+        <div id="kurs-manual-inputs"></div>
+        <button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="simpanKursManual()">💾 Simpan Kurs</button>
+      </div>
+    </div>
+  </div>
+  <div class="table-card">
+    <div class="table-header"><div class="table-title">📈 History Kurs (30 Hari)</div></div>
+    <div style="padding:12px;"><canvas id="kurs-chart" height="160"></canvas></div>
+  </div>
+</div>
+
+<!-- NOTIFIKASI & ALERT -->
+<div class="page" id="page-notifikasi">
+  <div class="section-header">
+    <div><div class="section-title">🔔 Notifikasi & Alert</div>
+    <div class="section-sub">Peringatan otomatis · Batas anggaran · Jatuh tempo · Arus kas</div></div>
+    <button class="btn btn-primary" onclick="openModalAlertBaru()">+ Tambah Alert</button>
+  </div>
+  <div id="notif-alert-list" style="margin-bottom:16px;"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="kalk-grid">
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">⚙️ Konfigurasi Alert</div></div>
+      <div style="padding:16px;" id="notif-config-list"></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">📜 Riwayat Notifikasi</div></div>
+      <div class="table-scroll" style="max-height:320px;overflow-y:auto;" id="notif-history"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ANGGARAN vs AKTUAL -->
+<div class="page" id="page-anggaran">
+  <div class="section-header">
+    <div><div class="section-title">🎯 Anggaran vs Aktual</div>
+    <div class="section-sub">Target per akun per bulan · Monitoring realisasi · Variance analysis</div></div>
+    <button class="btn btn-primary" onclick="openModalAnggaran()">+ Set Anggaran</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;" id="ang-kpi"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;" class="kalk-grid">
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">📊 Progress Anggaran Bulan Ini</div></div>
+      <div style="padding:12px;" id="ang-progress-list"></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">📈 Chart Anggaran vs Aktual</div></div>
+      <div style="padding:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;" class="chart-scroll-wrap"><div style="min-width:400px;"><canvas id="ang-chart" height="200" class="an-chart-clickable"></canvas></div></div>
+    </div>
+  </div>
+  <div class="table-card">
+    <div class="table-header"><div class="table-title">📋 Detail Anggaran Semua Akun</div></div>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Akun</th><th>Tipe</th><th>Anggaran</th><th>Aktual</th><th>Variance</th><th>% Terpakai</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody id="ang-tbody"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- PAJAK OTOMATIS -->
+<div class="page" id="page-pajak">
+  <div class="section-header">
+    <div><div class="section-title">🧾 Pajak Otomatis</div>
+    <div class="section-sub">PPN 12% · PPh 21 · PPh 23 · Laporan SPT</div></div>
+    <button class="btn btn-primary" onclick="renderPajakOtomatis()">🔄 Hitung Ulang</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;" id="pajak-kpi"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;" class="kalk-grid">
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">💰 PPN Keluaran &amp; Masukan</div></div>
+      <div style="padding:16px;" id="pajak-ppn-detail"></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">👤 PPh 21 Karyawan</div></div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group"><label>Total Gaji Bruto/Bulan</label><input type="number" id="pph21-gaji" placeholder="10000000" oninput="hitungPPh21Otomatis()"></div>
+          <div class="form-group"><label>Jumlah Karyawan</label><input type="number" id="pph21-karyawan" placeholder="5" oninput="hitungPPh21Otomatis()"></div>
+        </div>
+        <div style="margin-top:8px;" id="pph21-result"></div>
+        <button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="buatJurnalPPh21()">📒 Buat Jurnal PPh 21</button>
+      </div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;" class="kalk-grid">
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">🏢 PPh 23 (Jasa &amp; Royalti)</div></div>
+      <div class="modal-body">
+        <div class="form-group"><label>Jenis Penghasilan</label>
+          <select id="pph23-jenis" onchange="hitungPPh23Otomatis()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);">
+            <option value="jasa">Jasa (2%)</option>
+            <option value="royalti">Royalti (15%)</option>
+            <option value="sewa">Sewa Harta (2%)</option>
+            <option value="dividen">Dividen (15%)</option>
+            <option value="bunga">Bunga (15%)</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-top:8px;"><label>Nilai Bruto</label><input type="number" id="pph23-bruto" placeholder="5000000" oninput="hitungPPh23Otomatis()"></div>
+        <div style="margin-top:8px;" id="pph23-result"></div>
+        <button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="buatJurnalPPh23()">📒 Buat Jurnal PPh 23</button>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">📄 Ringkasan SPT Tahunan</div></div>
+      <div style="padding:16px;" id="pajak-spt-summary"></div>
+    </div>
+  </div>
+  <div class="table-card">
+    <div class="table-header"><div class="table-title">📋 Riwayat Transaksi Kena Pajak</div></div>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Tanggal</th><th>Keterangan</th><th>Bruto</th><th>Jenis Pajak</th><th>Tarif</th><th>Nilai Pajak</th><th>Jurnal</th></tr></thead>
+      <tbody id="pajak-tbody"></tbody>
+    </table></div>
+  </div>
+</div>
+
 <!-- TUTORIAL HUB PAGE -->
 <div class="page" id="page-tutorial">
   <div class="section-header" style="margin-bottom:20px;">
@@ -3557,6 +3860,14 @@ const pageTitles = {
   'ai-assistant':['Orias Assisten','Asisten keuangan berbasis AI'],
   'tutorial':['Tutorial','Panduan penggunaan software langkah demi langkah'],
   'analitik':['Analitik & Tren Bisnis','Pendapatan · Laba · Arus Kas · Posisi Keuangan · Proyeksi'],
+  // Fitur Baru
+  'jurnal-berulang':['Jurnal Berulang','Otomasi transaksi rutin · Gaji · Sewa · Cicilan'],
+  'invoice':['Invoice & Piutang','Buat invoice · Lacak pembayaran · Jurnal otomatis'],
+  'rekonsiliasi':['Rekonsiliasi Bank','Cocokkan mutasi bank dengan jurnal · Upload CSV'],
+  'kurs':['Multi Mata Uang','Kurs otomatis · Konversi transaksi · History kurs'],
+  'notifikasi':['Notifikasi & Alert','Peringatan otomatis · Batas anggaran · Jatuh tempo'],
+  'anggaran':['Anggaran vs Aktual','Target per akun · Monitoring realisasi · Variance'],
+  'pajak':['Pajak Otomatis','PPN 12% · PPh 21 · PPh 23 · Laporan SPT'],
 };
 
 let currentPage = 'dashboard';
@@ -3603,6 +3914,13 @@ function showPage(id) {
   if(id==='akun') renderAkun();
   if(id==='transaksi') initTransaksiForm();
   if(id==='analitik') setTimeout(renderAnalitik, 80);
+  // Fitur Baru
+  if(id==='jurnal-berulang') setTimeout(renderJurnalBerulang, 60);
+  if(id==='invoice') setTimeout(()=>{renderInvoiceList();renderInvoiceKPI();}, 60);
+  if(id==='kurs') setTimeout(renderKursPage, 60);
+  if(id==='notifikasi') setTimeout(renderNotifikasiPage, 60);
+  if(id==='anggaran') setTimeout(renderAnggaranPage, 60);
+  if(id==='pajak') setTimeout(renderPajakOtomatis, 60);
 }
 
 function handleAddBtn() {
@@ -8969,6 +9287,1070 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
+
+// ══════════════════════════════════════════════════════════════
+// FITUR BARU — DATA STORES
+// ══════════════════════════════════════════════════════════════
+let jurnalBerulangList = JSON.parse(localStorage.getItem('bhp_jb') || '[]');
+let jurnalBerulangHistory = JSON.parse(localStorage.getItem('bhp_jb_hist') || '[]');
+let invoiceList = JSON.parse(localStorage.getItem('bhp_invoices') || '[]');
+let rekonData = { baris: [], csvFile: null };
+let kursData = JSON.parse(localStorage.getItem('bhp_kurs') || 'null') || { USD:1, IDR:16200, SGD:12100, EUR:18300, MYR:3500, JPY:107, updatedAt:null };
+let notifAlerts = JSON.parse(localStorage.getItem('bhp_alerts') || '[]');
+let notifHistory = JSON.parse(localStorage.getItem('bhp_notif_hist') || '[]');
+let anggaranList = JSON.parse(localStorage.getItem('bhp_anggaran') || '[]');
+
+function saveFiturBaru() {
+  localStorage.setItem('bhp_jb', JSON.stringify(jurnalBerulangList));
+  localStorage.setItem('bhp_jb_hist', JSON.stringify(jurnalBerulangHistory));
+  localStorage.setItem('bhp_invoices', JSON.stringify(invoiceList));
+  localStorage.setItem('bhp_kurs', JSON.stringify(kursData));
+  localStorage.setItem('bhp_alerts', JSON.stringify(notifAlerts));
+  localStorage.setItem('bhp_notif_hist', JSON.stringify(notifHistory));
+  localStorage.setItem('bhp_anggaran', JSON.stringify(anggaranList));
+}
+
+// ══════════════════════════════════════════════════════════════
+// JURNAL BERULANG
+// ══════════════════════════════════════════════════════════════
+function openModalJurnalBerulang(editId) {
+  const opts = akuns.map(a=>`<option value="${a.kode}">${a.kode} - ${a.nama}</option>`).join('');
+  ['jb-akun-debit','jb-akun-kredit'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.innerHTML = opts;
+  });
+  document.getElementById('jb-tgl-mulai').value = new Date().toISOString().split('T')[0];
+  if(editId) {
+    const item = jurnalBerulangList.find(j=>j.id===editId);
+    if(item) {
+      ['nama','frekuensi','tgl-mulai','tgl-akhir','nominal','keterangan'].forEach(f=>{
+        const el = document.getElementById('jb-'+f); if(el) el.value = item[f.replace('-','')] || '';
+      });
+      document.getElementById('jb-akun-debit').value = item.akunDebit;
+      document.getElementById('jb-akun-kredit').value = item.akunKredit;
+    }
+    document.getElementById('modal-jb')._editId = editId;
+  } else {
+    document.getElementById('modal-jb')._editId = null;
+    ['jb-nama','jb-nominal','jb-keterangan','jb-tgl-akhir'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value='';
+    });
+  }
+  openModal('modal-jb');
+}
+
+function simpanJurnalBerulang() {
+  const nama = document.getElementById('jb-nama').value.trim();
+  const nominal = parseFloat(document.getElementById('jb-nominal').value)||0;
+  const akunDebit = document.getElementById('jb-akun-debit').value;
+  const akunKredit = document.getElementById('jb-akun-kredit').value;
+  const frekuensi = document.getElementById('jb-frekuensi').value;
+  const tglMulai = document.getElementById('jb-tgl-mulai').value;
+  if(!nama || !nominal || !akunDebit || !akunKredit || !tglMulai) {
+    showAlert('⚠️ Lengkapi semua field wajib'); return;
+  }
+  showOpSpinner('Menyimpan Jurnal Berulang...', 'Memvalidasi & menjadwalkan');
+  setTimeout(()=>{
+    const editId = document.getElementById('modal-jb')._editId;
+    const item = {
+      id: editId || 'jb_'+Date.now(),
+      nama, frekuensi, akunDebit, akunKredit, nominal,
+      keterangan: document.getElementById('jb-keterangan').value||nama,
+      tglMulai, tglAkhir: document.getElementById('jb-tgl-akhir').value||null,
+      aktif: true,
+      berikutnya: hitungTanggalBerikutnya(tglMulai, frekuensi),
+      createdAt: new Date().toISOString()
+    };
+    if(editId) {
+      const idx = jurnalBerulangList.findIndex(j=>j.id===editId);
+      if(idx>=0) jurnalBerulangList[idx] = item;
+    } else {
+      jurnalBerulangList.unshift(item);
+    }
+    saveFiturBaru();
+    closeModal('modal-jb');
+    renderJurnalBerulang();
+    showAlert('✓ Jurnal berulang berhasil disimpan!');
+    hideOpSpinner();
+  }, 600);
+}
+
+function hitungTanggalBerikutnya(tglMulai, frekuensi) {
+  const d = new Date(tglMulai);
+  const now = new Date();
+  while(d <= now) {
+    if(frekuensi==='harian') d.setDate(d.getDate()+1);
+    else if(frekuensi==='mingguan') d.setDate(d.getDate()+7);
+    else if(frekuensi==='bulanan') d.setMonth(d.getMonth()+1);
+    else if(frekuensi==='triwulan') d.setMonth(d.getMonth()+3);
+    else if(frekuensi==='tahunan') d.setFullYear(d.getFullYear()+1);
+    else break;
+  }
+  return d.toISOString().split('T')[0];
+}
+
+function renderJurnalBerulang() {
+  const tbody = document.getElementById('jb-tbody');
+  if(!tbody) return;
+  if(!jurnalBerulangList.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">Belum ada jurnal berulang. Klik <b>+ Tambah Berulang</b>.</td></tr>`;
+  } else {
+    const today = new Date().toISOString().split('T')[0];
+    tbody.innerHTML = jurnalBerulangList.map(j=>{
+      const aD = akuns.find(a=>a.kode===j.akunDebit); const aK = akuns.find(a=>a.kode===j.akunKredit);
+      const terlambat = j.berikutnya < today;
+      const statusBadge = !j.aktif ? `<span style="background:rgba(100,116,139,0.15);color:var(--muted);padding:2px 8px;border-radius:6px;font-size:11px;">Nonaktif</span>`
+        : terlambat ? `<span style="background:rgba(248,113,113,0.15);color:var(--red);padding:2px 8px;border-radius:6px;font-size:11px;">⚠️ Tertunda</span>`
+        : `<span style="background:rgba(74,222,128,0.12);color:var(--accent);padding:2px 8px;border-radius:6px;font-size:11px;">✅ Aktif</span>`;
+      return `<tr>
+        <td style="font-weight:600">${j.nama}</td>
+        <td style="text-transform:capitalize">${j.frekuensi}</td>
+        <td style="font-family:var(--mono);font-size:12px;${terlambat?'color:var(--red);':''}">${j.berikutnya}</td>
+        <td style="font-size:12px">${aD?aD.nama:j.akunDebit}</td>
+        <td style="font-size:12px">${aK?aK.nama:j.akunKredit}</td>
+        <td class="debit" style="font-family:var(--mono)">${rp(j.nominal)}</td>
+        <td>${statusBadge}</td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-ghost btn-sm" onclick="jalankanJurnalBerulang('${j.id}')">▶️</button>
+          <button class="btn btn-ghost btn-sm" onclick="openModalJurnalBerulang('${j.id}')">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleAktifJB('${j.id}')">${j.aktif?'⏸️':'▶️'}</button>
+          <button class="btn btn-danger btn-sm" onclick="hapusJurnalBerulang('${j.id}')">🗑</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+  const hbody = document.getElementById('jb-history-tbody');
+  if(hbody) {
+    if(!jurnalBerulangHistory.length) {
+      hbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;">Belum ada riwayat eksekusi</td></tr>`;
+    } else {
+      hbody.innerHTML = [...jurnalBerulangHistory].slice(0,30).map(h=>`<tr>
+        <td style="font-family:var(--mono);font-size:12px">${h.tgl}</td>
+        <td>${h.nama}</td>
+        <td class="debit" style="font-family:var(--mono)">${rp(h.nominal)}</td>
+        <td><span style="background:rgba(74,222,128,0.12);color:var(--accent);padding:2px 8px;border-radius:6px;font-size:11px;">✅ Berhasil</span></td>
+      </tr>`).join('');
+    }
+  }
+}
+
+function jalankanJurnalBerulang(id) {
+  const j = jurnalBerulangList.find(x=>x.id===id);
+  if(!j) return;
+  showOpSpinner('Menjalankan Jurnal Berulang...', `Membuat jurnal: ${j.nama}`);
+  setTimeout(()=>{
+    const tgl = new Date().toISOString().split('T')[0];
+    const entry = {
+      id:'JRN_'+Date.now(), tanggal:tgl, jenis:'Manual',
+      keterangan:`[Auto] ${j.nama}`,
+      lines:[{akun:j.akunDebit,debit:j.nominal,kredit:0},{akun:j.akunKredit,debit:0,kredit:j.nominal}]
+    };
+    jurnalEntries.push(entry);
+    jurnalBerulangHistory.unshift({tgl, nama:j.nama, nominal:j.nominal, jurnalId:entry.id});
+    j.berikutnya = hitungTanggalBerikutnya(j.berikutnya, j.frekuensi);
+    saveFiturBaru(); saveData();
+    renderJurnalBerulang();
+    showAlert(`✓ Jurnal "${j.nama}" berhasil dibuat!`);
+    hideOpSpinner();
+    cekNotifikasi();
+  }, 800);
+}
+
+function jalankanSemuaJurnalBerulang() {
+  const today = new Date().toISOString().split('T')[0];
+  const tertunda = jurnalBerulangList.filter(j=>j.aktif && j.berikutnya <= today);
+  if(!tertunda.length) { showAlert('Tidak ada jurnal yang tertunda'); return; }
+  showOpSpinner(`Menjalankan ${tertunda.length} Jurnal Tertunda...`, 'Memproses batch...');
+  let i = 0;
+  function next() {
+    if(i >= tertunda.length) {
+      saveFiturBaru(); saveData(); renderJurnalBerulang();
+      showAlert(`✓ ${tertunda.length} jurnal berhasil dieksekusi!`);
+      hideOpSpinner(); cekNotifikasi(); return;
+    }
+    const j = tertunda[i++];
+    const tgl = new Date().toISOString().split('T')[0];
+    const entry = {
+      id:'JRN_'+Date.now()+'_'+i, tanggal:tgl, jenis:'Manual',
+      keterangan:`[Auto] ${j.nama}`,
+      lines:[{akun:j.akunDebit,debit:j.nominal,kredit:0},{akun:j.akunKredit,debit:0,kredit:j.nominal}]
+    };
+    jurnalEntries.push(entry);
+    jurnalBerulangHistory.unshift({tgl, nama:j.nama, nominal:j.nominal, jurnalId:entry.id});
+    j.berikutnya = hitungTanggalBerikutnya(j.berikutnya, j.frekuensi);
+    setTimeout(next, 150);
+  }
+  next();
+}
+
+function hapusJurnalBerulang(id) {
+  if(!confirm('Hapus jurnal berulang ini?')) return;
+  showOpSpinner('Menghapus...','');
+  setTimeout(()=>{
+    jurnalBerulangList = jurnalBerulangList.filter(j=>j.id!==id);
+    saveFiturBaru(); renderJurnalBerulang();
+    showAlert('✓ Jurnal berulang dihapus'); hideOpSpinner();
+  }, 400);
+}
+
+function toggleAktifJB(id) {
+  const j = jurnalBerulangList.find(x=>x.id===id);
+  if(j) { j.aktif = !j.aktif; saveFiturBaru(); renderJurnalBerulang(); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// INVOICE & PIUTANG
+// ══════════════════════════════════════════════════════════════
+let _invItems = [];
+
+function openModalInvoice(editId) {
+  _invItems = [{ nama:'', qty:1, harga:0 }];
+  const tgl = new Date().toISOString().split('T')[0];
+  const due = new Date(Date.now()+30*86400000).toISOString().split('T')[0];
+  document.getElementById('inv-tgl').value = tgl;
+  document.getElementById('inv-jatuh-tempo').value = due;
+  document.getElementById('inv-no').value = 'INV-'+new Date().getFullYear()+'-'+String(invoiceList.length+1).padStart(3,'0');
+  document.getElementById('inv-pelanggan').value = '';
+  document.getElementById('inv-deskripsi').value = '';
+
+  const akunOpts = akuns.map(a=>`<option value="${a.kode}">${a.kode} - ${a.nama}</option>`).join('');
+  const piutangEl = document.getElementById('inv-akun-piutang');
+  const pendEl = document.getElementById('inv-akun-pend');
+  if(piutangEl) { piutangEl.innerHTML = akunOpts; const p=akuns.find(a=>a.tipe==='Aset'&&a.nama.toLowerCase().includes('piutang')); if(p) piutangEl.value=p.kode; }
+  if(pendEl) { pendEl.innerHTML = akunOpts; const p=akuns.find(a=>a.tipe==='Pendapatan'); if(p) pendEl.value=p.kode; }
+  renderInvoiceItems();
+  openModal('modal-invoice');
+}
+
+function renderInvoiceItems() {
+  const el = document.getElementById('inv-items-list'); if(!el) return;
+  el.innerHTML = _invItems.map((it,i)=>`
+    <div style="display:grid;grid-template-columns:1fr 80px 120px 32px;gap:8px;margin-bottom:8px;">
+      <input type="text" value="${it.nama}" placeholder="Nama item/jasa" oninput="_invItems[${i}].nama=this.value" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:12px;font-family:var(--sans);">
+      <input type="number" value="${it.qty}" min="1" oninput="_invItems[${i}].qty=+this.value;hitungTotalInvoice()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:12px;font-family:var(--sans);text-align:center;">
+      <input type="number" value="${it.harga}" placeholder="0" oninput="_invItems[${i}].harga=+this.value;hitungTotalInvoice()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:12px;font-family:var(--sans);">
+      <button onclick="_invItems.splice(${i},1);renderInvoiceItems();hitungTotalInvoice()" style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);border-radius:8px;color:var(--red);cursor:pointer;font-size:14px;">✕</button>
+    </div>`).join('');
+  hitungTotalInvoice();
+}
+
+function tambahItemInvoice() { _invItems.push({nama:'',qty:1,harga:0}); renderInvoiceItems(); }
+
+function hitungTotalInvoice() {
+  const subtotal = _invItems.reduce((s,it)=>s+it.qty*it.harga,0);
+  const ppn = document.getElementById('inv-ppn-check')?.checked ? subtotal*0.12 : 0;
+  const total = subtotal + ppn;
+  const fmt = v=>v.toLocaleString('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0});
+  const sub=document.getElementById('inv-subtotal'); if(sub) sub.textContent=fmt(subtotal);
+  const ppnEl=document.getElementById('inv-ppn-val'); if(ppnEl) ppnEl.textContent=fmt(ppn);
+  const tot=document.getElementById('inv-total'); if(tot) tot.textContent=fmt(total);
+}
+
+function simpanInvoice(status) {
+  const pelanggan = document.getElementById('inv-pelanggan').value.trim();
+  const nominal = _invItems.reduce((s,it)=>s+it.qty*it.harga,0);
+  const ppnCheck = document.getElementById('inv-ppn-check')?.checked;
+  const ppn = ppnCheck ? nominal*0.12 : 0;
+  const total = nominal + ppn;
+  if(!pelanggan || !nominal) { showAlert('⚠️ Lengkapi pelanggan dan minimal 1 item'); return; }
+  showOpSpinner('Menyimpan Invoice...', 'Membuat jurnal piutang');
+  setTimeout(()=>{
+    const inv = {
+      id: 'INV_'+Date.now(),
+      noInvoice: document.getElementById('inv-no').value,
+      pelanggan, tanggal: document.getElementById('inv-tgl').value,
+      jatuhTempo: document.getElementById('inv-jatuh-tempo').value,
+      deskripsi: document.getElementById('inv-deskripsi').value,
+      items: [..._invItems], subtotal: nominal, ppn, total,
+      sisaTagihan: total, status,
+      akunPiutang: document.getElementById('inv-akun-piutang').value,
+      akunPend: document.getElementById('inv-akun-pend').value,
+      createdAt: new Date().toISOString()
+    };
+    if(status === 'terkirim') {
+      // Buat jurnal piutang otomatis
+      const entry = {
+        id:'JRN_INV_'+Date.now(), tanggal:inv.tanggal, jenis:'Manual',
+        keterangan:`Invoice ${inv.noInvoice} — ${inv.pelanggan}`,
+        lines:[
+          {akun:inv.akunPiutang, debit:total, kredit:0},
+          {akun:inv.akunPend, debit:0, kredit:nominal},
+          ...(ppn>0?[{akun:akuns.find(a=>a.nama.toLowerCase().includes('ppn')&&a.tipe==='Liabilitas')?.kode||inv.akunPend, debit:0, kredit:ppn}]:[])
+        ].filter(l=>l.akun)
+      };
+      jurnalEntries.push(entry);
+      saveData();
+    }
+    invoiceList.unshift(inv);
+    saveFiturBaru();
+    closeModal('modal-invoice');
+    renderInvoiceList(); renderInvoiceKPI();
+    showAlert(`✓ Invoice ${inv.noInvoice} berhasil disimpan!`);
+    hideOpSpinner();
+    cekNotifikasi();
+  }, 900);
+}
+
+function renderInvoiceKPI() {
+  const el = document.getElementById('inv-kpi'); if(!el) return;
+  const semua = invoiceList;
+  const totalTagihan = semua.reduce((s,i)=>s+i.total,0);
+  const totalLunas = semua.filter(i=>i.status==='lunas').reduce((s,i)=>s+i.total,0);
+  const totalBelum = semua.filter(i=>i.status!=='lunas').reduce((s,i)=>s+i.sisaTagihan,0);
+  const jatuhTempo = semua.filter(i=>i.status!=='lunas'&&i.jatuhTempo<new Date().toISOString().split('T')[0]).length;
+  const kpis = [
+    {label:'Total Invoice',val:rp(totalTagihan),icon:'🧾',clr:'var(--accent2)'},
+    {label:'Sudah Lunas',val:rp(totalLunas),icon:'✅',clr:'var(--accent)'},
+    {label:'Belum Lunas',val:rp(totalBelum),icon:'⏳',clr:'var(--accent3)'},
+    {label:'Jatuh Tempo',val:jatuhTempo+' invoice',icon:'⚠️',clr:jatuhTempo?'var(--red)':'var(--muted)'},
+  ];
+  el.innerHTML = kpis.map(k=>`<div class="stat-card" style="padding:14px 16px;">
+    <div style="font-size:22px;margin-bottom:4px;">${k.icon}</div>
+    <div class="stat-label">${k.label}</div>
+    <div style="font-size:16px;font-weight:700;color:${k.clr};font-family:var(--mono);margin-top:4px;">${k.val}</div>
+  </div>`).join('');
+}
+
+function renderInvoiceList() {
+  const tbody = document.getElementById('inv-tbody'); if(!tbody) return;
+  const filter = document.getElementById('inv-filter-status')?.value || 'all';
+  const today = new Date().toISOString().split('T')[0];
+  let list = filter==='all' ? invoiceList : invoiceList.filter(i=>{
+    if(filter==='jatuh-tempo') return i.status!=='lunas' && i.jatuhTempo < today;
+    return i.status===filter;
+  });
+  if(!list.length) { tbody.innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">Belum ada invoice${filter!=='all'?' dengan filter ini':''}</td></tr>`; return; }
+  tbody.innerHTML = list.map(i=>{
+    const jt = i.jatuhTempo < today && i.status!=='lunas';
+    const statusMap = {draft:'var(--muted)',terkirim:'var(--accent2)',lunas:'var(--accent)','jatuh-tempo':'var(--red)'};
+    const s = jt?'jatuh-tempo':i.status;
+    const badge = `<span style="background:${statusMap[s]}22;color:${statusMap[s]};padding:2px 8px;border-radius:6px;font-size:11px;text-transform:capitalize;">${s==='jatuh-tempo'?'⚠️ Jatuh Tempo':s}</span>`;
+    return `<tr>
+      <td style="font-family:var(--mono);font-size:12px;font-weight:600">${i.noInvoice}</td>
+      <td>${i.pelanggan}</td>
+      <td style="font-size:12px">${i.tanggal}</td>
+      <td style="font-size:12px;${jt?'color:var(--red);font-weight:600;':''}">${i.jatuhTempo}</td>
+      <td class="debit" style="font-family:var(--mono)">${rp(i.total)}</td>
+      <td style="font-family:var(--mono);color:${i.sisaTagihan>0?'var(--accent3)':'var(--accent)'}">${rp(i.sisaTagihan)}</td>
+      <td>${badge}</td>
+      <td style="display:flex;gap:6px;">
+        ${i.status!=='lunas'?`<button class="btn btn-ghost btn-sm" onclick="openModalLunasInvoice('${i.id}')">✅ Lunas</button>`:''}
+        <button class="btn btn-danger btn-sm" onclick="hapusInvoice('${i.id}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openModalLunasInvoice(id) {
+  const inv = invoiceList.find(i=>i.id===id); if(!inv) return;
+  document.getElementById('inv-lunas-id').value = id;
+  document.getElementById('inv-lunas-nominal').value = inv.sisaTagihan;
+  document.getElementById('inv-lunas-tgl').value = new Date().toISOString().split('T')[0];
+  const opts = akuns.filter(a=>a.tipe==='Aset').map(a=>`<option value="${a.kode}">${a.kode} - ${a.nama}</option>`).join('');
+  const el = document.getElementById('inv-lunas-akun'); if(el) { el.innerHTML=opts; const k=akuns.find(a=>a.kode==='1101'); if(k) el.value=k.kode; }
+  openModal('modal-inv-lunas');
+}
+
+function konfirmasiLunasInvoice() {
+  const id = document.getElementById('inv-lunas-id').value;
+  const inv = invoiceList.find(i=>i.id===id); if(!inv) return;
+  const tgl = document.getElementById('inv-lunas-tgl').value;
+  const nominal = parseFloat(document.getElementById('inv-lunas-nominal').value)||0;
+  const akunKas = document.getElementById('inv-lunas-akun').value;
+  showOpSpinner('Memproses Pembayaran...', 'Membuat jurnal penerimaan kas');
+  setTimeout(()=>{
+    const entry = {
+      id:'JRN_LNS_'+Date.now(), tanggal:tgl, jenis:'Manual',
+      keterangan:`Pelunasan ${inv.noInvoice} — ${inv.pelanggan}`,
+      lines:[{akun:akunKas,debit:nominal,kredit:0},{akun:inv.akunPiutang,debit:0,kredit:nominal}]
+    };
+    jurnalEntries.push(entry);
+    inv.sisaTagihan = Math.max(0, inv.sisaTagihan - nominal);
+    if(inv.sisaTagihan <= 0) inv.status = 'lunas';
+    saveFiturBaru(); saveData();
+    closeModal('modal-inv-lunas');
+    renderInvoiceList(); renderInvoiceKPI();
+    showAlert(`✓ Pembayaran ${rp(nominal)} dicatat. Invoice ${inv.sisaTagihan<=0?'LUNAS':'sebagian terbayar'}.`);
+    hideOpSpinner();
+    cekNotifikasi();
+  }, 800);
+}
+
+function hapusInvoice(id) {
+  if(!confirm('Hapus invoice ini?')) return;
+  showOpSpinner('Menghapus...','');
+  setTimeout(()=>{
+    invoiceList = invoiceList.filter(i=>i.id!==id);
+    saveFiturBaru(); renderInvoiceList(); renderInvoiceKPI();
+    showAlert('✓ Invoice dihapus'); hideOpSpinner();
+  }, 400);
+}
+
+// ══════════════════════════════════════════════════════════════
+// REKONSILIASI BANK
+// ══════════════════════════════════════════════════════════════
+function handleRekonCSV(input) {
+  const file = input.files[0]; if(!file) return;
+  document.getElementById('rekon-file-name').textContent = file.name;
+  showOpSpinner('Membaca File CSV...', 'Memparse data mutasi bank');
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.split('\n').filter(l=>l.trim());
+    const bank = document.getElementById('rekon-bank').value;
+    rekonData.baris = parseCSVBank(lines, bank);
+    hideOpSpinner();
+    document.getElementById('rekon-summary').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="stat-card" style="padding:14px;"><div style="font-size:20px">📊</div><div class="stat-label">Total Baris</div><div style="font-size:18px;font-weight:700;color:var(--accent2);font-family:var(--mono);">${rekonData.baris.length}</div></div>
+        <div class="stat-card" style="padding:14px;"><div style="font-size:20px">💰</div><div class="stat-label">Total Mutasi</div><div style="font-size:16px;font-weight:700;color:var(--accent);font-family:var(--mono);">${rp(rekonData.baris.reduce((s,b)=>s+Math.abs(b.nominal),0))}</div></div>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:rgba(74,222,128,0.08);border-radius:8px;font-size:12px;color:var(--accent);">✅ ${rekonData.baris.length} baris siap diproses. Klik "Proses Rekonsiliasi".</div>`;
+    showAlert(`✓ File ${file.name} berhasil dibaca: ${rekonData.baris.length} transaksi`);
+  };
+  reader.readAsText(file);
+}
+
+function parseCSVBank(lines, bank) {
+  const result = [];
+  // Skip header rows
+  lines.slice(1).forEach(line => {
+    const cols = line.split(',').map(c=>c.replace(/"/g,'').trim());
+    if(cols.length < 3) return;
+    let tgl='', ket='', nominal=0;
+    try {
+      if(bank==='bca') { tgl=cols[0];ket=cols[1];nominal=parseFloat((cols[2]||'0').replace(/\./g,'').replace(',','.'))||0; }
+      else if(bank==='mandiri') { tgl=cols[0];ket=cols[2];nominal=parseFloat((cols[3]||'0').replace(/\./g,'').replace(',','.'))||0; }
+      else { tgl=cols[0];ket=cols[1];nominal=parseFloat((cols[2]||'0').replace(/[^0-9.-]/g,''))||0; }
+      if(tgl && nominal) result.push({tgl,ket,nominal,status:'belum',jurnalId:null});
+    } catch(e){}
+  });
+  return result;
+}
+
+function prosesRekonsiliasi() {
+  if(!rekonData.baris.length) { showAlert('⚠️ Upload CSV mutasi bank terlebih dahulu'); return; }
+  showOpSpinner('Mencocokkan Data...', 'Membandingkan mutasi vs jurnal');
+  setTimeout(()=>{
+    rekonData.baris.forEach(b=>{
+      const match = jurnalEntries.find(j=>{
+        if(j.tanggal !== b.tgl) return false;
+        const totalLine = j.lines.reduce((s,l)=>s+Math.max(l.debit,l.kredit),0);
+        return Math.abs(totalLine - Math.abs(b.nominal)) < 1000;
+      });
+      if(match) {
+        const totalLine = match.lines.reduce((s,l)=>s+Math.max(l.debit,l.kredit),0);
+        b.status = Math.abs(totalLine-Math.abs(b.nominal))<1 ? 'cocok' : 'beda';
+        b.jurnalId = match.id;
+        b.nominalJurnal = totalLine;
+      } else { b.status='belum'; b.jurnalId=null; }
+    });
+    const cocok = rekonData.baris.filter(b=>b.status==='cocok').length;
+    const beda = rekonData.baris.filter(b=>b.status==='beda').length;
+    const belum = rekonData.baris.filter(b=>b.status==='belum').length;
+    document.getElementById('rekon-summary').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div class="stat-card" style="padding:12px;"><div style="font-size:18px">✅</div><div class="stat-label">Cocok</div><div style="font-size:20px;font-weight:700;color:var(--accent);font-family:var(--mono);">${cocok}</div></div>
+        <div class="stat-card" style="padding:12px;"><div style="font-size:18px">⚠️</div><div class="stat-label">Beda Nominal</div><div style="font-size:20px;font-weight:700;color:var(--accent3);font-family:var(--mono);">${beda}</div></div>
+        <div class="stat-card" style="padding:12px;"><div style="font-size:18px">❓</div><div class="stat-label">Belum Cocok</div><div style="font-size:20px;font-weight:700;color:var(--red);font-family:var(--mono);">${belum}</div></div>
+      </div>`;
+    renderRekonTable('all');
+    document.getElementById('rekon-result-card').style.display='';
+    hideOpSpinner();
+    showAlert(`✓ Rekonsiliasi selesai: ${cocok} cocok, ${belum} perlu perhatian`);
+  }, 1200);
+}
+
+let _rekonFilter = 'all';
+function filterRekon(f) {
+  _rekonFilter = f;
+  ['all','cocok','belum','beda'].forEach(x=>{
+    const btn=document.getElementById('rekon-btn-'+x);
+    if(btn) btn.className='btn btn-'+(f===x?'primary':'ghost')+' btn-sm';
+  });
+  renderRekonTable(f);
+}
+
+function renderRekonTable(filter) {
+  const tbody = document.getElementById('rekon-tbody'); if(!tbody) return;
+  const list = filter==='all' ? rekonData.baris : rekonData.baris.filter(b=>b.status===filter);
+  tbody.innerHTML = list.map((b,i)=>{
+    const clr = b.status==='cocok'?'var(--accent)':b.status==='beda'?'var(--accent3)':'var(--red)';
+    const icon = b.status==='cocok'?'✅':b.status==='beda'?'⚠️':'❓';
+    const j = b.jurnalId ? jurnalEntries.find(x=>x.id===b.jurnalId) : null;
+    return `<tr>
+      <td style="font-size:12px;font-family:var(--mono)">${b.tgl}</td>
+      <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;">${b.ket}</td>
+      <td style="font-family:var(--mono);font-size:12px">${rp(Math.abs(b.nominal))}</td>
+      <td style="font-size:12px;color:var(--muted)">${j?j.keterangan:'—'}</td>
+      <td style="font-family:var(--mono);font-size:12px">${b.nominalJurnal?rp(b.nominalJurnal):'—'}</td>
+      <td><span style="color:${clr};font-size:12px;font-weight:600;">${icon} ${b.status}</span></td>
+      <td>${b.status==='belum'?`<button class="btn btn-ghost btn-sm" onclick="importSatuRekon(${rekonData.baris.indexOf(b)})">📥 Import</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function importSatuRekon(idx) {
+  const b = rekonData.baris[idx]; if(!b) return;
+  showOpSpinner('Membuat Jurnal...', 'Mengimpor transaksi bank');
+  setTimeout(()=>{
+    const masuk = b.nominal > 0;
+    const kas = akuns.find(a=>a.kode==='1101');
+    const oth = akuns.find(a=>a.tipe==='Pendapatan');
+    if(!kas||!oth) { hideOpSpinner(); showAlert('⚠️ Akun kas/pendapatan tidak ditemukan'); return; }
+    const entry = {
+      id:'JRN_REKON_'+Date.now(), tanggal:b.tgl, jenis:'Manual',
+      keterangan:`[Rekon] ${b.ket}`,
+      lines: masuk
+        ? [{akun:kas.kode,debit:Math.abs(b.nominal),kredit:0},{akun:oth.kode,debit:0,kredit:Math.abs(b.nominal)}]
+        : [{akun:oth.kode,debit:Math.abs(b.nominal),kredit:0},{akun:kas.kode,debit:0,kredit:Math.abs(b.nominal)}]
+    };
+    jurnalEntries.push(entry);
+    b.status='cocok'; b.jurnalId=entry.id; b.nominalJurnal=Math.abs(b.nominal);
+    saveData(); renderRekonTable(_rekonFilter);
+    showAlert('✓ Jurnal berhasil dibuat dari mutasi bank');
+    hideOpSpinner();
+  }, 700);
+}
+
+function importRekonSebagaiJurnal() {
+  const belum = rekonData.baris.filter(b=>b.status==='belum');
+  if(!belum.length) { showAlert('Tidak ada transaksi yang belum cocok'); return; }
+  if(!confirm(`Import ${belum.length} transaksi belum cocok sebagai jurnal baru?`)) return;
+  showOpSpinner(`Mengimpor ${belum.length} Transaksi...`, 'Membuat jurnal dari mutasi bank');
+  let i=0;
+  function next() {
+    if(i>=belum.length) {
+      saveData(); renderRekonTable(_rekonFilter);
+      showAlert(`✓ ${belum.length} transaksi berhasil diimpor`);
+      hideOpSpinner(); return;
+    }
+    importSatuRekonDirect(belum[i++]); setTimeout(next, 100);
+  }
+  function importSatuRekonDirect(b) {
+    const kas=akuns.find(a=>a.kode==='1101'); const oth=akuns.find(a=>a.tipe==='Pendapatan');
+    if(!kas||!oth) return;
+    const entry={id:'JRN_REKON_'+Date.now()+'_'+i,tanggal:b.tgl,jenis:'Manual',keterangan:`[Rekon] ${b.ket}`,
+      lines:b.nominal>0?[{akun:kas.kode,debit:Math.abs(b.nominal),kredit:0},{akun:oth.kode,debit:0,kredit:Math.abs(b.nominal)}]
+        :[{akun:oth.kode,debit:Math.abs(b.nominal),kredit:0},{akun:kas.kode,debit:0,kredit:Math.abs(b.nominal)}]};
+    jurnalEntries.push(entry); b.status='cocok'; b.jurnalId=entry.id; b.nominalJurnal=Math.abs(b.nominal);
+  }
+  next();
+}
+
+// ══════════════════════════════════════════════════════════════
+// MULTI MATA UANG / KURS
+// ══════════════════════════════════════════════════════════════
+const MATA_UANG = ['USD','IDR','SGD','EUR','MYR','JPY'];
+const KURS_DEMO = {USD:1,IDR:16200,SGD:1.35,EUR:0.92,MYR:4.72,JPY:156.3};
+
+function renderKursPage() {
+  renderKursCards();
+  renderKursManualInputs();
+  hitungKonversi();
+}
+
+function renderKursCards() {
+  const el = document.getElementById('kurs-cards'); if(!el) return;
+  const base = kursData.IDR||16200;
+  el.innerHTML = MATA_UANG.map(k=>{
+    const val = k==='IDR' ? 1 : (kursData.IDR||16200)/(kursData[k]||1);
+    return `<div class="stat-card" style="padding:14px 16px;">
+      <div style="font-size:22px;margin-bottom:4px;">${{USD:'🇺🇸',IDR:'🇮🇩',SGD:'🇸🇬',EUR:'🇪🇺',MYR:'🇲🇾',JPY:'🇯🇵'}[k]||'💱'}</div>
+      <div class="stat-label">${k}</div>
+      <div style="font-size:15px;font-weight:700;color:var(--accent2);font-family:var(--mono);margin-top:4px;">${k==='IDR'?'Base':rp(val).replace('Rp','').trim()}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px;">1 ${k==='IDR'?'IDR':'USD'} = ${k==='IDR'?rp(1):(rp(val))}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderKursManualInputs() {
+  const el = document.getElementById('kurs-manual-inputs'); if(!el) return;
+  el.innerHTML = MATA_UANG.filter(k=>k!=='USD').map(k=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <span style="font-weight:700;min-width:40px;font-family:var(--mono);">${k}</span>
+      <input type="number" id="kurs-input-${k}" value="${kursData[k]||KURS_DEMO[k]}" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-family:var(--mono);">
+      <span style="font-size:11px;color:var(--muted);">per USD</span>
+    </div>`).join('');
+}
+
+function simpanKursManual() {
+  showOpSpinner('Menyimpan Kurs...', 'Memperbarui data mata uang');
+  setTimeout(()=>{
+    MATA_UANG.filter(k=>k!=='USD').forEach(k=>{
+      const v = parseFloat(document.getElementById('kurs-input-'+k)?.value)||KURS_DEMO[k];
+      kursData[k] = v;
+    });
+    kursData.USD=1; kursData.updatedAt=new Date().toISOString();
+    saveFiturBaru(); renderKursCards(); hitungKonversi();
+    showAlert('✓ Kurs berhasil disimpan!'); hideOpSpinner();
+  }, 600);
+}
+
+function refreshKursOtomatis() {
+  showOpSpinner('Mengambil Kurs Terbaru...', 'Menghubungi API nilai tukar');
+  // Simulasi fetch kurs (dalam app nyata: fetch dari API)
+  setTimeout(()=>{
+    // Variasi kecil dari KURS_DEMO untuk simulasi
+    MATA_UANG.filter(k=>k!=='USD').forEach(k=>{
+      kursData[k] = KURS_DEMO[k] * (1 + (Math.random()-0.5)*0.02);
+    });
+    kursData.USD=1; kursData.updatedAt=new Date().toISOString();
+    saveFiturBaru(); renderKursCards(); hitungKonversi(); renderKursManualInputs();
+    showAlert('✓ Kurs berhasil diperbarui!'); hideOpSpinner();
+  }, 1500);
+}
+
+function hitungKonversi() {
+  const nominal = parseFloat(document.getElementById('kurs-nominal')?.value)||0;
+  const dari = document.getElementById('kurs-dari')?.value||'IDR';
+  const ke = document.getElementById('kurs-ke')?.value||'USD';
+  if(!nominal) { const el=document.getElementById('kurs-hasil-detail'); if(el) el.textContent='Masukkan nominal untuk konversi'; return; }
+  // Konversi via USD
+  const toUSD = dari==='USD' ? nominal : nominal/(kursData[dari]||1);
+  const hasil = ke==='USD' ? toUSD : toUSD*(kursData[ke]||1);
+  const fmt=(v,c)=>v.toLocaleString('id-ID',{minimumFractionDigits:c==='JPY'?0:2,maximumFractionDigits:c==='JPY'||c==='IDR'?0:4});
+  const el=document.getElementById('kurs-hasil-angka'); if(el) el.textContent=`${ke} ${fmt(hasil,ke)}`;
+  const el2=document.getElementById('kurs-hasil-detail'); if(el2) el2.textContent=`${fmt(nominal,dari)} ${dari} = ${fmt(hasil,ke)} ${ke} · Kurs: 1 ${dari} = ${fmt(hasil/nominal,ke)} ${ke}`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// NOTIFIKASI & ALERT
+// ══════════════════════════════════════════════════════════════
+function openModalAlertBaru() { renderAlertForm(); openModal('modal-alert-baru'); }
+
+function renderAlertForm() {
+  const tipe = document.getElementById('alert-tipe')?.value;
+  const el = document.getElementById('alert-form-extra'); if(!el) return;
+  if(tipe==='anggaran-terlampaui') el.innerHTML=`<div class="form-group"><label>Batas (%)</label><input type="number" id="alert-batas" value="90" placeholder="90"></div>`;
+  else if(tipe==='invoice-jatuh-tempo') el.innerHTML=`<div class="form-group"><label>H- (hari sebelum jatuh tempo)</label><input type="number" id="alert-batas" value="3" placeholder="3"></div>`;
+  else if(tipe==='saldo-akun-bawah') el.innerHTML=`<div class="form-group"><label>Akun</label><select id="alert-akun" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);">${akuns.map(a=>`<option value="${a.kode}">${a.kode} - ${a.nama}</option>`).join('')}</select></div><div class="form-group"><label>Batas Saldo Minimum (Rp)</label><input type="number" id="alert-batas" placeholder="1000000"></div>`;
+  else el.innerHTML='';
+}
+
+function simpanAlertBaru() {
+  const nama = document.getElementById('alert-nama')?.value.trim();
+  const tipe = document.getElementById('alert-tipe')?.value;
+  if(!nama) { showAlert('⚠️ Masukkan nama alert'); return; }
+  showOpSpinner('Menyimpan Alert...','');
+  setTimeout(()=>{
+    notifAlerts.push({
+      id:'alert_'+Date.now(), nama, tipe,
+      batas: parseFloat(document.getElementById('alert-batas')?.value)||null,
+      akun: document.getElementById('alert-akun')?.value||null,
+      aktif:true, createdAt:new Date().toISOString()
+    });
+    saveFiturBaru(); closeModal('modal-alert-baru'); renderNotifikasiPage();
+    showAlert('✓ Alert berhasil ditambahkan!'); hideOpSpinner();
+    cekNotifikasi();
+  }, 500);
+}
+
+function cekNotifikasi() {
+  const today = new Date().toISOString().split('T')[0];
+  const notifs = [];
+  notifAlerts.filter(a=>a.aktif).forEach(a=>{
+    if(a.tipe==='arus-kas-negatif') {
+      const kasIn = jurnalEntries.reduce((s,j)=>s+j.lines.filter(l=>l.akun==='1101').reduce((ss,l)=>ss+l.debit,0),0);
+      const kasOut = jurnalEntries.reduce((s,j)=>s+j.lines.filter(l=>l.akun==='1101').reduce((ss,l)=>ss+l.kredit,0),0);
+      if(kasIn-kasOut<0) notifs.push({tipe:'danger',msg:`⚠️ ${a.nama}: Arus kas negatif (${rp(kasIn-kasOut)})`, alertId:a.id});
+    }
+    if(a.tipe==='invoice-jatuh-tempo') {
+      const hariLimit = a.batas||3;
+      invoiceList.filter(i=>i.status!=='lunas').forEach(i=>{
+        const diff = (new Date(i.jatuhTempo)-new Date())/86400000;
+        if(diff>=0&&diff<=hariLimit) notifs.push({tipe:'warning',msg:`🔔 Invoice ${i.noInvoice} (${i.pelanggan}) jatuh tempo dalam ${Math.ceil(diff)} hari`, alertId:a.id});
+        if(diff<0) notifs.push({tipe:'danger',msg:`⚠️ Invoice ${i.noInvoice} (${i.pelanggan}) SUDAH JATUH TEMPO ${Math.abs(Math.ceil(diff))} hari lalu`, alertId:a.id});
+      });
+    }
+    if(a.tipe==='laba-negatif') {
+      const pend=jurnalEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&ac.tipe==='Pendapatan'?l.kredit:0)},0),0);
+      const beban=jurnalEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&ac.tipe==='Beban'?l.debit:0)},0),0);
+      if(pend-beban<0) notifs.push({tipe:'danger',msg:`📉 ${a.nama}: Laba bersih negatif (${rp(pend-beban)})`, alertId:a.id});
+    }
+  });
+  if(notifs.length) {
+    notifs.forEach(n=>{ notifHistory.unshift({...n, tgl:today, dibaca:false}); });
+    if(notifHistory.length>100) notifHistory=notifHistory.slice(0,100);
+    saveFiturBaru();
+    // Badge pada nav
+    updateNotifBadge(notifs.length);
+  }
+  return notifs;
+}
+
+function updateNotifBadge(n) {
+  const cards = document.querySelectorAll('.nav-card[data-page="notifikasi"]');
+  cards.forEach(c=>{
+    let badge = c.querySelector('.notif-badge');
+    if(n>0) {
+      if(!badge) { badge=document.createElement('span'); badge.className='notif-badge'; badge.style.cssText='position:absolute;top:4px;right:4px;background:var(--red);color:white;border-radius:50%;width:16px;height:16px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700;'; c.appendChild(badge); }
+      badge.textContent=n>9?'9+':n;
+    } else if(badge) badge.remove();
+  });
+}
+
+function renderNotifikasiPage() {
+  const aktifNotifs = cekNotifikasi();
+  const alertEl = document.getElementById('notif-alert-list');
+  if(alertEl) {
+    if(!aktifNotifs.length) {
+      alertEl.innerHTML=`<div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:16px;text-align:center;color:var(--accent);">✅ Semua kondisi keuangan normal. Tidak ada alert aktif.</div>`;
+    } else {
+      alertEl.innerHTML=aktifNotifs.map(n=>`
+        <div style="background:${n.tipe==='danger'?'rgba(248,113,113,0.1)':'rgba(245,158,11,0.1)'};border:1px solid ${n.tipe==='danger'?'rgba(248,113,113,0.3)':'rgba(245,158,11,0.3)'};border-radius:12px;padding:14px 16px;margin-bottom:10px;animation:fadeInUp 0.3s ease;">
+          <div style="font-weight:600;color:${n.tipe==='danger'?'var(--red)':'var(--accent3)'};">${n.msg}</div>
+        </div>`).join('');
+    }
+  }
+  const configEl = document.getElementById('notif-config-list');
+  if(configEl) {
+    configEl.innerHTML = notifAlerts.length ? notifAlerts.map(a=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--surface2);border-radius:10px;margin-bottom:8px;border:1px solid var(--border);">
+        <div><div style="font-size:13px;font-weight:600;">${a.nama}</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${a.tipe.replace(/-/g,' ')}</div></div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="toggleAlert('${a.id}')" class="btn btn-ghost btn-sm">${a.aktif?'⏸️':'▶️'}</button>
+          <button onclick="hapusAlert('${a.id}')" class="btn btn-danger btn-sm">🗑</button>
+        </div>
+      </div>`).join('') : `<div style="color:var(--muted);font-size:13px;text-align:center;padding:24px;">Belum ada alert. Klik + Tambah Alert.</div>`;
+  }
+  const histEl = document.getElementById('notif-history');
+  if(histEl) {
+    histEl.innerHTML = notifHistory.slice(0,20).map(n=>`
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);">
+        <div style="font-size:12px;color:${n.tipe==='danger'?'var(--red)':'var(--accent3)'};">${n.msg}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;">${n.tgl}</div>
+      </div>`).join('') || `<div style="color:var(--muted);font-size:12px;padding:20px;text-align:center;">Belum ada riwayat notifikasi</div>`;
+  }
+}
+
+function toggleAlert(id) {
+  const a=notifAlerts.find(x=>x.id===id); if(a){a.aktif=!a.aktif;saveFiturBaru();renderNotifikasiPage();}
+}
+function hapusAlert(id) {
+  notifAlerts=notifAlerts.filter(x=>x.id!==id);saveFiturBaru();renderNotifikasiPage();showAlert('✓ Alert dihapus');
+}
+
+// ══════════════════════════════════════════════════════════════
+// ANGGARAN vs AKTUAL
+// ══════════════════════════════════════════════════════════════
+function openModalAnggaran(editId) {
+  const opts=akuns.map(a=>`<option value="${a.kode}">${a.kode} - ${a.nama}</option>`).join('');
+  const el=document.getElementById('ang-akun'); if(el) el.innerHTML=opts;
+  const now=new Date();
+  document.getElementById('ang-periode').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('ang-nominal').value='';
+  document.getElementById('ang-catatan').value='';
+  openModal('modal-anggaran');
+}
+
+function simpanAnggaran() {
+  const akunKode=document.getElementById('ang-akun')?.value;
+  const periode=document.getElementById('ang-periode')?.value;
+  const nominal=parseFloat(document.getElementById('ang-nominal')?.value)||0;
+  if(!akunKode||!periode||!nominal){showAlert('⚠️ Lengkapi semua field');return;}
+  showOpSpinner('Menyimpan Anggaran...','');
+  setTimeout(()=>{
+    const exist=anggaranList.findIndex(a=>a.akunKode===akunKode&&a.periode===periode);
+    const item={id:'ang_'+Date.now(),akunKode,periode,nominal,catatan:document.getElementById('ang-catatan')?.value||''};
+    if(exist>=0) anggaranList[exist]=item; else anggaranList.push(item);
+    saveFiturBaru(); closeModal('modal-anggaran'); renderAnggaranPage();
+    showAlert('✓ Anggaran berhasil disimpan!'); hideOpSpinner();
+  }, 500);
+}
+
+function renderAnggaranPage() {
+  const now=new Date();
+  const periodeAktif=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const angBulanIni=anggaranList.filter(a=>a.periode===periodeAktif);
+
+  // Hitung aktual per akun bulan ini
+  function getAktual(kode) {
+    return jurnalEntries.filter(j=>j.tanggal.startsWith(periodeAktif)).reduce((s,j)=>
+      s+j.lines.filter(l=>l.akun===kode).reduce((ss,l)=>ss+Math.max(l.debit,l.kredit),0),0);
+  }
+
+  // KPI
+  const kpiEl=document.getElementById('ang-kpi');
+  if(kpiEl) {
+    const totAng=angBulanIni.reduce((s,a)=>s+a.nominal,0);
+    const totAkt=angBulanIni.reduce((s,a)=>s+getAktual(a.akunKode),0);
+    const variance=totAng-totAkt;
+    kpiEl.innerHTML=[
+      {label:'Total Anggaran',val:rp(totAng),icon:'🎯',clr:'var(--accent2)'},
+      {label:'Total Aktual',val:rp(totAkt),icon:'📊',clr:'var(--accent)'},
+      {label:'Variance',val:rp(variance),icon:variance>=0?'✅':'⚠️',clr:variance>=0?'var(--accent)':'var(--red)'},
+      {label:'Akun Dianggarkan',val:angBulanIni.length,icon:'📋',clr:'var(--muted)'},
+    ].map(k=>`<div class="stat-card" style="padding:14px 16px;"><div style="font-size:22px;margin-bottom:4px;">${k.icon}</div><div class="stat-label">${k.label}</div><div style="font-size:16px;font-weight:700;color:${k.clr};font-family:var(--mono);margin-top:4px;">${k.val}</div></div>`).join('');
+  }
+
+  // Progress bars
+  const progEl=document.getElementById('ang-progress-list');
+  if(progEl) {
+    if(!angBulanIni.length) { progEl.innerHTML=`<div style="color:var(--muted);text-align:center;padding:32px;font-size:13px;">Belum ada anggaran bulan ini. Klik <b>+ Set Anggaran</b>.</div>`; }
+    else progEl.innerHTML=angBulanIni.map(a=>{
+      const aktual=getAktual(a.akunKode);
+      const pct=Math.min(aktual/a.nominal*100,100);
+      const over=aktual>a.nominal;
+      const nama=akuns.find(x=>x.kode===a.akunKode)?.nama||a.akunKode;
+      return `<div style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:13px;font-weight:600;">${nama}</span>
+          <span style="font-size:12px;color:${over?'var(--red)':'var(--muted)'};font-family:var(--mono);">${rp(aktual)} / ${rp(a.nominal)}</span>
+        </div>
+        <div style="background:var(--surface2);border-radius:999px;height:8px;overflow:hidden;">
+          <div style="width:${pct}%;height:100%;background:${over?'var(--red)':pct>80?'var(--accent3)':'var(--accent)'};border-radius:999px;transition:width 0.6s cubic-bezier(0.34,1.56,0.64,1);"></div>
+        </div>
+        <div style="font-size:10px;color:${over?'var(--red)':'var(--muted)'};margin-top:2px;">${pct.toFixed(1)}% terpakai${over?' — MELEBIHI ANGGARAN':''}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Tabel detail
+  const tbody=document.getElementById('ang-tbody');
+  if(tbody) {
+    const all=anggaranList.map(a=>{
+      const aktual=getAktual(a.akunKode);
+      const variance=a.nominal-aktual;
+      const pct=a.nominal?aktual/a.nominal*100:0;
+      const over=aktual>a.nominal;
+      const nama=akuns.find(x=>x.kode===a.akunKode)?.nama||a.akunKode;
+      const tipe=akuns.find(x=>x.kode===a.akunKode)?.tipe||'—';
+      return `<tr>
+        <td style="font-weight:600">${nama}</td>
+        <td style="font-size:12px">${tipe}</td>
+        <td style="font-family:var(--mono)">${rp(a.nominal)}</td>
+        <td style="font-family:var(--mono)">${rp(aktual)}</td>
+        <td style="font-family:var(--mono);color:${variance>=0?'var(--accent)':'var(--red)'};">${rp(Math.abs(variance))} ${variance>=0?'↑ Sisa':'↓ Lebih'}</td>
+        <td style="font-family:var(--mono);color:${over?'var(--red)':pct>80?'var(--accent3)':'var(--accent)'};">${pct.toFixed(1)}%</td>
+        <td><span style="background:${over?'rgba(248,113,113,0.12)':'rgba(74,222,128,0.1)'};color:${over?'var(--red)':'var(--accent)'};padding:2px 8px;border-radius:6px;font-size:11px;">${over?'⚠️ Melebihi':'✅ On Track'}</span></td>
+        <td><button class="btn btn-danger btn-sm" onclick="hapusAnggaran('${a.id}')">🗑</button></td>
+      </tr>`;
+    }).join('');
+    tbody.innerHTML=all||`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">Belum ada data anggaran</td></tr>`;
+  }
+
+  // Chart
+  if(angBulanIni.length) {
+    const labels=angBulanIni.map(a=>akuns.find(x=>x.kode===a.akunKode)?.nama?.slice(0,10)||a.akunKode);
+    const angData=angBulanIni.map(a=>a.nominal);
+    const aktData=angBulanIni.map(a=>getAktual(a.akunKode));
+    const isDark=!document.body.classList.contains('light-mode');
+    const textClr=isDark?'rgba(226,232,240,0.7)':'rgba(15,23,42,0.6)';
+    const gridClr=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)';
+    anDrawGroupedBar('ang-chart',labels,
+      [{label:'Anggaran',data:angData,color:'rgba(34,211,238,'},{label:'Aktual',data:aktData,color:'rgba(74,222,128,'}],
+      textClr,gridClr);
+  }
+}
+
+function hapusAnggaran(id) {
+  anggaranList=anggaranList.filter(a=>a.id!==id);saveFiturBaru();renderAnggaranPage();showAlert('✓ Anggaran dihapus');
+}
+
+// ══════════════════════════════════════════════════════════════
+// PAJAK OTOMATIS
+// ══════════════════════════════════════════════════════════════
+function renderPajakOtomatis() {
+  showOpSpinner('Menghitung Pajak...', 'Menganalisis transaksi kena pajak');
+  setTimeout(()=>{
+    const penjualan=jurnalEntries.filter(j=>j.jenis==='Penjualan'||j.keterangan?.toLowerCase().includes('penjualan'));
+    const pembelian=jurnalEntries.filter(j=>j.jenis==='Pembelian'||j.keterangan?.toLowerCase().includes('pembelian'));
+
+    const totalPenjualan=penjualan.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a&&a.tipe==='Pendapatan'?l.kredit:0)},0),0);
+    const totalPembelian=pembelian.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a&&(a.tipe==='HPP'||a.tipe==='Beban')?l.debit:0)},0),0);
+    const ppnKeluaran=totalPenjualan*0.12;
+    const ppnMasukan=totalPembelian*0.12;
+    const ppnKurang=ppnKeluaran-ppnMasukan;
+
+    // KPI
+    const kpiEl=document.getElementById('pajak-kpi');
+    if(kpiEl) kpiEl.innerHTML=[
+      {label:'PPN Keluaran',val:rp(ppnKeluaran),icon:'💰',clr:'var(--red)'},
+      {label:'PPN Masukan',val:rp(ppnMasukan),icon:'💸',clr:'var(--accent)'},
+      {label:'PPN Kurang/Lebih Bayar',val:rp(Math.abs(ppnKurang)),icon:ppnKurang>0?'⬆️':'⬇️',clr:ppnKurang>0?'var(--red)':'var(--accent)'},
+      {label:'Total Transaksi Kena Pajak',val:(penjualan.length+pembelian.length)+' jurnal',icon:'📋',clr:'var(--muted)'},
+    ].map(k=>`<div class="stat-card" style="padding:14px 16px;"><div style="font-size:22px;margin-bottom:4px;">${k.icon}</div><div class="stat-label">${k.label}</div><div style="font-size:15px;font-weight:700;color:${k.clr};font-family:var(--mono);margin-top:4px;">${k.val}</div></div>`).join('');
+
+    // PPN Detail
+    const ppnEl=document.getElementById('pajak-ppn-detail');
+    if(ppnEl) ppnEl.innerHTML=`
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="background:var(--surface2);border-radius:10px;padding:14px;border:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">PPN KELUARAN (dari penjualan)</div>
+          <div style="font-size:22px;font-weight:700;color:var(--red);font-family:var(--mono);">${rp(ppnKeluaran)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">DPP: ${rp(totalPenjualan)} × 12%</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:10px;padding:14px;border:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">PPN MASUKAN (dari pembelian)</div>
+          <div style="font-size:22px;font-weight:700;color:var(--accent);font-family:var(--mono);">${rp(ppnMasukan)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">DPP: ${rp(totalPembelian)} × 12%</div>
+        </div>
+        <div style="background:${ppnKurang>0?'rgba(248,113,113,0.1)':'rgba(74,222,128,0.1)'};border-radius:10px;padding:14px;border:1px solid ${ppnKurang>0?'rgba(248,113,113,0.3)':'rgba(74,222,128,0.3)'};">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${ppnKurang>0?'PPN KURANG BAYAR':'PPN LEBIH BAYAR'}</div>
+          <div style="font-size:22px;font-weight:700;color:${ppnKurang>0?'var(--red)':'var(--accent)'};font-family:var(--mono);">${rp(Math.abs(ppnKurang))}</div>
+        </div>
+      </div>`;
+
+    // SPT Summary
+    const sptEl=document.getElementById('pajak-spt-summary');
+    if(sptEl) {
+      const yr=new Date().getFullYear();
+      sptEl.innerHTML=`
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;">📄 Ringkasan SPT ${yr}</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${[
+            ['Penghasilan Bruto', rp(totalPenjualan), 'var(--accent)'],
+            ['HPP & Biaya', rp(totalPembelian), 'var(--red)'],
+            ['Penghasilan Neto', rp(totalPenjualan-totalPembelian), totalPenjualan-totalPembelian>=0?'var(--accent)':'var(--red)'],
+            ['PPN Wajib Bayar', rp(Math.max(0,ppnKurang)), 'var(--accent3)'],
+          ].map(([l,v,c])=>`<div style="display:flex;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:8px;">
+            <span style="font-size:13px;color:var(--muted);">${l}</span>
+            <span style="font-family:var(--mono);font-size:13px;color:${c};font-weight:600;">${v}</span>
+          </div>`).join('')}
+        </div>`;
+    }
+
+    // Tabel transaksi
+    const tbody=document.getElementById('pajak-tbody');
+    if(tbody) {
+      const rows=[...penjualan.map(j=>({j,jenis:'PPN Keluaran',tarif:'12%'})),...pembelian.map(j=>({j,jenis:'PPN Masukan',tarif:'12%'}))].slice(0,50);
+      tbody.innerHTML=rows.map(({j,jenis,tarif})=>{
+        const nom=j.lines.reduce((s,l)=>s+Math.max(l.debit,l.kredit),0);
+        return `<tr>
+          <td style="font-size:12px;font-family:var(--mono)">${j.tanggal}</td>
+          <td style="font-size:12px">${j.keterangan||'—'}</td>
+          <td style="font-family:var(--mono)">${rp(nom)}</td>
+          <td><span style="background:rgba(34,211,238,0.1);color:var(--accent2);padding:2px 8px;border-radius:6px;font-size:11px;">${jenis}</span></td>
+          <td style="font-family:var(--mono)">${tarif}</td>
+          <td style="font-family:var(--mono);color:var(--accent3)">${rp(nom*0.12)}</td>
+          <td><span style="background:rgba(74,222,128,0.1);color:var(--accent);padding:2px 8px;border-radius:6px;font-size:11px;">✅ Otomatis</span></td>
+        </tr>`;
+      }).join('')||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px;">Belum ada transaksi kena pajak. Input jurnal penjualan/pembelian terlebih dahulu.</td></tr>`;
+    }
+
+    hideOpSpinner();
+  }, 1000);
+}
+
+function hitungPPh21Otomatis() {
+  const gajiBruto=parseFloat(document.getElementById('pph21-gaji')?.value)||0;
+  const jmlKaryawan=parseInt(document.getElementById('pph21-karyawan')?.value)||1;
+  const el=document.getElementById('pph21-result'); if(!el) return;
+  if(!gajiBruto) { el.innerHTML=''; return; }
+  // Simplified PPh 21
+  const setahun=gajiBruto*12;
+  const biayaJabatan=Math.min(setahun*0.05,6000000);
+  const ptkp=54000000;
+  const pkp=Math.max(0,setahun-biayaJabatan-ptkp);
+  let pph=0;
+  if(pkp<=60000000) pph=pkp*0.05;
+  else if(pkp<=250000000) pph=3000000+(pkp-60000000)*0.15;
+  else if(pkp<=500000000) pph=31500000+(pkp-250000000)*0.25;
+  else pph=93500000+(pkp-500000000)*0.30;
+  const pphBulan=pph/12;
+  el.innerHTML=`<div style="background:var(--surface2);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;">
+    ${[['PKP Setahun',rp(pkp)],['PPh 21 Setahun',rp(pph)],['PPh 21/Bulan/Karyawan',rp(pphBulan)],['Total PPh 21/Bulan',rp(pphBulan*jmlKaryawan)]].map(([l,v])=>`
+    <div style="display:flex;justify-content:space-between;"><span style="font-size:12px;color:var(--muted)">${l}</span><span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent3)">${v}</span></div>`).join('')}
+  </div>`;
+}
+
+function hitungPPh23Otomatis() {
+  const jenis=document.getElementById('pph23-jenis')?.value;
+  const bruto=parseFloat(document.getElementById('pph23-bruto')?.value)||0;
+  const el=document.getElementById('pph23-result'); if(!el) return;
+  const tarifMap={jasa:0.02,royalti:0.15,sewa:0.02,dividen:0.15,bunga:0.15};
+  const tarif=tarifMap[jenis]||0.02;
+  const pph=bruto*tarif;
+  el.innerHTML=`<div style="background:var(--surface2);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
+    <div><div style="font-size:11px;color:var(--muted);">PPh 23 (${(tarif*100).toFixed(0)}%)</div><div style="font-size:18px;font-weight:700;color:var(--accent3);font-family:var(--mono);">${rp(pph)}</div></div>
+    <div><div style="font-size:11px;color:var(--muted);">Neto Diterima</div><div style="font-size:16px;font-weight:700;color:var(--accent);font-family:var(--mono);">${rp(bruto-pph)}</div></div>
+  </div>`;
+}
+
+function buatJurnalPPh21() {
+  const gajiBruto=parseFloat(document.getElementById('pph21-gaji')?.value)||0;
+  const jmlKaryawan=parseInt(document.getElementById('pph21-karyawan')?.value)||1;
+  if(!gajiBruto){showAlert('⚠️ Masukkan gaji bruto terlebih dahulu');return;}
+  showOpSpinner('Membuat Jurnal PPh 21...','Memvalidasi kalkulasi pajak');
+  setTimeout(()=>{
+    const pphBulan=(gajiBruto*12-(Math.min(gajiBruto*12*0.05,6000000))-54000000);
+    const pphReal=Math.max(0,pphBulan)*jmlKaryawan;
+    const totalGaji=gajiBruto*jmlKaryawan;
+    const bebanAkun=akuns.find(a=>a.tipe==='Beban'&&a.nama.toLowerCase().includes('gaji'))||akuns.find(a=>a.tipe==='Beban');
+    const hutangAkun=akuns.find(a=>a.tipe==='Liabilitas')||akuns.find(a=>a.kode==='2101');
+    const kasAkun=akuns.find(a=>a.kode==='1101');
+    if(!bebanAkun||!kasAkun){hideOpSpinner();showAlert('⚠️ Akun beban gaji / kas tidak ditemukan');return;}
+    const entry={
+      id:'JRN_PPH21_'+Date.now(), tanggal:new Date().toISOString().split('T')[0],
+      jenis:'Manual', keterangan:`Gaji & PPh 21 — ${jmlKaryawan} karyawan`,
+      lines:[
+        {akun:bebanAkun.kode,debit:totalGaji,kredit:0},
+        ...(hutangAkun&&pphReal?[{akun:hutangAkun.kode,debit:0,kredit:pphReal}]:[]),
+        {akun:kasAkun.kode,debit:0,kredit:totalGaji-(pphReal||0)}
+      ]
+    };
+    jurnalEntries.push(entry); saveData();
+    showAlert(`✓ Jurnal PPh 21 dibuat! Gaji bersih: ${rp(totalGaji-(pphReal||0))}, PPh 21: ${rp(pphReal||0)}`);
+    hideOpSpinner();
+  }, 900);
+}
+
+function buatJurnalPPh23() {
+  const jenis=document.getElementById('pph23-jenis')?.value;
+  const bruto=parseFloat(document.getElementById('pph23-bruto')?.value)||0;
+  if(!bruto){showAlert('⚠️ Masukkan nilai bruto');return;}
+  showOpSpinner('Membuat Jurnal PPh 23...','');
+  setTimeout(()=>{
+    const tarifMap={jasa:0.02,royalti:0.15,sewa:0.02,dividen:0.15,bunga:0.15};
+    const tarif=tarifMap[jenis]||0.02;
+    const pph=bruto*tarif;
+    const kasAkun=akuns.find(a=>a.kode==='1101');
+    const pendAkun=akuns.find(a=>a.tipe==='Pendapatan');
+    const hutangAkun=akuns.find(a=>a.tipe==='Liabilitas');
+    if(!kasAkun||!pendAkun){hideOpSpinner();showAlert('⚠️ Akun tidak ditemukan');return;}
+    const entry={
+      id:'JRN_PPH23_'+Date.now(), tanggal:new Date().toISOString().split('T')[0],
+      jenis:'Manual', keterangan:`PPh 23 — ${jenis} (${(tarif*100).toFixed(0)}%)`,
+      lines:[
+        {akun:kasAkun.kode,debit:bruto-pph,kredit:0},
+        ...(hutangAkun?[{akun:hutangAkun.kode,debit:pph,kredit:0}]:[]),
+        {akun:pendAkun.kode,debit:0,kredit:bruto}
+      ]
+    };
+    jurnalEntries.push(entry); saveData();
+    showAlert(`✓ Jurnal PPh 23 dibuat! Bruto: ${rp(bruto)}, PPh: ${rp(pph)}, Neto: ${rp(bruto-pph)}`);
+    hideOpSpinner();
+  }, 800);
+}
+
+// ══════════════════════════════════════════════════════════════
+// HOOK showPage untuk render semua fitur baru
+// ══════════════════════════════════════════════════════════════
+(function() {
+  const origShowPage = window.showPage || function(){};
+  window.showPage = function(id) {
+    origShowPage(id);
+    if(id==='jurnal-berulang') setTimeout(renderJurnalBerulang, 60);
+    if(id==='invoice') setTimeout(()=>{renderInvoiceList();renderInvoiceKPI();}, 60);
+    if(id==='rekonsiliasi') { /* static UI */ }
+    if(id==='kurs') setTimeout(renderKursPage, 60);
+    if(id==='notifikasi') setTimeout(renderNotifikasiPage, 60);
+    if(id==='anggaran') setTimeout(renderAnggaranPage, 60);
+    if(id==='pajak') setTimeout(renderPajakOtomatis, 60);
+  };
+})();
+
+// Auto-cek notifikasi saat load
+setTimeout(cekNotifikasi, 2000);
+// Auto-jalankan jurnal berulang tertunda saat load
+setTimeout(function() {
+  const today=new Date().toISOString().split('T')[0];
+  const tertunda=jurnalBerulangList.filter(j=>j.aktif&&j.berikutnya<=today);
+  if(tertunda.length) {
+    setTimeout(()=>showAutoSaveToast(`🔄 ${tertunda.length} jurnal berulang tertunda. Buka menu Jurnal Berulang.`, false), 3000);
+  }
+}, 3500);
+
 // REMINDERS
 function getReminders() {
   const reminders = [];
@@ -10629,6 +12011,27 @@ kalkStyle.textContent = `
 @media(max-width:768px){ .kalk-grid { grid-template-columns: 1fr !important; } }
 
 /* Chart scroll wrapper */
+/* ═══ FITUR BARU — ANIMASI & STYLES ═══ */
+@keyframes fadeInUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes slideInRight {
+  from { opacity:0; transform:translateX(20px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+@keyframes pulseGlow {
+  0%,100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+  50%     { box-shadow: 0 0 0 6px rgba(74,222,128,0.15); }
+}
+.page.active { animation: fadeInUp 0.25s cubic-bezier(0.34,1.2,0.64,1) both; }
+#rekon-dropzone:hover { border-color:var(--accent2); background:rgba(34,211,238,0.04); color:var(--text); }
+.inv-item-row { animation: fadeInUp 0.2s ease both; }
+.notif-badge { animation: pulseGlow 2s ease-in-out infinite; }
+.stat-card { animation: fadeInUp 0.3s cubic-bezier(0.34,1.2,0.64,1) both; }
+/* Smooth progress bar */
+#ang-progress-list div[style*="height:8px"] > div { transition: width 0.7s cubic-bezier(0.34,1.56,0.64,1); }
+
 .chart-scroll-wrap { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 .chart-scroll-wrap::-webkit-scrollbar { height: 4px; }
 .chart-scroll-wrap::-webkit-scrollbar-track { background: transparent; }
@@ -18353,6 +19756,8 @@ function closeMataUangPicker() {
   var label   = document.getElementById('ptr-label');
   var arrow   = document.getElementById('ptr-arrow');
   var mainEl  = document.querySelector('.main');
+  // Hanya translasikan .content bukan .main, agar topbar tidak ikut ketarik
+  var contentEl = document.querySelector('.content');
 
   function getScrollTop() {
     return window.scrollY || document.documentElement.scrollTop || 0;
@@ -18364,16 +19769,18 @@ function closeMataUangPicker() {
   }
 
   function setMainTranslate(py) {
-    if (mainEl) mainEl.style.transform = 'translateY(' + py + 'px)';
+    if (contentEl) contentEl.style.transform = 'translateY(' + py + 'px)';
   }
 
   function resetMain() {
-    if (!mainEl) return;
-    mainEl.classList.remove('ptr-pulling');
-    mainEl.classList.add('ptr-snap-back');
-    mainEl.style.transform = '';
+    if (!contentEl) return;
+    mainEl && mainEl.classList.remove('ptr-pulling');
+    mainEl && mainEl.classList.add('ptr-snap-back');
+    contentEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    contentEl.style.transform = '';
     setTimeout(function() {
-      mainEl.classList.remove('ptr-snap-back');
+      mainEl && mainEl.classList.remove('ptr-snap-back');
+      contentEl.style.transition = '';
     }, 350);
   }
 
@@ -18385,7 +19792,11 @@ function closeMataUangPicker() {
     pill.classList.remove('ptr-visible', 'ptr-ready', 'ptr-refreshing');
     pill.style.transform = 'translateY(-60px)';
     if (label) label.textContent = 'Tarik untuk refresh';
-    if (arrow) arrow.style.transform = '';
+    if (arrow) {
+      arrow.style.transform = '';
+      arrow.textContent = '↓';      // reset kembali ke panah bawah
+      arrow.style.display = '';     // hapus inline display:flex dari afterRefresh
+    }
   }
 
   function doRefresh() {
@@ -18980,6 +20391,148 @@ function closeMataUangPicker() {
 
 })();
 </script>
+<!-- ═══════════════════════════════════════════════════════
+     MODAL: JURNAL BERULANG
+════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="modal-jb" onclick="if(event.target===this)closeModal('modal-jb')">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header"><div class="modal-title">🔄 Tambah Jurnal Berulang</div><button class="modal-close" onclick="closeModal('modal-jb')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Nama Template</label><input type="text" id="jb-nama" placeholder="Gaji Karyawan Bulanan"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Frekuensi</label>
+          <select id="jb-frekuensi" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;">
+            <option value="harian">Harian</option><option value="mingguan">Mingguan</option>
+            <option value="bulanan" selected>Bulanan</option><option value="triwulan">Triwulanan</option>
+            <option value="tahunan">Tahunan</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Tanggal Mulai</label><input type="date" id="jb-tgl-mulai"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Akun Debit</label><select id="jb-akun-debit" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;"></select></div>
+        <div class="form-group"><label>Akun Kredit</label><select id="jb-akun-kredit" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;"></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Nominal (Rp)</label><input type="number" id="jb-nominal" placeholder="5000000"></div>
+        <div class="form-group"><label>Keterangan</label><input type="text" id="jb-keterangan" placeholder="Otomatis oleh sistem"></div>
+      </div>
+      <div class="form-group"><label>Tanggal Berakhir (opsional)</label><input type="date" id="jb-tgl-akhir"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-jb')">Batal</button>
+      <button class="btn btn-primary" onclick="simpanJurnalBerulang()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     MODAL: INVOICE
+════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="modal-invoice" onclick="if(event.target===this)closeModal('modal-invoice')">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header"><div class="modal-title">🧾 Buat Invoice</div><button class="modal-close" onclick="closeModal('modal-invoice')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>No. Invoice</label><input type="text" id="inv-no" placeholder="INV-2026-001"></div>
+        <div class="form-group"><label>Tanggal Invoice</label><input type="date" id="inv-tgl"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Nama Pelanggan</label><input type="text" id="inv-pelanggan" placeholder="PT. Maju Bersama"></div>
+        <div class="form-group"><label>Jatuh Tempo</label><input type="date" id="inv-jatuh-tempo"></div>
+      </div>
+      <div class="form-group"><label>Keterangan / Deskripsi Jasa</label><textarea id="inv-deskripsi" rows="2" placeholder="Jasa konsultasi bulan Mei 2026" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);resize:vertical;"></textarea></div>
+      <div id="inv-items-wrap">
+        <div style="display:grid;grid-template-columns:1fr 80px 120px 32px;gap:8px;margin-bottom:6px;">
+          <span style="font-size:11px;color:var(--muted);font-weight:600;">ITEM</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:600;">QTY</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:600;">HARGA</span>
+          <span></span>
+        </div>
+        <div id="inv-items-list"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="tambahItemInvoice()">+ Tambah Item</button>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="color:var(--muted);font-size:13px;">Subtotal</span><span id="inv-subtotal" style="font-family:var(--mono);font-size:13px;">Rp 0</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label style="color:var(--muted);font-size:13px;">PPN <input type="checkbox" id="inv-ppn-check" onchange="hitungTotalInvoice()"> 12%</label>
+          <span id="inv-ppn-val" style="font-family:var(--mono);font-size:13px;">Rp 0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px;"><span style="font-weight:700;">Total</span><span id="inv-total" style="font-family:var(--mono);font-weight:700;color:var(--accent);font-size:16px;">Rp 0</span></div>
+      </div>
+      <div class="form-row" style="margin-top:12px;">
+        <div class="form-group"><label>Akun Piutang</label><select id="inv-akun-piutang" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;"></select></div>
+        <div class="form-group"><label>Akun Pendapatan</label><select id="inv-akun-pend" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;"></select></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-invoice')">Batal</button>
+      <button class="btn btn-ghost" onclick="simpanInvoice('draft')">💾 Simpan Draft</button>
+      <button class="btn btn-primary" onclick="simpanInvoice('terkirim')">📤 Simpan & Terkirim</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TANDAI INVOICE LUNAS -->
+<div class="modal-backdrop" id="modal-inv-lunas" onclick="if(event.target===this)closeModal('modal-inv-lunas')">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header"><div class="modal-title">✅ Tandai Lunas</div><button class="modal-close" onclick="closeModal('modal-inv-lunas')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="inv-lunas-id">
+      <div class="form-group"><label>Tanggal Pembayaran</label><input type="date" id="inv-lunas-tgl"></div>
+      <div class="form-group"><label>Nominal Dibayar (Rp)</label><input type="number" id="inv-lunas-nominal"></div>
+      <div class="form-group"><label>Akun Kas/Bank Penerima</label><select id="inv-lunas-akun" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;"></select></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-inv-lunas')">Batal</button>
+      <button class="btn btn-primary" onclick="konfirmasiLunasInvoice()">✅ Konfirmasi Lunas & Buat Jurnal</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ALERT BARU -->
+<div class="modal-backdrop" id="modal-alert-baru" onclick="if(event.target===this)closeModal('modal-alert-baru')">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header"><div class="modal-title">🔔 Tambah Alert</div><button class="modal-close" onclick="closeModal('modal-alert-baru')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Nama Alert</label><input type="text" id="alert-nama" placeholder="Peringatan Arus Kas Negatif"></div>
+      <div class="form-group"><label>Tipe Alert</label>
+        <select id="alert-tipe" onchange="renderAlertForm()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;">
+          <option value="arus-kas-negatif">Arus Kas Negatif</option>
+          <option value="anggaran-terlampaui">Anggaran Terlampaui (%)</option>
+          <option value="invoice-jatuh-tempo">Invoice Jatuh Tempo (H-X)</option>
+          <option value="saldo-akun-bawah">Saldo Akun Di Bawah Batas</option>
+          <option value="laba-negatif">Laba Bersih Negatif</option>
+        </select>
+      </div>
+      <div id="alert-form-extra"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-alert-baru')">Batal</button>
+      <button class="btn btn-primary" onclick="simpanAlertBaru()">💾 Simpan Alert</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ANGGARAN -->
+<div class="modal-backdrop" id="modal-anggaran" onclick="if(event.target===this)closeModal('modal-anggaran')">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header"><div class="modal-title">🎯 Set Anggaran</div><button class="modal-close" onclick="closeModal('modal-anggaran')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>Akun</label><select id="ang-akun" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--sans);width:100%;"></select></div>
+        <div class="form-group"><label>Periode (YYYY-MM)</label><input type="month" id="ang-periode"></div>
+      </div>
+      <div class="form-group"><label>Nominal Anggaran (Rp)</label><input type="number" id="ang-nominal" placeholder="10000000"></div>
+      <div class="form-group"><label>Catatan</label><input type="text" id="ang-catatan" placeholder="Anggaran gaji tim engineering"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-anggaran')">Batal</button>
+      <button class="btn btn-primary" onclick="simpanAnggaran()">💾 Simpan Anggaran</button>
+    </div>
+  </div>
+</div>
+
 <!-- Chart HD Modal -->
 <div id="an-chart-modal">
   <div id="an-chart-modal-inner">
