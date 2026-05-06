@@ -3915,12 +3915,13 @@ function showPage(id) {
   if(id==='transaksi') initTransaksiForm();
   if(id==='analitik') setTimeout(renderAnalitik, 80);
   // Fitur Baru
-  if(id==='jurnal-berulang') setTimeout(renderJurnalBerulang, 60);
-  if(id==='invoice') setTimeout(()=>{renderInvoiceList();renderInvoiceKPI();}, 60);
-  if(id==='kurs') setTimeout(renderKursPage, 60);
-  if(id==='notifikasi') setTimeout(renderNotifikasiPage, 60);
-  if(id==='anggaran') setTimeout(renderAnggaranPage, 60);
-  if(id==='pajak') setTimeout(renderPajakOtomatis, 60);
+  if(id==='jurnal-berulang') setTimeout(()=>{ renderJurnalBerulang(); upgradeFormPickers(); }, 80);
+  if(id==='invoice') setTimeout(()=>{ renderInvoiceList(); renderInvoiceKPI(); upgradeFormPickers(); }, 80);
+  if(id==='rekonsiliasi') setTimeout(upgradeFormPickers, 80);
+  if(id==='kurs') setTimeout(()=>{ renderKursPage(); upgradeFormPickers(); }, 80);
+  if(id==='notifikasi') setTimeout(()=>{ renderNotifikasiPage(); upgradeFormPickers(); }, 80);
+  if(id==='anggaran') setTimeout(()=>{ renderAnggaranPage(); upgradeFormPickers(); }, 80);
+  if(id==='pajak') setTimeout(()=>{ renderPajakOtomatis(); }, 60);
 }
 
 function handleAddBtn() {
@@ -9336,6 +9337,7 @@ function openModalJurnalBerulang(editId) {
     });
   }
   openModal('modal-jb');
+  setTimeout(upgradeFormPickers, 80);
 }
 
 function simpanJurnalBerulang() {
@@ -9519,6 +9521,7 @@ function openModalInvoice(editId) {
   if(pendEl) { pendEl.innerHTML = akunOpts; const p=akuns.find(a=>a.tipe==='Pendapatan'); if(p) pendEl.value=p.kode; }
   renderInvoiceItems();
   openModal('modal-invoice');
+  setTimeout(upgradeFormPickers, 80);
 }
 
 function renderInvoiceItems() {
@@ -9648,6 +9651,7 @@ function openModalLunasInvoice(id) {
   const opts = akuns.filter(a=>a.tipe==='Aset').map(a=>`<option value="${a.kode}">${a.kode} - ${a.nama}</option>`).join('');
   const el = document.getElementById('inv-lunas-akun'); if(el) { el.innerHTML=opts; const k=akuns.find(a=>a.kode==='1101'); if(k) el.value=k.kode; }
   openModal('modal-inv-lunas');
+  setTimeout(upgradeFormPickers, 80);
 }
 
 function konfirmasiLunasInvoice() {
@@ -9916,7 +9920,7 @@ function hitungKonversi() {
 // ══════════════════════════════════════════════════════════════
 // NOTIFIKASI & ALERT
 // ══════════════════════════════════════════════════════════════
-function openModalAlertBaru() { renderAlertForm(); openModal('modal-alert-baru'); }
+function openModalAlertBaru() { renderAlertForm(); openModal('modal-alert-baru'); setTimeout(upgradeFormPickers, 80); }
 
 function renderAlertForm() {
   const tipe = document.getElementById('alert-tipe')?.value;
@@ -10041,6 +10045,7 @@ function openModalAnggaran(editId) {
   document.getElementById('ang-nominal').value='';
   document.getElementById('ang-catatan').value='';
   openModal('modal-anggaran');
+  setTimeout(upgradeFormPickers, 80);
 }
 
 function simpanAnggaran() {
@@ -10324,22 +10329,6 @@ function buatJurnalPPh23() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// HOOK showPage untuk render semua fitur baru
-// ══════════════════════════════════════════════════════════════
-(function() {
-  const origShowPage = window.showPage || function(){};
-  window.showPage = function(id) {
-    origShowPage(id);
-    if(id==='jurnal-berulang') setTimeout(renderJurnalBerulang, 60);
-    if(id==='invoice') setTimeout(()=>{renderInvoiceList();renderInvoiceKPI();}, 60);
-    if(id==='rekonsiliasi') { /* static UI */ }
-    if(id==='kurs') setTimeout(renderKursPage, 60);
-    if(id==='notifikasi') setTimeout(renderNotifikasiPage, 60);
-    if(id==='anggaran') setTimeout(renderAnggaranPage, 60);
-    if(id==='pajak') setTimeout(renderPajakOtomatis, 60);
-  };
-})();
-
 // Auto-cek notifikasi saat load
 setTimeout(cekNotifikasi, 2000);
 // Auto-jalankan jurnal berulang tertunda saat load
@@ -17096,6 +17085,91 @@ function upgradeFormPickers() {
 
   // Upgrade pajak pickers juga
   upgradePajakPickers();
+
+  // ═══ FITUR BARU: Upgrade semua select ke opt-picker ═══
+
+  // Jurnal Berulang — Frekuensi
+  const jbFrek = document.getElementById('jb-frekuensi');
+  if(jbFrek && !jbFrek.dataset.upgraded) upgradeSelectToOptPicker(jbFrek, {
+    title: '🔄 Frekuensi Pengulangan',
+    iconMap: { harian:'☀️', mingguan:'📅', bulanan:'📆', triwulan:'🗓️', tahunan:'🎊' },
+    subMap: { harian:'Setiap hari', mingguan:'Setiap 7 hari', bulanan:'Setiap 1 bulan', triwulan:'Setiap 3 bulan', tahunan:'Setiap 1 tahun' }
+  });
+
+  // Jurnal Berulang — Akun Debit & Kredit (gunakan akun-picker yang sudah ada)
+  ['jb-akun-debit','jb-akun-kredit'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el && !el.dataset.upgraded) upgradeSelectToOptPicker(el, {
+      title: id==='jb-akun-debit' ? '📤 Pilih Akun Debit' : '📥 Pilih Akun Kredit'
+    });
+  });
+
+  // Invoice — filter status
+  const invStatus = document.getElementById('inv-filter-status');
+  if(invStatus && !invStatus.dataset.upgraded) upgradeSelectToOptPicker(invStatus, {
+    title: '📋 Filter Status Invoice',
+    iconMap: { all:'🗂️', draft:'📝', terkirim:'📤', lunas:'✅', 'jatuh-tempo':'⚠️' },
+    subMap: { all:'Tampilkan semua invoice', draft:'Belum dikirim', terkirim:'Sudah dikirim ke pelanggan', lunas:'Pembayaran diterima', 'jatuh-tempo':'Melewati batas waktu' }
+  });
+
+  // Invoice — akun piutang & pendapatan
+  ['inv-akun-piutang','inv-akun-pend'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el && !el.dataset.upgraded) upgradeSelectToOptPicker(el, {
+      title: id==='inv-akun-piutang' ? '📋 Akun Piutang' : '💰 Akun Pendapatan'
+    });
+  });
+
+  // Invoice Lunas — akun kas
+  const invLunasAkun = document.getElementById('inv-lunas-akun');
+  if(invLunasAkun && !invLunasAkun.dataset.upgraded) upgradeSelectToOptPicker(invLunasAkun, {
+    title: '🏦 Akun Penerima Pembayaran',
+    iconMap: { '1101':'💵', '1102':'🏦', '1103':'🏦' }
+  });
+
+  // Rekonsiliasi — pilih bank
+  const rekonBank = document.getElementById('rekon-bank');
+  if(rekonBank && !rekonBank.dataset.upgraded) upgradeSelectToOptPicker(rekonBank, {
+    title: '🏦 Pilih Bank',
+    iconMap: { bca:'🟦', mandiri:'🟨', bni:'🟥', bri:'🟧', cimb:'🔵', generic:'📄' },
+    subMap: { bca:'Format CSV BCA', mandiri:'Format CSV Mandiri', bni:'Format CSV BNI', bri:'Format CSV BRI', cimb:'Format CSV CIMB Niaga', generic:'Format CSV umum (kol: tanggal,ket,nominal)' }
+  });
+
+  // Kurs — dari & ke
+  const kursIconMap = { IDR:'🇮🇩', USD:'🇺🇸', SGD:'🇸🇬', EUR:'🇪🇺', MYR:'🇲🇾', JPY:'🇯🇵' };
+  const kursSubMap = { IDR:'Rupiah Indonesia', USD:'Dolar Amerika Serikat', SGD:'Dolar Singapura', EUR:'Euro Eropa', MYR:'Ringgit Malaysia', JPY:'Yen Jepang' };
+  const kursDari = document.getElementById('kurs-dari');
+  if(kursDari && !kursDari.dataset.upgraded) upgradeSelectToOptPicker(kursDari, {
+    title: '💱 Mata Uang Asal', iconMap: kursIconMap, subMap: kursSubMap
+  });
+  const kursKe = document.getElementById('kurs-ke');
+  if(kursKe && !kursKe.dataset.upgraded) upgradeSelectToOptPicker(kursKe, {
+    title: '💱 Mata Uang Tujuan', iconMap: kursIconMap, subMap: kursSubMap
+  });
+
+  // Notifikasi — tipe alert
+  const alertTipe = document.getElementById('alert-tipe');
+  if(alertTipe && !alertTipe.dataset.upgraded) upgradeSelectToOptPicker(alertTipe, {
+    title: '🔔 Tipe Alert',
+    iconMap: { 'arus-kas-negatif':'💸', 'anggaran-terlampaui':'📊', 'invoice-jatuh-tempo':'⏰', 'saldo-akun-bawah':'⚠️', 'laba-negatif':'📉' },
+    subMap: { 'arus-kas-negatif':'Notifikasi saat kas bersih negatif', 'anggaran-terlampaui':'Notifikasi saat % terpakai terlampaui', 'invoice-jatuh-tempo':'Notifikasi H-X sebelum jatuh tempo', 'saldo-akun-bawah':'Notifikasi saat saldo akun di bawah batas', 'laba-negatif':'Notifikasi saat laba bersih negatif' },
+    onChange: () => renderAlertForm()
+  });
+
+  // Anggaran — akun
+  const angAkun = document.getElementById('ang-akun');
+  if(angAkun && !angAkun.dataset.upgraded) upgradeSelectToOptPicker(angAkun, {
+    title: '🎯 Pilih Akun Anggaran'
+  });
+
+  // Pajak PPh 23 — jenis penghasilan
+  const pph23Jenis = document.getElementById('pph23-jenis');
+  if(pph23Jenis && !pph23Jenis.dataset.upgraded) upgradeSelectToOptPicker(pph23Jenis, {
+    title: '🏢 Jenis Penghasilan PPh 23',
+    iconMap: { jasa:'🔧', royalti:'©️', sewa:'🏠', dividen:'💰', bunga:'💹' },
+    subMap: { jasa:'Tarif 2% dari bruto', royalti:'Tarif 15% dari bruto', sewa:'Tarif 2% dari bruto', dividen:'Tarif 15% dari bruto', bunga:'Tarif 15% dari bruto' },
+    onChange: () => hitungPPh23Otomatis()
+  });
 }
 
 // UPGRADE PAJAK PICKERS (PPN & PPh)
