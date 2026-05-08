@@ -1640,6 +1640,10 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
         <span id="save-text">Tersimpan</span>
       </div>
     </div>
+    <!-- Tombol Install PWA — selalu tampil, aksi menyesuaikan kondisi -->
+    <button id="pwa-install-btn" onclick="handlePwaInstall()" style="width:100%;background:linear-gradient(135deg,rgba(74,222,128,0.15),rgba(34,211,238,0.15));border:1px solid rgba(74,222,128,0.35);border-radius:8px;padding:8px 4px;font-size:12px;color:var(--accent);cursor:pointer;font-family:var(--sans);font-weight:700;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;">
+      📲 <span id="pwa-btn-text">Install App</span>
+    </button>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
       <button onclick="manualSave()" data-tooltip="Ctrl+S" style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);border-radius:6px;padding:6px 4px;font-size:11px;color:var(--accent);cursor:pointer;font-family:var(--sans);font-weight:600;">💾 Simpan</button>
       <button onclick="openStorageModal()" data-tooltip="Kelola Data" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.25);border-radius:6px;padding:6px 4px;font-size:11px;color:var(--accent2);cursor:pointer;font-family:var(--sans);font-weight:600;">📂 Kelola</button>
@@ -20747,60 +20751,159 @@ function closeMataUangPicker() {
 </div>
 <!-- PWA: Service Worker + Install Prompt -->
 <script>
-// ── Service Worker (offline cache) ──────────────────────────
+// ── 1. Service Worker ─────────────────────────────────────────
 if ('serviceWorker' in navigator) {
+  // SW harus file terpisah untuk scope penuh, tapi bisa pakai blob untuk GitHub Pages
   const swCode = `
-const CACHE = 'oas-v1';
-const ASSETS = ['./', './index.html'];
+const CACHE_NAME = 'oas-v2';
+const CORE = ['./'];
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(CORE)));
   self.skipWaiting();
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ));
-  self.clients.claim();
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
 });
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    fetch(e.request).then(res => {
-      const clone = res.clone();
-      caches.open(CACHE).then(c => c.put(e.request, clone));
-      return res;
-    }).catch(() => caches.match(e.request))
+    fetch(e.request)
+      .then(res => {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+        return res;
+      })
+      .catch(() => caches.match(e.request).then(r => r || new Response('Offline', {status: 503})))
   );
+});
+self.addEventListener('message', e => {
+  if (e.data === 'skipWaiting') self.skipWaiting();
 });`;
-  const blob = new Blob([swCode], { type: 'application/javascript' });
-  const swUrl = URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swUrl).catch(() => {});
+  try {
+    const blob = new Blob([swCode], {type: 'application/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl).then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            nw.postMessage('skipWaiting');
+          }
+        });
+      });
+    }).catch(() => {});
+  } catch(e) {}
 }
 
-// ── Install Prompt (Android "Tambah ke Layar Utama") ─────────
-let _pwaInstallPrompt = null;
+// ── 2. Install Prompt & handlePwaInstall ──────────────────────
+let _pwaPrompt = null;
+let _pwaInstalled = window.matchMedia('(display-mode: standalone)').matches
+                  || window.navigator.standalone === true;
+
+function updatePwaBtn() {
+  const btn = document.getElementById('pwa-install-btn');
+  const txt = document.getElementById('pwa-btn-text');
+  if (!btn || !txt) return;
+  if (_pwaInstalled) {
+    btn.style.opacity = '0.45';
+    btn.style.cursor = 'default';
+    txt.textContent = 'Sudah Terinstall ✓';
+  } else if (_pwaPrompt) {
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+    txt.textContent = 'Install App';
+    btn.style.animation = 'pulseGlow 2s ease-in-out infinite';
+  } else {
+    btn.style.opacity = '0.7';
+    btn.style.cursor = 'pointer';
+    txt.textContent = 'Install App';
+  }
+}
+
+function handlePwaInstall() {
+  if (_pwaInstalled) {
+    showAlert('✅ OAS sudah terinstall di perangkat ini!');
+    return;
+  }
+  if (_pwaPrompt) {
+    // Browser modern: tampilkan dialog install native
+    _pwaPrompt.prompt();
+    _pwaPrompt.userChoice.then(result => {
+      if (result.outcome === 'accepted') {
+        _pwaInstalled = true;
+        _pwaPrompt = null;
+        updatePwaBtn();
+        showAlert('✅ OAS berhasil diinstall!');
+      }
+    });
+    return;
+  }
+  // Fallback: panduan manual sesuai browser
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isSamsung = /SamsungBrowser/.test(navigator.userAgent);
+  const isChrome = /Chrome/.test(navigator.userAgent) && !isSamsung;
+  let msg = '';
+  if (isIOS) {
+    msg = '📱 Di Safari iOS:\n1. Ketuk tombol Bagikan (□↑)\n2. Pilih "Tambahkan ke Layar Utama"\n3. Ketuk "Tambah"';
+  } else if (isSamsung) {
+    msg = '📱 Di Samsung Internet:\n1. Ketuk menu ⋮ (3 titik)\n2. Pilih "Tambahkan halaman ke"\n3. Pilih "Layar Utama"';
+  } else if (isAndroid && isChrome) {
+    msg = '📱 Di Chrome Android:\n1. Ketuk menu ⋮ (3 titik)\n2. Pilih "Tambahkan ke Layar Utama"\natau tunggu banner install muncul otomatis';
+  } else {
+    msg = '💻 Di Chrome/Edge desktop:\n1. Klik ikon ⊕ di address bar kanan\n2. Klik "Install"\n\natau: Menu → "Install OAS..."';
+  }
+  // Tampilkan modal panduan install
+  showPwaGuideModal(msg);
+}
+
+function showPwaGuideModal(msg) {
+  // Remove existing
+  document.getElementById('pwa-guide-modal')?.remove();
+  const el = document.createElement('div');
+  el.id = 'pwa-guide-modal';
+  el.style.cssText = `position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s ease;`;
+  el.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:28px 24px 40px;width:100%;max-width:480px;border-top:1px solid var(--border);animation:slideUp 0.3s cubic-bezier(0.34,1.2,0.64,1);">
+      <div style="width:40px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 20px;"></div>
+      <div style="font-size:28px;text-align:center;margin-bottom:10px;">📲</div>
+      <div style="font-size:16px;font-weight:700;color:var(--text);text-align:center;margin-bottom:8px;">Install OAS sebagai App</div>
+      <div style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:20px;">Akses lebih cepat tanpa buka browser</div>
+      <div style="background:var(--surface2);border-radius:12px;padding:16px 18px;font-size:13px;color:var(--text);line-height:1.8;white-space:pre-line;border:1px solid var(--border);">${msg}</div>
+      <button onclick="document.getElementById('pwa-guide-modal').remove()" style="width:100%;margin-top:16px;background:var(--accent);color:#0d0f14;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--sans);">Mengerti</button>
+    </div>`;
+  el.onclick = e => { if(e.target===el) el.remove(); };
+  document.body.appendChild(el);
+}
+
+// Tangkap event beforeinstallprompt (Chrome/Edge/Samsung)
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
-  _pwaInstallPrompt = e;
-  // Tampilkan tombol install di sidebar footer setelah 3 detik
-  setTimeout(() => {
-    const footer = document.querySelector('.sidebar-footer') || document.querySelector('.sidebar');
-    if (!footer || document.getElementById('pwa-install-btn')) return;
-    const btn = document.createElement('button');
-    btn.id = 'pwa-install-btn';
-    btn.innerHTML = '📲 Install App';
-    btn.style.cssText = 'width:100%;background:var(--accent);color:#0d0f14;border:none;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px;font-family:var(--sans);transition:opacity 0.2s;';
-    btn.onclick = () => {
-      _pwaInstallPrompt.prompt();
-      _pwaInstallPrompt.userChoice.then(() => { btn.remove(); _pwaInstallPrompt = null; });
-    };
-    footer.appendChild(btn);
-  }, 3000);
+  _pwaPrompt = e;
+  updatePwaBtn();
 });
+
+// Deteksi sudah terinstall
 window.addEventListener('appinstalled', () => {
-  document.getElementById('pwa-install-btn')?.remove();
-  _pwaInstallPrompt = null;
-  if(typeof showAlert === 'function') showAlert('✅ OAS berhasil diinstall!');
+  _pwaInstalled = true;
+  _pwaPrompt = null;
+  updatePwaBtn();
+  if(typeof showAlert === 'function') showAlert('✅ OAS berhasil diinstall di perangkat ini!');
+});
+
+// Init state setelah DOM siap
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(updatePwaBtn, 500);
 });
 </script>
+<style>
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+</style>
 </body></html>
