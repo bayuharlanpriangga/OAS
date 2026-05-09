@@ -12,21 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="OAS">
 <meta name="theme-color" content="#0d0f14" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
-<!-- PWA Manifest inline -->
-<link rel="manifest" href="data:application/manifest+json,{
-  %22name%22:%22OAS%20%E2%80%94%20Software%20Akuntansi%22,
-  %22short_name%22:%22OAS%22,
-  %22description%22:%22Software%20akuntansi%20lengkap%20berbasis%20web%22,
-  %22start_url%22:%22./%22,
-  %22display%22:%22standalone%22,
-  %22orientation%22:%22portrait%22,
-  %22background_color%22:%22%230d0f14%22,
-  %22theme_color%22:%22%230d0f14%22,
-  %22icons%22:[
-    {%22src%22:%22data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%3E%3Ccircle%20cx%3D%27256%27%20cy%3D%27256%27%20r%3D%27256%27%20fill%3D%27%230d0f14%27%2F%3E%3Crect%20x%3D%27246%27%20y%3D%27100%27%20width%3D%2720%27%20height%3D%27230%27%20rx%3D%2710%27%20fill%3D%27%234ade80%27%2F%3E%3Crect%20x%3D%27166%27%20y%3D%27326%27%20width%3D%27180%27%20height%3D%2726%27%20rx%3D%2713%27%20fill%3D%27%234ade80%27%2F%3E%3Crect%20x%3D%27192%27%20y%3D%27352%27%20width%3D%27128%27%20height%3D%2720%27%20rx%3D%2710%27%20fill%3D%27%234ade8099%27%2F%3E%3Crect%20x%3D%27116%27%20y%3D%27140%27%20width%3D%27280%27%20height%3D%2720%27%20rx%3D%2710%27%20fill%3D%27%2322d3ee%27%2F%3E%3C%2Fsvg%3E%22,%22sizes%22:%22512x512%22,%22type%22:%22image/svg+xml%22,%22purpose%22:%22any%20maskable%22}
-  ],
-  %22categories%22:[%22finance%22,%22business%22,%22productivity%22]
-}">
+<link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><circle cx='40' cy='40' r='40' fill='%23ffffff'/><rect x='38.5' y='16' width='3' height='36' rx='1.5' fill='%234ade80'/><rect x='26' y='51' width='28' height='4' rx='2' fill='%234ade80'/><rect x='30' y='55' width='20' height='3' rx='1.5' fill='%234ade80' opacity='0.7'/><rect x='18' y='22' width='44' height='3' rx='1.5' fill='%2322d3ee'/><circle cx='40' cy='23.5' r='3' fill='%23f59e0b'/><line x1='22' y1='25' x2='22' y2='37' stroke='%2322d3ee' stroke-width='1.5' stroke-linecap='round'/><line x1='58' y1='25' x2='58' y2='37' stroke='%2322d3ee' stroke-width='1.5' stroke-linecap='round'/><ellipse cx='22' cy='38.5' rx='9' ry='3' fill='%234ade80' opacity='0.85'/><ellipse cx='58' cy='38.5' rx='9' ry='3' fill='%234ade80' opacity='0.85'/><text x='22' y='37.5' text-anchor='middle' fill='%230d0f14' font-size='7' font-weight='bold' font-family='sans-serif'>Rp</text><text x='58' y='37.5' text-anchor='middle' fill='%230d0f14' font-size='8' font-weight='bold' font-family='sans-serif'>=</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><circle cx='256' cy='256' r='256' fill='%230d0f14'/><rect x='246' y='100' width='20' height='230' rx='10' fill='%234ade80'/><rect x='166' y='326' width='180' height='26' rx='13' fill='%234ade80'/><rect x='116' y='140' width='280' height='20' rx='10' fill='%2322d3ee'/></svg>">
 <meta name="theme-color" content="#0d0f14">
@@ -2450,6 +2436,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
           <button class="btn btn-sm" id="ks-tab-wa" onclick="switchKartuStockTab('wa',this)" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;">Weighted Avg</button>
           <button class="btn btn-sm" id="ks-tab-mwa" onclick="switchKartuStockTab('mwa',this)" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;">Moving WA</button>
         </div>
+        <button onclick="openKonversiKartuStock()" class="btn btn-sm" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:var(--accent2);font-size:12px;" title="Konversi kartu stock ke metode lain">🔀 Konversi Metode</button>
         <button id="ks-clear-btn" class="btn btn-danger btn-sm" style="font-size:12px;">🗑️ Hapus Catatan</button>
       </div>
     </div>
@@ -3473,150 +3460,219 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
 <div class="page" id="page-tutorial">
   <div class="section-header" style="margin-bottom:20px;">
     <div>
-      <div class="section-title" style="display:flex;align-items:center;gap:10px;">
-        🎓 Pusat Tutorial
-      </div>
-      <div class="section-sub">Pilih topik yang ingin kamu pelajari. Setiap tutorial bisa diselesaikan dalam 2–5 menit.</div>
+      <div class="section-title" style="display:flex;align-items:center;gap:10px;">🎓 Pusat Tutorial</div>
+      <div class="section-sub">Panduan lengkap semua fitur. Setiap tutorial bisa diselesaikan dalam 2–5 menit.</div>
     </div>
     <button class="btn btn-primary" onclick="startTutorialById('semua')">▶ Jalankan Semua</button>
   </div>
 
-  <!-- Category: Dasar -->
+  <!-- DASAR -->
   <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;">🌱 Dasar — Mulai dari sini</div>
-  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:28px;">
+  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
     <div class="tut-card" onclick="startTutorialById('pengenalan')">
-      <div class="tut-card-icon">👋</div>
-      <div class="tut-card-title">Pengenalan Bayu Harlan Priangga</div>
-      <div class="tut-card-desc">Kenali tampilan, navigasi sidebar, dan cara berpindah antar menu. Cocok untuk pemula.</div>
+      <div class="tut-card-icon">👋</div><div class="tut-card-title">Pengenalan OAS</div>
+      <div class="tut-card-desc">Kenali tampilan, navigasi sidebar, topbar, dan cara berpindah antar menu. Cocok untuk pertama kali.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~2 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('konsep-akuntansi')">
-      <div class="tut-card-icon">📚</div>
-      <div class="tut-card-title">Konsep Dasar Akuntansi</div>
+      <div class="tut-card-icon">📚</div><div class="tut-card-title">Konsep Dasar Akuntansi</div>
       <div class="tut-card-desc">Debit, kredit, akun, jurnal — dijelaskan dengan bahasa sehari-hari tanpa rumus membingungkan.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~3 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('chart-of-accounts')">
-      <div class="tut-card-icon">🗂️</div>
-      <div class="tut-card-title">Chart of Accounts</div>
-      <div class="tut-card-desc">Apa itu daftar akun, bagaimana strukturnya, dan cara menambah akun baru sesuai kebutuhan bisnis.</div>
+      <div class="tut-card-icon">🗂️</div><div class="tut-card-title">Chart of Accounts</div>
+      <div class="tut-card-desc">Struktur daftar akun, cara tambah akun baru, dan tips pengelompokan yang benar.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~2 menit</span></div>
+    </div>
+    <div class="tut-card" onclick="startTutorialById('saldo-awal')">
+      <div class="tut-card-icon">🏁</div><div class="tut-card-title">Setup Saldo Awal</div>
+      <div class="tut-card-desc">Cara input saldo awal kas, aset, utang, dan modal saat pertama kali mulai menggunakan OAS.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~3 menit</span></div>
     </div>
   </div>
 
-  <!-- Category: Transaksi -->
+  <!-- TRANSAKSI -->
   <div style="font-size:11px;font-weight:700;color:var(--accent2);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;">💳 Mencatat Transaksi</div>
-  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:28px;">
+  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
     <div class="tut-card" onclick="startTutorialById('catat-kas-masuk')">
-      <div class="tut-card-icon">💵</div>
-      <div class="tut-card-title">Mencatat Pemasukan Kas</div>
+      <div class="tut-card-icon">💵</div><div class="tut-card-title">Mencatat Pemasukan Kas</div>
       <div class="tut-card-desc">Cara mencatat uang masuk: dari modal, pembayaran pelanggan, penerimaan piutang, dll.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~3 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('catat-kas-keluar')">
-      <div class="tut-card-icon">💸</div>
-      <div class="tut-card-title">Mencatat Pengeluaran Kas</div>
+      <div class="tut-card-icon">💸</div><div class="tut-card-title">Mencatat Pengeluaran Kas</div>
       <div class="tut-card-desc">Cara mencatat bayar beban: listrik, gaji, sewa, pembelian perlengkapan, dan lainnya.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~3 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('catat-penjualan')">
-      <div class="tut-card-icon">🧾</div>
-      <div class="tut-card-title">Mencatat Penjualan</div>
-      <div class="tut-card-desc">Penjualan tunai dan kredit (piutang). Termasuk cara input HPP agar laba otomatis terhitung.</div>
+      <div class="tut-card-icon">🧾</div><div class="tut-card-title">Mencatat Penjualan</div>
+      <div class="tut-card-desc">Penjualan tunai dan kredit (piutang). Input HPP agar laba kotor otomatis terhitung.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~4 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('catat-pembelian')">
-      <div class="tut-card-icon">🛒</div>
-      <div class="tut-card-title">Mencatat Pembelian</div>
-      <div class="tut-card-desc">Beli persediaan, aset, atau bahan — tunai maupun kredit (utang usaha). Akun yang tepat untuk setiap jenis.</div>
+      <div class="tut-card-icon">🛒</div><div class="tut-card-title">Mencatat Pembelian</div>
+      <div class="tut-card-desc">Beli persediaan, aset, bahan — tunai maupun kredit. Akun yang tepat untuk setiap jenis.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~3 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('jurnal-manual')">
-      <div class="tut-card-icon">✏️</div>
-      <div class="tut-card-title">Jurnal Manual</div>
-      <div class="tut-card-desc">Untuk transaksi kompleks atau koreksi — input bebas baris debit/kredit dengan validasi balance otomatis.</div>
+      <div class="tut-card-icon">✏️</div><div class="tut-card-title">Jurnal Manual</div>
+      <div class="tut-card-desc">Input bebas baris debit/kredit dengan validasi balance otomatis. Untuk transaksi kompleks atau koreksi.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur">⏱ ~4 menit</span></div>
     </div>
   </div>
 
-  <!-- Category: Laporan -->
+  <!-- LAPORAN -->
   <div style="font-size:11px;font-weight:700;color:var(--accent3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;">📊 Membaca Laporan Keuangan</div>
-  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:28px;">
+  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
     <div class="tut-card" onclick="startTutorialById('jurnal-laporan')">
-      <div class="tut-card-icon">📒</div>
-      <div class="tut-card-title">Membaca Jurnal & Buku Besar</div>
-      <div class="tut-card-desc">Cara memahami jurnal umum, jurnal kas, jurnal penjualan, dan buku besar per akun.</div>
+      <div class="tut-card-icon">📒</div><div class="tut-card-title">Jurnal & Buku Besar</div>
+      <div class="tut-card-desc">Cara memahami jurnal umum, kas, penjualan, dan buku besar per akun. Filter dan pencarian data.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~3 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('neraca-saldo')">
-      <div class="tut-card-icon">⚖️</div>
-      <div class="tut-card-title">Neraca Saldo</div>
+      <div class="tut-card-icon">⚖️</div><div class="tut-card-title">Neraca Saldo</div>
       <div class="tut-card-desc">Apa itu neraca saldo, cara membacanya, dan apa artinya jika tidak balance.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~2 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('laba-rugi')">
-      <div class="tut-card-icon">📈</div>
-      <div class="tut-card-title">Laporan Laba Rugi</div>
+      <div class="tut-card-icon">📈</div><div class="tut-card-title">Laporan Laba Rugi</div>
       <div class="tut-card-desc">Cara membaca laporan laba rugi — dari pendapatan, HPP, laba kotor, sampai laba bersih.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~3 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('neraca')">
-      <div class="tut-card-icon">🏦</div>
-      <div class="tut-card-title">Neraca (Balance Sheet)</div>
+      <div class="tut-card-icon">🏦</div><div class="tut-card-title">Neraca (Balance Sheet)</div>
       <div class="tut-card-desc">Cara membaca neraca — aset, liabilitas, ekuitas. Kenapa harus balance dan apa artinya.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur">⏱ ~3 menit</span></div>
     </div>
+    <div class="tut-card" onclick="startTutorialById('export-laporan')">
+      <div class="tut-card-icon">📤</div><div class="tut-card-title">Export PDF, Excel & CSV</div>
+      <div class="tut-card-desc">Cara export semua laporan termasuk invoice, anggaran, pajak, dan analitik ke PDF, Excel, atau CSV.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~3 menit</span></div>
+    </div>
   </div>
 
-  <!-- Category: Kalkulator -->
+  <!-- FITUR BARU -->
+  <div style="font-size:11px;font-weight:700;color:#a78bfa;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;">✨ Fitur Baru</div>
+  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
+    <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-jurnal-berulang')">
+      <div class="tut-card-icon">🔄</div><div class="tut-card-title">Jurnal Berulang</div>
+      <div class="tut-card-desc">Otomasi transaksi rutin seperti gaji, sewa, cicilan. Set sekali, jalan otomatis sesuai jadwal.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~3 menit</span></div>
+    </div>
+    <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-invoice')">
+      <div class="tut-card-icon">🧾</div><div class="tut-card-title">Invoice & Piutang</div>
+      <div class="tut-card-desc">Buat invoice profesional, lacak status pembayaran, tandai lunas dan jurnal otomatis terbuat.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~4 menit</span></div>
+    </div>
+    <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-rekonsiliasi')">
+      <div class="tut-card-icon">🏦</div><div class="tut-card-title">Rekonsiliasi Bank</div>
+      <div class="tut-card-desc">Upload CSV mutasi bank, cocokkan otomatis dengan jurnal, import transaksi yang belum tercatat.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur">⏱ ~5 menit</span></div>
+    </div>
+    <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-kurs')">
+      <div class="tut-card-icon">💱</div><div class="tut-card-title">Multi Mata Uang & Kurs</div>
+      <div class="tut-card-desc">Kelola kurs USD, SGD, EUR, MYR, JPY. Konverter cepat dan update kurs otomatis.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~3 menit</span></div>
+    </div>
+    <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-notifikasi')">
+      <div class="tut-card-icon">🔔</div><div class="tut-card-title">Notifikasi & Alert</div>
+      <div class="tut-card-desc">Set alert otomatis: arus kas negatif, invoice jatuh tempo, anggaran terlampaui, laba negatif.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~3 menit</span></div>
+    </div>
+    <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-anggaran')">
+      <div class="tut-card-icon">🎯</div><div class="tut-card-title">Anggaran vs Aktual</div>
+      <div class="tut-card-desc">Set target anggaran per akun per bulan, monitor realisasi dengan progress bar dan variance analysis.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur">⏱ ~4 menit</span></div>
+    </div>
+    <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-pajak')">
+      <div class="tut-card-icon">🧾</div><div class="tut-card-title">Pajak Otomatis</div>
+      <div class="tut-card-desc">Kalkulasi PPN 12%, PPh 21 karyawan, PPh 23. Jurnal pajak otomatis dan ringkasan SPT tahunan.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur">⏱ ~5 menit</span></div>
+    </div>
+  </div>
+
+  <!-- ANALITIK -->
+  <div style="font-size:11px;font-weight:700;color:var(--accent3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;">📈 Analitik & Tren</div>
+  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
+    <div class="tut-card" onclick="startTutorialById('tut-analitik')">
+      <div class="tut-card-icon">📊</div><div class="tut-card-title">Analitik & Tren Bisnis</div>
+      <div class="tut-card-desc">Baca 10+ grafik analitik: pendapatan vs beban, tren laba, arus kas, waterfall, proyeksi, dan lainnya.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur">⏱ ~4 menit</span></div>
+    </div>
+    <div class="tut-card" onclick="startTutorialById('tut-chart-hd')">
+      <div class="tut-card-icon">🔍</div><div class="tut-card-title">Chart HD & Zoom</div>
+      <div class="tut-card-desc">Klik chart mana saja untuk tampilan HD super besar. Scroll horizontal di mobile agar label tidak bertabrakan.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~1 menit</span></div>
+    </div>
+  </div>
+
+  <!-- KALKULATOR -->
   <div style="font-size:11px;font-weight:700;color:var(--red);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;">🧮 Kalkulator Akuntansi</div>
-  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:28px;">
+  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
     <div class="tut-card" onclick="startTutorialById('kalk-penyusutan')">
-      <div class="tut-card-icon">🏗️</div>
-      <div class="tut-card-title">Kalkulator Penyusutan</div>
-      <div class="tut-card-desc">Cara hitung penyusutan aset tetap — garis lurus, saldo menurun, SYD, unit produksi. Lengkap tabel per tahun.</div>
+      <div class="tut-card-icon">🏗️</div><div class="tut-card-title">Kalkulator Penyusutan</div>
+      <div class="tut-card-desc">Hitung penyusutan aset tetap — garis lurus, saldo menurun, SYD, unit produksi. Tabel per tahun lengkap.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur">⏱ ~4 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('kalk-persediaan')">
-      <div class="tut-card-icon">📦</div>
-      <div class="tut-card-title">Kalkulator Persediaan</div>
+      <div class="tut-card-icon">📦</div><div class="tut-card-title">Kalkulator Persediaan</div>
       <div class="tut-card-desc">FIFO, LIFO, Weighted Average — cara input kartu stok dan baca hasil HPP serta nilai akhir persediaan.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur">⏱ ~4 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('kalk-pajak')">
-      <div class="tut-card-icon">🧾</div>
-      <div class="tut-card-title">Kalkulator Pajak (PPN & PPh)</div>
+      <div class="tut-card-icon">🧾</div><div class="tut-card-title">Kalkulator PPN & PPh</div>
       <div class="tut-card-desc">Hitung PPN 12%, PPh 21 karyawan, PPh 23, dan PPh Badan. Otomatis dengan tarif terbaru.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur">⏱ ~5 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('kalk-bep')">
-      <div class="tut-card-icon">⚡</div>
-      <div class="tut-card-title">Kalkulator BEP & Margin</div>
-      <div class="tut-card-desc">Hitung titik impas bisnis kamu — BEP unit, BEP rupiah, contribution margin, margin of safety.</div>
+      <div class="tut-card-icon">⚡</div><div class="tut-card-title">Kalkulator BEP & Margin</div>
+      <div class="tut-card-desc">Hitung titik impas bisnis — BEP unit, BEP rupiah, contribution margin, margin of safety.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur">⏱ ~3 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('kalk-rasio')">
-      <div class="tut-card-icon">📐</div>
-      <div class="tut-card-title">Kalkulator Rasio Keuangan</div>
-      <div class="tut-card-desc">Analisis kesehatan keuangan bisnis — 20+ rasio likuiditas, solvabilitas, profitabilitas, aktivitas, dan pasar.</div>
+      <div class="tut-card-icon">📐</div><div class="tut-card-title">Kalkulator Rasio Keuangan</div>
+      <div class="tut-card-desc">20+ rasio likuiditas, solvabilitas, profitabilitas, aktivitas, dan pasar. Otomatis dari data jurnal.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-hard">Lanjutan</span><span class="tut-dur">⏱ ~5 menit</span></div>
+    </div>
+    <div class="tut-card" onclick="startTutorialById('kalk-bunga')">
+      <div class="tut-card-icon">💹</div><div class="tut-card-title">Kalkulator Bunga & Anuitas</div>
+      <div class="tut-card-desc">Hitung bunga tunggal, majemuk, PV/FV, cicilan kredit, dan tabel amortisasi pinjaman lengkap.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur">⏱ ~4 menit</span></div>
     </div>
   </div>
 
-  <!-- Category: AI -->
+  <!-- AI -->
   <div style="font-size:11px;font-weight:700;color:var(--accent2);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;">🤖 AI Assistant</div>
-  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:28px;">
+  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
     <div class="tut-card tut-card-ai" onclick="startTutorialById('ai-intro')">
-      <div class="tut-card-icon">🤖</div>
-      <div class="tut-card-title">Mengenal Orias Assisten</div>
+      <div class="tut-card-icon">🤖</div><div class="tut-card-title">Mengenal Orias Assisten</div>
       <div class="tut-card-desc">Cara terbaik menggunakan AI: catat transaksi pakai kalimat natural, minta kalkulasi, tanya cara pakai.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~3 menit</span></div>
     </div>
     <div class="tut-card tut-card-ai" onclick="startTutorialById('ai-advanced')">
-      <div class="tut-card-icon">✨</div>
-      <div class="tut-card-title">AI untuk Analisis Keuangan</div>
-      <div class="tut-card-desc">Minta AI analisis laporan keuanganmu, identifikasi masalah, dan berikan rekomendasi bisnis.</div>
+      <div class="tut-card-icon">✨</div><div class="tut-card-title">AI untuk Analisis Keuangan</div>
+      <div class="tut-card-desc">Minta AI analisis laporan keuanganmu, identifikasi masalah cash flow, dan berikan rekomendasi bisnis.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-hard">Lanjutan</span><span class="tut-dur">⏱ ~3 menit</span></div>
+    </div>
+  </div>
+
+  <!-- TIPS & SHORTCUT -->
+  <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;">⌨️ Tips & Shortcut</div>
+  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
+    <div class="tut-card" onclick="startTutorialById('tut-shortcut')">
+      <div class="tut-card-icon">⌨️</div><div class="tut-card-title">Keyboard Shortcut</div>
+      <div class="tut-card-desc">Ctrl+N tambah transaksi, Ctrl+S simpan, Ctrl+/ buka AI, dan shortcut lainnya untuk kerja lebih cepat.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~1 menit</span></div>
+    </div>
+    <div class="tut-card" onclick="startTutorialById('tut-mobile')">
+      <div class="tut-card-icon">📱</div><div class="tut-card-title">Penggunaan di Mobile</div>
+      <div class="tut-card-desc">Pull-to-refresh, bottom sheet picker, install sebagai PWA, dan tips navigasi di layar kecil.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur">⏱ ~2 menit</span></div>
+    </div>
+    <div class="tut-card" onclick="startTutorialById('tut-backup')">
+      <div class="tut-card-icon">☁️</div><div class="tut-card-title">Backup & Sinkronisasi</div>
+      <div class="tut-card-desc">Cara login Supabase untuk sinkron data antar perangkat, backup JSON, dan restore data.</div>
+      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur">⏱ ~3 menit</span></div>
     </div>
   </div>
 </div>
@@ -5174,7 +5230,117 @@ function exportExcelData(nama, periode) {
     addSheet(wb, '🗂️ Chart of Accounts', rows, [8,28,14,12,14,20]);
   }
 
-  // SHEET 11: FORMULA REFERENCE
+  // SHEET: INVOICE & PIUTANG
+  if(document.getElementById('exp-invoice')?.checked && typeof invoiceList !== 'undefined' && invoiceList.length) {
+    const rows = [
+      ...headerBlock(nama, periode, 'INVOICE & PIUTANG', today),
+      [hdr('No Invoice'), hdr('Pelanggan'), hdr('Tanggal'), hdr('Jatuh Tempo'), hdr('Total (Rp)'), hdr('Sisa (Rp)'), hdr('Status')],
+    ];
+    invoiceList.forEach(inv => {
+      rows.push([
+        {v:inv.noInvoice,t:'s',s:{font:{bold:true}}},
+        {v:inv.pelanggan,t:'s'}, {v:inv.tanggal,t:'s'}, {v:inv.jatuhTempo,t:'s'},
+        numFmt(inv.total), numFmt(inv.sisaTagihan),
+        {v:inv.status,t:'s',s:{font:{color:{rgb:inv.status==='lunas'?'16A34A':'DC2626'}}}}
+      ]);
+    });
+    const totalTagihan = invoiceList.reduce((s,i)=>s+i.total,0);
+    const totalSisa = invoiceList.reduce((s,i)=>s+i.sisaTagihan,0);
+    rows.push([], [{v:'TOTAL',t:'s',s:{font:{bold:true}}}, '','','', boldNum(totalTagihan), boldNum(totalSisa),'']);
+    addSheet(wb, '🧾 Invoice Piutang', rows, [16,24,12,12,18,18,12]);
+  }
+
+  // SHEET: JURNAL BERULANG
+  if(document.getElementById('exp-jurnal-berulang')?.checked && typeof jurnalBerulangList !== 'undefined' && jurnalBerulangList.length) {
+    const rows = [
+      ...headerBlock(nama, periode, 'JURNAL BERULANG', today),
+      [hdr('Nama Template'), hdr('Frekuensi'), hdr('Akun Debit'), hdr('Akun Kredit'), hdr('Nominal (Rp)'), hdr('Berikutnya'), hdr('Status')],
+    ];
+    jurnalBerulangList.forEach(j => {
+      const aD=akuns.find(a=>a.kode===j.akunDebit); const aK=akuns.find(a=>a.kode===j.akunKredit);
+      rows.push([
+        {v:j.nama,t:'s',s:{font:{bold:true}}},
+        {v:j.frekuensi,t:'s'}, {v:(aD?aD.nama:j.akunDebit),t:'s'}, {v:(aK?aK.nama:j.akunKredit),t:'s'},
+        numFmt(j.nominal), {v:j.berikutnya,t:'s'}, {v:j.aktif?'Aktif':'Nonaktif',t:'s'}
+      ]);
+    });
+    addSheet(wb, '🔄 Jurnal Berulang', rows, [26,14,22,22,18,14,10]);
+  }
+
+  // SHEET: ANGGARAN VS AKTUAL
+  if(document.getElementById('exp-anggaran')?.checked && typeof anggaranList !== 'undefined' && anggaranList.length) {
+    const rows = [
+      ...headerBlock(nama, periode, 'ANGGARAN VS AKTUAL', today),
+      [hdr('Akun'), hdr('Periode'), hdr('Anggaran (Rp)'), hdr('Aktual (Rp)'), hdr('Variance (Rp)'), hdr('% Terpakai'), hdr('Status')],
+    ];
+    anggaranList.forEach(a => {
+      const akunNama = akuns.find(x=>x.kode===a.akunKode)?.nama||a.akunKode;
+      const aktual = jurnalEntries.filter(j=>j.tanggal.startsWith(a.periode)).reduce((s,j)=>
+        s+j.lines.filter(l=>l.akun===a.akunKode).reduce((ss,l)=>ss+Math.max(l.debit,l.kredit),0),0);
+      const variance = a.nominal - aktual;
+      const pct = a.nominal ? (aktual/a.nominal*100) : 0;
+      rows.push([
+        {v:akunNama,t:'s'}, {v:a.periode,t:'s'}, numFmt(a.nominal), numFmt(aktual),
+        {v:variance,t:'n',s:{numFmt:'"Rp "#,##0',font:{bold:true,color:{rgb:variance>=0?'16A34A':'DC2626'}}}},
+        {v:parseFloat(pct.toFixed(1)),t:'n',s:{numFmt:'0.0"%"'}},
+        {v:aktual>a.nominal?'⚠️ Melebihi':'✅ On Track',t:'s'}
+      ]);
+    });
+    addSheet(wb, '🎯 Anggaran vs Aktual', rows, [28,10,18,18,18,12,14]);
+  }
+
+  // SHEET: LAPORAN PAJAK
+  if(document.getElementById('exp-pajak')?.checked) {
+    const penjualan = jurnalEntries.filter(j=>j.jenis==='Penjualan'||j.keterangan?.toLowerCase().includes('penjualan'));
+    const pembelian = jurnalEntries.filter(j=>j.jenis==='Pembelian'||j.keterangan?.toLowerCase().includes('pembelian'));
+    const totalPenj = penjualan.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&ac.tipe==='Pendapatan'?l.kredit:0)},0),0);
+    const totalBeli = pembelian.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&(ac.tipe==='HPP'||ac.tipe==='Beban')?l.debit:0)},0),0);
+    const ppnKeluar = totalPenj*0.12; const ppnMasuk = totalBeli*0.12;
+    const rows = [
+      ...headerBlock(nama, periode, 'LAPORAN PAJAK', today),
+      [boldTxt('REKAPITULASI PAJAK')], [],
+      [boldTxt('Uraian'), '', boldTxt('Nilai (Rp)')],
+      [{v:'Dasar Pengenaan PPN Keluaran (Penjualan)',t:'s'},'',numFmt(totalPenj)],
+      [{v:'PPN Keluaran (12%)',t:'s',s:{font:{color:{rgb:'DC2626'}}}},'',boldNum(ppnKeluar)],
+      [{v:'Dasar Pengenaan PPN Masukan (Pembelian)',t:'s'},'',numFmt(totalBeli)],
+      [{v:'PPN Masukan (12%)',t:'s',s:{font:{color:{rgb:'16A34A'}}}},'',boldNum(ppnMasuk)],
+      [], [{v:'PPN Kurang/(Lebih) Bayar',t:'s',s:{font:{bold:true}}},'',boldNum(ppnKeluar-ppnMasuk)],
+      [], [boldTxt('RIWAYAT TRANSAKSI KENA PAJAK')], [],
+      [hdr('Tanggal'), hdr('Keterangan'), hdr('DPP (Rp)'), hdr('Jenis Pajak'), hdr('Tarif'), hdr('Nilai Pajak (Rp)')],
+    ];
+    [...penjualan.map(j=>({j,jenis:'PPN Keluaran',tarif:0.12})),...pembelian.map(j=>({j,jenis:'PPN Masukan',tarif:0.12}))].forEach(({j,jenis,tarif})=>{
+      const dpp=j.lines.reduce((s,l)=>s+Math.max(l.debit,l.kredit),0);
+      rows.push([{v:j.tanggal,t:'s'},{v:j.keterangan||'—',t:'s'},numFmt(dpp),{v:jenis,t:'s'},{v:(tarif*100)+'%',t:'s'},numFmt(dpp*tarif)]);
+    });
+    addSheet(wb, '🧾 Laporan Pajak', rows, [12,30,18,16,8,18]);
+  }
+
+  // SHEET: ANALITIK BISNIS
+  if(document.getElementById('exp-analitik')?.checked) {
+    const months = []; const now2 = new Date();
+    for(let i=11;i>=0;i--){ const d=new Date(now2.getFullYear(),now2.getMonth()-i,1); months.push({y:d.getFullYear(),m:d.getMonth(),label:d.toLocaleDateString('id-ID',{month:'short',year:'numeric'})}); }
+    const rows = [
+      ...headerBlock(nama, periode, 'ANALITIK BISNIS 12 BULAN', today),
+      [hdr('Bulan'), hdr('Pendapatan (Rp)'), hdr('Beban (Rp)'), hdr('Laba Bersih (Rp)'), hdr('Margin (%)'), hdr('Pertumbuhan')],
+    ];
+    let prevPend = 0;
+    months.forEach(mo => {
+      const pfx = `${mo.y}-${String(mo.m+1).padStart(2,'0')}`;
+      const pend = jurnalEntries.filter(j=>j.tanggal.startsWith(pfx)).reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&ac.tipe==='Pendapatan'?l.kredit:0)},0),0);
+      const beban = jurnalEntries.filter(j=>j.tanggal.startsWith(pfx)).reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&(ac.tipe==='Beban'||ac.tipe==='HPP')?l.debit:0)},0),0);
+      const laba = pend - beban; const margin = pend ? laba/pend*100 : 0;
+      const growth = prevPend ? ((pend-prevPend)/prevPend*100) : 0;
+      rows.push([
+        {v:mo.label,t:'s'}, numFmt(pend), numFmt(beban), {v:laba,t:'n',s:{numFmt:'"Rp "#,##0',font:{color:{rgb:laba>=0?'16A34A':'DC2626'}}}},
+        {v:parseFloat(margin.toFixed(1)),t:'n',s:{numFmt:'0.0"%"'}},
+        {v:prevPend?parseFloat(growth.toFixed(1))+'%':'—',t:'s',s:{font:{color:{rgb:growth>=0?'16A34A':'DC2626'}}}}
+      ]);
+      prevPend = pend;
+    });
+    addSheet(wb, '📈 Analitik Bisnis', rows, [16,20,18,20,12,14]);
+  }
+
+  // SHEET: FORMULA REFERENCE
   const formulaRows = [
     ...headerBlock(nama, periode, 'REFERENSI FORMULA AKUNTANSI', today),
     [boldTxt('FORMULA DASAR'), '', boldTxt('KETERANGAN')],
@@ -12081,6 +12247,15 @@ kalkStyle.textContent = `
 
 /* Chart scroll wrapper */
 /* ═══ FITUR BARU — ANIMASI & STYLES ═══ */
+/* Konversi Kartu Stock buttons */
+.ks-conv-btn {
+  padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted); font-size: 12px;
+  cursor: pointer; font-family: var(--sans); transition: all 0.15s;
+  text-align: center;
+}
+.ks-conv-btn:hover { border-color: var(--accent2); color: var(--text); }
+.ks-conv-btn.active { background: rgba(34,211,238,0.12); border-color: var(--accent2); color: var(--accent2); font-weight: 700; }
 
 /* Ensure ALL selects & inputs inside form-group take full width consistently */
 .form-group select,
@@ -12580,6 +12755,231 @@ function hitungPersediaan() {
 let kartuStockData = { fifo:[], lifo:[], wa:[], mwa:[] };
 let kartuStockTab = 'fifo';
 let kartuStockIdCounter = 0;
+
+// ── KONVERSI KARTU STOCK ANTAR METODE ─────────────────────────
+
+let _ksConvDari = 'fifo';
+let _ksConvKe   = 'wa';
+const _ksLabel  = { fifo:'FIFO', lifo:'LIFO', wa:'Weighted Avg', mwa:'Moving WA' };
+const _ksIcon   = { fifo:'🔼', lifo:'🔽', wa:'⚖️', mwa:'📊' };
+
+function openKonversiKartuStock() {
+  _ksConvDari = kartuStockTab;
+  // Default tujuan: metode lain
+  const allM = ['fifo','lifo','wa','mwa'];
+  _ksConvKe = allM.find(m => m !== _ksConvDari) || 'wa';
+  // Update button states
+  document.querySelectorAll('.ks-conv-dari').forEach(b => {
+    b.classList.toggle('active', b.dataset.val === _ksConvDari);
+  });
+  document.querySelectorAll('.ks-conv-ke').forEach(b => {
+    b.classList.toggle('active', b.dataset.val === _ksConvKe);
+  });
+  updateKsConvPreview();
+  document.getElementById('ks-conv-preview-rows').style.display = 'none';
+  openModal('modal-konversi-ks');
+}
+
+function selectKsConvDari(val, el) {
+  _ksConvDari = val;
+  document.querySelectorAll('.ks-conv-dari').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  // Jika sama dengan tujuan, swap tujuan
+  if (_ksConvDari === _ksConvKe) {
+    const allM = ['fifo','lifo','wa','mwa'];
+    _ksConvKe = allM.find(m => m !== _ksConvDari) || 'wa';
+    document.querySelectorAll('.ks-conv-ke').forEach(b => {
+      b.classList.toggle('active', b.dataset.val === _ksConvKe);
+    });
+  }
+  updateKsConvPreview();
+  document.getElementById('ks-conv-preview-rows').style.display = 'none';
+}
+
+function selectKsConvKe(val, el) {
+  _ksConvKe = val;
+  document.querySelectorAll('.ks-conv-ke').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  if (_ksConvKe === _ksConvDari) {
+    const allM = ['fifo','lifo','wa','mwa'];
+    _ksConvDari = allM.find(m => m !== _ksConvKe) || 'fifo';
+    document.querySelectorAll('.ks-conv-dari').forEach(b => {
+      b.classList.toggle('active', b.dataset.val === _ksConvDari);
+    });
+  }
+  updateKsConvPreview();
+  document.getElementById('ks-conv-preview-rows').style.display = 'none';
+}
+
+function updateKsConvPreview() {
+  const srcData  = kartuStockData[_ksConvDari] || [];
+  const dstData  = kartuStockData[_ksConvKe]   || [];
+  const srcMasuk = srcData.filter(e => e.mQty > 0);
+  const dstMasuk = dstData.filter(e => e.mQty > 0);
+
+  document.getElementById('ks-conv-label-dari').textContent  = _ksLabel[_ksConvDari];
+  document.getElementById('ks-conv-label-ke').textContent    = _ksLabel[_ksConvKe];
+  document.getElementById('ks-conv-count-dari').textContent  = srcMasuk.length + ' entri masuk tersedia';
+  document.getElementById('ks-conv-count-ke').textContent    = dstMasuk.length + ' entri sudah ada';
+  document.getElementById('ks-dari-info').textContent        =
+    srcData.length ? `${srcData.length} total baris (${srcMasuk.length} masuk, ${srcData.filter(e=>e.kQty>0).length} keluar)` : '⚠️ Belum ada data di metode ini';
+  document.getElementById('ks-ke-info').textContent          =
+    dstData.length ? `${dstData.length} total baris (${dstMasuk.length} masuk, ${dstData.filter(e=>e.kQty>0).length} keluar)` : 'Kosong — akan diisi dari konversi';
+}
+
+/** Ambil entri MASUK dari sumber dan kembalikan sebagai array baru */
+function _getEntriesMasukFromSource(sumber) {
+  return (kartuStockData[sumber] || [])
+    .filter(e => e.mQty > 0)
+    .map(e => ({ tgl: e.tgl, ket: e.ket || 'Masuk', mQty: e.mQty, mHarga: e.mHarga }));
+}
+
+/**
+ * Gabungkan + sort entri masuk berdasarkan tanggal (terlama di atas).
+ * Untuk FIFO dan LIFO: layer yang lebih lama harus di-assign id lebih rendah.
+ * Untuk WA dan MWA: urutan masuk mempengaruhi rata-rata running.
+ */
+function _buildMergedMasuk(sumberEntries, tujuan) {
+  const existing = (kartuStockData[tujuan] || [])
+    .filter(e => e.mQty > 0)
+    .map(e => ({ tgl: e.tgl, ket: e.ket, mQty: e.mQty, mHarga: e.mHarga }));
+
+  const merged = [...existing, ...sumberEntries];
+
+  // Sort berdasarkan tanggal ascending (terlama di atas)
+  // Untuk metode yang tidak memerlukan urutan (WA/MWA sama saja, hasilnya identik)
+  // Untuk FIFO/LIFO, urutan tanggal sangat penting
+  merged.sort((a, b) => {
+    const da = new Date(a.tgl), db = new Date(b.tgl);
+    if (da < db) return -1;
+    if (da > db) return 1;
+    return 0; // jika tanggal sama, pertahankan urutan relatif
+  });
+
+  return merged;
+}
+
+/**
+ * Rebuild kartu stock dari awal berdasarkan entri masuk yang sudah diurutkan,
+ * lalu terapkan metode perhitungan yang sesuai.
+ * Entri KELUAR tidak dikonversi — dihapus dari tujuan agar tidak confuse.
+ */
+function _rekalkulasiKartuStock(mergedMasuk, metode) {
+  const newStorage = [];
+  let runningStock = [];
+
+  mergedMasuk.forEach(e => {
+    const id = kartuStockIdCounter++;
+
+    // Masukkan ke running stock sesuai metode
+    if (metode === 'wa') {
+      const tq = runningStock.reduce((s,x)=>s+x.qty,0) + e.mQty;
+      const tv = runningStock.reduce((s,x)=>s+x.qty*x.harga,0) + e.mQty*e.mHarga;
+      runningStock = [{ qty: tq, harga: tq ? tv/tq : 0 }];
+    } else if (metode === 'mwa') {
+      const tq = runningStock.reduce((s,x)=>s+x.qty,0) + e.mQty;
+      const tv = runningStock.reduce((s,x)=>s+x.qty*x.harga,0) + e.mQty*e.mHarga;
+      runningStock = [{ qty: tq, harga: tq ? tv/tq : 0 }];
+    } else {
+      // fifo / lifo: tambahkan layer baru
+      runningStock.push({ qty: e.mQty, harga: e.mHarga });
+    }
+
+    const sl = runningStock.filter(x=>x.qty>0).map(x=>({...x}));
+    newStorage.push({
+      id, tgl: e.tgl, ket: e.ket,
+      mQty: e.mQty, mHarga: e.mHarga,
+      kQty: 0, kHarga: 0, kJml: 0,
+      saldoLayers: sl,
+      jurnalDone: false,
+      _converted: true  // penanda baris hasil konversi
+    });
+  });
+
+  return newStorage;
+}
+
+function previewKonversiKS() {
+  const srcEntries = _getEntriesMasukFromSource(_ksConvDari);
+  if (!srcEntries.length) {
+    showAlert(`⚠️ Tidak ada entri masuk di kartu stock ${_ksLabel[_ksConvDari]}`);
+    return;
+  }
+  const merge  = document.getElementById('ks-conv-merge')?.checked !== false &&
+                 !document.getElementById('ks-conv-mode-replace')?.checked;
+  const merged = merge ? _buildMergedMasuk(srcEntries, _ksConvKe) : srcEntries.sort((a,b)=>new Date(a.tgl)-new Date(b.tgl));
+
+  const el = document.getElementById('ks-conv-preview-rows');
+  el.style.display = 'block';
+  el.innerHTML = `<div style="font-weight:700;margin-bottom:6px;color:var(--text);">Preview urutan entri MASUK → ${_ksLabel[_ksConvKe]} (${merged.length} entri):</div>` +
+    merged.map((e, i) => {
+      const isNew = srcEntries.some(s => s.tgl===e.tgl && s.mQty===e.mQty && s.mHarga===e.mHarga);
+      return `<div style="display:flex;gap:8px;padding:4px 6px;border-radius:4px;background:${isNew?'rgba(34,211,238,0.07)':'transparent'};margin-bottom:2px;">
+        <span style="min-width:20px;color:var(--muted);">${i+1}</span>
+        <span style="min-width:90px;font-family:var(--mono);">${e.tgl}</span>
+        <span style="flex:1;">${e.ket}</span>
+        <span style="color:var(--accent);">+${e.mQty} × ${rp(e.mHarga)}</span>
+        ${isNew?'<span style="color:var(--accent2);font-size:10px;">✨ dari sumber</span>':'<span style="color:var(--muted);font-size:10px;">sudah ada</span>'}
+      </div>`;
+    }).join('');
+}
+
+function eksekusiKonversiKS() {
+  const srcEntries = _getEntriesMasukFromSource(_ksConvDari);
+  if (!srcEntries.length) {
+    showAlert(`⚠️ Tidak ada entri masuk di kartu stock ${_ksLabel[_ksConvDari]}`);
+    return;
+  }
+  if (_ksConvDari === _ksConvKe) {
+    showAlert('⚠️ Metode sumber dan tujuan tidak boleh sama');
+    return;
+  }
+
+  const replace = document.getElementById('ks-conv-mode-replace')?.checked;
+  const merge   = !replace;
+
+  showOpSpinner(`Mengkonversi ${_ksLabel[_ksConvDari]} → ${_ksLabel[_ksConvKe]}...`, 'Mengurutkan & menghitung ulang');
+
+  setTimeout(() => {
+    try {
+      let mergedMasuk;
+      if (merge) {
+        mergedMasuk = _buildMergedMasuk(srcEntries, _ksConvKe);
+      } else {
+        // Replace: hanya dari sumber, sort tanggal
+        mergedMasuk = [...srcEntries].sort((a,b) => new Date(a.tgl)-new Date(b.tgl));
+      }
+
+      // Rebuild kartu tujuan dari entri yang sudah diurutkan
+      const newData = _rekalkulasiKartuStock(mergedMasuk, _ksConvKe);
+      kartuStockData[_ksConvKe] = newData;
+
+      // Switch ke tab tujuan
+      closeModal('modal-konversi-ks');
+      const tabEl = document.getElementById('ks-tab-' + _ksConvKe);
+      if (tabEl) switchKartuStockTab(_ksConvKe, tabEl);
+      else { kartuStockTab = _ksConvKe; renderKartuStock(); }
+
+      saveKartuStockToCloud();
+      hideOpSpinner();
+
+      const info = merge
+        ? `${srcEntries.length} entri dari ${_ksLabel[_ksConvDari]} digabung`
+        : `${srcEntries.length} entri dari ${_ksLabel[_ksConvDari]} dipindahkan`;
+      showAlert(`✅ Konversi berhasil! ${info} → ${_ksLabel[_ksConvKe]}. Total: ${newData.length} entri, diurutkan berdasarkan tanggal.`);
+
+      // Scroll ke kartu stock
+      setTimeout(() => {
+        const wrap = document.getElementById('catatan-persediaan-wrap');
+        if (wrap) wrap.scrollIntoView({ behavior:'smooth', block:'start' });
+      }, 300);
+
+    } catch(e) {
+      hideOpSpinner();
+      showAlert('❌ Gagal konversi: ' + e.message);
+    }
+  }, 900);
+}
 
 function switchKartuStockTab(tab, el) {
   kartuStockTab = tab;
@@ -15105,11 +15505,232 @@ const TUT_MODULES = {
         body:'Coba tanya AI:\n\n💬 <i>"Analisis kondisi keuangan bisnis saya sekarang"</i>\n💬 <i>"Apakah rasio keuangan saya bagus?"</i>\n💬 <i>"Ada masalah apa di laporan keuangan saya?"</i>\n💬 <i>"Kenapa laba saya kecil padahal penjualan banyak?"</i>\n\nAI akan baca data jurnal dan berikan insight spesifik!',
         target: '#ai-input', highlight: true },
       { icon:'🎯', title:'Minta Rekomendasi',
-        body:'AI juga bisa kasih rekomendasi:\n\n💬 <i>"Bagaimana cara meningkatkan profit margin saya?"</i>\n💬 <i>"Akun apa yang perlu saya tambahkan untuk bisnis restoran?"</i>\n💬 <i>"Saya mau ajukan kredit bank, dokumen apa yang perlu disiapkan?"</i>\n\nAI punya pengetahuan akuntansi, perpajakan, dan bisnis Indonesia.',
+        body:'AI juga bisa kasih rekomendasi:\n\n💬 <i>"Bagaimana cara meningkatkan profit margin saya?"</i>\n💬 <i>"Akun apa yang perlu saya tambahkan untuk bisnis restoran?"</i>\n💬 <i>"Saya mau ajukan kredit bank, dokumen apa yang perlu disiapkan?"</i>',
         target: null },
       { icon:'✅', title:'AI Siap Jadi Konsultan Kamu!',
-        body:'Ingat:\n✅ AI paham bahasa natural dan konteks\n✅ AI baca data keuangan kamu secara real-time\n✅ AI tahu semua standar PSAK & perpajakan Indonesia\n✅ AI bisa jelaskan ulang dengan cara berbeda jika belum paham\n\nJangan ragu untuk tanya apapun — AI tidak pernah lelah menjawab! 😊',
+        body:'✅ AI paham bahasa natural dan konteks\n✅ AI baca data keuangan kamu secara real-time\n✅ AI tahu semua standar PSAK & perpajakan Indonesia\n✅ AI bisa jelaskan ulang dengan cara berbeda jika belum paham',
         target: null }
+    ]
+  },
+
+  // ═══ FITUR BARU ═══
+
+  'tut-jurnal-berulang': {
+    title: 'Jurnal Berulang', icon: '🔄',
+    steps: [
+      { icon:'🔄', title:'Apa itu Jurnal Berulang?',
+        body:'Jurnal Berulang adalah template transaksi yang berjalan otomatis sesuai jadwal.\n\nContoh penggunaan:\n💼 Gaji karyawan → tiap bulan tanggal 25\n🏠 Sewa kantor → tiap bulan tanggal 1\n💳 Cicilan → tiap bulan\n📦 Langganan software → tiap tahun\n\nSekali setup, sistem yang mencatat otomatis!',
+        navTo: 'jurnal-berulang' },
+      { icon:'➕', title:'Cara Membuat Jurnal Berulang',
+        body:'1. Buka menu <b>J. Berulang</b> di sidebar\n2. Ketuk <b>+ Tambah Berulang</b>\n3. Isi nama template (contoh: "Gaji Karyawan")\n4. Pilih frekuensi: Harian / Mingguan / Bulanan / Triwulan / Tahunan\n5. Pilih tanggal mulai\n6. Pilih akun Debit dan Kredit\n7. Isi nominal dan keterangan\n8. Ketuk <b>Simpan</b>',
+        target: null },
+      { icon:'▶️', title:'Menjalankan Jurnal Tertunda',
+        body:'Sistem otomatis deteksi jurnal yang tertunda saat app dibuka.\n\n<b>Jalankan satu:</b> Ketuk tombol ▶️ di baris jurnal\n<b>Jalankan semua:</b> Ketuk tombol <b>▶️ Jalankan Semua Tertunda</b>\n\nSetelah dijalankan, jurnal otomatis tercatat di Jurnal Umum dan tanggal berikutnya diperbarui otomatis.',
+        target: null },
+      { icon:'✅', title:'Tips Jurnal Berulang',
+        body:'💡 Tips:\n✅ Gunakan keterangan "[Auto] Nama Jurnal" agar mudah diidentifikasi\n✅ Set tanggal berakhir jika transaksi ada batas waktu (cicilan selesai)\n✅ Nonaktifkan (⏸️) jika sementara tidak perlu tanpa menghapus template\n✅ Cek riwayat eksekusi di bagian bawah halaman',
+        target: null }
+    ]
+  },
+
+  'tut-invoice': {
+    title: 'Invoice & Piutang', icon: '🧾',
+    steps: [
+      { icon:'🧾', title:'Apa itu Fitur Invoice?',
+        body:'Fitur Invoice memungkinkan kamu:\n✅ Buat invoice profesional untuk pelanggan\n✅ Lacak status: Draft → Terkirim → Lunas\n✅ Deteksi otomatis invoice yang sudah jatuh tempo\n✅ Jurnal piutang dibuat otomatis saat invoice dikirim\n✅ Jurnal penerimaan kas dibuat otomatis saat tandai lunas',
+        navTo: 'invoice' },
+      { icon:'➕', title:'Cara Membuat Invoice',
+        body:'1. Buka menu <b>Invoice</b> → ketuk <b>+ Buat Invoice</b>\n2. No. Invoice otomatis terisi (bisa diubah)\n3. Isi nama pelanggan dan tanggal jatuh tempo\n4. Tambah item/jasa: nama, qty, harga\n5. Centang PPN 12% jika dikenakan pajak\n6. Pilih akun piutang dan akun pendapatan\n7. Ketuk <b>Simpan & Terkirim</b> → jurnal piutang otomatis dibuat!',
+        target: null },
+      { icon:'✅', title:'Tandai Invoice Lunas',
+        body:'Saat pelanggan membayar:\n1. Temukan invoice di daftar\n2. Ketuk tombol <b>✅ Lunas</b>\n3. Isi tanggal pembayaran dan nominal\n4. Pilih akun kas/bank penerima\n5. Ketuk <b>Konfirmasi Lunas & Buat Jurnal</b>\n\nJurnal: Kas (Debit) | Piutang Usaha (Kredit) — otomatis!',
+        target: null },
+      { icon:'🔍', title:'Filter & Monitoring',
+        body:'Gunakan filter status untuk monitoring:\n📋 <b>Semua</b> — lihat semua invoice\n📝 <b>Draft</b> — belum dikirim ke pelanggan\n📤 <b>Terkirim</b> — menunggu pembayaran\n✅ <b>Lunas</b> — sudah dibayar\n⚠️ <b>Jatuh Tempo</b> — lewat tanggal bayar\n\nKPI cards di atas menampilkan total tagihan, lunas, belum lunas, dan jumlah jatuh tempo.',
+        target: null }
+    ]
+  },
+
+  'tut-rekonsiliasi': {
+    title: 'Rekonsiliasi Bank', icon: '🏦',
+    steps: [
+      { icon:'🏦', title:'Apa itu Rekonsiliasi Bank?',
+        body:'Rekonsiliasi bank adalah proses mencocokkan mutasi di rekening bank dengan jurnal yang sudah dicatat di OAS.\n\nManfaatnya:\n✅ Temukan transaksi yang belum dicatat\n✅ Deteksi selisih atau kesalahan pencatatan\n✅ Pastikan saldo buku = saldo bank\n✅ Import transaksi bank langsung jadi jurnal',
+        navTo: 'rekonsiliasi' },
+      { icon:'📥', title:'Upload CSV Mutasi Bank',
+        body:'1. Buka menu <b>Rekonsiliasi</b>\n2. Pilih nama bank (BCA/Mandiri/BNI/BRI/Generic)\n3. Download mutasi rekening dari internet banking dalam format CSV\n4. Tap zona upload atau drag file CSV ke sana\n5. File langsung diparse — lihat ringkasan di panel kanan',
+        target: null },
+      { icon:'🔍', title:'Proses Pencocokan',
+        body:'Ketuk <b>🔍 Proses Rekonsiliasi</b> — sistem otomatis:\n\n✅ <b>Cocok</b> — tanggal & nominal sama dengan jurnal\n⚠️ <b>Beda Nominal</b> — tanggal sama tapi nominal berbeda\n❓ <b>Belum Cocok</b> — tidak ada jurnal yang sesuai\n\nGunakan filter untuk fokus ke yang belum cocok.',
+        target: null },
+      { icon:'📥', title:'Import Transaksi Bank',
+        body:'Untuk transaksi <b>❓ Belum Cocok</b>:\n\n<b>Satu-satu:</b> Ketuk <b>📥 Import</b> di baris transaksi\n<b>Semua sekaligus:</b> Ketuk <b>📥 Import Belum Cocok</b>\n\nJurnal otomatis dibuat dari data mutasi bank. Kamu bisa edit akun setelahnya di Jurnal Umum.',
+        target: null }
+    ]
+  },
+
+  'tut-kurs': {
+    title: 'Multi Mata Uang & Kurs', icon: '💱',
+    steps: [
+      { icon:'💱', title:'Fitur Multi Mata Uang',
+        body:'OAS mendukung 6 mata uang: IDR, USD, SGD, EUR, MYR, JPY.\n\nFitur ini berguna untuk:\n✅ Bisnis yang bertransaksi dalam mata uang asing\n✅ Konversi cepat antar mata uang\n✅ Tracking nilai kurs terkini\n✅ Update kurs manual atau otomatis',
+        navTo: 'kurs' },
+      { icon:'🔄', title:'Update Kurs',
+        body:'<b>Update Otomatis:</b>\nKetuk tombol <b>🔄 Update Kurs</b> di pojok kanan atas — kurs langsung diperbarui.\n\n<b>Update Manual:</b>\nDi panel kanan "Atur Kurs Manual", isi nilai kurs terbaru per USD, lalu ketuk <b>💾 Simpan Kurs</b>.\n\nKurs disimpan di perangkat dan dipakai untuk konversi.',
+        target: null },
+      { icon:'🔢', title:'Konverter Cepat',
+        body:'Panel kiri "Konverter Cepat":\n1. Isi nominal yang ingin dikonversi\n2. Pilih mata uang asal (Dari)\n3. Pilih mata uang tujuan (Ke)\n4. Hasil konversi muncul otomatis real-time\n\nContoh: 1.000.000 IDR → berapa USD? Langsung terhitung!',
+        target: null }
+    ]
+  },
+
+  'tut-notifikasi': {
+    title: 'Notifikasi & Alert', icon: '🔔',
+    steps: [
+      { icon:'🔔', title:'Alert Keuangan Otomatis',
+        body:'Sistem notifikasi OAS memantau kondisi keuangan bisnis kamu secara otomatis.\n\nAda 5 tipe alert:\n💸 Arus kas negatif\n📊 Anggaran terlampaui\n⏰ Invoice jatuh tempo\n⚠️ Saldo akun di bawah batas\n📉 Laba bersih negatif',
+        navTo: 'notifikasi' },
+      { icon:'➕', title:'Cara Membuat Alert',
+        body:'1. Buka menu <b>Notifikasi</b>\n2. Ketuk <b>+ Tambah Alert</b>\n3. Beri nama alert (contoh: "Peringatan Arus Kas")\n4. Pilih tipe alert dari daftar\n5. Isi parameter jika diperlukan (contoh: batas % untuk anggaran)\n6. Ketuk <b>Simpan Alert</b>\n\nAlert langsung aktif dan dicek setiap ada perubahan data.',
+        target: null },
+      { icon:'🔴', title:'Membaca Alert Aktif',
+        body:'Saat ada kondisi yang terpenuhi:\n\n🔴 <b>Alert bahaya</b> — latar merah (arus kas negatif, jatuh tempo)\n🟡 <b>Alert peringatan</b> — latar kuning (mendekati batas)\n\nAngka merah di ikon 🔔 di sidebar menunjukkan jumlah alert aktif.\n\nRiwayat semua notifikasi tersimpan di panel kanan.',
+        target: null }
+    ]
+  },
+
+  'tut-anggaran': {
+    title: 'Anggaran vs Aktual', icon: '🎯',
+    steps: [
+      { icon:'🎯', title:'Mengapa Perlu Anggaran?',
+        body:'Anggaran (budget) adalah target pengeluaran atau pendapatan per akun per bulan.\n\nDengan fitur ini kamu bisa:\n✅ Set target realistis per kategori\n✅ Monitor apakah pengeluaran sesuai rencana\n✅ Lihat variance (selisih anggaran vs aktual)\n✅ Dapat peringatan saat melebihi anggaran',
+        navTo: 'anggaran' },
+      { icon:'➕', title:'Set Anggaran Baru',
+        body:'1. Buka menu <b>Anggaran</b>\n2. Ketuk <b>+ Set Anggaran</b>\n3. Pilih akun (misalnya: Beban Gaji, Beban Sewa)\n4. Pilih periode bulan (YYYY-MM)\n5. Isi nominal target anggaran\n6. Tambah catatan opsional\n7. Ketuk <b>Simpan Anggaran</b>',
+        target: null },
+      { icon:'📊', title:'Membaca Progress Anggaran',
+        body:'Panel "Progress Anggaran Bulan Ini" menampilkan:\n\n🟢 <b>Hijau</b> — masih di bawah 80% → aman\n🟡 <b>Kuning</b> — 80–100% → perhatikan\n🔴 <b>Merah</b> — melewati 100% → melebihi anggaran!\n\nTabel detail menampilkan semua akun dengan variance dan status on-track/melebihi.',
+        target: null },
+      { icon:'📈', title:'Chart Anggaran vs Aktual',
+        body:'Chart batang di panel kanan membandingkan:\n\n🔵 <b>Batang biru</b> — nominal anggaran yang ditetapkan\n🟢 <b>Batang hijau</b> — aktual dari jurnal yang sudah tercatat\n\nKlik chart untuk tampilan HD yang lebih besar dan jelas.',
+        target: null }
+    ]
+  },
+
+  'tut-pajak': {
+    title: 'Pajak Otomatis', icon: '🧾',
+    steps: [
+      { icon:'🧾', title:'Pajak Otomatis di OAS',
+        body:'OAS otomatis menghitung pajak dari data jurnal kamu:\n\n💰 <b>PPN 12%</b> — dari transaksi penjualan & pembelian\n👤 <b>PPh 21</b> — pajak gaji karyawan (progresif)\n🏢 <b>PPh 23</b> — jasa, royalti, sewa, dividen, bunga\n\nHitung otomatis, buat jurnal pajak satu klik!',
+        navTo: 'pajak' },
+      { icon:'💰', title:'PPN Keluaran & Masukan',
+        body:'Sistem otomatis scan jurnal penjualan dan pembelian:\n\n📤 <b>PPN Keluaran</b> = PPN dari penjualan (hutang ke negara)\n📥 <b>PPN Masukan</b> = PPN dari pembelian (kredit pajak)\n⚖️ <b>Kurang/(Lebih) Bayar</b> = Keluaran minus Masukan\n\nKetuk <b>🔄 Hitung Ulang</b> untuk perbarui kalkulasi.',
+        target: null },
+      { icon:'👤', title:'PPh 21 — Pajak Gaji',
+        body:'1. Isi <b>Total Gaji Bruto/Bulan</b> dan <b>Jumlah Karyawan</b>\n2. Sistem otomatis hitung PKP, biaya jabatan, PTKP\n3. Tarif progresif: 5% / 15% / 25% / 30% / 35%\n4. Ketuk <b>📒 Buat Jurnal PPh 21</b>\n\nJurnal: Beban Gaji (D) | Hutang PPh 21 (K) | Kas (K)',
+        target: null },
+      { icon:'🏢', title:'PPh 23 — Jasa & Royalti',
+        body:'1. Pilih jenis penghasilan (Jasa 2%, Royalti 15%, Sewa 2%, dll)\n2. Isi nilai bruto\n3. PPh otomatis terhitung\n4. Ketuk <b>📒 Buat Jurnal PPh 23</b>\n\nRingkasan SPT Tahunan di panel kanan merangkum semua penghasilan bruto, HPP, dan PPN wajib bayar untuk pelaporan.',
+        target: null }
+    ]
+  },
+
+  'tut-analitik': {
+    title: 'Analitik & Tren Bisnis', icon: '📊',
+    steps: [
+      { icon:'📊', title:'Dashboard Analitik',
+        body:'Halaman Analitik menampilkan 10+ grafik visual dari data jurnal kamu:\n\n📊 Pendapatan vs Beban per Bulan\n📈 Tren Laba Bersih\n💧 Arus Kas Bersih per Bulan\n🌊 Waterfall Laba-Rugi\n📉 Growth MoM (%)\n🍩 Distribusi Beban (Donut)\n💰 Posisi Keuangan\n🎯 Margin per Bulan\n🔮 Proyeksi Keuangan',
+        navTo: 'analitik' },
+      { icon:'📱', title:'Scroll Horizontal di Mobile',
+        body:'Di HP, chart kadang tampak sempit karena banyak data bulan.\n\n👆 <b>Geser kiri-kanan</b> di area chart untuk scroll horizontal\n📅 Label bulan dan tahun tampil 2 baris (tidak bertabrakan)\n\nScrollbar tipis muncul di bawah chart sebagai indikator posisi.',
+        target: null },
+      { icon:'🔍', title:'Tampilan Chart HD',
+        body:'Ketuk/klik chart mana saja untuk membuka modal HD!\n\n✅ Chart diperbesar mengisi layar penuh\n✅ Resolusi super tajam\n✅ Scroll horizontal jika data banyak\n✅ Tutup dengan ketuk ✕ atau area gelap atau tekan Escape',
+        target: null },
+      { icon:'📤', title:'Export Analitik',
+        body:'Data analitik bisa diekspor!\n\n1. Ketuk <b>Export Laporan</b> di sidebar\n2. Centang <b>📈 Grafik Analitik Bisnis</b>\n3. Pilih format Excel\n4. Ketuk Export\n\nSheet "📈 Analitik Bisnis" berisi data 12 bulan: pendapatan, beban, laba, margin, dan pertumbuhan MoM.',
+        target: null }
+    ]
+  },
+
+  'tut-chart-hd': {
+    title: 'Chart HD & Zoom', icon: '🔍',
+    steps: [
+      { icon:'🔍', title:'Fitur Chart HD',
+        body:'Semua chart di halaman Analitik bisa diklik untuk membuka tampilan HD!\n\nCaranya:\n👆 <b>Mobile</b>: Tap chart\n🖱️ <b>Desktop</b>: Klik chart\n\nModal akan terbuka dengan chart diperbesar mengisi layar — sangat berguna untuk presentasi atau analisis detail.',
+        navTo: 'analitik' },
+      { icon:'📱', title:'Scroll Horizontal',
+        body:'Setiap chart di mobile punya scroll horizontal sendiri (bukan seluruh halaman).\n\nLabel format baru:\n📅 Baris atas: nama bulan (Jan, Feb, Mar)\n📅 Baris bawah: tahun (2025, 2026)\n\nLabel tidak bertabrakan lagi meski data banyak!',
+        target: null }
+    ]
+  },
+
+  'export-laporan': {
+    title: 'Export PDF, Excel & CSV', icon: '📤',
+    steps: [
+      { icon:'📤', title:'Cara Export Laporan',
+        body:'OAS mendukung export ke 3 format:\n\n📊 <b>Excel (.xlsx)</b> — tabel terformat, formula aktif\n📄 <b>PDF</b> — siap cetak/kirim, bisa tambah logo\n📋 <b>CSV</b> — untuk Google Sheets / analisis eksternal\n\nBuka: Sidebar → <b>Export Laporan</b>',
+        target: null },
+      { icon:'✨', title:'Export Fitur Baru',
+        body:'Selain laporan standar, sekarang bisa export:\n\n🧾 <b>Invoice & Piutang</b> — semua invoice + status\n🔄 <b>Jurnal Berulang</b> — daftar template aktif\n🎯 <b>Anggaran vs Aktual</b> — realisasi per akun\n🧾 <b>Laporan Pajak</b> — rekap PPN & riwayat transaksi\n📈 <b>Analitik Bisnis</b> — data 12 bulan tren keuangan',
+        target: null },
+      { icon:'📄', title:'Export PDF dengan Logo',
+        body:'Saat pilih format PDF:\n1. Upload logo perusahaan (PNG/JPG/SVG, maks 2MB)\n2. Logo muncul di pojok kiri atas setiap halaman\n3. Isi nama perusahaan dan periode\n4. Setiap laporan dipisah per halaman otomatis',
+        target: null },
+      { icon:'📊', title:'Template Excel',
+        body:'Ada 2 template Excel:\n\n📋 <b>Template Data</b> — data mentah per sheet, formula referensi\n⚙️ <b>Template Hitung Otomatis</b> — formula Excel aktif, ubah di sheet INPUT → semua laporan update otomatis\n\nTemplate Hitung Otomatis cocok untuk akuntan yang mau edit dan analisis di Excel.',
+        target: null }
+    ]
+  },
+
+  'tut-shortcut': {
+    title: 'Keyboard Shortcut', icon: '⌨️',
+    steps: [
+      { icon:'⌨️', title:'Shortcut Keyboard OAS',
+        body:'Shortcut untuk kerja lebih cepat:\n\n<b>Ctrl+N</b> — Input transaksi baru\n<b>Ctrl+S</b> — Simpan data ke cloud\n<b>Ctrl+/</b> — Buka AI Assisten\n<b>Ctrl+E</b> — Buka modal Export\n<b>Ctrl+F</b> — Fokus ke pencarian\n<b>Escape</b> — Tutup modal / picker\n<b>Alt+←</b> — Kembali ke halaman sebelumnya\n\nShortcut aktif di semua halaman.',
+        target: null }
+    ]
+  },
+
+  'tut-mobile': {
+    title: 'Penggunaan di Mobile', icon: '📱',
+    steps: [
+      { icon:'📱', title:'OAS di Mobile',
+        body:'OAS dirancang mobile-first dengan fitur:\n\n🔃 <b>Pull-to-refresh</b> — tarik ke bawah untuk refresh data\n📋 <b>Bottom sheet picker</b> — pilih akun/opsi dari bawah layar\n📲 <b>Install sebagai PWA</b> — buka seperti aplikasi native\n👆 <b>Swipe & scroll</b> — navigasi intuitif',
+        target: null },
+      { icon:'📲', title:'Install sebagai App',
+        body:'Buka sidebar → scroll ke bawah → ketuk <b>📲 Install App</b>\n\nSetelah install:\n✅ Icon OAS muncul di home screen\n✅ Buka tanpa URL bar browser\n✅ Tampilan fullscreen\n✅ Akses lebih cepat\n\nPanduan detail otomatis muncul sesuai browser kamu.',
+        target: null },
+      { icon:'🔃', title:'Pull-to-Refresh',
+        body:'Saat berada di paling atas halaman:\n\n1. Tarik layar ke bawah dengan jari\n2. Muncul indikator loading\n3. Lepas saat indikator berputar\n4. Data direfresh!\n\n⚠️ Hanya isi konten yang refresh — header/topbar tetap di tempat.',
+        target: null }
+    ]
+  },
+
+  'tut-backup': {
+    title: 'Backup & Sinkronisasi', icon: '☁️',
+    steps: [
+      { icon:'☁️', title:'Simpan Data ke Cloud',
+        body:'OAS mendukung 2 mode penyimpanan:\n\n💾 <b>Mode Tamu (Lokal)</b> — data tersimpan di browser perangkat ini saja\n☁️ <b>Mode Login (Cloud)</b> — data tersimpan di Supabase, bisa diakses dari perangkat manapun\n\nMode cloud memerlukan akun gratis di Supabase.',
+        target: null },
+      { icon:'📥', title:'Export Backup JSON',
+        body:'Cara backup manual:\n1. Buka sidebar → <b>Kelola</b>\n2. Ketuk <b>Export Backup JSON</b>\n3. File JSON diunduh ke perangkat\n\nFile JSON berisi semua jurnal, akun, pengaturan, invoice, anggaran, dan data lainnya.',
+        target: null },
+      { icon:'📤', title:'Import / Restore Backup',
+        body:'Cara restore dari backup:\n1. Buka sidebar → <b>Kelola</b>\n2. Ketuk <b>Import Backup JSON</b>\n3. Pilih file JSON backup\n4. Konfirmasi restore\n\n⚠️ Import akan menggantikan semua data yang ada sekarang.',
+        target: null }
+    ]
+  },
+
+  'saldo-awal': {
+    title: 'Setup Saldo Awal', icon: '🏁',
+    steps: [
+      { icon:'🏁', title:'Mengapa Perlu Saldo Awal?',
+        body:'Saldo awal adalah posisi keuangan bisnis kamu sebelum mulai mencatat di OAS.\n\nContoh:\n💵 Kamu punya kas Rp 50 juta\n🏦 Tabungan bank Rp 200 juta\n🏠 Aset gedung Rp 500 juta\n💳 Utang bank Rp 150 juta\n\nSemua ini perlu diinput agar laporan keuangan akurat dari hari pertama.',
+        target: null },
+      { icon:'⚙️', title:'Cara Input Saldo Awal',
+        body:'1. Buka <b>Dashboard</b> → ketuk tombol <b>Saldo Awal</b>\n2. Isi saldo untuk setiap akun yang relevan\n3. Sistem akan buat jurnal pembuka otomatis\n\nAlternatif: Input manual via <b>Jurnal Manual</b> dengan keterangan "Saldo Awal [nama akun]"\n\nAkun yang biasanya perlu saldo awal:\n✅ Kas & Bank\n✅ Piutang (jika ada)\n✅ Aset Tetap\n✅ Utang (jika ada)\n✅ Modal Pemilik',
+        target: 'button[onclick*="saldoAwal"], button[onclick*="saldo-awal"]', navTo: 'dashboard' }
     ]
   }
 };
@@ -15620,8 +16241,10 @@ function startTutorial() { showPage('tutorial'); }
       </div>
 
       <!-- Sheet/Section selection -->
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Pilih yang ingin di-export:</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Pilih yang ingin di-export:</div>
+
+      <div style="font-size:10px;color:var(--accent);font-weight:600;margin-bottom:8px;letter-spacing:0.05em;">📊 LAPORAN KEUANGAN STANDAR</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
         <label class="exp-check"><input type="checkbox" id="exp-jurnal-umum" checked> Jurnal Umum</label>
         <label class="exp-check"><input type="checkbox" id="exp-jurnal-kas" checked> Jurnal Kas</label>
         <label class="exp-check"><input type="checkbox" id="exp-jurnal-jual" checked> Jurnal Penjualan</label>
@@ -15631,7 +16254,25 @@ function startTutorial() { showPage('tutorial'); }
         <label class="exp-check"><input type="checkbox" id="exp-laba-rugi" checked> Laporan Laba Rugi</label>
         <label class="exp-check"><input type="checkbox" id="exp-neraca" checked> Neraca</label>
         <label class="exp-check"><input type="checkbox" id="exp-coa" checked> Chart of Accounts</label>
-        <label class="exp-check"><input type="checkbox" id="exp-dashboard" checked> Ringkasan (Dashboard)</label>
+        <label class="exp-check"><input type="checkbox" id="exp-dashboard" checked> Ringkasan Dashboard</label>
+      </div>
+
+      <div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:8px;letter-spacing:0.05em;">✨ FITUR BARU</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <label class="exp-check"><input type="checkbox" id="exp-invoice" checked> Invoice & Piutang</label>
+        <label class="exp-check"><input type="checkbox" id="exp-jurnal-berulang" checked> Jurnal Berulang</label>
+        <label class="exp-check"><input type="checkbox" id="exp-anggaran" checked> Anggaran vs Aktual</label>
+        <label class="exp-check"><input type="checkbox" id="exp-pajak" checked> Laporan Pajak (PPN/PPh)</label>
+        <label class="exp-check"><input type="checkbox" id="exp-rekonsiliasi"> Rekonsiliasi Bank</label>
+        <label class="exp-check"><input type="checkbox" id="exp-kurs"> Kurs & Multi Mata Uang</label>
+      </div>
+
+      <div style="font-size:10px;color:var(--accent3);font-weight:600;margin-bottom:8px;letter-spacing:0.05em;">📈 ANALITIK & TREN</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+        <label class="exp-check"><input type="checkbox" id="exp-analitik" checked> Grafik Analitik Bisnis</label>
+        <label class="exp-check"><input type="checkbox" id="exp-tren-laba"> Tren Laba Bersih</label>
+        <label class="exp-check"><input type="checkbox" id="exp-arus-kas"> Arus Kas per Bulan</label>
+        <label class="exp-check"><input type="checkbox" id="exp-proyeksi"> Proyeksi Keuangan</label>
       </div>
 
       <!-- Company info -->
@@ -20739,6 +21380,77 @@ function closeMataUangPicker() {
   </div>
 </div>
 
+<!-- MODAL: KONVERSI KARTU STOCK -->
+<div class="modal-backdrop" id="modal-konversi-ks" onclick="if(event.target===this)closeModal('modal-konversi-ks')">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head">
+      <div class="modal-title">🔀 Konversi Kartu Stock Antar Metode</div>
+      <button class="modal-close" onclick="closeModal('modal-konversi-ks')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--accent2);margin-bottom:16px;line-height:1.6;">
+        💡 Semua entri <b>MASUK</b> dari metode asal akan disalin ke metode tujuan, <b>diurutkan berdasarkan tanggal</b> (terlama di atas). Digabungkan dengan entri yang sudah ada di metode tujuan. Entri KELUAR dari sumber <b>tidak</b> dikonversi — akan dihitung ulang oleh metode tujuan.
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Dari Metode (Sumber)</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;" id="ks-dari-opts">
+            <button class="ks-conv-btn ks-conv-dari active" data-val="fifo" onclick="selectKsConvDari('fifo',this)">📋 FIFO</button>
+            <button class="ks-conv-btn ks-conv-dari" data-val="lifo" onclick="selectKsConvDari('lifo',this)">📋 LIFO</button>
+            <button class="ks-conv-btn ks-conv-dari" data-val="wa" onclick="selectKsConvDari('wa',this)">📋 Weighted Avg</button>
+            <button class="ks-conv-btn ks-conv-dari" data-val="mwa" onclick="selectKsConvDari('mwa',this)">📋 Moving WA</button>
+          </div>
+          <div id="ks-dari-info" style="font-size:11px;color:var(--muted);margin-top:6px;"></div>
+        </div>
+        <div class="form-group">
+          <label>Ke Metode (Tujuan)</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;" id="ks-ke-opts">
+            <button class="ks-conv-btn ks-conv-ke" data-val="fifo" onclick="selectKsConvKe('fifo',this)">📋 FIFO</button>
+            <button class="ks-conv-btn ks-conv-ke" data-val="lifo" onclick="selectKsConvKe('lifo',this)">📋 LIFO</button>
+            <button class="ks-conv-btn ks-conv-ke active" data-val="wa" onclick="selectKsConvKe('wa',this)">📋 Weighted Avg</button>
+            <button class="ks-conv-btn ks-conv-ke" data-val="mwa" onclick="selectKsConvKe('mwa',this)">📋 Moving WA</button>
+          </div>
+          <div id="ks-ke-info" style="font-size:11px;color:var(--muted);margin-top:6px;"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border-radius:10px;margin-bottom:12px;">
+        <span style="font-size:24px;" id="ks-conv-preview-dari">📋</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;" id="ks-conv-label-dari">FIFO</div>
+          <div style="font-size:11px;color:var(--muted);" id="ks-conv-count-dari">— entri masuk</div>
+        </div>
+        <span style="font-size:20px;color:var(--accent2);">🔀</span>
+        <div style="flex:1;text-align:right;">
+          <div style="font-size:13px;font-weight:700;" id="ks-conv-label-ke">Weighted Avg</div>
+          <div style="font-size:11px;color:var(--muted);" id="ks-conv-count-ke">— entri sudah ada</div>
+        </div>
+        <span style="font-size:24px;" id="ks-conv-preview-ke">📋</span>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;">⚙️ Opsi Konversi:</div>
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);cursor:pointer;margin-bottom:8px;">
+        <input type="checkbox" id="ks-conv-merge" checked style="margin-top:2px;flex-shrink:0;">
+        <div>
+          <div style="font-size:13px;font-weight:600;">Gabungkan dengan data yang sudah ada</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Entri baru dari sumber digabung dengan entri yang sudah ada di tujuan, lalu diurutkan ulang berdasarkan tanggal</div>
+        </div>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);cursor:pointer;margin-bottom:8px;">
+        <input type="radio" name="ks-conv-mode" id="ks-conv-mode-replace" style="margin-top:2px;flex-shrink:0;">
+        <div>
+          <div style="font-size:13px;font-weight:600;">Timpa (replace) data tujuan</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Hapus semua entri di metode tujuan, ganti dengan yang dikonversi dari sumber</div>
+        </div>
+      </label>
+      <div id="ks-conv-preview-rows" style="margin-top:12px;max-height:180px;overflow-y:auto;background:var(--surface2);border-radius:8px;border:1px solid var(--border);padding:10px;font-size:11px;color:var(--muted);display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-konversi-ks')">Batal</button>
+      <button class="btn btn-ghost" onclick="previewKonversiKS()">👁️ Preview</button>
+      <button class="btn btn-primary" onclick="eksekusiKonversiKS()">🔀 Konversi Sekarang</button>
+    </div>
+  </div>
+</div>
+
 <!-- Chart HD Modal -->
 <div id="an-chart-modal">
   <div id="an-chart-modal-inner">
@@ -20753,50 +21465,19 @@ function closeMataUangPicker() {
 <script>
 // ── 1. Service Worker ─────────────────────────────────────────
 if ('serviceWorker' in navigator) {
-  // SW harus file terpisah untuk scope penuh, tapi bisa pakai blob untuk GitHub Pages
-  const swCode = `
-const CACHE_NAME = 'oas-v2';
-const CORE = ['./'];
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(CORE)));
-  self.skipWaiting();
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
-});
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  e.respondWith(
-    fetch(e.request)
-      .then(res => {
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
-        return res;
-      })
-      .catch(() => caches.match(e.request).then(r => r || new Response('Offline', {status: 503})))
-  );
-});
-self.addEventListener('message', e => {
-  if (e.data === 'skipWaiting') self.skipWaiting();
-});`;
-  try {
-    const blob = new Blob([swCode], {type: 'application/javascript'});
-    const swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl).then(reg => {
+  navigator.serviceWorker.register('./sw.js')
+    .then(reg => {
       reg.addEventListener('updatefound', () => {
         const nw = reg.installing;
+        if (!nw) return;
         nw.addEventListener('statechange', () => {
           if (nw.state === 'installed' && navigator.serviceWorker.controller) {
             nw.postMessage('skipWaiting');
           }
         });
       });
-    }).catch(() => {});
-  } catch(e) {}
+    })
+    .catch(() => {});
 }
 
 // ── 2. Install Prompt & handlePwaInstall ──────────────────────
@@ -20830,7 +21511,6 @@ function handlePwaInstall() {
     return;
   }
   if (_pwaPrompt) {
-    // Browser modern: tampilkan dialog install native
     _pwaPrompt.prompt();
     _pwaPrompt.userChoice.then(result => {
       if (result.outcome === 'accepted') {
@@ -20842,23 +21522,63 @@ function handlePwaInstall() {
     });
     return;
   }
-  // Fallback: panduan manual sesuai browser
+  // Langsung tampilkan panduan — tidak perlu nunggu event apapun
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isAndroid = /Android/.test(navigator.userAgent);
   const isSamsung = /SamsungBrowser/.test(navigator.userAgent);
-  const isChrome = /Chrome/.test(navigator.userAgent) && !isSamsung;
-  let msg = '';
+  const isAndroid = /Android/.test(navigator.userAgent);
+  let steps = [];
   if (isIOS) {
-    msg = '📱 Di Safari iOS:\n1. Ketuk tombol Bagikan (□↑)\n2. Pilih "Tambahkan ke Layar Utama"\n3. Ketuk "Tambah"';
+    steps = [
+      { icon:'1️⃣', text:'Buka di <b>Safari</b> (bukan Chrome iOS)' },
+      { icon:'2️⃣', text:'Ketuk ikon <b>Bagikan</b> (□↑) di bawah layar' },
+      { icon:'3️⃣', text:'Scroll & pilih <b>"Tambahkan ke Layar Utama"</b>' },
+      { icon:'4️⃣', text:'Ketuk <b>"Tambah"</b> — selesai!' },
+    ];
   } else if (isSamsung) {
-    msg = '📱 Di Samsung Internet:\n1. Ketuk menu ⋮ (3 titik)\n2. Pilih "Tambahkan halaman ke"\n3. Pilih "Layar Utama"';
-  } else if (isAndroid && isChrome) {
-    msg = '📱 Di Chrome Android:\n1. Ketuk menu ⋮ (3 titik)\n2. Pilih "Tambahkan ke Layar Utama"\natau tunggu banner install muncul otomatis';
+    steps = [
+      { icon:'1️⃣', text:'Ketuk ikon <b>Menu</b> (☰) di bawah' },
+      { icon:'2️⃣', text:'Pilih <b>"Tambahkan halaman ke"</b>' },
+      { icon:'3️⃣', text:'Pilih <b>"Layar Utama"</b>' },
+      { icon:'4️⃣', text:'Ketuk <b>"Tambah"</b> — selesai!' },
+    ];
+  } else if (isAndroid) {
+    steps = [
+      { icon:'1️⃣', text:'Ketuk ikon <b>⋮</b> (3 titik) kanan atas' },
+      { icon:'2️⃣', text:'Pilih <b>"Tambahkan ke layar utama"</b><br><small style="color:var(--muted);">atau "Install App" / "Add to Home Screen"</small>' },
+      { icon:'3️⃣', text:'Ketuk <b>"Tambah"</b> atau <b>"Install"</b>' },
+      { icon:'4️⃣', text:'OAS muncul di home screen seperti aplikasi! ✅' },
+    ];
   } else {
-    msg = '💻 Di Chrome/Edge desktop:\n1. Klik ikon ⊕ di address bar kanan\n2. Klik "Install"\n\natau: Menu → "Install OAS..."';
+    steps = [
+      { icon:'1️⃣', text:'Klik ikon <b>⊕</b> di address bar kanan' },
+      { icon:'2️⃣', text:'Klik <b>"Install OAS..."</b>' },
+      { icon:'3️⃣', text:'Klik <b>"Install"</b> pada dialog konfirmasi' },
+    ];
   }
-  // Tampilkan modal panduan install
-  showPwaGuideModal(msg);
+
+  document.getElementById('pwa-guide-modal')?.remove();
+  const el = document.createElement('div');
+  el.id = 'pwa-guide-modal';
+  el.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);display:flex;align-items:flex-end;justify-content:center;';
+  el.innerHTML = `
+    <div style="background:var(--surface);border-radius:24px 24px 0 0;padding:8px 20px 40px;width:100%;max-width:480px;border-top:1px solid var(--border);animation:slideUp 0.35s cubic-bezier(0.34,1.2,0.64,1);">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:4px;margin:12px auto 20px;"></div>
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="font-size:40px;margin-bottom:10px;">📲</div>
+        <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:4px;">Install OAS ke Home Screen</div>
+        <div style="font-size:13px;color:var(--muted);">Akses seperti aplikasi native, tanpa buka browser</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+        ${steps.map(s=>`
+          <div style="display:flex;align-items:flex-start;gap:12px;background:var(--surface2);border-radius:12px;padding:12px 14px;border:1px solid var(--border);">
+            <span style="font-size:18px;flex-shrink:0;">${s.icon}</span>
+            <span style="font-size:13px;color:var(--text);line-height:1.5;">${s.text}</span>
+          </div>`).join('')}
+      </div>
+      <button onclick="document.getElementById('pwa-guide-modal').remove()" style="width:100%;background:var(--accent);color:#0d0f14;border:none;border-radius:14px;padding:16px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);">✅ Siap, Saya Install!</button>
+    </div>`;
+  el.onclick = e => { if(e.target===el) el.remove(); };
+  document.body.appendChild(el);
 }
 
 function showPwaGuideModal(msg) {
