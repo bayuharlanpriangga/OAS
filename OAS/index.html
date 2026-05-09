@@ -11034,6 +11034,9 @@ document.addEventListener('keydown', (e) => {
   // Escape — close search if open
   if(e.key === 'Escape') {
     if(document.getElementById('global-search-wrap')?.classList.contains('open')) closeGlobalSearch();
+    // Tutup tutorial selesai dengan Escape
+    const tutComplete = document.getElementById('tut-complete');
+    if(tutComplete && tutComplete.style.display !== 'none') tutComplete.style.display = 'none';
   }
 });
 
@@ -16046,7 +16049,7 @@ function startTutorial() { showPage('tutorial'); }
 </div>
 
 <!-- Tutorial complete modal -->
-<div id="tut-complete" style="display:none;position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;padding:20px;">
+<div id="tut-complete" style="display:none;position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this){this.style.display='none';}"  title="Klik area gelap untuk menutup">
   <div style="background:var(--surface);border:2px solid var(--accent);border-radius:20px;padding:32px;max-width:440px;width:100%;text-align:center;">
     <div style="font-size:56px;margin-bottom:16px;">🎉</div>
     <div style="font-size:22px;font-weight:800;color:var(--accent);margin-bottom:8px;">Tutorial Selesai!</div>
@@ -16059,6 +16062,10 @@ function startTutorial() { showPage('tutorial'); }
       <button onclick="document.getElementById('tut-complete').style.display='none';showPage('ai-assistant')" style="background:rgba(34,211,238,0.15);color:var(--accent2);border:1px solid rgba(34,211,238,0.3);border-radius:8px;padding:10px 20px;font-weight:600;cursor:pointer;font-family:var(--sans);">Tanya Orias Assisten</button>
       <button onclick="document.getElementById('tut-complete').style.display='none';startTutorial()" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;cursor:pointer;font-family:var(--sans);">Ulangi Tutorial</button>
     </div>
+    <div style="margin-top:16px;">
+      <button onclick="document.getElementById('tut-complete').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--sans);opacity:0.6;">✕ Tutup</button>
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:var(--muted);opacity:0.45;">Atau klik area gelap di luar popup untuk menutup</div>
   </div>
 </div>
 
@@ -21465,19 +21472,24 @@ function closeMataUangPicker() {
 <script>
 // ── 1. Service Worker ─────────────────────────────────────────
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js')
-    .then(reg => {
-      reg.addEventListener('updatefound', () => {
-        const nw = reg.installing;
-        if (!nw) return;
-        nw.addEventListener('statechange', () => {
-          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-            nw.postMessage('skipWaiting');
-          }
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then(reg => {
+        // Check for updates
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', () => {
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+              nw.postMessage('skipWaiting');
+            }
+          });
         });
-      });
-    })
-    .catch(() => {});
+        // Force update check
+        reg.update();
+      })
+      .catch(err => console.warn('SW registration failed:', err));
+  });
 }
 
 // ── 2. Install Prompt & handlePwaInstall ──────────────────────
@@ -21492,15 +21504,20 @@ function updatePwaBtn() {
   if (_pwaInstalled) {
     btn.style.opacity = '0.45';
     btn.style.cursor = 'default';
+    btn.style.animation = '';
     txt.textContent = 'Sudah Terinstall ✓';
   } else if (_pwaPrompt) {
+    // SIAP install — highlight penuh
     btn.style.opacity = '1';
     btn.style.cursor = 'pointer';
-    txt.textContent = 'Install App';
+    btn.style.background = 'linear-gradient(135deg,rgba(74,222,128,0.25),rgba(34,211,238,0.25))';
+    btn.style.borderColor = 'rgba(74,222,128,0.6)';
     btn.style.animation = 'pulseGlow 2s ease-in-out infinite';
+    txt.textContent = '📲 Install — Siap!';
   } else {
-    btn.style.opacity = '0.7';
+    btn.style.opacity = '0.8';
     btn.style.cursor = 'pointer';
+    btn.style.animation = '';
     txt.textContent = 'Install App';
   }
 }
