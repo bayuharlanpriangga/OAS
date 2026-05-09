@@ -19779,7 +19779,38 @@ async function accsLoadProviders() {
     if (!user) throw new Error('Tidak ada sesi aktif. Silakan login ulang.');
     const identities = user?.identities || [];
     const linkedIds = identities.map(i => i.provider);
-    const hasEmail = linkedIds.includes('email');
+
+    // Cek email identity: bisa dari identities ATAU dari
+    // user yang sudah set password (email_confirmed_at ada, email ada,
+    // tapi identity masih google — karena Supabase tidak tambah identity baru
+    // saat set password via updateUser)
+    const hasEmailIdentity = linkedIds.includes('email');
+    const hasEmailPassword = hasEmailIdentity ||
+      (!!user.email && !!user.email_confirmed_at &&
+       !!(user.user_metadata?.has_password ||
+          user.app_metadata?.providers?.includes('email') ||
+          // Jika user bisa login via email+password, Supabase set last_sign_in_at
+          // dan identities punya email. Fallback: cek apakah ada password yg pernah diset
+          identities.some(i => i.provider === 'email')));
+
+    // Coba refresh user untuk dapat data terbaru dari Supabase
+    try {
+      const { data: freshData } = await supabase.auth.getUser();
+      if (freshData?.user) {
+        const freshIdentities = freshData.user.identities || [];
+        if (freshIdentities.some(i => i.provider === 'email')) {
+          // Update local reference
+          user = freshData.user;
+        }
+      }
+    } catch(e2) {}
+
+    const freshIdentities2 = user?.identities || [];
+    const freshLinkedIds = freshIdentities2.map(i => i.provider);
+    const hasEmail = freshLinkedIds.includes('email') ||
+      !!(user?.app_metadata?.providers?.includes('email')) ||
+      !!(user?.user_metadata?.has_password);
+
     let html = '';
 
     // Email/Password row
@@ -19900,10 +19931,23 @@ async function accsUpdatePassword() {
   try {
     const { error } = await _supa.auth.updateUser({ password: pw1 });
     if (error) throw error;
+
+    // Tandai di user_metadata bahwa user sudah set password
+    // Ini supaya pengecekan di tab Login Platform bisa detect
+    try {
+      await _supa.auth.updateUser({
+        data: { has_password: true }
+      });
+    } catch(e2) { /* non-critical */ }
+
     document.getElementById('accs-input-pw1').value = '';
     document.getElementById('accs-input-pw2').value = '';
     accsShowMsg('password', '✅ Password berhasil diatur! Kamu sekarang bisa login dengan email + password juga.', 'success');
-    setTimeout(accsLoadProviders, 1500);
+    // Refresh session dan reload providers setelah 1.5 detik
+    setTimeout(async () => {
+      try { await _supa.auth.refreshSession(); } catch(e3) {}
+      accsLoadProviders();
+    }, 1500);
   } catch(e) { accsShowMsg('password', '❌ ' + e.message, 'error'); }
   finally { btn.innerHTML = '🔒 Simpan Password'; btn.disabled = false; }
 }
