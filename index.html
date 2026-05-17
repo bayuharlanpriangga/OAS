@@ -1503,11 +1503,6 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
         <span class="nav-card-icon">💳</span>Transaksi
       </div>
     </div>
-    <div class="nav-grid single" style="margin-bottom:4px;">
-      <div class="nav-card" onclick="openJurnalPenyesuaian()" data-page="jurnal-penyesuaian">
-        <span class="nav-card-icon">🔧</span>Jurnal Penyesuaian
-      </div>
-    </div>
 
     <div class="nav-group-label">Jurnal</div>
     <div class="nav-grid">
@@ -1736,7 +1731,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
       </div>
       <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <button onclick="showPage('transaksi')" class="quick-action-btn" data-tooltip="Ctrl+N">💳 Input Transaksi</button>
-        <button onclick="openJurnalPenyesuaian()" class="quick-action-btn" data-tooltip="Jurnal Penyesuaian">🔧 Jurnal Penyesuaian</button>
+        <button onclick="openJurnalPenyesuaian()" class="quick-action-btn" data-tooltip="Scan & buat jurnal penyesuaian otomatis">🔧 Jurnal Penyesuaian</button>
         <button onclick="showPage('laba-rugi')" class="quick-action-btn" data-tooltip="Laporan Laba Rugi">📈 Laba Rugi</button>
         <button onclick="showPage('neraca')" class="quick-action-btn" data-tooltip="Balance Sheet">🏦 Neraca</button>
         <button onclick="buatJurnalPenutup()" class="quick-action-btn" data-tooltip="Tutup Periode Akuntansi" style="border-color:rgba(245,158,11,0.3);color:var(--accent3);">📕 Jurnal Penutup</button>
@@ -1916,7 +1911,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   <!-- JURNAL MANUAL -->
   <div id="trx-umum" class="trx-tab" style="display:none;">
     <div class="table-card">
-      <div class="table-header"><div class="table-title">Jurnal Manual (Custom)</div></div>
+      <div class="table-header"><div class="table-title">✏️ Jurnal Manual</div></div>
       <div class="modal-body">
         <div class="form-row">
           <div class="form-group">
@@ -2428,8 +2423,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   <!-- CATATAN PERSEDIAAN / KARTU STOCK TERINTEGRASI -->
   <div class="table-card" id="catatan-persediaan-wrap" style="margin-top:0;">
     <div class="table-header" style="flex-wrap:wrap;gap:10px;">
-      <div class="table-title">📋 Catatan Persediaan / Kartu Stock</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <div class="table-title">📋 Catatan Persediaan / Kartu Stock</div>      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <div id="kartu-stock-tabs" style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="btn btn-sm" id="ks-tab-fifo" onclick="switchKartuStockTab('fifo',this)" style="background:rgba(74,222,128,0.1);border:1px solid var(--accent);color:var(--accent);font-size:12px;">FIFO</button>
           <button class="btn btn-sm" id="ks-tab-lifo" onclick="switchKartuStockTab('lifo',this)" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;">LIFO</button>
@@ -2441,6 +2435,7 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
       </div>
     </div>
     <div id="catatan-persediaan-content" style="padding:12px 16px;">
+      <div id="ks-selector-wrap"></div>
       <div id="ks-active-tab-label" style="font-size:12px;color:var(--accent);margin-bottom:8px;font-weight:600;">Metode: FIFO</div>
       <div class="table-scroll"><table id="ks-table">
         <thead><tr>
@@ -7965,10 +7960,16 @@ function inputAnuitasJurnal() {
 
 // PERSEDIAAN → INPUT JURNAL (sekarang lewat popup kartu stock)
 function inputPersediaanJurnal() {
-  // Redirect ke popup jurnal kartu stock
   const metode = window._invMetode || document.getElementById('inv-metode')?.value || 'fifo';
   kartuStockTab = metode;
-  bukaPopupJurnalSemua();
+  // Jika hanya 1 kartu stock → langsung buka popup jurnal
+  // Jika lebih dari 1 → tanya dulu ke kartu stock mana
+  showPilihKartuStockPopup((ksId) => {
+    // Switch ke kartu stock yang dipilih
+    switchActiveKS(ksId);
+    // Lanjut buka popup jurnal (addToKartuStockDanBukaPopup)
+    bukaPopupJurnalSemua();
+  });
 }
 
 // PPN → INPUT JURNAL
@@ -8293,25 +8294,423 @@ function tutRestore() {
 
 // renderTutStep mini sync handled inline
 
-// JURNAL PENYESUAIAN OTOMATIS
+// JURNAL PENYESUAIAN — scan otomatis, langsung dari tombol aksi cepat
 function openJurnalPenyesuaian() {
-  // Navigate to transaksi and show penyesuaian helper
-  showPage('transaksi');
-  setTimeout(() => {
-    // Switch to manual tab
-    document.querySelectorAll('.trx-tab').forEach(t => t.style.display='none');
-    const manTab = document.getElementById('trx-umum');
-    if(manTab) manTab.style.display='block';
-    document.querySelectorAll('.tab').forEach(t => {
-      t.classList.toggle('active', t.getAttribute('onclick')?.includes('umum'));
-    });
-    // Show penyesuaian helper modal
-    openModalPenyesuaian();
-  }, 150);
+  deteksiPenyesuaianOtomatis();
 }
 
-function openModalPenyesuaian() {
-  document.getElementById('modal-penyesuaian').classList.add('open');
+function openInlineTemplatePenyesuaian() { deteksiPenyesuaianOtomatis(); }
+function toggleTemplatePenyesuaian() { deteksiPenyesuaianOtomatis(); }
+function fillPenyesuaianInline() { deteksiPenyesuaianOtomatis(); }
+function openModalPenyesuaian() { deteksiPenyesuaianOtomatis(); }
+
+// ══════════════════════════════════════════════════════════════
+// DETEKSI JURNAL PENYESUAIAN OTOMATIS — FIXED
+// ══════════════════════════════════════════════════════════════
+let _autoDetectResults = [];
+
+function deteksiPenyesuaianOtomatis() {
+  if (!jurnalEntries.length) {
+    showAlert('⚠️ Belum ada jurnal yang tercatat. Input transaksi dulu!');
+    return;
+  }
+  showOpSpinner('Menganalisis Jurnal...', 'Memindai & mendeteksi yang perlu disesuaikan');
+
+  setTimeout(() => {
+    _autoDetectResults = [];
+    const today = new Date();
+    const periodeAktif = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+    const idSet = new Set(); // FIX BUG 1: dedup — satu ID hanya boleh muncul sekali
+
+    // ── Helpers ─────────────────────────────────────────────
+    /** Saldo bersih akun dari semua jurnal (debit - kredit) */
+    function getSaldoDebit(kode) {
+      let s = 0;
+      jurnalEntries.forEach(j => j.lines.forEach(l => {
+        if (l.akun === kode) s += (l.debit||0) - (l.kredit||0);
+      }));
+      return s;
+    }
+    /** Saldo kredit bersih (untuk akun liabilitas) */
+    function getSaldoKredit(kode) {
+      let s = 0;
+      jurnalEntries.forEach(j => j.lines.forEach(l => {
+        if (l.akun === kode) s += (l.kredit||0) - (l.debit||0);
+      }));
+      return s;
+    }
+    /** Cek apakah sudah ada jurnal penyesuaian bulan ini yang menyentuh akun tertentu */
+    function sudahAdaAdjAkun(kodeAkun) {
+      return jurnalEntries.some(j =>
+        j.tanggal?.startsWith(periodeAktif) &&
+        (j.jenis === 'Penyesuaian' || j.no?.startsWith('ADJ') || j.ket?.toLowerCase().includes('penyesuaian')) &&
+        j.lines.some(l => l.akun === kodeAkun)
+      );
+    }
+    /** Tambah hasil hanya jika ID unik */
+    function push(item) {
+      if (idSet.has(item.id)) return;
+      idSet.add(item.id);
+      _autoDetectResults.push(item);
+    }
+
+    // ── 1. BEBAN DIBAYAR DIMUKA (akun 1601) ─────────────────
+    const saldoBDD = getSaldoDebit('1601');
+    if (saldoBDD > 10000 && !sudahAdaAdjAkun('1601')) {
+      // Cari semua jurnal masuk ke akun 1601
+      const masukList = jurnalEntries.filter(j => j.lines.some(l => l.akun==='1601' && (l.debit||0)>0));
+      // Ambil yang paling besar (kemungkinan pembayaran terbaru)
+      const jTerbaru = masukList.sort((a,b) => (b.tanggal||'') > (a.tanggal||'') ? 1:-1)[0];
+      if (jTerbaru) {
+        const nilaiAwal = jTerbaru.lines.find(l=>l.akun==='1601'&&l.debit>0)?.debit || saldoBDD;
+        const tglMasuk = new Date(jTerbaru.tanggal);
+        const bulanBerlalu = Math.max(1,
+          (today.getFullYear()-tglMasuk.getFullYear())*12 + (today.getMonth()-tglMasuk.getMonth())
+        );
+        const perBulan = Math.round(nilaiAwal / 12);
+        const nilaiSesuaikan = Math.min(perBulan, saldoBDD); // hanya 1 bulan, bukan kumulatif
+        if (nilaiSesuaikan > 0) {
+          push({
+            id: 'adj_bdd',
+            tipe: 'beban_dibayar_dimuka',
+            level: 'warning',
+            judul: '📅 Beban Dibayar Dimuka Belum Diakui',
+            deskripsi: `Akun <b>1601 — Biaya Dibayar Dimuka</b> saldo <b>${rp(saldoBDD)}</b>. Dibayar ${jTerbaru.tanggal} senilai <b>${rp(nilaiAwal)}</b>. Estimasi beban bulan ini: <b>${rp(nilaiSesuaikan)}</b> (1/12 nilai).`,
+            alasan: 'Biaya dibayar dimuka diakui sebagai beban pada periode yang dinikmati (matching principle).',
+            nilaiSuggested: nilaiSesuaikan,
+            lines: [
+              { akun:'6201', ket:'Beban Dibayar Dimuka (terpakai)', debit: nilaiSesuaikan, kredit: 0 },
+              { akun:'1601', ket:'Biaya Dibayar Dimuka (dikurangi)', debit: 0, kredit: nilaiSesuaikan }
+            ],
+            checked: false, perluInput: true
+          });
+        }
+      }
+    }
+
+    // ── 2. PENDAPATAN DITERIMA DIMUKA (2201, 2202) ───────────
+    [
+      {kode:'2201', nama:'Pendapatan Diterima Dimuka'},
+      {kode:'2202', nama:'Uang Muka Penjualan'},
+    ].forEach(({kode, nama}) => {
+      const saldo = getSaldoKredit(kode);
+      if (saldo > 10000 && !sudahAdaAdjAkun(kode)) {
+        const perBulan = Math.round(saldo / 12);
+        const nilaiEarned = Math.min(perBulan, saldo);
+        if (nilaiEarned > 0) {
+          push({
+            id: 'adj_pdd_' + kode,
+            tipe: 'pendapatan_diterima_dimuka',
+            level: 'info',
+            judul: `💰 ${nama} Harus Diakui`,
+            deskripsi: `Akun <b>${kode} — ${nama}</b> saldo <b>${rp(saldo)}</b>. Estimasi yang sudah earned bulan ini: <b>${rp(nilaiEarned)}</b>.`,
+            alasan: 'Pendapatan diterima dimuka dipindahkan ke akun pendapatan saat jasa/produk sudah diserahkan.',
+            nilaiSuggested: nilaiEarned,
+            lines: [
+              { akun: kode,   ket: nama + ' (diakui bulan ini)', debit: nilaiEarned, kredit: 0 },
+              { akun: '4101', ket: 'Pendapatan Jasa/Penjualan',  debit: 0, kredit: nilaiEarned }
+            ],
+            checked: false, perluInput: true
+          });
+        }
+      }
+    });
+
+    // ── 3. PENYUSUTAN ASET TETAP ─────────────────────────────
+    // FIX BUG 2: akun beban penyusutan harus sesuai aset, bukan hardcode 6303
+    // FIX BUG 2: penyusutan hanya dari aset tetap sesungguhnya, BUKAN dari perlengkapan
+    const asetTetapPairs = [
+      {aset:'1702', akum:'1703', beban:'6301', nama:'Bangunan',            umur:20},
+      {aset:'1711', akum:'1712', beban:'6302', nama:'Kendaraan',           umur:5},
+      {aset:'1721', akum:'1722', beban:'6303', nama:'Peralatan Kantor',    umur:5},
+      {aset:'1731', akum:'1732', beban:'6304', nama:'Mesin & Produksi',    umur:10},
+      {aset:'1741', akum:'1742', beban:'6305', nama:'Inventaris & Furnitur',umur:8},
+      {aset:'1751', akum:'1752', beban:'6305', nama:'Komputer & Laptop',   umur:4},
+    ];
+    asetTetapPairs.forEach(({aset, akum, beban, nama, umur}) => {
+      const nilaiAset = getSaldoDebit(aset);
+      if (nilaiAset < 500000) return; // skip jika tidak ada aset ini
+      if (sudahAdaAdjAkun(akum)) return; // sudah ada penyusutan bulan ini untuk aset ini
+      const penyBulan = Math.round(nilaiAset / (umur * 12));
+      if (penyBulan <= 0) return;
+      push({
+        id: 'adj_peny_' + aset,
+        tipe: 'penyusutan',
+        level: 'warning',
+        judul: `🏗️ Penyusutan ${nama} Belum Dicatat`,
+        deskripsi: `Aset <b>${aset} — ${nama}</b> senilai <b>${rp(nilaiAset)}</b>. Umur ${umur} tahun → penyusutan garis lurus <b>${rp(penyBulan)}/bulan</b>. Bulan ${periodeAktif} belum ada.`,
+        alasan: 'Penyusutan dicatat tiap bulan agar nilai aset di neraca akurat (accrual basis).',
+        nilaiSuggested: penyBulan,
+        lines: [
+          { akun: beban, ket: `Beban Penyusutan ${nama}`,        debit: penyBulan, kredit: 0 },
+          { akun: akum,  ket: `Akumulasi Penyusutan ${nama}`,    debit: 0,         kredit: penyBulan }
+        ],
+        checked: true
+      });
+    });
+
+    // ── 4. PEMAKAIAN PERLENGKAPAN (1401, 1402) ───────────────
+    // FIX BUG 2: akun beban perlengkapan = 6205, BUKAN 6302
+    [
+      {kode:'1401', beban:'6205', nama:'Perlengkapan Kantor'},
+      {kode:'1402', beban:'6205', nama:'Perlengkapan Toko'},
+    ].forEach(({kode, beban, nama}) => {
+      const saldo = getSaldoDebit(kode);
+      if (saldo < 10000) return;
+      if (sudahAdaAdjAkun(kode)) return;
+      const estimasi = Math.round(saldo * 0.3); // estimasi 30%, perlu diisi manual
+      push({
+        id: 'adj_perlengkapan_' + kode,
+        tipe: 'perlengkapan',
+        level: 'info',
+        judul: `📦 Pemakaian ${nama} Belum Disesuaikan`,
+        deskripsi: `Akun <b>${kode} — ${nama}</b> saldo <b>${rp(saldo)}</b>. Perlengkapan yang terpakai harus diakui sebagai beban. Isi nilai yang benar-benar terpakai bulan ini.`,
+        alasan: 'Perlengkapan yang sudah digunakan dipindahkan ke Beban Perlengkapan agar saldo neraca akurat.',
+        nilaiSuggested: estimasi,
+        lines: [
+          { akun: beban, ket: `Beban Perlengkapan Terpakai`,  debit: estimasi, kredit: 0 },
+          { akun: kode,  ket: `${nama} (terpakai)`,           debit: 0,        kredit: estimasi }
+        ],
+        checked: false, perluInput: true
+      });
+    });
+
+    // ── 5. BEBAN AKRUAL (gaji/listrik/sewa belum dicatat) ────
+    const bebanRutin = [
+      { kode:'6101', nama:'Beban Gaji & Upah',   utang:'2101' },
+      { kode:'6201', nama:'Beban Listrik & Air',  utang:'2104' },
+      { kode:'6205', nama:'Beban Sewa',           utang:'2104' },
+    ];
+    bebanRutin.forEach(({kode, nama, utang}) => {
+      const pernahAda = jurnalEntries.some(j =>
+        j.tanggal && !j.tanggal.startsWith(periodeAktif) &&
+        j.lines.some(l => l.akun===kode && (l.debit||0)>0)
+      );
+      const sudahBulanIni = jurnalEntries.some(j =>
+        j.tanggal?.startsWith(periodeAktif) &&
+        j.lines.some(l => l.akun===kode && (l.debit||0)>0)
+      );
+      if (!pernahAda || sudahBulanIni) return;
+      // Rata-rata dari entri sebelumnya (maks 6 bulan, bagi 3)
+      const totalHistori = jurnalEntries
+        .filter(j => !j.tanggal?.startsWith(periodeAktif) && j.lines.some(l=>l.akun===kode))
+        .slice(-6)
+        .reduce((s,j)=>s+j.lines.filter(l=>l.akun===kode).reduce((ss,l)=>ss+(l.debit||0),0),0);
+      const rataRata = Math.round(totalHistori / 3) || 0;
+      if (rataRata <= 0) return;
+      push({
+        id: 'adj_akrual_' + kode,
+        tipe: 'beban_akrual',
+        level: 'warning',
+        judul: `💼 ${nama} Bulan Ini Belum Dicatat`,
+        deskripsi: `Akun <b>${kode} — ${nama}</b> biasanya ada setiap bulan tapi bulan <b>${periodeAktif}</b> belum ada. Rata-rata historis: <b>${rp(rataRata)}</b>.`,
+        alasan: 'Beban yang sudah terjadi tapi belum dibayar dicatat sebagai utang akrual agar laporan laba rugi akurat.',
+        nilaiSuggested: rataRata,
+        lines: [
+          { akun: kode,  ket: nama + ' (akrual)',                   debit: rataRata, kredit: 0 },
+          { akun: utang, ket: 'Utang ' + nama.replace('Beban ',''), debit: 0,        kredit: rataRata }
+        ],
+        checked: false, perluInput: true
+      });
+    });
+
+    // ── 6. CADANGAN KERUGIAN PIUTANG ─────────────────────────
+    const saldoPiutang = getSaldoDebit('1201');
+    const saldoCadangan = getSaldoKredit('1203');
+    if (saldoPiutang > 1000000 && !sudahAdaAdjAkun('1203')) {
+      const cadanganIdeal = Math.round(saldoPiutang * 0.02);
+      const selisih = cadanganIdeal - saldoCadangan;
+      if (selisih > 0) {
+        push({
+          id: 'adj_cadangan_piutang',
+          tipe: 'cadangan_piutang',
+          level: 'info',
+          judul: '⚠️ Cadangan Kerugian Piutang Kurang',
+          deskripsi: `Piutang <b>${rp(saldoPiutang)}</b>, cadangan baru <b>${rp(saldoCadangan)}</b>. Standar 2% = <b>${rp(cadanganIdeal)}</b>. Perlu tambah: <b>${rp(selisih)}</b>.`,
+          alasan: 'Konservatisme: estimasi piutang tak tertagih dicatat sebagai beban kerugian.',
+          nilaiSuggested: selisih,
+          lines: [
+            { akun:'6401', ket:'Beban Kerugian Piutang',    debit: selisih, kredit: 0 },
+            { akun:'1203', ket:'Cadangan Kerugian Piutang', debit: 0,       kredit: selisih }
+          ],
+          checked: false
+        });
+      }
+    }
+
+    hideOpSpinner();
+    renderAutoDetectModal(_autoDetectResults);
+    openModal('modal-auto-penyesuaian');
+  }, 900);
+}
+
+function renderAutoDetectModal(results) {
+  const body = document.getElementById('auto-peny-result-body');
+  const btn  = document.getElementById('auto-peny-input-all-btn');
+
+  if (!results.length) {
+    body.innerHTML = `<div style="text-align:center;padding:40px 20px;">
+      <div style="font-size:48px;margin-bottom:12px;">✅</div>
+      <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;">Tidak Ada Penyesuaian Terdeteksi</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;">Semua akun sudah tercatat dengan baik untuk periode ini.<br>Tidak ada beban dibayar dimuka, penyusutan, pendapatan dimuka, atau akrual yang tertinggal.</div>
+    </div>`;
+    btn.style.display = 'none';
+    return;
+  }
+
+  btn.style.display = '';
+  const colorMap  = { warning:'rgba(245,158,11,0.08)',  info:'rgba(34,211,238,0.06)',  danger:'rgba(248,113,113,0.08)' };
+  const borderMap = { warning:'rgba(245,158,11,0.3)',   info:'rgba(34,211,238,0.2)',   danger:'rgba(248,113,113,0.25)' };
+
+  body.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:0 0 14px;line-height:1.6;">
+    Ditemukan <b style="color:var(--text)">${results.length} item</b> yang perlu disesuaikan.
+    Centang item yang ingin diinput, edit nilainya jika perlu, lalu klik <b>Input Semua yang Dipilih</b>.
+    <span style="color:var(--accent3);">⚠️ Item bertanda "Edit nilai" perlu diisi nominal aktual.</span>
+  </div>` +
+  results.map((r, i) => `
+  <div style="background:${colorMap[r.level]||colorMap.info};border:1px solid ${borderMap[r.level]||borderMap.info};border-radius:12px;padding:14px 16px;margin-bottom:10px;" id="adj-card-${i}">
+    <div style="display:flex;align-items:flex-start;gap:10px;">
+      <input type="checkbox" id="adj-check-${i}" ${r.checked?'checked':''}
+        style="width:17px;height:17px;accent-color:var(--accent);flex-shrink:0;margin-top:3px;cursor:pointer;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px;">${r.judul}</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:8px;">${r.deskripsi}</div>
+        <div style="font-size:11px;padding:6px 10px;background:rgba(0,0,0,0.15);border-radius:6px;color:var(--muted);margin-bottom:10px;font-style:italic;">
+          💡 ${r.alasan}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;color:var(--muted);">Nilai:</span>
+            <input type="number" id="adj-nilai-${i}" value="${r.nilaiSuggested}" min="1"
+              style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 9px;color:var(--text);font-size:12px;font-family:var(--mono);width:150px;outline:none;"
+              oninput="_autoDetectResults[${i}].nilaiSuggested=parseFloat(this.value)||0;_syncAdjLines(${i})">
+            ${r.perluInput?'<span style="color:var(--accent3);font-size:10px;font-weight:600;">← Edit nilai aktual</span>':''}
+          </div>
+          <button onclick="_toggleAdjPreview(${i})" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 9px;font-size:11px;color:var(--muted);cursor:pointer;">
+            👁 Preview
+          </button>
+          <button onclick="inputSatuAutoDetect(${i})" style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:6px;padding:4px 12px;font-size:11px;color:var(--accent);cursor:pointer;font-weight:600;">
+            ▶ Input Ini
+          </button>
+        </div>
+        <div id="adj-preview-${i}" style="display:none;margin-top:10px;border-radius:8px;overflow:hidden;border:1px solid var(--border);">
+          <table style="width:100%;font-size:11px;border-collapse:collapse;">
+            <thead><tr style="background:var(--surface2);">
+              <th style="padding:5px 9px;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);">Akun</th>
+              <th style="padding:5px 9px;text-align:right;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);">Debit</th>
+              <th style="padding:5px 9px;text-align:right;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);">Kredit</th>
+            </tr></thead>
+            <tbody id="adj-preview-tbody-${i}">
+              ${r.lines.map(l=>{
+                const nama = akuns.find(a=>a.kode===l.akun)?.nama||l.akun;
+                return `<tr>
+                  <td style="padding:5px 9px;">${l.akun} — ${nama}</td>
+                  <td style="padding:5px 9px;text-align:right;font-family:var(--mono);color:${l.debit?'var(--accent3)':'var(--muted)'};">${l.debit?rp(l.debit):'—'}</td>
+                  <td style="padding:5px 9px;text-align:right;font-family:var(--mono);color:${l.kredit?'var(--accent)':'var(--muted)'};">${l.kredit?rp(l.kredit):'—'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>`).join('');
+}
+
+function _syncAdjLines(idx) {
+  const r = _autoDetectResults[idx]; if (!r) return;
+  const nominal = r.nilaiSuggested;
+  r.lines.forEach(l => {
+    if (l.debit  > 0) l.debit  = nominal;
+    if (l.kredit > 0) l.kredit = nominal;
+  });
+  // Update preview table jika terbuka
+  const tbody = document.getElementById('adj-preview-tbody-' + idx);
+  if (tbody) {
+    tbody.querySelectorAll('tr').forEach((tr, li) => {
+      const l = r.lines[li]; if (!l) return;
+      const tds = tr.querySelectorAll('td');
+      if (tds[1]) tds[1].textContent = l.debit  ? rp(l.debit)  : '—';
+      if (tds[2]) tds[2].textContent = l.kredit ? rp(l.kredit) : '—';
+    });
+  }
+}
+
+function _toggleAdjPreview(idx) {
+  const el = document.getElementById('adj-preview-' + idx);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function inputSatuAutoDetect(idx) {
+  const r = _autoDetectResults[idx];
+  if (!r) return;
+  if (r._done) { showAlert('⚠️ Item ini sudah diinput sebelumnya'); return; }
+  if (!r.nilaiSuggested || r.nilaiSuggested <= 0) { showAlert('⚠️ Isi nilai yang valid (lebih dari 0)'); return; }
+  // Sync nilai ke lines dulu
+  _syncAdjLines(idx);
+  _buatJurnalPenyesuaianAuto([r]);
+  r._done = true;
+  // Visual feedback: redup card
+  const card = document.getElementById('adj-card-' + idx);
+  if (card) {
+    card.style.opacity = '0.45';
+    card.style.pointerEvents = 'none';
+    card.insertAdjacentHTML('beforeend', '<div style="text-align:center;padding:6px;font-size:12px;color:var(--accent);font-weight:700;">✅ Sudah diinput ke Jurnal Umum</div>');
+  }
+  showAlert('✅ Jurnal penyesuaian berhasil dibuat!');
+}
+
+function inputSemuaAutoDetect() {
+  // Kumpulkan yang di-centang, belum done, dan nilai valid
+  const terpilih = _autoDetectResults.filter((r, i) => {
+    const chk = document.getElementById('adj-check-' + i);
+    return chk?.checked && !r._done && (r.nilaiSuggested||0) > 0;
+  });
+  if (!terpilih.length) {
+    showAlert('⚠️ Pilih minimal 1 penyesuaian dan pastikan nilainya terisi (lebih dari 0)');
+    return;
+  }
+  // Sync semua nilai dulu
+  _autoDetectResults.forEach((r, i) => _syncAdjLines(i));
+  showOpSpinner(`Membuat ${terpilih.length} Jurnal Penyesuaian...`, 'Menyimpan ke Jurnal Umum');
+  setTimeout(() => {
+    _buatJurnalPenyesuaianAuto(terpilih);
+    // Tandai done
+    _autoDetectResults.forEach((r, i) => {
+      const chk = document.getElementById('adj-check-' + i);
+      if (chk?.checked && !r._done) {
+        r._done = true;
+        const card = document.getElementById('adj-card-' + i);
+        if (card) { card.style.opacity='0.45'; card.style.pointerEvents='none'; }
+      }
+    });
+    hideOpSpinner();
+    closeModal('modal-auto-penyesuaian');
+    showAlert(`✅ ${terpilih.length} jurnal penyesuaian berhasil dibuat dan disimpan ke Jurnal Umum!`);
+  }, 700);
+}
+
+function _buatJurnalPenyesuaianAuto(items) {
+  const today = new Date().toISOString().split('T')[0];
+  items.forEach(r => {
+    const kode = nextKode('ADJ');
+    // FIX BUG 1: Pastikan lines memakai nilai terbaru (bukan stale dari saat render)
+    const lines = r.lines.map(l => ({
+      akun: l.akun,
+      ket:  l.ket,
+      debit:  l.debit  || 0,
+      kredit: l.kredit || 0
+    }));
+    jurnalEntries.push({
+      no: kode,
+      tanggal: today,
+      ket: 'J. Penyesuaian — ' + r.judul.replace(/[^\w\s\-]/gu,'').trim().slice(0,60),
+      jenis: 'Penyesuaian',
+      lines
+    });
+  });
+  saveData();
+  cekNotifikasi();
 }
 
 function fillPenyesuaian(type) {
@@ -10545,6 +10944,14 @@ function buatJurnalPPh23() {
 // ══════════════════════════════════════════════════════════════
 // Auto-cek notifikasi saat load
 setTimeout(cekNotifikasi, 2000);
+// Init Multi Kartu Stock (guest mode — login mode dihandle di loadKartuStockFromData)
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    if (typeof initMultiKartuStock === 'function' && Object.keys(multiKartuStock).length === 0) {
+      initMultiKartuStock();
+    }
+  }, 500);
+});
 // Auto-jalankan jurnal berulang tertunda saat load
 setTimeout(function() {
   const today=new Date().toISOString().split('T')[0];
@@ -10558,10 +10965,13 @@ setTimeout(function() {
 function getReminders() {
   const reminders = [];
   const now = new Date();
-  const lastJurnal = jurnalEntries.length > 0 ? new Date(jurnalEntries[jurnalEntries.length-1].tanggal) : null;
+  // Ambil tanggal jurnal TERBARU (bukan terakhir di array — karena bisa tidak urut)
+  const lastJurnal = jurnalEntries.length > 0
+    ? new Date(jurnalEntries.map(j => j.tanggal).filter(Boolean).sort().slice(-1)[0])
+    : null;
 
   // 1. No entries in 7 days
-  if(lastJurnal) {
+  if(lastJurnal && !isNaN(lastJurnal.getTime())) {
     const daysSince = Math.floor((now - lastJurnal) / 86400000);
     if(daysSince >= 7) reminders.push({ type:'warn', icon:'⚠️', text:`Belum ada transaksi selama ${daysSince} hari`, action:"showPage('transaksi')" });
   }
@@ -12249,7 +12659,31 @@ kalkStyle.textContent = `
 }
 
 /* Chart scroll wrapper */
-/* ═══ FITUR BARU — ANIMASI & STYLES ═══ */
+/* Template Penyesuaian inline buttons */
+.tmpl-peny-btn {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 12px; cursor: pointer;
+  font-family: var(--sans); text-align: left; transition: all 0.15s;
+  width: 100%;
+}
+.tmpl-peny-btn:hover { border-color: var(--accent3); background: rgba(245,158,11,0.06); transform: translateY(-1px); }
+.tmpl-peny-btn:active { transform: translateY(0); }
+.tmpl-peny-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.tmpl-peny-nama { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.tmpl-peny-akun { font-size: 10px; color: var(--muted); line-height: 1.4; }
+
+/* ═══ MULTI KARTU STOCK ═══ */
+.ks-selector-btn {
+  padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted); font-size: 11px;
+  cursor: pointer; font-family: var(--sans); transition: all 0.15s; white-space: nowrap;
+}
+.ks-selector-btn:hover { border-color: var(--accent2); color: var(--text); }
+.ks-selector-btn.active { background: rgba(74,222,128,0.1); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.mks-pilih-item:hover { border-color: var(--accent2) !important; }
+.mks-pilih-item.selected { border-color: var(--accent) !important; background: rgba(74,222,128,0.06) !important; }
+.mks-pilih-item.selected .mks-pilih-radio { border-color: var(--accent) !important; }
 /* Konversi Kartu Stock buttons */
 .ks-conv-btn {
   padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
@@ -12759,6 +13193,207 @@ let kartuStockData = { fifo:[], lifo:[], wa:[], mwa:[] };
 let kartuStockTab = 'fifo';
 let kartuStockIdCounter = 0;
 
+// ── MULTI KARTU STOCK ─────────────────────────────────────────
+// Format: { [ksId]: { id, nama, deskripsi, satuan, createdAt, data: {fifo,lifo,wa,mwa} } }
+let multiKartuStock = {};         // semua kartu stock
+let activeKartuStockId = null;    // ID kartu stock yang sedang aktif
+
+function _ksDefaultData() {
+  return { fifo:[], lifo:[], wa:[], mwa:[] };
+}
+
+/** Inisialisasi: jika belum ada multi KS, migrate data lama ke KS pertama */
+function initMultiKartuStock() {
+  const stored = localStorage.getItem('bhp_mks_' + (window.currentCompany?.id || 'guest'));
+  if (stored) {
+    try { multiKartuStock = JSON.parse(stored); } catch(e) { multiKartuStock = {}; }
+  }
+  // Migrate data lama jika multiKartuStock kosong tapi kartuStockData ada isinya
+  const hasOldData = Object.values(kartuStockData).some(arr => arr.length > 0);
+  if (Object.keys(multiKartuStock).length === 0) {
+    const firstId = 'ks_' + Date.now();
+    multiKartuStock[firstId] = {
+      id: firstId, nama: 'Persediaan Barang 1', deskripsi: '', satuan: 'unit',
+      createdAt: new Date().toISOString(),
+      data: hasOldData ? { ...kartuStockData } : _ksDefaultData()
+    };
+    activeKartuStockId = firstId;
+    saveMKS();
+  } else {
+    if (!activeKartuStockId || !multiKartuStock[activeKartuStockId]) {
+      activeKartuStockId = Object.keys(multiKartuStock)[0];
+    }
+  }
+  // Sync kartuStockData dengan active KS
+  kartuStockData = multiKartuStock[activeKartuStockId].data;
+  renderKartuStockSelector();
+}
+
+function saveMKS() {
+  // Sync dulu data aktif
+  if (activeKartuStockId && multiKartuStock[activeKartuStockId]) {
+    multiKartuStock[activeKartuStockId].data = kartuStockData;
+  }
+  const key = 'bhp_mks_' + (window.currentCompany?.id || 'guest');
+  try { localStorage.setItem(key, JSON.stringify(multiKartuStock)); } catch(e) {}
+  saveKartuStockToCloud();
+}
+
+function switchActiveKS(ksId) {
+  if (!multiKartuStock[ksId]) return;
+  // Simpan data aktif sekarang
+  if (activeKartuStockId && multiKartuStock[activeKartuStockId]) {
+    multiKartuStock[activeKartuStockId].data = kartuStockData;
+  }
+  activeKartuStockId = ksId;
+  kartuStockData = multiKartuStock[ksId].data;
+  renderKartuStockSelector();
+  renderKartuStock();
+}
+
+function renderKartuStockSelector() {
+  const container = document.getElementById('ks-selector-wrap');
+  if (!container) return;
+  const list = Object.values(multiKartuStock);
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <span style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Kartu Stock:</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1;">
+        ${list.map(ks => `
+          <button onclick="switchActiveKS('${ks.id}')" class="ks-selector-btn ${ks.id === activeKartuStockId ? 'active' : ''}"
+            title="${ks.deskripsi || ks.nama}">
+            📦 ${ks.nama}
+            <span style="font-size:9px;color:var(--muted);margin-left:3px;">(${(ks.data[kartuStockTab]||[]).length})</span>
+          </button>`).join('')}
+      </div>
+      <button onclick="openModalTambahKS()" class="btn btn-sm" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:var(--accent2);font-size:11px;white-space:nowrap;">+ Kartu Baru</button>
+      ${list.length > 1 ? `<button onclick="openModalKelolaKS()" class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:11px;">⚙️ Kelola</button>` : ''}
+    </div>
+    <div style="font-size:12px;color:var(--accent2);font-weight:600;margin-bottom:6px;">
+      📦 ${multiKartuStock[activeKartuStockId]?.nama || ''}
+      ${multiKartuStock[activeKartuStockId]?.deskripsi ? `<span style="color:var(--muted);font-weight:400;"> — ${multiKartuStock[activeKartuStockId].deskripsi}</span>` : ''}
+      ${multiKartuStock[activeKartuStockId]?.satuan ? `<span style="color:var(--muted);font-size:11px;"> · ${multiKartuStock[activeKartuStockId].satuan}</span>` : ''}
+      <button onclick="openModalEditKS('${activeKartuStockId}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;margin-left:6px;">✏️</button>
+    </div>`;
+}
+
+function openModalTambahKS() {
+  document.getElementById('mks-modal-title').textContent = '+ Tambah Kartu Stock Baru';
+  document.getElementById('mks-input-nama').value = '';
+  document.getElementById('mks-input-desc').value = '';
+  document.getElementById('mks-input-satuan').value = 'unit';
+  document.getElementById('mks-modal')._editId = null;
+  openModal('mks-modal');
+  setTimeout(()=>document.getElementById('mks-input-nama')?.focus(), 100);
+}
+
+function openModalEditKS(ksId) {
+  const ks = multiKartuStock[ksId]; if(!ks) return;
+  document.getElementById('mks-modal-title').textContent = '✏️ Edit Kartu Stock';
+  document.getElementById('mks-input-nama').value = ks.nama;
+  document.getElementById('mks-input-desc').value = ks.deskripsi || '';
+  document.getElementById('mks-input-satuan').value = ks.satuan || 'unit';
+  document.getElementById('mks-modal')._editId = ksId;
+  openModal('mks-modal');
+}
+
+function simpanModalKS() {
+  const nama = document.getElementById('mks-input-nama').value.trim();
+  const desc = document.getElementById('mks-input-desc').value.trim();
+  const satuan = document.getElementById('mks-input-satuan').value.trim() || 'unit';
+  if (!nama) { showAlert('⚠️ Nama kartu stock wajib diisi'); return; }
+  const editId = document.getElementById('mks-modal')._editId;
+  if (editId) {
+    multiKartuStock[editId].nama = nama;
+    multiKartuStock[editId].deskripsi = desc;
+    multiKartuStock[editId].satuan = satuan;
+  } else {
+    const newId = 'ks_' + Date.now();
+    multiKartuStock[newId] = {
+      id: newId, nama, deskripsi: desc, satuan,
+      createdAt: new Date().toISOString(), data: _ksDefaultData()
+    };
+    // Otomatis switch ke kartu baru
+    if (activeKartuStockId && multiKartuStock[activeKartuStockId]) {
+      multiKartuStock[activeKartuStockId].data = kartuStockData;
+    }
+    activeKartuStockId = newId;
+    kartuStockData = multiKartuStock[newId].data;
+  }
+  closeModal('mks-modal');
+  saveMKS();
+  renderKartuStockSelector();
+  renderKartuStock();
+  showAlert(editId ? `✅ "${nama}" berhasil diperbarui` : `✅ Kartu stock "${nama}" berhasil dibuat!`);
+}
+
+function openModalKelolaKS() {
+  const list = Object.values(multiKartuStock);
+  const el = document.getElementById('mks-kelola-modal');
+  document.getElementById('mks-kelola-list').innerHTML = list.map(ks => {
+    const total = Object.values(ks.data).reduce((s,arr)=>s+(arr?.length||0),0);
+    const isActive = ks.id === activeKartuStockId;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:10px;border:1px solid ${isActive?'var(--accent)':'var(--border)'};margin-bottom:8px;">
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;">${isActive?'▶ ':''} ${ks.nama}</div>
+        <div style="font-size:11px;color:var(--muted);">${ks.deskripsi||'—'} · ${ks.satuan} · ${total} entri</div>
+      </div>
+      <button onclick="switchActiveKS('${ks.id}');closeModal('mks-kelola-modal')" class="btn btn-ghost btn-sm" ${isActive?'disabled':''}>
+        ${isActive?'Aktif':'Buka'}
+      </button>
+      <button onclick="openModalEditKS('${ks.id}');closeModal('mks-kelola-modal')" class="btn btn-ghost btn-sm">✏️</button>
+      ${list.length>1 ? `<button onclick="hapusKS('${ks.id}')" class="btn btn-danger btn-sm" ${isActive?'disabled':''}>🗑</button>` : ''}
+    </div>`;
+  }).join('');
+  openModal('mks-kelola-modal');
+}
+
+function hapusKS(ksId) {
+  if (ksId === activeKartuStockId) { showAlert('❌ Tidak bisa hapus kartu stock yang sedang aktif'); return; }
+  const ks = multiKartuStock[ksId];
+  if (!ks) return;
+  if (!confirm(`Hapus kartu stock "${ks.nama}"? Semua data di kartu ini akan hilang.`)) return;
+  delete multiKartuStock[ksId];
+  saveMKS();
+  closeModal('mks-kelola-modal');
+  renderKartuStockSelector();
+  showAlert(`✅ Kartu stock "${ks.nama}" dihapus`);
+}
+
+/** Popup pilih kartu stock saat user klik Input dari preview persediaan */
+function showPilihKartuStockPopup(onSelect) {
+  const list = Object.values(multiKartuStock);
+  // Jika hanya 1, langsung pilih tanpa popup
+  if (list.length === 1) { onSelect(list[0].id); return; }
+
+  const el = document.getElementById('mks-pilih-modal');
+  document.getElementById('mks-pilih-list').innerHTML = list.map(ks => {
+    const total = (ks.data[kartuStockTab] || []).length;
+    const isActive = ks.id === activeKartuStockId;
+    return `<div onclick="document.querySelectorAll('.mks-pilih-item').forEach(x=>x.classList.remove('selected'));this.classList.add('selected');document.getElementById('mks-pilih-ok').dataset.ksId=this.dataset.ksId"
+      class="mks-pilih-item ${isActive?'selected':''}" data-ks-id="${ks.id}"
+      style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:12px;border:1px solid ${isActive?'var(--accent)':'var(--border)'};margin-bottom:8px;cursor:pointer;transition:all 0.15s;">
+      <span style="font-size:24px;">📦</span>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;">${ks.nama}</div>
+        <div style="font-size:11px;color:var(--muted);">${ks.deskripsi||'—'} · ${ks.satuan} · ${total} entri di tab ${kartuStockTab.toUpperCase()}</div>
+      </div>
+      <div class="mks-pilih-radio" style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;">
+        ${isActive?'<div style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></div>':''}
+      </div>
+    </div>`;
+  }).join('') + `<button onclick="openModalTambahKS();closeModal('mks-pilih-modal')" style="width:100%;background:rgba(34,211,238,0.08);border:1px dashed rgba(34,211,238,0.3);border-radius:10px;padding:10px;color:var(--accent2);font-size:12px;cursor:pointer;font-family:var(--sans);">+ Buat Kartu Stock Baru</button>`;
+
+  document.getElementById('mks-pilih-ok').dataset.ksId = activeKartuStockId;
+  document.getElementById('mks-pilih-ok').onclick = () => {
+    const ksId = document.getElementById('mks-pilih-ok').dataset.ksId;
+    closeModal('mks-pilih-modal');
+    onSelect(ksId);
+  };
+  openModal('mks-pilih-modal');
+}
+
+
 // ── KONVERSI KARTU STOCK ANTAR METODE ─────────────────────────
 
 let _ksConvDari = 'fifo';
@@ -13004,9 +13639,16 @@ function inputKeKartuStock() {
   const metode = window._invMetode;
   if(!kartu || !kartu.length) { showAlert('Hitung persediaan dulu!'); return; }
 
+  // Tanya ke kartu stock mana jika lebih dari 1
+  showPilihKartuStockPopup((ksId) => {
+    // Switch active KS ke pilihan user
+    switchActiveKS(ksId);
+    _doInputKeKartuStock(kartu, metode);
+  });
+}
+
+function _doInputKeKartuStock(kartu, metode) {
   const storage = kartuStockData[metode];
-  // Rebuild stock dari existing kartu stock untuk validasi saldo awal
-  // Kita append semua entri baru ke storage
   let runningStock = rebuildStockFromKartu(storage, metode);
 
   kartu.forEach(k => {
@@ -13074,10 +13716,9 @@ function inputKeKartuStock() {
   if(tabEl) switchKartuStockTab(metode, tabEl);
   else renderKartuStock();
 
-  showAlert('✅ Berhasil disimpan ke Kartu Stock ('+metode.toUpperCase()+')!');
-  // Simpan ke cloud
-  saveKartuStockToCloud();
-  // Scroll to kartu
+  const ksNama = multiKartuStock[activeKartuStockId]?.nama || '';
+  showAlert(`✅ Berhasil disimpan ke "${ksNama}" (${metode.toUpperCase()})!`);
+  saveMKS();
   setTimeout(()=>{ const el=document.getElementById('catatan-persediaan-wrap'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }, 200);
 }
 
@@ -19274,6 +19915,8 @@ function loadKartuStockFromData(profileData) {
   let maxId = 0;
   for (const arr of Object.values(kartuStockData)) arr.forEach(e => { if((e.id||0) > maxId) maxId = e.id; });
   kartuStockIdCounter = maxId + 1;
+  // Init multi kartu stock (migrate data lama jika perlu)
+  if (typeof initMultiKartuStock === 'function') initMultiKartuStock();
   if (typeof renderKartuStock === 'function') renderKartuStock();
 }
 
@@ -21498,6 +22141,87 @@ function closeMataUangPicker() {
       <button class="btn btn-ghost" onclick="closeModal('modal-konversi-ks')">Batal</button>
       <button class="btn btn-ghost" onclick="previewKonversiKS()">👁️ Preview</button>
       <button class="btn btn-primary" onclick="eksekusiKonversiKS()">🔀 Konversi Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TAMBAH/EDIT KARTU STOCK -->
+<div class="modal-backdrop" id="mks-modal" onclick="if(event.target===this)closeModal('mks-modal')">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-head">
+      <div class="modal-title" id="mks-modal-title">+ Tambah Kartu Stock Baru</div>
+      <button class="modal-close" onclick="closeModal('mks-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nama Barang / Kartu Stock <span style="color:var(--red)">*</span></label>
+        <input type="text" id="mks-input-nama" placeholder="contoh: Beras Premium 5kg, Minyak Goreng 1L">
+      </div>
+      <div class="form-group">
+        <label>Deskripsi / Keterangan</label>
+        <input type="text" id="mks-input-desc" placeholder="Opsional — kode SKU, keterangan tambahan">
+      </div>
+      <div class="form-group">
+        <label>Satuan</label>
+        <input type="text" id="mks-input-satuan" placeholder="unit, kg, liter, pcs, karton..." value="unit">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('mks-modal')">Batal</button>
+      <button class="btn btn-primary" onclick="simpanModalKS()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: KELOLA SEMUA KARTU STOCK -->
+<div class="modal-backdrop" id="mks-kelola-modal" onclick="if(event.target===this)closeModal('mks-kelola-modal')">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <div class="modal-title">⚙️ Kelola Kartu Stock</div>
+      <button class="modal-close" onclick="closeModal('mks-kelola-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="mks-kelola-list"></div>
+      <button onclick="openModalTambahKS();closeModal('mks-kelola-modal')" style="width:100%;background:rgba(34,211,238,0.08);border:1px dashed rgba(34,211,238,0.3);border-radius:10px;padding:10px;color:var(--accent2);font-size:12px;cursor:pointer;font-family:var(--sans);margin-top:8px;">+ Tambah Kartu Stock Baru</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PILIH KARTU STOCK SAAT INPUT -->
+<div class="modal-backdrop" id="mks-pilih-modal" onclick="if(event.target===this)closeModal('mks-pilih-modal')">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-head">
+      <div class="modal-title">📦 Pilih Kartu Stock Tujuan</div>
+      <button class="modal-close" onclick="closeModal('mks-pilih-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Data persediaan ini akan ditambahkan ke kartu stock mana?</div>
+      <div id="mks-pilih-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('mks-pilih-modal')">Batal</button>
+      <button class="btn btn-primary" id="mks-pilih-ok">✅ Masukkan ke Kartu Ini</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DETEKSI JURNAL PENYESUAIAN OTOMATIS -->
+<div class="modal-backdrop" id="modal-auto-penyesuaian" onclick="if(event.target===this)closeModal('modal-auto-penyesuaian')">
+  <div class="modal" style="max-width:600px;max-height:88vh;display:flex;flex-direction:column;">
+    <div class="modal-head" style="flex-shrink:0;">
+      <div>
+        <div class="modal-title">🔍 Hasil Deteksi Jurnal Penyesuaian</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Berdasarkan analisis jurnal umum periode aktif</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-auto-penyesuaian')">✕</button>
+    </div>
+    <div class="modal-body" style="overflow-y:auto;flex:1;" id="auto-peny-result-body">
+    </div>
+    <div class="modal-footer" style="flex-shrink:0;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-auto-penyesuaian')">Tutup</button>
+      <button class="btn btn-primary" id="auto-peny-input-all-btn" onclick="inputSemuaAutoDetect()" style="display:none;">
+        ✅ Input Semua yang Dipilih
+      </button>
     </div>
   </div>
 </div>
