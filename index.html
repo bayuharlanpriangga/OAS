@@ -8879,7 +8879,7 @@ function getProfil() {
 }
 function loadProfil() {
   const p = getProfil();
-  ['nama','jenis','alamat','telp','npwp','email'].forEach(k => {
+  ['nama','jenis','pemilik','alamat','telp','npwp','email'].forEach(k => {
     const el = document.getElementById('prof-'+k);
     if(el) el.value = p[k] || '';
   });
@@ -8908,6 +8908,7 @@ function saveProfil() {
     const p = {
       nama: document.getElementById('prof-nama').value.trim(),
       jenis: document.getElementById('prof-jenis').value.trim(),
+      pemilik: document.getElementById('prof-pemilik').value.trim(),
       alamat: document.getElementById('prof-alamat').value.trim(),
       telp: document.getElementById('prof-telp').value.trim(),
       npwp: document.getElementById('prof-npwp').value.trim(),
@@ -17295,8 +17296,11 @@ function startTutorial() { showPage('tutorial'); }
         <div class="form-group"><label>Jenis Usaha</label><input type="text" id="prof-jenis" placeholder="Perdagangan / Jasa / Manufaktur"></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Alamat</label><input type="text" id="prof-alamat" placeholder="Jl. Sudirman No. 1, Jakarta"></div>
+        <div class="form-group"><label>Nama Pemilik</label><input type="text" id="prof-pemilik" placeholder="Nama lengkap pemilik / direktur"></div>
         <div class="form-group"><label>Telepon</label><input type="text" id="prof-telp" placeholder="021-12345678"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Alamat</label><input type="text" id="prof-alamat" placeholder="Jl. Sudirman No. 1, Jakarta"></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>NPWP</label><input type="text" id="prof-npwp" placeholder="00.000.000.0-000.000"></div>
