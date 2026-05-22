@@ -4248,16 +4248,16 @@ function showPage(id) {
   document.getElementById('page-sub').textContent = t[1];
   currentPage = id;
   // Render
-  if(id==='dashboard') renderDashboard();
+  if(id==='dashboard') { renderDashboard(); setTimeout(upgradeFormPickers, 150); }
   if(id==='ai-assistant') { updateAIKeyStatus(); initChipsState(); }
   // Setup number inputs for calculator pages
-  if(id && id.startsWith('kalk')) setTimeout(setupNumberInputs, 300);
-  if(id==='jurnal-umum') renderJurnalUmum();
-  if(id==='rekonsiliasi-bank') { /* bank rekon page init */ }
-  if(id==='jurnal-kas') renderJurnalKas();
-  if(id==='jurnal-penjualan') renderJurnalPenjualan();
-  if(id==='jurnal-pembelian') renderJurnalPembelian();
-  if(id==='buku-besar') renderBukuBesar();
+  if(id && id.startsWith('kalk')) setTimeout(() => { setupNumberInputs(); upgradeFormPickers(); upgradePajakPickers(); }, 300);
+  if(id==='jurnal-umum') { renderJurnalUmum(); setTimeout(upgradeFormPickers, 80); }
+  if(id==='rekonsiliasi-bank') { setTimeout(upgradeFormPickers, 80); }
+  if(id==='jurnal-kas') { renderJurnalKas(); setTimeout(upgradeFormPickers, 80); }
+  if(id==='jurnal-penjualan') { renderJurnalPenjualan(); setTimeout(upgradeFormPickers, 80); }
+  if(id==='jurnal-pembelian') { renderJurnalPembelian(); setTimeout(upgradeFormPickers, 80); }
+  if(id==='buku-besar') { renderBukuBesar(); setTimeout(upgradeFormPickers, 80); }
   if(id==='neraca-saldo') renderNeracaSaldo();
   if(id==='laba-rugi') { renderLabaRugi(); setTimeout(addPeriodFilterToReports,80); }
   if(id==='neraca-saldo') setTimeout(addPeriodFilterToReports,80);
@@ -4266,8 +4266,8 @@ function showPage(id) {
   if(id==='perubahan-ekuitas') { renderPerubahanEkuitas(); setTimeout(upgradeFormPickers, 80); }
   if(id==='aset-tetap') setTimeout(()=>{ renderAsetTetap(); renderAsetTetapKPI(); upgradeFormPickers(); }, 80);
   if(id==='kontak') setTimeout(()=>{ renderKontak(); renderKontakKPI(); upgradeFormPickers(); }, 80);
-  if(id==='akun') renderAkun();
-  if(id==='transaksi') initTransaksiForm();
+  if(id==='akun') { renderAkun(); setTimeout(upgradeFormPickers, 80); }
+  if(id==='transaksi') { initTransaksiForm(); setTimeout(upgradeFormPickers, 80); }
   if(id==='analitik') setTimeout(renderAnalitik, 80);
   // Fitur Baru
   if(id==='jurnal-berulang') setTimeout(()=>{ renderJurnalBerulang(); upgradeFormPickers(); }, 80);
@@ -18834,6 +18834,13 @@ function upgradeAllPeriodPickers() {
 
 // UPGRADE FORM SELECTS
 function upgradeFormPickers() {
+  // Reset semua select yang belum jadi opt-picker (jika elemen baru muncul setelah re-render)
+  document.querySelectorAll('select[id]').forEach(sel => {
+    // Jika select masih visible (tidak disembunyikan oleh upgradeSelectToOptPicker), reset flag
+    if (sel.style.display !== 'none' && sel.dataset.upgraded) {
+      delete sel.dataset.upgraded;
+    }
+  });
   // Jenis kas: penerimaan/pengeluaran
   const kasJenis = document.getElementById('kas-jenis');
   if (kasJenis) upgradeSelectToOptPicker(kasJenis, {
@@ -19395,6 +19402,8 @@ function upgradePajakPickers() {
     iconMap: { ya: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>', tidak: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red)"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>' },
     subMap: { ya: 'Tarif normal', tidak: '+100% tarif (2× lipat)' }
   });
+} // end upgradePajakPickers
+
 // Upgrades run after page load via window.addEventListener('load') below
 
 // Patch showPage after load
@@ -19417,6 +19426,8 @@ window.addEventListener('load', () => {
   }
   // Initial upgrade for pajak pickers
   setTimeout(upgradePajakPickers, 500);
+  // Initial upgrade for ALL pickers on first load
+  setTimeout(() => { upgradeAllPeriodPickers(); upgradeFormPickers(); }, 600);
 });
 </script>
 
