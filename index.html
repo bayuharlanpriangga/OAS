@@ -18076,7 +18076,19 @@ function startTutorial() { showPage('tutorial'); }
   display:flex;flex-direction:column;
   align-items:center;justify-content:center;
   gap:0;
+  background:#0d0f14;
 ">
+<script>
+// Set loading screen background IMMEDIATELY based on saved theme
+(function(){
+  var el = document.getElementById('app-loading');
+  if(!el) return;
+  var isLight = (window.__initialTheme || localStorage.getItem('bhp_theme') || 'dark') === 'light';
+  el.style.background = isLight ? '#f8fafc' : '#0d0f14';
+  // Also pre-set text colors so there's no flash
+  el.style.color = isLight ? '#0f172a' : '#e2e8f0';
+})();
+</script>
   <!-- Logo area -->
   <div style="text-align:center;margin-bottom:40px;">
     <!-- Timbangan/Scales logo SVG -->
@@ -18107,10 +18119,10 @@ function startTutorial() { showPage('tutorial'); }
         <text x="58" y="37.5" text-anchor="middle" fill="#0d0f14" id="logo-eq-text" font-size="8" font-weight="bold" font-family="sans-serif">=</text>
       </svg>
     </div>
-    <div id="loading-company-name" style="font-size:22px;font-weight:800;letter-spacing:0.02em;font-family:'IBM Plex Mono',monospace;">
+    <div id="loading-company-name" style="font-size:22px;font-weight:800;letter-spacing:0.02em;font-family:'IBM Plex Mono',monospace;color:#e2e8f0;">
       OAS
     </div>
-    <div id="loading-subtitle" style="font-size:12px;margin-top:6px;letter-spacing:0.1em;text-transform:uppercase;">
+    <div id="loading-subtitle" style="font-size:12px;margin-top:6px;letter-spacing:0.1em;text-transform:uppercase;color:#64748b;">
       Software Akuntansi Profesional
     </div>
   </div>
@@ -18118,16 +18130,16 @@ function startTutorial() { showPage('tutorial'); }
   <!-- Progress bar container -->
   <div style="width:240px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <span id="loading-status" style="font-size:12px;font-family:'IBM Plex Mono',monospace;">Memuat sistem...</span>
-      <span id="loading-pct" style="font-size:12px;font-family:'IBM Plex Mono',monospace;font-weight:700;">0%</span>
+      <span id="loading-status" style="font-size:12px;font-family:'IBM Plex Mono',monospace;color:#64748b;">Memuat sistem...</span>
+      <span id="loading-pct" style="font-size:12px;font-family:'IBM Plex Mono',monospace;font-weight:700;color:#4ade80;">0%</span>
     </div>
-    <div id="loading-bar-track" style="height:4px;border-radius:2px;overflow:hidden;">
+    <div id="loading-bar-track" style="height:4px;border-radius:2px;overflow:hidden;background:#252a3a;">
       <div id="loading-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#4ade80,#22d3ee);border-radius:2px;transition:width 0.25s ease;"></div>
     </div>
   </div>
 
   <!-- Version -->
-  <div id="loading-version" style="position:absolute;bottom:32px;font-size:11px;">
+  <div id="loading-version" style="position:absolute;bottom:32px;font-size:11px;color:#334155;">
     v2.0 · Powered by Orias AI
   </div>
 </div>
