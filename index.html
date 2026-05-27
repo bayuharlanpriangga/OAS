@@ -19,49 +19,29 @@
 <!-- ANTI-GLITCH: sembunyikan konten SEBELUM CSS/font load agar loading screen tidak berkedip -->
 <script>
 (function(){
-  // Baca tema sebelum apapun dirender
-  try { window.__initialTheme = localStorage.getItem('bhp_theme') || 'dark'; } catch(e) { window.__initialTheme = 'dark'; }
+  // Baca tema sebelum apapun dirender — ikuti sistem jika belum ada preferensi tersimpan
+  try {
+    var saved = localStorage.getItem('bhp_theme');
+    if(saved) {
+      window.__initialTheme = saved;
+    } else {
+      window.__initialTheme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+    }
+  } catch(e) { window.__initialTheme = 'dark'; }
   // Tulis style inline — body invisible sampai loading screen siap
   var isLight = window.__initialTheme === 'light';
   var bg = isLight ? '#f8fafc' : '#0d0f14';
-  document.write('<style id="anti-glitch-style">html,body{background:'+bg+' !important;overflow:hidden;}
-/* Hide native browser calendar icon to prevent double icon */
-.date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator,
-.date-input-wrap input[type="date"]::-webkit-inner-spin-button {
-  opacity: 0;
-  position: absolute;
-  right: 0;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
-}
-.date-input-wrap {
-  position: relative;
-}
-.date-input-wrap input[type="date"] {
-  width: 100%;
-  padding-right: 36px;
-}
-.date-input-wrap .date-input-icon {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: var(--muted);
-}
-
-/* Ensure month input is clickable */
-input[type="month"] {
-  cursor: pointer;
-  color-scheme: dark;
-}
-input[type="month"]::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  filter: invert(0.8);
-  opacity: 0.7;
-}
-</style>');
+  var agStyle = document.createElement('style');
+  agStyle.id = 'anti-glitch-style';
+  agStyle.textContent = 'html,body{background:' + bg + ' !important;overflow:hidden;}' +
+    '.date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator,' +
+    '.date-input-wrap input[type="date"]::-webkit-inner-spin-button{opacity:0;position:absolute;right:0;width:100%;height:100%;cursor:pointer;}' +
+    '.date-input-wrap{position:relative;}' +
+    '.date-input-wrap input[type="date"]{width:100%;padding-right:36px;}' +
+    '.date-input-wrap .date-input-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted);}' +
+    'input[type="month"]{cursor:pointer;color-scheme:dark;}' +
+    'input[type="month"]::-webkit-calendar-picker-indicator{cursor:pointer;filter:invert(0.8);opacity:0.7;}';
+  document.head.appendChild(agStyle);
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -558,7 +538,9 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 .modal-title { font-size: 15px; font-weight: 600; }
 .modal-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; }
 .modal-body { padding: 20px 22px; }
-.modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+.modal-footer { padding: 14px 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.modal-footer .btn { flex: 1; min-width: 0; justify-content: center; white-space: nowrap; }
+@media (min-width: 480px) { .modal-footer .btn { flex: none; } }
 
 /* Form */
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
@@ -1812,6 +1794,11 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
         <span class="nav-card-icon" id="theme-nav-icon" style="color:var(--text);display:inline-flex;align-items:center;justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></span>
         <span id="theme-nav-label">Tema Gelap</span>
       </div>
+      <!-- Multi-User Management -->
+      <div class="nav-card" onclick="openUserMgmtModal()" id="nav-user-mgmt" style="color:var(--accent2);">
+        <span class="nav-card-icon" style="color:var(--accent2);display:inline-flex;align-items:center;justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span>
+        Kelola Tim
+      </div>
     </div>
 
   </nav>
@@ -2061,7 +2048,18 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
             <input type="text" id="jual-ket" placeholder="Penjualan barang/jasa...">
           </div>
         </div>
-        <button class="btn btn-primary" onclick="simpanPenjualan()">Simpan & Buat Jurnal</button>
+        <!-- KONTAK OPSIONAL -->
+        <div class="form-row" style="margin-top:4px;">
+          <div class="form-group">
+            <label>
+              <i class="ti ti-users" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i>
+              Kontak <span style="color:var(--muted);font-weight:400;font-size:11px;">(opsional)</span>
+            </label>
+            <input type="hidden" id="jual-kontak-id" value="">
+            <button class="form-picker-btn" type="button" id="jual-kontak-btn" onclick="openKontakPicker('jual-kontak-id','jual-kontak-btn')">Pilih kontak...</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="simpanPenjualan()">Simpan &amp; Buat Jurnal</button>
       </div>
     </div>
   </div>
@@ -2105,7 +2103,18 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
             <input type="text" id="beli-ket" placeholder="Pembelian persediaan/aset...">
           </div>
         </div>
-        <button class="btn btn-primary" onclick="simpanPembelian()">Simpan & Buat Jurnal</button>
+        <!-- KONTAK OPSIONAL -->
+        <div class="form-row" style="margin-top:4px;">
+          <div class="form-group">
+            <label>
+              <i class="ti ti-users" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i>
+              Kontak <span style="color:var(--muted);font-weight:400;font-size:11px;">(opsional)</span>
+            </label>
+            <input type="hidden" id="beli-kontak-id" value="">
+            <button class="form-picker-btn" type="button" id="beli-kontak-btn" onclick="openKontakPicker('beli-kontak-id','beli-kontak-btn')">Pilih kontak...</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="simpanPembelian()">Simpan &amp; Buat Jurnal</button>
       </div>
     </div>
   </div>
@@ -3875,15 +3884,15 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 
   <!-- KALKULATOR -->
-  <div style="font-size:11px;font-weight:700;color:var(--red);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;">[Kalkulator] Kalkulator Akuntansi</div>
+  <div style="font-size:11px;font-weight:700;color:var(--red);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="9" y2="9"/><line x1="15" y1="9" x2="15" y2="9"/><line x1="9" y1="15" x2="9" y2="15"/><line x1="15" y1="12" x2="15" y2="18"/><line x1="12" y1="9" x2="12" y2="9"/><line x1="9" y1="12" x2="9" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/></svg> Kalkulator Akuntansi</div>
   <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
     <div class="tut-card" onclick="startTutorialById('kalk-penyusutan')">
-      <div class="tut-card-icon">[Penyusutan]</div><div class="tut-card-title">Kalkulator Penyusutan</div>
+      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg></div><div class="tut-card-title">Kalkulator Penyusutan</div>
       <div class="tut-card-desc">Hitung penyusutan aset tetap — garis lurus, saldo menurun, SYD, unit produksi. Tabel per tahun lengkap.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~4 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('kalk-persediaan')">
-      <div class="tut-card-icon">[Persediaan]</div><div class="tut-card-title">Kalkulator Persediaan</div>
+      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div><div class="tut-card-title">Kalkulator Persediaan</div>
       <div class="tut-card-desc">FIFO, LIFO, Weighted Average — cara input kartu stok dan baca hasil HPP serta nilai akhir persediaan.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~4 menit</span></div>
     </div>
@@ -3893,17 +3902,17 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~5 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('kalk-bep')">
-      <div class="tut-card-icon">[BEP]</div><div class="tut-card-title">Kalkulator BEP & Margin</div>
+      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="tut-card-title">Kalkulator BEP & Margin</div>
       <div class="tut-card-desc">Hitung titik impas bisnis — BEP unit, BEP rupiah, contribution margin, margin of safety.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('kalk-rasio')">
-      <div class="tut-card-icon">[Rasio]</div><div class="tut-card-title">Kalkulator Rasio Keuangan</div>
+      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div><div class="tut-card-title">Kalkulator Rasio Keuangan</div>
       <div class="tut-card-desc">20+ rasio likuiditas, solvabilitas, profitabilitas, aktivitas, dan pasar. Otomatis dari data jurnal.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-hard">Lanjutan</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~5 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('kalk-bunga')">
-      <div class="tut-card-icon">[Bunga]</div><div class="tut-card-title">Kalkulator Bunga & Anuitas</div>
+      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg></div><div class="tut-card-title">Kalkulator Bunga & Anuitas</div>
       <div class="tut-card-desc">Hitung bunga tunggal, majemuk, PV/FV, cicilan kredit, dan tabel amortisasi pinjaman lengkap.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~4 menit</span></div>
     </div>
@@ -3925,20 +3934,20 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
   </div>
 
   <!-- TIPS & SHORTCUT -->
-  <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;">⌨️ Tips & Shortcut</div>
+  <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg> Tips &amp; Shortcut</div>
   <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
     <div class="tut-card" onclick="startTutorialById('tut-shortcut')">
-      <div class="tut-card-icon">⌨️</div><div class="tut-card-title">Keyboard Shortcut</div>
+      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg></div><div class="tut-card-title">Keyboard Shortcut</div>
       <div class="tut-card-desc">Ctrl+N tambah transaksi, Ctrl+S simpan, Ctrl+/ buka AI, dan shortcut lainnya untuk kerja lebih cepat.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~1 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('tut-mobile')">
-      <div class="tut-card-icon">📱</div><div class="tut-card-title">Penggunaan di Mobile</div>
+      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div><div class="tut-card-title">Penggunaan di Mobile</div>
       <div class="tut-card-desc">Pull-to-refresh, bottom sheet picker, install sebagai PWA, dan tips navigasi di layar kecil.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~2 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('tut-backup')">
-      <div class="tut-card-icon">☁️</div><div class="tut-card-title">Backup & Sinkronisasi</div>
+      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg></div><div class="tut-card-title">Backup &amp; Sinkronisasi</div>
       <div class="tut-card-desc">Cara login Supabase untuk sinkron data antar perangkat, backup JSON, dan restore data.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
     </div>
@@ -4003,6 +4012,43 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
     <div id="akun-picker-list"></div>
   </div>
 </div>
+
+<!-- KONTAK PICKER BOTTOM-SHEET — desain sama persis dengan akun picker -->
+<div id="kontak-picker-backdrop" onclick="if(event.target===this)closeKontakPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:6001;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px);">
+  <div id="kontak-picker-sheet" style="background:var(--surface);width:100%;max-width:520px;border-radius:20px 20px 0 0;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,0.4);animation:slideUpSheet 0.25s cubic-bezier(0.34,1.2,0.64,1);">
+    <div style="width:36px;height:4px;border-radius:2px;background:var(--border);margin:10px auto 0;flex-shrink:0;"></div>
+    <div style="padding:10px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;gap:10px;">
+      <h3 style="font-size:15px;font-weight:700;flex:1;"><i class="ti ti-users" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Pilih Kontak</h3>
+      <button onclick="closeKontakPicker()" style="background:var(--surface2);border:none;border-radius:50%;width:30px;height:30px;color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+    <div style="padding:10px 14px 8px;flex-shrink:0;position:relative;">
+      <i class="ti ti-search" style="position:absolute;left:26px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;color:var(--muted);"></i>
+      <input id="kontak-picker-search" type="text" placeholder="Cari nama, telepon, email..." autocomplete="off"
+        oninput="renderKontakPickerList(this.value, document.getElementById(_kontakPickerHiddenId||'jual-kontak-id')?.value||'')"
+        style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px 10px 38px;color:var(--text);font-size:14px;font-family:var(--sans);outline:none;">
+    </div>
+    <div id="kontak-picker-list" style="overflow-y:auto;flex:1;padding:4px 10px 16px;"></div>
+    <div style="padding:10px 14px;border-top:1px solid var(--border);flex-shrink:0;">
+      <button class="btn btn-ghost btn-sm" style="width:100%;" onclick="closeKontakPicker()">Batal / Tanpa Kontak</button>
+    </div>
+  </div>
+</div>
+<script>
+// Make kontak picker backdrop show/hide properly (uses display:flex like akun picker)
+const _kpBd = document.getElementById('kontak-picker-backdrop');
+if (_kpBd) {
+  Object.defineProperty(_kpBd, '_openState', { writable: true, value: false });
+  const _origOpen = _kpBd.classList.add.bind(_kpBd.classList);
+  _kpBd.classList.add = function(cls) {
+    if (cls === 'open') { _kpBd.style.display = 'flex'; return; }
+    _origOpen(cls);
+  };
+  _kpBd.classList.remove = function(cls) {
+    if (cls === 'open') { _kpBd.style.display = 'none'; return; }
+    HTMLElement.prototype.classList.remove.call(_kpBd, cls);
+  };
+}
+</script>
 
 <script>
 // SIDEBAR TOGGLE — didefinisikan awal agar onclick bisa akses
@@ -4267,7 +4313,7 @@ function showPage(id) {
   if(id==='aset-tetap') setTimeout(()=>{ renderAsetTetap(); renderAsetTetapKPI(); upgradeFormPickers(); }, 80);
   if(id==='kontak') setTimeout(()=>{ renderKontak(); renderKontakKPI(); upgradeFormPickers(); }, 80);
   if(id==='akun') { renderAkun(); setTimeout(upgradeFormPickers, 80); }
-  if(id==='transaksi') { initTransaksiForm(); setTimeout(upgradeFormPickers, 80); }
+  if(id==='transaksi') { initTransaksiForm(); setTimeout(() => { upgradeFormPickers(); refreshKontakPickers(); }, 80); }
   if(id==='analitik') setTimeout(renderAnalitik, 80);
   // Fitur Baru
   if(id==='jurnal-berulang') setTimeout(()=>{ renderJurnalBerulang(); upgradeFormPickers(); }, 80);
@@ -4449,18 +4495,24 @@ function simpanPenjualan() {
   const jumlah = parseFloat(document.getElementById('jual-jumlah').value)||0;
   const hpp = parseFloat(document.getElementById('jual-hpp').value)||0;
   const ket = document.getElementById('jual-ket').value || `Penjualan ${inv}`;
+  const kontakId = document.getElementById('jual-kontak-id')?.value || '';
   if(!tanggal||!jumlah) { showAlert('Lengkapi tanggal dan jumlah!'); return; }
   const debAkun = metode==='tunai'?'1101':'1201';
   const debNama = metode==='tunai'?'Kas masuk':'Piutang usaha';
-  addJurnal({tanggal,ket,jenis:'Penjualan',ref:inv,lines:[
+  addJurnal({tanggal,ket,jenis:'Penjualan',ref:inv,kontakId,lines:[
     {akun:debAkun,ket:debNama,debit:jumlah,kredit:0},
     {akun:'4101',ket:'Penjualan',debit:0,kredit:jumlah},
   ]});
-  if(hpp>0) addJurnal({tanggal,ket:'HPP '+ket,jenis:'Penjualan',ref:inv,lines:[
+  if(hpp>0) addJurnal({tanggal,ket:'HPP '+ket,jenis:'Penjualan',ref:inv,kontakId,lines:[
     {akun:'5101',ket:'HPP',debit:hpp,kredit:0},
     {akun:'1301',ket:'Persediaan',debit:0,kredit:hpp},
   ]});
+  // Update total transaksi di kontak jika dipilih
+  if(kontakId) updateKontakTotalTrx(kontakId, jumlah, 'penjualan');
   ['jual-inv','jual-jumlah','jual-hpp','jual-ket'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('jual-kontak-id').value = '';
+  const jualKontakBtn = document.getElementById('jual-kontak-btn');
+  if(jualKontakBtn){ jualKontakBtn.classList.remove('has-value'); jualKontakBtn.textContent = 'Pilih kontak...'; }
   showAlert('✓ Jurnal Penjualan berhasil disimpan!');
 }
 
@@ -4472,15 +4524,21 @@ function simpanPembelian() {
   const jumlah = parseFloat(document.getElementById('beli-jumlah').value)||0;
   const akunKode = document.getElementById('beli-akun').value;
   const ket = document.getElementById('beli-ket').value || `Pembelian ${faktur}`;
+  const kontakId = document.getElementById('beli-kontak-id')?.value || '';
   if(!tanggal||!jumlah) { showAlert('Lengkapi tanggal dan jumlah!'); return; }
   if(!akunKode) { showAlert('Pilih akun beban/aset terlebih dahulu!'); return; }
   const krAkun = metode==='tunai'?'1101':'2101';
   const krNama = metode==='tunai'?'Kas keluar':'Utang usaha';
-  addJurnal({tanggal,ket,jenis:'Pembelian',ref:faktur,lines:[
+  addJurnal({tanggal,ket,jenis:'Pembelian',ref:faktur,kontakId,lines:[
     {akun:akunKode,ket,debit:jumlah,kredit:0},
     {akun:krAkun,ket:krNama,debit:0,kredit:jumlah},
   ]});
+  // Update total transaksi di kontak jika dipilih
+  if(kontakId) updateKontakTotalTrx(kontakId, jumlah, 'pembelian');
   ['beli-faktur','beli-jumlah','beli-ket'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('beli-kontak-id').value = '';
+  const beliKontakBtn = document.getElementById('beli-kontak-btn');
+  if(beliKontakBtn){ beliKontakBtn.classList.remove('has-value'); beliKontakBtn.textContent = 'Pilih kontak...'; }
   // Reset picker button
   const btn = document.getElementById('beli-akun-btn');
   if(btn){ btn.classList.remove('has-value'); btn.textContent = 'Pilih Akun...'; }
@@ -5042,7 +5100,7 @@ let exportLogoDataUrl = null; // base64 logo for PDF
 function openExportModal() {
   document.getElementById('exp-status').style.display = 'none';
   document.getElementById('exp-btn').disabled = false;
-  document.getElementById('exp-btn').textContent = '<i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Sekarang';
+  document.getElementById('exp-btn').innerHTML = '<i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Sekarang';
   // Pre-fill from profil
   const _p = typeof getProfil === 'function' ? getProfil() : {};
   const namaEl = document.getElementById('exp-nama-perusahaan');
@@ -5136,12 +5194,12 @@ function doExport() {
       else if(exportFmt === 'pdf') exportPDF(nama, periode, proyek);
       else exportCSV(nama, periode);
       btn.disabled = false;
-      btn.textContent = '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Selesai!';
-      setTimeout(() => { btn.textContent = '<i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Sekarang'; btn.disabled = false; }, 2000);
+      btn.innerHTML = '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Selesai!';
+      setTimeout(() => { btn.innerHTML = '<i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Sekarang'; btn.disabled = false; }, 2000);
     } catch(e) {
       expStatus('❌ Error: ' + e.message, 'var(--red)');
       btn.disabled = false;
-      btn.textContent = '<i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Sekarang';
+      btn.innerHTML = '<i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Sekarang';
     }
   }, 100);
 }
@@ -7460,7 +7518,7 @@ function selectTemplate(id) {
   const tmpl = TEMPLATES[id];
   const count = tmpl.codes ? tmpl.codes.length : akuns.length;
   document.getElementById('template-selected-info').style.display = 'block';
-  document.getElementById('tmpl-sel-title').textContent = '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ' + tmpl.label + ' dipilih';
+  document.getElementById('tmpl-sel-title').innerHTML = '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ' + tmpl.label + ' dipilih';
   document.getElementById('tmpl-sel-desc').textContent = tmpl.desc + ` (${count} akun)`;
   document.getElementById('tmpl-apply-btn').disabled = false;
 }
@@ -7655,8 +7713,14 @@ if(!inIframe) {
 const THEME_KEY = 'bhp_theme';
 
 function initTheme() {
-  const saved = localStorage.getItem(THEME_KEY) || 'dark';
-  applyTheme(saved);
+  const saved = localStorage.getItem(THEME_KEY);
+  if(saved) {
+    applyTheme(saved);
+  } else {
+    // Ikuti preferensi sistem perangkat
+    const preferLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    applyTheme(preferLight ? 'light' : 'dark');
+  }
 }
 
 function applyTheme(mode) {
@@ -8731,9 +8795,494 @@ function openModalKontak(editId=null){
 }
 function simpanKontak(){const nama=document.getElementById('kontak-nama').value.trim();if(!nama){showAlert('Nama kontak wajib diisi.');return;}const editId=document.getElementById('kontak-edit-id').value;const kontak={id:editId||'KTK_'+Date.now(),nama,tipe:document.getElementById('kontak-tipe').value,telp:document.getElementById('kontak-telp').value.trim(),email:document.getElementById('kontak-email').value.trim(),alamat:document.getElementById('kontak-alamat').value.trim(),npwp:document.getElementById('kontak-npwp').value.trim(),pic:document.getElementById('kontak-pic').value.trim(),catatan:document.getElementById('kontak-catatan').value.trim(),createdAt:editId?(kontakList.find(k=>k.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString()};if(editId){const idx=kontakList.findIndex(k=>k.id===editId);if(idx>=0)kontakList[idx]=kontak;}else kontakList.unshift(kontak);saveFiturBaru();closeModal('modal-kontak');renderKontak();renderKontakKPI();showAlert(`Kontak "${nama}" berhasil disimpan!`);}
 function hapusKontak(id){if(!confirm('Hapus kontak ini?'))return;kontakList=kontakList.filter(k=>k.id!==id);saveFiturBaru();renderKontak();renderKontakKPI();showAlert('Kontak dihapus.');}
-function lihatDetailKontak(id){const k=kontakList.find(c=>c.id===id);if(!k)return;const totalInvoice=invoiceList.filter(i=>i.pelanggan===k.nama).reduce((s,i)=>s+i.total,0);const tipeLabel={pelanggan:'Pelanggan',supplier:'Supplier',keduanya:'Keduanya'}[k.tipe]||k.tipe;document.getElementById('kontak-detail-title').textContent=k.nama;document.getElementById('kontak-detail-body').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;"><div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Tipe</div><div>${tipeLabel}</div></div><div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Telepon</div><div>${k.telp||'—'}</div></div><div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Email</div><div>${k.email||'—'}</div></div><div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">NPWP</div><div style="font-family:var(--mono);font-size:12px;">${k.npwp||'—'}</div></div>${k.alamat?`<div style="grid-column:1/-1;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Alamat</div><div>${k.alamat}</div></div>`:''}</div>${totalInvoice?`<div style="background:var(--surface2);border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Total dari Invoice</div><div style="font-size:16px;font-weight:600;color:var(--accent);">${rp(totalInvoice)}</div></div>`:''}<div style="display:flex;gap:8px;margin-top:16px;"><button class="btn btn-ghost btn-sm" onclick="closeModal('modal-kontak-detail');openModalKontak('${id}')"><i class="ti ti-pencil ti-btn"></i> Edit</button><button class="btn btn-danger btn-sm" onclick="closeModal('modal-kontak-detail');hapusKontak('${id}')"><i class="ti ti-trash ti-btn"></i> Hapus</button></div>`;openModal('modal-kontak-detail');}
+function lihatDetailKontak(id){const k=kontakList.find(c=>c.id===id);if(!k)return;const totalInvoice=invoiceList.filter(i=>i.pelanggan===k.nama).reduce((s,i)=>s+i.total,0);const totalTrxJurnal=jurnalEntries.filter(j=>j.kontakId===id).reduce((s,j)=>{const t=(j.lines||[]).filter(l=>l.debit>0).reduce((a,l)=>a+l.debit,0);return s+t;},0);const totalKeseluruhan=totalInvoice+(k.totalTrx||0);const tipeLabel={pelanggan:'Pelanggan',supplier:'Supplier',keduanya:'Keduanya'}[k.tipe]||k.tipe;document.getElementById('kontak-detail-title').textContent=k.nama;document.getElementById('kontak-detail-body').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;"><div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Tipe</div><div>${tipeLabel}</div></div><div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Telepon</div><div>${k.telp||'—'}</div></div><div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Email</div><div>${k.email||'—'}</div></div><div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">NPWP</div><div style="font-family:var(--mono);font-size:12px;">${k.npwp||'—'}</div></div>${k.alamat?`<div style="grid-column:1/-1;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Alamat</div><div>${k.alamat}</div></div>`:''}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">${totalInvoice?`<div style="background:var(--surface2);border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Total Invoice</div><div style="font-size:15px;font-weight:600;color:var(--accent);">${rp(totalInvoice)}</div></div>`:''}<div style="background:var(--surface2);border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Total Transaksi</div><div style="font-size:15px;font-weight:600;color:var(--accent2);">${rp((k.totalTrx||0))}</div></div>${(k.totalPenjualan||0)>0?`<div style="background:var(--surface2);border-radius:10px;padding:10px 12px;"><div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Penjualan</div><div style="font-size:13px;font-weight:600;color:var(--accent);">${rp(k.totalPenjualan)}</div></div>`:''} ${(k.totalPembelian||0)>0?`<div style="background:var(--surface2);border-radius:10px;padding:10px 12px;"><div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Pembelian</div><div style="font-size:13px;font-weight:600;color:var(--accent3);">${rp(k.totalPembelian)}</div></div>`:''}</div><div style="display:flex;gap:8px;margin-top:4px;"><button class="btn btn-ghost btn-sm" onclick="closeModal('modal-kontak-detail');openModalKontak('${id}')"><i class="ti ti-pencil ti-btn"></i> Edit</button><button class="btn btn-danger btn-sm" onclick="closeModal('modal-kontak-detail');hapusKontak('${id}')"><i class="ti ti-trash ti-btn"></i> Hapus</button></div>`;openModal('modal-kontak-detail');}
 function renderKontakKPI(){const el=document.getElementById('kontak-kpi');if(!el)return;const pelanggan=kontakList.filter(k=>k.tipe==='pelanggan'||k.tipe==='keduanya').length;const supplier=kontakList.filter(k=>k.tipe==='supplier'||k.tipe==='keduanya').length;const kpis=[{label:'Total Kontak',val:kontakList.length+' kontak',icon:'users',clr:'var(--accent2)'},{label:'Pelanggan',val:pelanggan+' kontak',icon:'user-check',clr:'var(--accent)'},{label:'Supplier',val:supplier+' kontak',icon:'building-warehouse',clr:'var(--accent3)'}];el.innerHTML=kpis.map(k=>`<div style="flex:1;min-width:120px;background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:12px 14px;"><div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px;"><i class="ti ti-${k.icon}"></i> ${k.label}</div><div style="font-size:15px;font-weight:600;color:${k.clr};margin-top:4px;">${k.val}</div></div>`).join('');}
-function renderKontak(){const tbody=document.getElementById('kontak-tbody');if(!tbody)return;const search=(document.getElementById('kontak-search')?.value||'').toLowerCase();const list=kontakList.filter(k=>{const matchTipe=_kontakFilter==='semua'||k.tipe===_kontakFilter||k.tipe==='keduanya';const matchSearch=!search||k.nama.toLowerCase().includes(search)||k.telp?.includes(search)||k.email?.toLowerCase().includes(search);return matchTipe&&matchSearch;});if(!list.length){tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px;">Belum ada kontak</td></tr>`;return;}const tipeMap={pelanggan:`<span style="background:var(--accent)22;color:var(--accent);padding:2px 8px;border-radius:6px;font-size:11px;">Pelanggan</span>`,supplier:`<span style="background:var(--accent3)22;color:var(--accent3);padding:2px 8px;border-radius:6px;font-size:11px;">Supplier</span>`,keduanya:`<span style="background:var(--accent2)22;color:var(--accent2);padding:2px 8px;border-radius:6px;font-size:11px;">Keduanya</span>`};tbody.innerHTML=list.map(k=>{const totalInvoice=invoiceList.filter(i=>i.pelanggan===k.nama).reduce((s,i)=>s+i.total,0);return `<tr><td style="font-weight:500;cursor:pointer;" onclick="lihatDetailKontak('${k.id}')">${k.nama}</td><td>${tipeMap[k.tipe]||k.tipe}</td><td style="font-size:12px;color:var(--muted)">${k.telp||'—'}</td><td style="font-size:12px;color:var(--muted)">${k.email||'—'}</td><td style="font-size:12px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.alamat||'—'}</td><td style="text-align:right;font-family:var(--mono);color:${totalInvoice?'var(--accent)':'var(--muted)'};">${totalInvoice?rp(totalInvoice):'—'}</td><td style="display:flex;gap:4px;"><button class="btn btn-ghost btn-sm" onclick="lihatDetailKontak('${k.id}')" title="Lihat"><i class="ti ti-eye"></i></button><button class="btn btn-ghost btn-sm" onclick="openModalKontak('${k.id}')" title="Edit"><i class="ti ti-pencil"></i></button><button class="btn btn-danger btn-sm" onclick="hapusKontak('${k.id}')" title="Hapus"><i class="ti ti-trash"></i></button></td></tr>`;}).join('');}
+function renderKontak(){const tbody=document.getElementById('kontak-tbody');if(!tbody)return;const search=(document.getElementById('kontak-search')?.value||'').toLowerCase();const list=kontakList.filter(k=>{const matchTipe=_kontakFilter==='semua'||k.tipe===_kontakFilter||k.tipe==='keduanya';const matchSearch=!search||k.nama.toLowerCase().includes(search)||k.telp?.includes(search)||k.email?.toLowerCase().includes(search);return matchTipe&&matchSearch;});if(!list.length){tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px;">Belum ada kontak</td></tr>`;return;}const tipeMap={pelanggan:`<span style="background:var(--accent)22;color:var(--accent);padding:2px 8px;border-radius:6px;font-size:11px;">Pelanggan</span>`,supplier:`<span style="background:var(--accent3)22;color:var(--accent3);padding:2px 8px;border-radius:6px;font-size:11px;">Supplier</span>`,keduanya:`<span style="background:var(--accent2)22;color:var(--accent2);padding:2px 8px;border-radius:6px;font-size:11px;">Keduanya</span>`};tbody.innerHTML=list.map(k=>{const totalInvoice=invoiceList.filter(i=>i.pelanggan===k.nama).reduce((s,i)=>s+i.total,0);const totalDirect=k.totalTrx||0;const totalAll=totalInvoice+totalDirect;return `<tr><td style="font-weight:500;cursor:pointer;" onclick="lihatDetailKontak('${k.id}')">${k.nama}</td><td>${tipeMap[k.tipe]||k.tipe}</td><td style="font-size:12px;color:var(--muted)">${k.telp||'—'}</td><td style="font-size:12px;color:var(--muted)">${k.email||'—'}</td><td style="font-size:12px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.alamat||'—'}</td><td style="text-align:right;font-family:var(--mono);color:${totalAll?'var(--accent)':'var(--muted)'};">${totalAll?rp(totalAll):'—'}</td><td style="display:flex;gap:4px;"><button class="btn btn-ghost btn-sm" onclick="lihatDetailKontak('${k.id}')" title="Lihat"><i class="ti ti-eye"></i></button><button class="btn btn-ghost btn-sm" onclick="openModalKontak('${k.id}')" title="Edit"><i class="ti ti-pencil"></i></button><button class="btn btn-danger btn-sm" onclick="hapusKontak('${k.id}')" title="Hapus"><i class="ti ti-trash"></i></button></td></tr>`;}).join('');}
+
+
+// ══════════════════════════════════════════════════════════════
+// KONTAK — UPDATE TOTAL TRANSAKSI & POPULATE PICKERS
+// ══════════════════════════════════════════════════════════════
+
+/** Tambah jumlah ke totalTrx kontak dan simpan */
+function updateKontakTotalTrx(kontakId, jumlah, jenisTrx) {
+  if (!kontakId) return;
+  const idx = kontakList.findIndex(k => k.id === kontakId);
+  if (idx < 0) return;
+  if (!kontakList[idx].totalTrx) kontakList[idx].totalTrx = 0;
+  if (!kontakList[idx].totalPenjualan) kontakList[idx].totalPenjualan = 0;
+  if (!kontakList[idx].totalPembelian) kontakList[idx].totalPembelian = 0;
+  kontakList[idx].totalTrx += jumlah;
+  if (jenisTrx === 'penjualan') kontakList[idx].totalPenjualan += jumlah;
+  if (jenisTrx === 'pembelian') kontakList[idx].totalPembelian += jumlah;
+  saveFiturBaru();
+}
+
+/** Recalculate semua totalTrx dari jurnalEntries (untuk sync ulang) */
+function recalcKontakTotalTrx() {
+  kontakList.forEach(k => { k.totalTrx = 0; k.totalPenjualan = 0; k.totalPembelian = 0; });
+  jurnalEntries.forEach(j => {
+    if (!j.kontakId) return;
+    const idx = kontakList.findIndex(k => k.id === j.kontakId);
+    if (idx < 0) return;
+    const total = (j.lines || []).filter(l => l.debit > 0).reduce((s, l) => s + l.debit, 0);
+    if (!kontakList[idx].totalTrx) kontakList[idx].totalTrx = 0;
+    if (!kontakList[idx].totalPenjualan) kontakList[idx].totalPenjualan = 0;
+    if (!kontakList[idx].totalPembelian) kontakList[idx].totalPembelian = 0;
+    kontakList[idx].totalTrx += total;
+    if (j.jenis === 'Penjualan') kontakList[idx].totalPenjualan += total;
+    if (j.jenis === 'Pembelian') kontakList[idx].totalPembelian += total;
+  });
+}
+
+/** Buka kontak picker (bottom sheet sama seperti akun picker) — semua kontak tampil, tidak filter tipe */
+let _kontakPickerHiddenId = null;
+let _kontakPickerBtnId = null;
+
+function openKontakPicker(hiddenInputId, btnId) {
+  _kontakPickerHiddenId = hiddenInputId;
+  _kontakPickerBtnId = btnId;
+  const currentVal = document.getElementById(hiddenInputId)?.value || '';
+  document.getElementById('kontak-picker-search').value = '';
+  renderKontakPickerList('', currentVal);
+  document.getElementById('kontak-picker-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('kontak-picker-search').focus(), 200);
+}
+
+function renderKontakPickerList(query, selectedId) {
+  const q = query.toLowerCase();
+  const list = document.getElementById('kontak-picker-list');
+  const filtered = kontakList.filter(k =>
+    !q || k.nama.toLowerCase().includes(q) ||
+    (k.telp && k.telp.includes(q)) ||
+    (k.email && k.email.toLowerCase().includes(q))
+  );
+  const tipeLabel = { pelanggan: 'Pelanggan', supplier: 'Supplier', keduanya: 'Keduanya' };
+  const tipeColor = { pelanggan: 'var(--accent)', supplier: 'var(--accent3)', keduanya: 'var(--accent2)' };
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;">
+      <i class="ti ti-users" style="font-size:24px;display:block;margin:0 auto 8px;opacity:0.4;"></i>
+      ${q ? 'Kontak tidak ditemukan' : 'Belum ada kontak'}
+    </div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(k => {
+    const isSel = k.id === selectedId;
+    const tl = tipeLabel[k.tipe] || k.tipe;
+    const tc = tipeColor[k.tipe] || 'var(--muted)';
+    return `<div class="akun-picker-item${isSel?' selected':''}" onclick="selectKontakPicker('${k.id}','${k.nama.replace(/'/g,"\\'")}','${k.tipe}')">
+      <span style="display:flex;flex-direction:column;flex:1;min-width:0;">
+        <span style="font-weight:500;font-size:13px;">${k.nama}</span>
+        <span style="font-size:11px;color:var(--muted);margin-top:1px;">${k.telp||k.email||'—'}</span>
+      </span>
+      <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;background:${tc}22;color:${tc};flex-shrink:0;">${tl}</span>
+    </div>`;
+  }).join('');
+}
+
+function selectKontakPicker(id, nama, tipe) {
+  if (!_kontakPickerHiddenId) return;
+  const hidden = document.getElementById(_kontakPickerHiddenId);
+  const btn = document.getElementById(_kontakPickerBtnId);
+  if (hidden) hidden.value = id;
+  if (btn) {
+    btn.classList.add('has-value');
+    const tipeColor = { pelanggan: 'var(--accent)', supplier: 'var(--accent3)', keduanya: 'var(--accent2)' };
+    const tc = tipeColor[tipe] || 'var(--muted)';
+    btn.innerHTML = `<i class="ti ti-user" style="font-size:13px;width:13px;height:13px;vertical-align:-1px;color:${tc};margin-right:5px;"></i><span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${nama}</span>`;
+  }
+  _kontakPickerHiddenId = null;
+  _kontakPickerBtnId = null;
+  document.getElementById('kontak-picker-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function closeKontakPicker() {
+  _kontakPickerHiddenId = null;
+  _kontakPickerBtnId = null;
+  document.getElementById('kontak-picker-backdrop')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function onJualKontakChange() { /* placeholder */ }
+function refreshKontakPickers() { /* tidak diperlukan lagi — picker on-demand */ }
+
+// ══════════════════════════════════════════════════════════════
+// MULTI-USER SYSTEM (Supabase-backed) — v2 dengan Share Link & CRUD Permissions
+// ══════════════════════════════════════════════════════════════
+
+// Modul + aksi CRUD yang bisa diatur per user
+const MODULES_CRUD = {
+  dashboard:    { label: 'Dashboard',          icon: 'ti-layout-dashboard' },
+  transaksi:    { label: 'Input Transaksi',     icon: 'ti-credit-card' },
+  jurnal:       { label: 'Jurnal',              icon: 'ti-book' },
+  'laba-rugi':  { label: 'Laba Rugi',           icon: 'ti-trending-up' },
+  neraca:       { label: 'Neraca',              icon: 'ti-building-bank' },
+  'arus-kas':   { label: 'Arus Kas',            icon: 'ti-cash' },
+  akun:         { label: 'Chart of Accounts',   icon: 'ti-clipboard-list' },
+  kontak:       { label: 'Kontak',              icon: 'ti-users' },
+  invoice:      { label: 'Invoice & Piutang',   icon: 'ti-receipt' },
+  anggaran:     { label: 'Anggaran',            icon: 'ti-chart-bar' },
+  pajak:        { label: 'Pajak',               icon: 'ti-percent' },
+  rekonsiliasi: { label: 'Rekonsiliasi Bank',   icon: 'ti-refresh' },
+  analitik:     { label: 'Analitik & Tren',     icon: 'ti-chart-area' },
+  'ai-assistant':{ label: 'AI Assisten',        icon: 'ti-robot' },
+  export:       { label: 'Export Laporan',      icon: 'ti-upload' },
+  reset:        { label: 'Reset Data',          icon: 'ti-trash', danger: true },
+};
+const CRUD_ACTIONS = ['read','create','update','delete'];
+const CRUD_LABELS  = { read:'Lihat', create:'Buat', update:'Edit', delete:'Hapus' };
+
+/** Buat default permissions: semua modul, semua CRUD = true (kecuali reset = false) */
+function makeDefaultPerms(isAdmin = false) {
+  const p = {};
+  Object.keys(MODULES_CRUD).forEach(mod => {
+    p[mod] = {};
+    CRUD_ACTIONS.forEach(act => {
+      p[mod][act] = mod === 'reset' ? isAdmin : true;
+    });
+  });
+  return p;
+}
+
+let _orgMembers = [];
+let _currentMemberRole = null;
+
+async function loadOrgMembers() {
+  if (!currentCompany || !_supa) return [];
+  try {
+    const { data, error } = await _supa.from('org_members').select('*').eq('company_id', currentCompany.id);
+    if (error) { console.error('loadOrgMembers:', error); return []; }
+    _orgMembers = data || [];
+    const me = _orgMembers.find(m => m.user_id === currentUser?.id);
+    _currentMemberRole = me?.role || (currentCompany?.user_id === currentUser?.id ? 'admin' : 'member');
+    return _orgMembers;
+  } catch(e) { console.error('loadOrgMembers:', e); return []; }
+}
+
+function isAdmin() {
+  return _currentMemberRole === 'admin' || currentCompany?.user_id === currentUser?.id;
+}
+
+function hasPerm(mod, act) {
+  if (isAdmin()) return true;
+  const me = _orgMembers.find(m => m.user_id === currentUser?.id);
+  if (!me) return false;
+  const p = me.permissions || {};
+  return p[mod]?.[act] !== false;
+}
+
+function enforcePermissions() {
+  if (isAdmin()) return;
+  Object.keys(MODULES_CRUD).forEach(mod => {
+    const navEl = document.querySelector(`[data-page="${mod}"]`);
+    if (navEl) navEl.style.display = hasPerm(mod, 'read') ? '' : 'none';
+  });
+  const resetBtn = document.querySelector('[onclick*="resetData"]');
+  if (resetBtn && !hasPerm('reset', 'delete')) resetBtn.style.display = 'none';
+}
+
+// ── Share Link / Join Code ──────────────────────────────────
+/** Generate atau ambil join code untuk company saat ini */
+async function getOrCreateJoinCode() {
+  if (!currentCompany || !_supa) return null;
+  // Cek apakah sudah ada
+  const { data: existing } = await _supa.from('company_join_codes')
+    .select('code,expires_at').eq('company_id', currentCompany.id).single();
+  if (existing && new Date(existing.expires_at) > new Date()) return existing.code;
+  // Buat baru — 8 karakter uppercase alphanumeric
+  const code = Math.random().toString(36).substring(2,6).toUpperCase() +
+               Math.random().toString(36).substring(2,6).toUpperCase();
+  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 hari
+  await _supa.from('company_join_codes').upsert({
+    company_id: currentCompany.id, code,
+    created_by: currentUser?.id, expires_at: expires
+  }, { onConflict: 'company_id' });
+  return code;
+}
+
+async function showJoinCodeModal() {
+  if (!isAdmin()) { showAlert('Hanya admin yang bisa melihat join code.'); return; }
+  const btn = document.getElementById('btn-show-joincode');
+  if (btn) { btn.disabled = true; btn.textContent = 'Memuat...'; }
+  try {
+    const code = await getOrCreateJoinCode();
+    const joinLink = `${location.origin}${location.pathname}?join=${code}`;
+    document.getElementById('joincode-display').textContent = code || '—';
+    document.getElementById('joincode-link').value = joinLink;
+    if (btn) { btn.disabled = false; btn.textContent = 'Perbarui Kode'; }
+    openModal('modal-joincode');
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Lihat Join Code'; }
+    showAlert('Gagal: ' + e.message + '\n\nPastikan tabel company_join_codes sudah dibuat.');
+  }
+}
+
+async function regenerateJoinCode() {
+  const btn = document.getElementById('btn-regen-code');
+  btn.disabled = true; btn.textContent = 'Memperbarui...';
+  await _supa.from('company_join_codes').delete().eq('company_id', currentCompany.id);
+  btn.disabled = false; btn.textContent = 'Perbarui Kode';
+  await showJoinCodeModal();
+}
+
+function copyJoinLink() {
+  const val = document.getElementById('joincode-link').value;
+  navigator.clipboard.writeText(val).then(() => showAlert('✓ Link berhasil disalin!')).catch(() => {
+    document.getElementById('joincode-link').select();
+    document.execCommand('copy');
+    showAlert('✓ Link disalin!');
+  });
+}
+
+/** Cek apakah URL punya ?join=CODE dan proses join */
+async function checkJoinCodeInURL() {
+  const params = new URLSearchParams(location.search);
+  const code = params.get('join');
+  if (!code || !currentUser) return;
+  // Hilangkan dari URL
+  history.replaceState({}, '', location.pathname);
+  try {
+    const { data: jc } = await _supa.from('company_join_codes').select('*').eq('code', code.toUpperCase()).single();
+    if (!jc) { showAlert('❌ Kode undangan tidak valid atau sudah kadaluarsa.'); return; }
+    if (new Date(jc.expires_at) < new Date()) { showAlert('❌ Kode undangan sudah kadaluarsa (berlaku 7 hari).'); return; }
+    // Ambil info company
+    const { data: co } = await _supa.from('companies').select('*').eq('id', jc.company_id).single();
+    if (!co) { showAlert('❌ Bisnis tidak ditemukan.'); return; }
+    // Cek apakah sudah member
+    const { data: existing } = await _supa.from('org_members').select('id').eq('company_id', jc.company_id).eq('email', currentUser.email).single();
+    if (existing) { showAlert(`ℹ Kamu sudah terdaftar di bisnis "${co.name}".`); return; }
+    // Konfirmasi
+    if (!confirm(`Bergabung ke bisnis "${co.name}"?\n\nKamu akan didaftarkan sebagai Member dengan izin default.`)) return;
+    const { error } = await _supa.from('org_members').insert({
+      company_id: jc.company_id, user_id: currentUser.id,
+      email: currentUser.email,
+      nama: currentUser.user_metadata?.full_name || currentUser.email,
+      role: 'member', permissions: makeDefaultPerms(false),
+      status: 'active', created_at: new Date().toISOString()
+    });
+    if (error) { showAlert('Gagal bergabung: ' + error.message); return; }
+    showAlert(`✓ Berhasil bergabung ke bisnis "${co.name}"!\n\nSilakan refresh dan pilih bisnis tersebut.`);
+  } catch(e) { showAlert('Error: ' + e.message); }
+}
+
+// ── Modal User Management ─────────────────────────────────────
+function openUserMgmtModal() {
+  if (!isAdmin()) { showAlert('Hanya admin yang bisa mengelola tim.'); return; }
+  renderUserMgmtList();
+  openModal('modal-user-mgmt');
+}
+
+async function renderUserMgmtList() {
+  const el = document.getElementById('user-mgmt-list');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;text-align:center;"><i class="ti ti-loader" style="font-size:20px;display:block;margin:0 auto 8px;animation:spin 1s linear infinite;"></i>Memuat anggota...</div>';
+  await loadOrgMembers();
+  if (!_orgMembers.length) {
+    el.innerHTML = `<div style="text-align:center;padding:32px 16px;">
+      <i class="ti ti-users" style="font-size:32px;display:block;margin:0 auto 12px;opacity:0.3;"></i>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Belum ada anggota tim.<br>Bagikan join code agar user lain bisa bergabung.</div>
+      <button class="btn btn-primary btn-sm" onclick="showJoinCodeModal()"><i class="ti ti-link ti-btn"></i> Tampilkan Join Code</button>
+    </div>`;
+    return;
+  }
+  el.innerHTML = _orgMembers.map(m => {
+    const isMe = m.user_id === currentUser?.id;
+    const p = m.permissions || {};
+    const modCount = Object.keys(MODULES_CRUD).length;
+    const activeCount = Object.keys(MODULES_CRUD).filter(mod => p[mod]?.read !== false).length;
+    const roleBadge = m.role === 'admin'
+      ? `<span style="padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(245,158,11,0.15);color:var(--accent3);">Admin</span>`
+      : `<span style="padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(34,211,238,0.1);color:var(--accent2);">Member</span>`;
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--accent)22;border:1px solid var(--accent)44;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--accent);flex-shrink:0;">
+          ${(m.nama||m.email||'?').charAt(0).toUpperCase()}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px;">
+            <span style="font-weight:600;font-size:14px;">${m.nama||'—'}</span>
+            ${roleBadge}
+            ${isMe?'<span style="font-size:10px;color:var(--accent);background:rgba(74,222,128,0.1);padding:2px 6px;border-radius:4px;font-weight:600;">Saya</span>':''}
+          </div>
+          <div style="font-size:11px;color:var(--muted);">${m.email||'—'}${m.nik?' · NIK: '+m.nik:''}${m.jabatan?' · '+m.jabatan:''}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;"><i class="ti ti-shield-check" style="font-size:11px;width:11px;height:11px;vertical-align:-1px;"></i> ${activeCount}/${modCount} modul aktif</div>
+        </div>
+        ${!isMe ? `<div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="btn btn-ghost btn-sm" onclick="openEditMember('${m.id}')"><i class="ti ti-pencil ti-btn"></i> Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="removeMember('${m.id}','${m.nama||m.email}')"><i class="ti ti-trash ti-btn"></i></button>
+        </div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function removeMember(memberId, nama) {
+  if (!confirm(`Hapus anggota "${nama}" dari tim?`)) return;
+  const { error } = await _supa.from('org_members').delete().eq('id', memberId);
+  if (error) { showAlert('Gagal hapus: ' + error.message); return; }
+  showAlert(`✓ "${nama}" dihapus dari tim.`);
+  renderUserMgmtList();
+}
+
+// ── Invite / Edit Member dengan CRUD Permissions ─────────────
+
+function openInviteModal() {
+  if (!isAdmin()) return;
+  document.getElementById('invite-email').value = '';
+  document.getElementById('invite-nama').value = '';
+  document.getElementById('invite-nik').value = '';
+  document.getElementById('invite-jabatan').value = '';
+  document.getElementById('invite-role').value = 'member';
+  renderPermTable('perm-table-invite', makeDefaultPerms(false));
+  openModal('modal-invite-user');
+}
+
+async function kirimInvite() {
+  const email = document.getElementById('invite-email').value.trim();
+  const nama = document.getElementById('invite-nama').value.trim();
+  const nik = document.getElementById('invite-nik').value.trim();
+  const jabatan = document.getElementById('invite-jabatan').value.trim();
+  const role = document.getElementById('invite-role').value;
+  if (!email) { showAlert('Email wajib diisi!'); return; }
+  const perms = readPermTableValues('perm-table-invite');
+  const btn = document.getElementById('btn-kirim-invite');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  try {
+    const { error } = await _supa.from('org_members').insert({
+      company_id: currentCompany.id, email, nama, nik, jabatan, role,
+      permissions: perms, invited_by: currentUser.id,
+      status: 'pending', created_at: new Date().toISOString()
+    });
+    btn.disabled = false; btn.textContent = 'Simpan Anggota';
+    if (error) { showAlert('Gagal: ' + error.message); return; }
+    showAlert(`✓ Anggota "${nama||email}" ditambahkan!\n\nMinta mereka buka link join code untuk bergabung.`);
+    closeModal('modal-invite-user');
+    renderUserMgmtList();
+  } catch(e) { btn.disabled=false; btn.textContent='Simpan Anggota'; showAlert('Error: '+e.message); }
+}
+
+let _editMemberId = null;
+async function openEditMember(memberId) {
+  _editMemberId = memberId;
+  const m = _orgMembers.find(x => x.id === memberId);
+  if (!m) return;
+  document.getElementById('edit-member-nama').value = m.nama || '';
+  document.getElementById('edit-member-nik').value = m.nik || '';
+  document.getElementById('edit-member-jabatan').value = m.jabatan || '';
+  document.getElementById('edit-member-role').value = m.role || 'member';
+  renderPermTable('perm-table-edit', m.permissions || makeDefaultPerms(false));
+  openModal('modal-edit-member');
+}
+
+async function simpanEditMember() {
+  if (!_editMemberId) return;
+  const nama = document.getElementById('edit-member-nama').value.trim();
+  const nik = document.getElementById('edit-member-nik').value.trim();
+  const jabatan = document.getElementById('edit-member-jabatan').value.trim();
+  const role = document.getElementById('edit-member-role').value;
+  const perms = readPermTableValues('perm-table-edit');
+  const btn = document.getElementById('btn-simpan-edit-member');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  const { error } = await _supa.from('org_members').update({ nama, nik, jabatan, role, permissions: perms }).eq('id', _editMemberId);
+  btn.disabled = false; btn.textContent = 'Simpan Perubahan';
+  if (error) { showAlert('Gagal: ' + error.message); return; }
+  showAlert('✓ Data anggota berhasil diperbarui!');
+  closeModal('modal-edit-member');
+  renderUserMgmtList();
+  enforcePermissions();
+}
+
+// ── Permission Table (CRUD per Modul) ─────────────────────────
+
+/** Render tabel permission CRUD ke dalam container */
+function renderPermTable(containerId, perms) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const p = perms || makeDefaultPerms(false);
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border);">
+        <th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:600;">Modul</th>
+        ${CRUD_ACTIONS.map(a => `<th style="text-align:center;padding:6px 4px;color:var(--muted);font-weight:600;min-width:44px;">${CRUD_LABELS[a]}</th>`).join('')}
+        <th style="text-align:center;padding:6px 4px;color:var(--muted);font-weight:600;">Semua</th>
+      </tr>
+    </thead>
+    <tbody>`;
+  Object.entries(MODULES_CRUD).forEach(([mod, info]) => {
+    const isDanger = info.danger;
+    html += `<tr style="border-bottom:1px solid var(--border);${isDanger?'background:rgba(239,68,68,0.04);':''}">
+      <td style="padding:7px 8px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <i class="ti ${info.icon}" style="font-size:13px;width:13px;height:13px;color:${isDanger?'var(--red)':'var(--muted)'};flex-shrink:0;"></i>
+          <span style="color:${isDanger?'var(--red)':'var(--text)'};">${info.label}</span>
+        </div>
+      </td>
+      ${CRUD_ACTIONS.map(act => {
+        const checked = p[mod]?.[act] !== false;
+        return `<td style="text-align:center;padding:4px;">
+          <input type="checkbox" data-mod="${mod}" data-act="${act}" class="perm-cb-${containerId}" ${checked?'checked':''}
+            onchange="syncRowAll('${containerId}','${mod}')"
+            style="width:15px;height:15px;accent-color:${isDanger?'var(--red)':'var(--accent)'};cursor:pointer;">
+        </td>`;
+      }).join('')}
+      <td style="text-align:center;padding:4px;">
+        <input type="checkbox" data-mod="${mod}" data-act="all" class="perm-cb-${containerId}"
+          ${CRUD_ACTIONS.every(a => p[mod]?.[a] !== false) ? 'checked' : ''}
+          onchange="toggleRowAll('${containerId}','${mod}',this.checked)"
+          style="width:15px;height:15px;accent-color:var(--accent2);cursor:pointer;">
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+/** Toggle semua CRUD di satu modul */
+function toggleRowAll(containerId, mod, checked) {
+  document.querySelectorAll(`.perm-cb-${containerId}[data-mod="${mod}"][data-act!="all"]`).forEach(cb => cb.checked = checked);
+}
+
+/** Sync checkbox "Semua" setelah individual diubah */
+function syncRowAll(containerId, mod) {
+  const cbs = Array.from(document.querySelectorAll(`.perm-cb-${containerId}[data-mod="${mod}"][data-act!="all"]`));
+  const allChecked = cbs.every(cb => cb.checked);
+  const allCb = document.querySelector(`.perm-cb-${containerId}[data-mod="${mod}"][data-act="all"]`);
+  if (allCb) allCb.checked = allChecked;
+}
+
+/** Baca nilai dari tabel permission */
+function readPermTableValues(containerId) {
+  const perms = {};
+  Object.keys(MODULES_CRUD).forEach(mod => {
+    perms[mod] = {};
+    CRUD_ACTIONS.forEach(act => {
+      const cb = document.querySelector(`.perm-cb-${containerId}[data-mod="${mod}"][data-act="${act}"]`);
+      perms[mod][act] = cb ? cb.checked : true;
+    });
+  });
+  return perms;
+}
+
+// Hook afterLogin
+setTimeout(() => {
+  const _origAL = window.afterLogin;
+  if (typeof _origAL === 'function') {
+    window.afterLogin = async function() {
+      await _origAL.apply(this, arguments);
+      setTimeout(async () => {
+        if (currentCompany) {
+          await loadOrgMembers();
+          enforcePermissions();
+          const navBtn = document.getElementById('nav-user-mgmt');
+          if (navBtn) navBtn.style.display = isAdmin() ? '' : 'none';
+          checkJoinCodeInURL();
+        }
+      }, 600);
+    };
+  }
+}, 0);
 
 // ══════════════════════════════════════════════════════════════
 // DETEKSI JURNAL PENYESUAIAN OTOMATIS — FIXED
@@ -17552,7 +18101,7 @@ function startTutorial() { showPage('tutorial'); }
 
         <!-- Template Dagang -->
         <div class="tut-card" id="tmpl-dagang" onclick="selectTemplate('dagang')" style="border:2px solid var(--border);">
-          <div style="font-size:32px;margin-bottom:8px;">[Jurnal Beli]</div>
+          <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent2);"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
           <div style="font-size:15px;font-weight:800;margin-bottom:6px;">Bisnis Dagang</div>
           <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px;">
             Toko retail, distributor, reseller, marketplace. Ada HPP, persediaan, dan retur.
@@ -17580,8 +18129,7 @@ function startTutorial() { showPage('tutorial'); }
 
         <!-- Template Lengkap -->
         <div class="tut-card" id="tmpl-lengkap" onclick="selectTemplate('lengkap')" style="border:2px solid var(--border);">
-          <div style="font-size:32px;margin-bottom:8px;">⭐</div>
-          <div style="font-size:15px;font-weight:800;margin-bottom:6px;">Semua Akun (Default)</div>
+          <div style="margin-bottom:8px;display:flex;justify-content:center;color:#f59e0b;"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
           <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px;">
             Set akun lengkap mencakup semua jenis bisnis. Bisa hapus yang tidak dipakai.
           </div>
@@ -17802,7 +18350,7 @@ function startTutorial() { showPage('tutorial'); }
             <div style="font-size:11px;color:var(--muted);">Konsultan, klinik, salon, agensi</div>
           </div>
           <div class="ob-type-card" onclick="selectObType('dagang',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
-            <div style="font-size:28px;margin-bottom:8px;">[Jurnal Beli]</div>
+            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent2);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
             <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Dagang</div>
             <div style="font-size:11px;color:var(--muted);">Toko, reseller, distributor</div>
           </div>
@@ -17812,7 +18360,7 @@ function startTutorial() { showPage('tutorial'); }
             <div style="font-size:11px;color:var(--muted);">Pabrik, produksi, UMKM</div>
           </div>
           <div class="ob-type-card" onclick="selectObType('lengkap',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
-            <div style="font-size:28px;margin-bottom:8px;">⭐</div>
+            <div style="margin-bottom:8px;display:flex;justify-content:center;color:#f59e0b;"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
             <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Semua Akun</div>
             <div style="font-size:11px;color:var(--muted);">103 akun lengkap</div>
           </div>
@@ -20438,16 +20986,35 @@ async function deleteCompany(company) {
 
 async function getMyCompanies() {
   if (!currentUser) throw new Error('Belum login');
-  const { data, error } = await _supa
+  // 1. Companies yang dimiliki user
+  const { data: owned, error: ownedErr } = await _supa
     .from('companies')
     .select('*')
     .eq('user_id', currentUser.id)
     .order('created_at');
-  if (error) {
-    console.error('getMyCompanies error:', error);
-    throw new Error(error.message || 'Gagal mengambil data bisnis');
+  if (ownedErr) {
+    console.error('getMyCompanies error:', ownedErr);
+    throw new Error(ownedErr.message || 'Gagal mengambil data bisnis');
   }
-  return Array.isArray(data) ? data : [];
+  // 2. Companies yang user-nya jadi member (via org_members)
+  let memberCompanies = [];
+  try {
+    const { data: memberships } = await _supa
+      .from('org_members')
+      .select('company_id')
+      .eq('email', currentUser.email);
+    if (memberships && memberships.length) {
+      const ids = memberships.map(m => m.company_id);
+      const { data: mcos } = await _supa
+        .from('companies')
+        .select('*')
+        .in('id', ids);
+      memberCompanies = (mcos || []).filter(c => c.user_id !== currentUser.id);
+    }
+  } catch(e) { /* tabel org_members mungkin belum ada, skip */ }
+  const all = [...(Array.isArray(owned)?owned:[]), ...memberCompanies];
+  // Deduplicate by id
+  return all.filter((c, i, arr) => arr.findIndex(x => x.id === c.id) === i);
 }
 
 // Blokir karakter non-angka di input nominal (kecuali tombol kontrol)
@@ -23535,7 +24102,230 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 
-<!-- MODAL: ALERT BARU -->
+<!-- MODAL: KELOLA TIM / MULTI-USER -->
+<div class="modal-backdrop" id="modal-user-mgmt" onclick="if(event.target===this)closeModal('modal-user-mgmt')">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title"><i class="ti ti-users" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Kelola Tim</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Atur anggota &amp; izin akses per modul</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-user-mgmt')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <!-- Join Code Banner -->
+      <div style="background:linear-gradient(135deg,rgba(74,222,128,0.08),rgba(34,211,238,0.08));border:1px solid rgba(74,222,128,0.25);border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:3px;"><i class="ti ti-link" style="font-size:12px;width:12px;height:12px;vertical-align:-1px;margin-right:4px;"></i> Share Join Code</div>
+          <div style="font-size:11px;color:var(--muted);">Bagikan kode ini agar anggota bisa bergabung dari perangkat mereka sendiri</div>
+        </div>
+        <button id="btn-show-joincode" class="btn btn-primary btn-sm" onclick="showJoinCodeModal()"><i class="ti ti-qrcode" style="font-size:13px;width:13px;height:13px;vertical-align:-1px;margin-right:4px;"></i> Lihat Join Code</button>
+      </div>
+      <!-- Members list -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Anggota Tim</div>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-user-mgmt');openInviteModal()"><i class="ti ti-user-plus" style="font-size:13px;width:13px;height:13px;vertical-align:-1px;margin-right:4px;"></i> Tambah Manual</button>
+      </div>
+      <div id="user-mgmt-list" style="max-height:360px;overflow-y:auto;"></div>
+      <!-- SQL note -->
+      <div style="margin-top:14px;padding:10px 12px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.7;">
+        <b style="color:var(--accent3);">⚠ Setup diperlukan:</b> Jalankan SQL schema <code>org_members</code> + <code>company_join_codes</code> di Supabase.
+        <button onclick="showOrgMembersSQL()" style="margin-left:8px;background:var(--accent3);border:none;border-radius:5px;padding:3px 10px;font-size:10px;color:#000;font-weight:700;cursor:pointer;">Lihat SQL</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-user-mgmt')">Tutup</button>
+    </div>
+  </div>
+</div>
 
+<!-- MODAL: JOIN CODE -->
+<div class="modal-backdrop" id="modal-joincode" onclick="if(event.target===this)closeModal('modal-joincode')">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-head">
+      <div class="modal-title"><i class="ti ti-link" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Join Code Bisnis</div>
+      <button class="modal-close" onclick="closeModal('modal-joincode')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <!-- Big code display -->
+      <div style="text-align:center;padding:24px 0 20px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.1em;">Kode Bergabung</div>
+        <div id="joincode-display" style="font-size:40px;font-weight:800;letter-spacing:.2em;color:var(--accent);font-family:var(--mono);background:var(--surface2);border:2px dashed var(--accent)44;border-radius:12px;padding:16px 24px;display:inline-block;margin-bottom:8px;">—</div>
+        <div style="font-size:11px;color:var(--muted);">Berlaku 7 hari · Admin bisa memperbarui kapan saja</div>
+      </div>
+      <!-- Link copy -->
+      <div style="margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Atau share link langsung:</div>
+        <div style="display:flex;gap:8px;">
+          <input id="joincode-link" type="text" readonly
+            style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:12px;font-family:var(--mono);min-width:0;"
+            onclick="this.select()">
+          <button class="btn btn-primary btn-sm" onclick="copyJoinLink()"><i class="ti ti-copy" style="font-size:13px;width:13px;height:13px;vertical-align:-1px;"></i> Salin</button>
+        </div>
+      </div>
+      <!-- Cara pakai -->
+      <div style="background:var(--surface2);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.8;">
+        <b style="color:var(--text);">Cara bergabung untuk anggota:</b><br>
+        1. Login ke OAS dengan email mereka<br>
+        2. Buka link di atas, atau masukkan kode di menu Bergabung<br>
+        3. Konfirmasi untuk bergabung ke bisnis ini<br>
+        4. Admin bisa atur izin akses di Kelola Tim
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" id="btn-regen-code" onclick="regenerateJoinCode()"><i class="ti ti-refresh" style="font-size:13px;width:13px;height:13px;vertical-align:-1px;margin-right:4px;"></i> Perbarui Kode</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-joincode')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: UNDANG / TAMBAH ANGGOTA MANUAL -->
+<div class="modal-backdrop" id="modal-invite-user" onclick="if(event.target===this)closeModal('modal-invite-user')">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <div class="modal-title"><i class="ti ti-user-plus" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Tambah Anggota Tim</div>
+      <button class="modal-close" onclick="closeModal('modal-invite-user')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body" style="max-height:72vh;overflow-y:auto;">
+      <div style="font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Data Anggota</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nama Lengkap</label>
+          <input type="text" id="invite-nama" placeholder="Nama anggota">
+        </div>
+        <div class="form-group">
+          <label>Email <span style="color:var(--red)">*</span></label>
+          <input type="email" id="invite-email" placeholder="email@domain.com">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>NIK / ID Karyawan</label>
+          <input type="text" id="invite-nik" placeholder="Opsional">
+        </div>
+        <div class="form-group">
+          <label>Jabatan</label>
+          <input type="text" id="invite-jabatan" placeholder="Jabatan / posisi">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Role</label>
+          <select id="invite-role" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;width:100%;">
+            <option value="member">Member — Akses terbatas</option>
+            <option value="admin">Admin — Akses penuh</option>
+          </select>
+        </div>
+      </div>
+      <!-- CRUD Permission Table -->
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+        <div style="font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;"><i class="ti ti-shield-check" style="font-size:12px;width:12px;height:12px;vertical-align:-1px;margin-right:4px;"></i> Izin Akses per Modul</div>
+        <div id="perm-table-invite" style="overflow-x:auto;border:1px solid var(--border);border-radius:8px;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-invite-user')">Batal</button>
+      <button class="btn btn-primary" id="btn-kirim-invite" onclick="kirimInvite()"><i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i> Simpan Anggota</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDIT ANGGOTA -->
+<div class="modal-backdrop" id="modal-edit-member" onclick="if(event.target===this)closeModal('modal-edit-member')">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <div class="modal-title"><i class="ti ti-pencil" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Edit Anggota</div>
+      <button class="modal-close" onclick="closeModal('modal-edit-member')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body" style="max-height:72vh;overflow-y:auto;">
+      <div style="font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Data Anggota</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nama Lengkap</label>
+          <input type="text" id="edit-member-nama" placeholder="Nama anggota">
+        </div>
+        <div class="form-group">
+          <label>NIK / ID Karyawan</label>
+          <input type="text" id="edit-member-nik" placeholder="Opsional">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Jabatan</label>
+          <input type="text" id="edit-member-jabatan" placeholder="Jabatan / posisi">
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="edit-member-role" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;width:100%;">
+            <option value="member">Member</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <!-- CRUD Permission Table -->
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+        <div style="font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;"><i class="ti ti-shield-check" style="font-size:12px;width:12px;height:12px;vertical-align:-1px;margin-right:4px;"></i> Izin Akses per Modul</div>
+        <div id="perm-table-edit" style="overflow-x:auto;border:1px solid var(--border);border-radius:8px;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-edit-member')">Batal</button>
+      <button class="btn btn-primary" id="btn-simpan-edit-member" onclick="simpanEditMember()"><i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i> Simpan Perubahan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showOrgMembersSQL() {
+  const sql = `-- Jalankan di Supabase SQL Editor:
+
+-- 1. Tabel org_members
+CREATE TABLE org_members (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  company_id uuid REFERENCES companies(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  email text NOT NULL,
+  nama text,
+  nik text,
+  jabatan text,
+  role text DEFAULT 'member',
+  permissions jsonb DEFAULT '{}',
+  status text DEFAULT 'pending',
+  invited_by uuid REFERENCES auth.users(id),
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE org_members ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Org members access"
+  ON org_members FOR ALL
+  USING (
+    company_id IN (SELECT id FROM companies WHERE user_id = auth.uid())
+    OR user_id = auth.uid()
+  );
+CREATE INDEX idx_org_members_company ON org_members(company_id);
+CREATE INDEX idx_org_members_email ON org_members(email);
+
+-- 2. Tabel company_join_codes (untuk share link)
+CREATE TABLE company_join_codes (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  company_id uuid REFERENCES companies(id) ON DELETE CASCADE UNIQUE,
+  code text NOT NULL UNIQUE,
+  created_by uuid REFERENCES auth.users(id),
+  expires_at timestamptz NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE company_join_codes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Join codes access"
+  ON company_join_codes FOR ALL
+  USING (company_id IN (SELECT id FROM companies WHERE user_id = auth.uid()));
+-- Allow reading join code to join (public readable by code)
+CREATE POLICY "Anyone can read join code by code value"
+  ON company_join_codes FOR SELECT
+  USING (true);`;
+
+  const w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><title>SQL Multi-User OAS</title><style>body{font-family:monospace;background:#0d0f14;color:#e2e8f0;padding:24px;margin:0;}pre{background:#141720;border:1px solid #252a3a;border-radius:10px;padding:20px;white-space:pre-wrap;font-size:13px;line-height:1.6;}h2{color:#4ade80;margin-bottom:16px;}button{background:#4ade80;border:none;border-radius:8px;padding:10px 20px;font-weight:700;cursor:pointer;color:#0d0f14;margin-bottom:16px;}</style></head><body><h2>SQL: Multi-User System untuk OAS</h2><button onclick="navigator.clipboard.writeText(document.querySelector(\'pre\').textContent).then(()=>this.textContent=\'✓ Copied!\')">Copy SQL</button><pre>' + sql + '</pre></body></html>');
+  w.document.close();
+}
+</script>
 
 </body></html>
