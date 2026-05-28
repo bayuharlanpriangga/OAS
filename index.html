@@ -2046,15 +2046,25 @@ body.light-mode .bhp-cal-day.selected { color: #fff; }
             </select>
           </div>
           <div class="form-group">
-            <label>Jumlah Penjualan (Rp)</label>
-            <input type="number" id="jual-jumlah" placeholder="0" inputmode="numeric" onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)">
+            <label>Jenis Penjualan <span id="jual-akun-auto-label" style="color:var(--accent);font-size:11px;font-weight:400;"></span></label>
+            <input type="hidden" id="jual-akun-pendapatan" value="4101">
+            <button class="opt-picker-btn" type="button" id="jual-akun-pendapatan-btn" onclick="openJualAkunPicker()" data-value="4101">
+              <span class="opt-picker-label" id="jual-akun-pendapatan-label"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg>Penjualan Barang</span>
+              <span class="opt-picker-arrow">▾</span>
+            </button>
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
+            <label>Jumlah Penjualan (Rp)</label>
+            <input type="number" id="jual-jumlah" placeholder="0" inputmode="numeric" onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)">
+          </div>
+          <div class="form-group">
             <label>HPP / Harga Pokok (Rp)</label>
             <input type="number" id="jual-hpp" placeholder="0 (opsional)" inputmode="numeric" onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)">
           </div>
+        </div>
+        <div class="form-row full">
           <div class="form-group">
             <label>Keterangan</label>
             <input type="text" id="jual-ket" placeholder="Penjualan barang/jasa...">
@@ -4282,6 +4292,13 @@ const pageTitles = {
 let currentPage = 'dashboard';
 
 function showPage(id) {
+  // Cek permission sebelum buka halaman (kecuali dashboard)
+  if (id !== 'dashboard' && !isAdmin() && typeof hasPerm === 'function') {
+    if (!hasPerm(id, 'read')) {
+      showAlert('⛔ Akses ditolak.\n\nKamu tidak punya izin untuk membuka modul ini.\nHubungi admin untuk mengatur ulang hak akses.');
+      return;
+    }
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   // Handle both old nav-item and new nav-card
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -4348,6 +4365,7 @@ function switchTab(group, tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   event.target.classList.add('active');
   if(tab==='umum') initManualLines();
+  if(tab==='penjualan') initJualAkunPendapatan();
 }
 
 // AKUN DROPDOWN
@@ -4500,6 +4518,71 @@ function simpanKas() {
 }
 
 // PENJUALAN
+function getAkunPendapatanDefault() {
+  // Auto-detect dari tipe bisnis currentCompany
+  const tipe = currentCompany?.type || currentCompany?.tipe || '';
+  if (tipe === 'jasa') return { kode: '4102', nama: 'Penjualan Jasa' };
+  if (tipe === 'dagang') return { kode: '4101', nama: 'Penjualan Barang' };
+  if (tipe === 'properti') return { kode: '4103', nama: 'Pendapatan Sewa' };
+  if (tipe === 'manufaktur') return { kode: '4101', nama: 'Penjualan Barang' };
+  return null; // umum = user pilih sendiri
+}
+
+const _jualAkunOptions = [
+  { value: '4101', label: 'Penjualan Barang', sub: 'Akun 4101 · Pendapatan Operasional',
+    icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg>` },
+  { value: '4102', label: 'Penjualan Jasa',   sub: 'Akun 4102 · Pendapatan Operasional',
+    icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>` },
+  { value: '4103', label: 'Pendapatan Sewa',  sub: 'Akun 4103 · Pendapatan Lain-lain',
+    icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` },
+  { value: '4104', label: 'Pendapatan Lainnya', sub: 'Akun 4104 · Non-Operasional',
+    icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>` },
+];
+
+function openJualAkunPicker() {
+  const hidden = document.getElementById('jual-akun-pendapatan');
+  const btn    = document.getElementById('jual-akun-pendapatan-btn');
+  openOptPicker({
+    title: 'Pilih Jenis Penjualan',
+    options: _jualAkunOptions,
+    currentValue: hidden ? hidden.value : '4101',
+    btnEl: btn,
+    onSelect: function(value, label) {
+      const opt = _jualAkunOptions.find(o => o.value === value);
+      if (hidden) hidden.value = value;
+      const lblEl = document.getElementById('jual-akun-pendapatan-label');
+      if (lblEl) {
+        const iconHtml = opt && opt.icon
+          ? `<span style="display:inline-flex;align-items:center;margin-right:6px;vertical-align:-2px;">${opt.icon.replace(/width="18" height="18"/, 'width="15" height="15"')}</span>`
+          : '';
+        lblEl.innerHTML = iconHtml + label;
+      }
+      if (btn) btn.dataset.value = value;
+    }
+  });
+}
+
+function initJualAkunPendapatan() {
+  const hidden = document.getElementById('jual-akun-pendapatan');
+  const lbl    = document.getElementById('jual-akun-auto-label');
+  if (!hidden) return;
+  const def = getAkunPendapatanDefault();
+  if (def) {
+    hidden.value = def.kode;
+    const opt = _jualAkunOptions.find(o => o.value === def.kode);
+    const lblEl = document.getElementById('jual-akun-pendapatan-label');
+    if (lblEl && opt) {
+      const iconHtml = opt.icon
+        ? `<span style="display:inline-flex;align-items:center;margin-right:6px;vertical-align:-2px;">${opt.icon.replace(/width="18" height="18"/, 'width="15" height="15"')}</span>`
+        : '';
+      lblEl.innerHTML = iconHtml + opt.label;
+    }
+    if (lbl) lbl.textContent = '(otomatis dari tipe bisnis)';
+  } else {
+    if (lbl) lbl.textContent = '(pilih sesuai jenis)';
+  }
+}
+
 function simpanPenjualan() {
   const tanggal = document.getElementById('jual-tanggal').value;
   const inv = document.getElementById('jual-inv').value || autoNo('INV');
@@ -4508,12 +4591,16 @@ function simpanPenjualan() {
   const hpp = parseFloat(document.getElementById('jual-hpp').value)||0;
   const ket = document.getElementById('jual-ket').value || `Penjualan ${inv}`;
   const kontakId = document.getElementById('jual-kontak-id')?.value || '';
+  // Ambil akun pendapatan dari pilihan user
+  const akunPendapatanKode = document.getElementById('jual-akun-pendapatan')?.value || '4101';
+  const _jualOpt = _jualAkunOptions?.find(o => o.value === akunPendapatanKode);
+  const akunPendapatanNama = _jualOpt ? _jualOpt.label : 'Penjualan';
   if(!tanggal||!jumlah) { showAlert('Lengkapi tanggal dan jumlah!'); return; }
   const debAkun = metode==='tunai'?'1101':'1201';
   const debNama = metode==='tunai'?'Kas masuk':'Piutang usaha';
   addJurnal({tanggal,ket,jenis:'Penjualan',ref:inv,kontakId,lines:[
     {akun:debAkun,ket:debNama,debit:jumlah,kredit:0},
-    {akun:'4101',ket:'Penjualan',debit:0,kredit:jumlah},
+    {akun:akunPendapatanKode,ket:akunPendapatanNama,debit:0,kredit:jumlah},
   ]});
   if(hpp>0) addJurnal({tanggal,ket:'HPP '+ket,jenis:'Penjualan',ref:inv,kontakId,lines:[
     {akun:'5101',ket:'HPP',debit:hpp,kredit:0},
@@ -4664,7 +4751,7 @@ function renderJurnalUmum() {
         <td class="debit">${l.debit?fmtRp(l.debit):''}</td>
         <td class="kredit">${l.kredit?fmtRp(l.kredit):''}</td>
         ${i===0?`<td rowspan="${j.lines.length}" style="text-align:center;vertical-align:middle;padding:4px 2px;">
-            <button onclick="openAttachModal(${idx})" title="Lampiran" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 3px;transition:opacity 0.15s;opacity:${attachCount?'1':'0.2'};" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='${attachCount?1:0.2}'">${attachCount?' '+attachCount:''}</button>
+            <button onclick="openAttachModal(${idx})" title="Lampiran" style="background:none;border:none;cursor:pointer;padding:4px 5px;border-radius:6px;transition:all 0.15s;opacity:${attachCount?'1':'0.35'};display:flex;align-items:center;gap:3px;color:${attachCount?'var(--accent2)':'var(--muted)'};" onmouseover="this.style.opacity='1';this.style.background='rgba(34,211,238,0.08)'" onmouseout="this.style.opacity='${attachCount?1:0.35}';this.style.background='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>${attachCount?`<span style="font-size:10px;font-weight:600;font-family:var(--mono)">${attachCount}</span>`:''}</button>
           </td>
           <td rowspan="${j.lines.length}" style="text-align:center;vertical-align:middle;">
           <button onclick="konfirmasiHapusJurnal(${idx})" data-tooltip="Hapus Jurnal"
@@ -8988,11 +9075,27 @@ function hasPerm(mod, act) {
 function enforcePermissions() {
   if (isAdmin()) return;
   Object.keys(MODULES_CRUD).forEach(mod => {
+    // Sembunyikan nav card di sidebar
     const navEl = document.querySelector(`[data-page="${mod}"]`);
     if (navEl) navEl.style.display = hasPerm(mod, 'read') ? '' : 'none';
+    // Sembunyikan tombol Aksi Cepat di dashboard (onclick="showPage('mod')")
+    document.querySelectorAll(`.quick-action-btn[onclick*="showPage('${mod}')"]`).forEach(btn => {
+      btn.style.display = hasPerm(mod, 'read') ? '' : 'none';
+    });
   });
+  // Sembunyikan tombol reset
   const resetBtn = document.querySelector('[onclick*="resetData"]');
   if (resetBtn && !hasPerm('reset', 'delete')) resetBtn.style.display = 'none';
+  // Sembunyikan tombol create/edit/delete di halaman jika tidak punya akses
+  const currentMod = typeof currentPage !== 'undefined' ? currentPage : null;
+  if (currentMod) {
+    const addBtns = document.querySelectorAll('.btn-tambah, [data-action="create"], .btn-primary[onclick*="baru"], .btn-primary[onclick*="tambah"]');
+    addBtns.forEach(btn => { btn.style.display = hasPerm(currentMod, 'create') ? '' : 'none'; });
+    const editBtns = document.querySelectorAll('[data-action="edit"], .btn-edit');
+    editBtns.forEach(btn => { btn.style.display = hasPerm(currentMod, 'update') ? '' : 'none'; });
+    const delBtns = document.querySelectorAll('[data-action="delete"], .btn-delete, .btn-hapus');
+    delBtns.forEach(btn => { btn.style.display = hasPerm(currentMod, 'delete') ? '' : 'none'; });
+  }
 }
 
 // ── Share Link / Join Code ──────────────────────────────────
