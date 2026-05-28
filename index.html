@@ -8737,6 +8737,12 @@ function tutRestore() {
 // renderTutStep mini sync handled inline
 
 // JURNAL PENYESUAIAN — scan otomatis, langsung dari tombol aksi cepat
+function dismissAndOpenPenyesuaian(dismissKey) {
+  // Tandai notifikasi ini sudah di-dismiss untuk bulan ini
+  if(dismissKey) localStorage.setItem(dismissKey, '1');
+  openJurnalPenyesuaian();
+}
+
 function openJurnalPenyesuaian() {
   deteksiPenyesuaianOtomatis();
 }
@@ -10083,7 +10089,55 @@ const PROFIL_KEY = 'bhp_profil_v1';
 function getProfil() {
   try { return JSON.parse(localStorage.getItem(PROFIL_KEY) || '{}'); } catch { return {}; }
 }
-function loadProfil() {
+
+function switchProfilMode(mode) {
+  const viewMode = document.getElementById('profil-view-mode');
+  const editMode = document.getElementById('profil-edit-mode');
+  const viewFooter = document.getElementById('profil-view-footer');
+  const editFooter = document.getElementById('profil-edit-footer');
+  if (mode === 'edit') {
+    if (viewMode) viewMode.style.display = 'none';
+    if (editMode) editMode.style.display = '';
+    if (viewFooter) viewFooter.style.display = 'none';
+    if (editFooter) editFooter.style.display = '';
+    loadProfilToEditForm();
+  } else {
+    if (viewMode) viewMode.style.display = '';
+    if (editMode) editMode.style.display = 'none';
+    if (viewFooter) viewFooter.style.display = '';
+    if (editFooter) editFooter.style.display = 'none';
+    renderProfilView();
+  }
+}
+
+function renderProfilView() {
+  const p = getProfil();
+  const logo = localStorage.getItem('bhp_company_logo');
+  const logoEl = document.getElementById('profil-view-logo');
+  if (logoEl) {
+    if (logo) {
+      logoEl.innerHTML = `<img src="${logo}" style="width:100%;height:100%;object-fit:contain;border-radius:14px;">`;
+    } else {
+      logoEl.innerHTML = '🏢';
+    }
+  }
+  const setV = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val || '—'; };
+  setV('profil-view-nama', p.nama || '(belum diisi)');
+  setV('profil-view-jenis', p.jenis || '');
+  setV('profil-view-pemilik', p.pemilik || '');
+  setV('profil-view-telp', p.telp || '—');
+  setV('profil-view-alamat', p.alamat || '—');
+  setV('profil-view-npwp', p.npwp || '—');
+  setV('profil-view-email', p.email || '—');
+  // Sembunyikan baris kosong
+  const rows = { 'profil-view-row-pemilik': p.pemilik, 'profil-view-row-npwp': p.npwp, 'profil-view-row-email': p.email };
+  Object.entries(rows).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = val ? 'flex' : 'none';
+  });
+}
+
+function loadProfilToEditForm() {
   const p = getProfil();
   ['nama','jenis','pemilik','alamat','telp','npwp','email'].forEach(k => {
     const el = document.getElementById('prof-'+k);
@@ -10101,6 +10155,46 @@ function loadProfil() {
     const lbl = document.getElementById('prof-mata-uang-label');
     if(lbl && _muMap[p.matauang]) lbl.innerHTML = '<i class="ti ti-currency" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> ' + _muMap[p.matauang];
   }
+  // Load logo preview di form edit
+  const logo = localStorage.getItem('bhp_company_logo');
+  const editLogoEl = document.getElementById('profil-edit-logo-preview');
+  if (editLogoEl && logo) {
+    editLogoEl.innerHTML = `<img src="${logo}" style="width:100%;height:100%;object-fit:contain;border-radius:12px;">`;
+  }
+}
+
+function loadProfil() {
+  // Jika profil sudah ada data → buka view mode, kalau belum → langsung edit
+  const p = getProfil();
+  if (p.nama) {
+    switchProfilMode('view');
+  } else {
+    switchProfilMode('edit');
+  }
+}
+
+function handleLogoUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showAlert('Ukuran logo max 2MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataURL = e.target.result;
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const size = Math.min(img.width, img.height, 300);
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, (img.width-size)/2, (img.height-size)/2, size, size, 0, 0, size, size);
+      const compressed = canvas.toDataURL('image/png', 0.9);
+      localStorage.setItem('bhp_company_logo', compressed);
+      const editLogoEl = document.getElementById('profil-edit-logo-preview');
+      if (editLogoEl) editLogoEl.innerHTML = `<img src="${compressed}" style="width:100%;height:100%;object-fit:contain;border-radius:12px;">`;
+    };
+    img.src = dataURL;
+  };
+  reader.readAsDataURL(file);
 }
 function saveProfil() {
   const btn = document.querySelector('#modal-profil .btn-primary');
@@ -10123,17 +10217,12 @@ function saveProfil() {
       matauang: document.getElementById('prof-mata-uang').value,
     };
     localStorage.setItem(PROFIL_KEY, JSON.stringify(p));
-    // Update sidebar name
-    const logoEl = document.querySelector('.logo');
-    if(logoEl && p.nama) {
-      const words = p.nama.split(' ');
-      const short = words.length >= 3 ? words.slice(0,2).join(' ') : p.nama;
-      logoEl.innerHTML = `${short.split(' ')[0]}<span>${short.split(' ').slice(1).join(' ')}</span>`;
-    }
+    // Jangan ubah logo OAS — nama perusahaan bukan nama app
     if (btn) { btn.disabled = false; btn.innerHTML = origHTML; }
-    closeModal('modal-profil');
     markDirty();
-    // Show success popup
+    // Kembali ke view mode
+    switchProfilMode('view');
+    // Show success toast
     showSaveProfilSuccess();
   }, 900);
 }
@@ -12200,10 +12289,13 @@ function getReminders() {
     if(daysSince >= 7) reminders.push({ type:'warn', icon:'<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>', text:`Belum ada transaksi selama ${daysSince} hari`, action:"showPage('transaksi')" });
   }
 
-  // 2. End of month approaching
+  // 2. End of month approaching — hanya tampil jika belum di-dismiss di bulan ini
   const daysToEOM = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate() - now.getDate();
   if(daysToEOM <= 5 && daysToEOM >= 0) {
-    reminders.push({ type:'info', icon:'[Tanggal]', text:`Akhir bulan dalam ${daysToEOM} hari — buat jurnal penyesuaian?`, action:'openJurnalPenyesuaian()' });
+    const dismissKey = `bhp_dismiss_penyesuaian_${now.getFullYear()}_${now.getMonth()}`;
+    if(!localStorage.getItem(dismissKey)) {
+      reminders.push({ type:'info', icon:'[Tanggal]', text:`Akhir bulan dalam ${daysToEOM} hari — buat jurnal penyesuaian?`, action:`dismissAndOpenPenyesuaian('${dismissKey}')` });
+    }
   }
 
   // 3. Check if neraca is balanced using double-entry rule: total debit == total kredit
@@ -13504,14 +13596,44 @@ function viewAttachment(jurnalNo, idx) {
   const allAttach = getAttachments();
   const a = (allAttach[jurnalNo]||[])[idx];
   if(!a) return;
-  const w = window.open('', '_blank');
-  if(!w) { showAlert('❌ Pop-up diblokir browser. Izinkan pop-up untuk melihat lampiran.'); return; }
-  if(a.type.startsWith('image')) {
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${a.name}</title>\u003cstyle\u003e*{margin:0;padding:0;box-sizing:border-box;}html,body{width:100%;height:100%;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;}img{max-width:100vw;max-height:100vh;object-fit:contain;display:block;}\u003c/style\u003e</head><body><img src="${a.data}" alt="${a.name}"></body></html>`);
+
+  // In-page lightbox — tidak perlu popup (popup sering diblokir di mobile)
+  const existing = document.getElementById('attach-lightbox');
+  if (existing) existing.remove();
+
+  const lb = document.createElement('div');
+  lb.id = 'attach-lightbox';
+  lb.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.96);display:flex;flex-direction:column;align-items:center;justify-content:center;';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+  closeBtn.style.cssText = 'position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);color:#fff;cursor:pointer;z-index:1;display:flex;align-items:center;justify-content:center;';
+  closeBtn.onclick = () => lb.remove();
+  lb.appendChild(closeBtn);
+
+  const fnLabel = document.createElement('div');
+  fnLabel.textContent = a.name;
+  fnLabel.style.cssText = 'position:absolute;top:16px;left:14px;right:60px;color:rgba(255,255,255,0.6);font-size:11px;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+  lb.appendChild(fnLabel);
+
+  if (a.type && a.type.startsWith('image')) {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding:52px 0 12px;box-sizing:border-box;';
+    const img = document.createElement('img');
+    img.src = a.data;
+    img.alt = a.name;
+    img.style.cssText = 'max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;border-radius:4px;';
+    wrapper.appendChild(img);
+    lb.appendChild(wrapper);
   } else {
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${a.name}</title>\u003cstyle\u003e*{margin:0;padding:0;}html,body{width:100%;height:100%;overflow:hidden;}iframe{width:100vw;height:100vh;border:none;display:block;}\u003c/style\u003e</head><body><iframe src="${a.data}"></iframe></body></html>`);
+    const iframe = document.createElement('iframe');
+    iframe.src = a.data;
+    iframe.style.cssText = 'width:100vw;height:100vh;border:none;display:block;margin-top:44px;';
+    lb.appendChild(iframe);
   }
-  w.document.close();
+
+  lb.addEventListener('click', (e) => { if (e.target === lb) lb.remove(); });
+  document.body.appendChild(lb);
 }
 
 function deleteAttachment(jurnalNo, idx) {
@@ -18505,7 +18627,50 @@ function startTutorial() { showPage('tutorial'); }
       <div class="modal-title"><i class="ti ti-building ti-btn"></i> Profil Perusahaan</div>
       <button class="modal-close" onclick="closeModal('modal-profil')">✕</button>
     </div>
-    <div class="modal-body">
+    <!-- VIEW MODE -->
+    <div id="profil-view-mode" class="modal-body" style="display:none;">
+      <!-- Logo / Foto -->
+      <div style="text-align:center;padding:12px 0 16px;">
+        <div id="profil-view-logo" style="width:80px;height:80px;border-radius:16px;background:var(--surface2);border:2px solid var(--border);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:32px;">🏢</div>
+        <div id="profil-view-nama" style="font-size:18px;font-weight:700;color:var(--text);line-height:1.3;"></div>
+        <div id="profil-view-jenis" style="font-size:12px;color:var(--muted);margin-top:3px;"></div>
+      </div>
+      <div style="display:grid;gap:10px;">
+        <div id="profil-view-row-pemilik" style="display:none;background:var(--surface2);border-radius:10px;padding:11px 14px;display:flex;gap:10px;align-items:center;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--muted)"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <div><div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0.04em;">PEMILIK</div><div id="profil-view-pemilik" style="font-size:13px;font-weight:500;color:var(--text);"></div></div>
+        </div>
+        <div id="profil-view-row-telp" style="background:var(--surface2);border-radius:10px;padding:11px 14px;display:flex;gap:10px;align-items:center;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--muted)"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.7 12.1a19.79 19.79 0 01-3.07-8.67A2 2 0 013.63 1.5h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.91 9.1a16 16 0 006.06 6.06l.97-.97a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          <div><div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0.04em;">TELEPON</div><div id="profil-view-telp" style="font-size:13px;font-weight:500;color:var(--text);"></div></div>
+        </div>
+        <div id="profil-view-row-alamat" style="background:var(--surface2);border-radius:10px;padding:11px 14px;display:flex;gap:10px;align-items:flex-start;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;color:var(--muted)"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div><div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0.04em;">ALAMAT</div><div id="profil-view-alamat" style="font-size:13px;font-weight:500;color:var(--text);line-height:1.4;"></div></div>
+        </div>
+        <div id="profil-view-row-npwp" style="background:var(--surface2);border-radius:10px;padding:11px 14px;display:flex;gap:10px;align-items:center;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--muted)"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          <div><div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0.04em;">NPWP</div><div id="profil-view-npwp" style="font-size:13px;font-weight:500;color:var(--text);font-family:var(--mono);"></div></div>
+        </div>
+        <div id="profil-view-row-email" style="background:var(--surface2);border-radius:10px;padding:11px 14px;display:flex;gap:10px;align-items:center;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--muted)"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <div><div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0.04em;">EMAIL</div><div id="profil-view-email" style="font-size:13px;font-weight:500;color:var(--text);"></div></div>
+        </div>
+      </div>
+    </div>
+    <!-- EDIT MODE -->
+    <div id="profil-edit-mode" class="modal-body" style="display:none;">
+      <!-- Upload Logo -->
+      <div style="text-align:center;padding:4px 0 12px;">
+        <div style="position:relative;display:inline-block;">
+          <div id="profil-edit-logo-preview" style="width:72px;height:72px;border-radius:14px;background:var(--surface2);border:2px dashed var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:28px;cursor:pointer;" onclick="document.getElementById('profil-logo-input').click()">🏢</div>
+          <label for="profil-logo-input" style="position:absolute;bottom:-4px;right:-4px;width:24px;height:24px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0d0f14" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </label>
+          <input type="file" id="profil-logo-input" accept="image/*" style="display:none" onchange="handleLogoUpload(this)">
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;">Ketuk untuk upload logo perusahaan</div>
+      </div>
       <div class="form-row">
         <div class="form-group"><label>Nama Perusahaan</label><input type="text" id="prof-nama" placeholder="PT Maju Bersama"></div>
         <div class="form-group"><label>Jenis Usaha</label><input type="text" id="prof-jenis" placeholder="Perdagangan / Jasa / Manufaktur"></div>
@@ -18538,8 +18703,12 @@ function startTutorial() { showPage('tutorial'); }
         </div>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-profil')">Batal</button>
+    <div class="modal-footer" id="profil-view-footer" style="display:none;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-profil')">Tutup</button>
+      <button class="btn btn-primary" onclick="switchProfilMode('edit')"><i class="ti ti-pencil" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Edit Profil</button>
+    </div>
+    <div class="modal-footer" id="profil-edit-footer" style="display:none;">
+      <button class="btn btn-ghost" onclick="switchProfilMode('view')">Batal</button>
       <button class="btn btn-primary" onclick="saveProfil()"><i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Simpan Profil</button>
     </div>
   </div>
@@ -19422,12 +19591,17 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
         <input type="file" id="attach-file-input" accept="image/*,.pdf" style="display:none" onchange="handleAttachFile(this)">
       </div>
     </div>
-    <div class="modal-footer" style="justify-content:space-between;align-items:center;flex-wrap:nowrap;">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;min-width:0;">
-        <button class="btn btn-ghost" onclick="closeModal('modal-attach')">Tutup</button>
-        <button id="attach-dl-all-btn" class="btn btn-ghost" style="display:none;color:var(--accent2);border-color:rgba(34,211,238,0.3);white-space:nowrap;" onclick="(()=>{const idx=parseInt(document.getElementById('attach-jurnal-idx').value);const j=jurnalEntries[idx];if(j)downloadAllAttachments(j.no);})()"><i class="ti ti-download" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Unduh Semua</button>
+    <div class="modal-footer" style="justify-content:space-between;align-items:center;flex-wrap:nowrap;gap:8px;">
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="btn btn-ghost" onclick="closeModal('modal-attach')" style="flex-shrink:0;">Tutup</button>
+        <button id="attach-dl-all-btn" class="btn btn-ghost" style="display:none;color:var(--accent2);border-color:rgba(34,211,238,0.3);flex-shrink:0;white-space:nowrap;padding:0 10px;" title="Unduh Semua" onclick="(()=>{const idx=parseInt(document.getElementById('attach-jurnal-idx').value);const j=jurnalEntries[idx];if(j)downloadAllAttachments(j.no);})()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span style="margin-left:5px;">Unduh</span>
+        </button>
       </div>
-      <button class="btn btn-primary" onclick="addAttachment()" style="flex-shrink:0;white-space:nowrap;"> Tambah File</button>
+      <button class="btn btn-primary" onclick="addAttachment()" style="flex-shrink:0;white-space:nowrap;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tambah File
+      </button>
     </div>
   </div>
 </div>
@@ -21847,16 +22021,8 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function loadProfilToSidebar() {
-  const _initProfil = getProfil();
-  if(_initProfil.nama) {
-    const _logoEl = document.querySelector('.logo');
-    if(_logoEl) {
-      const _words = _initProfil.nama.split(' ');
-      const _short = _words.length >= 2 ? _words[0]+' '+_words[1] : _initProfil.nama;
-      _logoEl.innerHTML = `${_short.split(' ')[0]}<span>${_short.split(' ').slice(1).join(' ')}</span><button class="logo-close" onclick="closeSidebar()"><i class="ti ti-x"></i></button>`;
-    }
-  }
-  // Chip tetap tampil — akan diupdate oleh updateGuestChip() atau updateUserChip()
+  // Logo OAS tidak diubah — nama perusahaan bukan nama app
+  // Chip akan diupdate oleh updateGuestChip() atau updateUserChip()
 }
 
 function showDemoModeBanner() {
@@ -21923,11 +22089,6 @@ function showDemoModeBanner() {
           <input type="text" id="accs-input-name" placeholder="Nama kamu">
         </div>
         <div class="accs-field">
-          <label>NAMA PERUSAHAAN</label>
-          <input type="text" id="accs-input-company" placeholder="Nama perusahaan / bisnis kamu">
-          <div style="font-size:11px;color:var(--muted);margin-top:5px;">Tampil di laporan dan profil bisnis</div>
-        </div>
-        <div class="accs-field">
           <label>EMAIL (tidak bisa diubah langsung)</label>
           <input type="email" id="accs-input-email" disabled>
         </div>
@@ -21957,17 +22118,17 @@ function showDemoModeBanner() {
           </div>
         </div>
         <button class="auth-btn-primary" onclick="accsUpdatePassword()" id="accs-btn-save-pw" style="margin-top:4px;">
-          🔒 Simpan Password
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Simpan Password
         </button>
         <div id="accs-msg-password" class="accs-msg"></div>
         <div class="accs-danger-zone">
           <div class="accs-danger-title"><i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ZONA BERBAHAYA</div>
           <div class="accs-danger-desc">Logout dari semua perangkat. Data bisnis &amp; jurnal <strong>tidak</strong> akan terhapus.</div>
           <button class="provider-action btn-unlink" onclick="accsLogoutAll()" style="width:100%;padding:10px;margin-bottom:8px;">
-            🚪 Logout dari Semua Perangkat
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Logout dari Semua Perangkat
           </button>
           <button class="provider-action btn-unlink" onclick="doLogout()" style="width:100%;padding:10px;background:rgba(248,113,113,0.08);">
-            🔓 Keluar dari Akun Ini
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Keluar dari Akun Ini
           </button>
         </div>
       </div>
@@ -22188,7 +22349,6 @@ async function accsUnlinkProvider(providerId) {
 async function accsUpdateProfile() {
   const name = document.getElementById('accs-input-name').value.trim();
   if (!name) { accsShowMsg('profile', '❌ Nama tidak boleh kosong.', 'error'); return; }
-  const companyName = (document.getElementById('accs-input-company')?.value || '').trim();
   const btn = document.getElementById('accs-btn-save-profile');
   btn.innerHTML = '<span class="accs-spinner"></span>Menyimpan...'; btn.disabled = true;
   try {
@@ -22202,14 +22362,6 @@ async function accsUpdateProfile() {
     const { error } = await _supa.auth.updateUser({ data: { full_name: name } });
     if (error) throw error;
     if (currentUser?.user_metadata) currentUser.user_metadata.full_name = name;
-    // Simpan nama perusahaan ke profil localStorage
-    try {
-      const p = JSON.parse(localStorage.getItem('bhp_profil_v1')||'{}');
-      if (companyName) p.nama = companyName;
-      localStorage.setItem('bhp_profil_v1', JSON.stringify(p));
-      const expEl = document.getElementById('exp-nama-perusahaan');
-      if (expEl && companyName && !expEl.value) expEl.value = companyName;
-    } catch(e2) {}
     await accsLoadUserInfo();
     accsShowMsg('profile', '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Profil berhasil disimpan!', 'success');
   } catch(e) {
@@ -22253,7 +22405,7 @@ async function accsUpdatePassword() {
       accsLoadProviders();
     }, 1500);
   } catch(e) { accsShowMsg('password', '❌ ' + e.message, 'error'); }
-  finally { btn.innerHTML = '🔒 Simpan Password'; btn.disabled = false; }
+  finally { btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Simpan Password'; btn.disabled = false; }
 }
 
 async function accsLogoutAll() {
@@ -22271,7 +22423,7 @@ function switchAccsTab(tab) {
 
 function accsShowMsg(panel, msg, type) {
   const el = document.getElementById('accs-msg-' + panel); if (!el) return;
-  el.textContent = msg; el.className = 'accs-msg ' + type; el.style.display = 'block';
+  el.innerHTML = msg; el.className = 'accs-msg ' + type; el.style.display = 'block';
   if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
 
