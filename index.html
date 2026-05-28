@@ -9076,11 +9076,11 @@ async function _processJoinCode(code) {
   try {
     const { data: jc, error: jcErr } = await _supa
       .from('company_join_codes').select('*').eq('code', code).single();
-    if (jcErr || !jc) { showAlert('❌ Kode undangan tidak valid atau sudah kadaluarsa.'); return; }
-    if (new Date(jc.expires_at) < new Date()) { showAlert('❌ Kode undangan sudah kadaluarsa (berlaku 7 hari).\n\nMinta admin untuk memperbarui kode.'); return; }
+    if (jcErr || !jc) throw new Error('Kode undangan tidak valid atau sudah kadaluarsa.');
+    if (new Date(jc.expires_at) < new Date()) throw new Error('Kode undangan sudah kadaluarsa (berlaku 7 hari). Minta admin untuk memperbarui kode.');
     // Ambil info company
     const { data: co } = await _supa.from('companies').select('*').eq('id', jc.company_id).single();
-    if (!co) { showAlert('❌ Bisnis tidak ditemukan.'); return; }
+    if (!co) throw new Error('Bisnis tidak ditemukan.');
     // Cek apakah sudah member atau owner
     if (co.user_id === currentUser.id) { showAlert(`ℹ Kamu adalah pemilik bisnis "${co.name}".`); return; }
     const { data: existing } = await _supa.from('org_members').select('id')
@@ -9363,18 +9363,19 @@ function readPermTableValues(containerId) {
 }
 
 // Hook afterLogin — jalankan join code check + load org members
-setTimeout(() => {
+// FIX: Tidak pakai setTimeout agar wrap terjadi SEBELUM auth event pertama
+(function _hookAfterLogin() {
   const _origAL = window.afterLogin;
   if (typeof _origAL === 'function') {
     window.afterLogin = async function() {
       // Ambil pending join SEBELUM afterLogin jalan (company belum dipilih)
       const pendingJoin = sessionStorage.getItem('oas_pending_join');
-      if (pendingJoin) sessionStorage.removeItem('oas_pending_join'); // Hapus segera agar tidak terpicu ulang
+      if (pendingJoin) sessionStorage.removeItem('oas_pending_join');
 
       await _origAL.apply(this, arguments);
 
+      // FIX: Tunggu lebih lama agar selectCompany & currentCompany sudah terisi
       setTimeout(async () => {
-        // Proses pending join dari URL (bukan dari membuka modal biasa)
         if (pendingJoin && currentUser) {
           await _processJoinCode(pendingJoin);
         }
@@ -9384,15 +9385,29 @@ setTimeout(() => {
           const navBtn = document.getElementById('nav-user-mgmt');
           if (navBtn) navBtn.style.display = isAdmin() ? '' : 'none';
         }
-      }, 800);
+      }, 1200);
     };
+  } else {
+    // Fallback: jika afterLogin belum ada saat script ini jalan,
+    // poll sampai tersedia (maks 3 detik)
+    let tries = 0;
+    const poll = setInterval(() => {
+      tries++;
+      if (typeof window.afterLogin === 'function') {
+        clearInterval(poll);
+        _hookAfterLogin();
+      } else if (tries > 30) {
+        clearInterval(poll);
+        console.warn('[OAS] afterLogin tidak ditemukan setelah 3 detik');
+      }
+    }, 100);
   }
+})();
 
-  // Cek join code di URL — HANYA jika ada ?join= parameter
-  if (new URLSearchParams(location.search).has('join')) {
-    checkJoinCodeInURL();
-  }
-}, 100);
+// Cek join code di URL — HANYA jika ada ?join= parameter
+if (new URLSearchParams(location.search).has('join')) {
+  checkJoinCodeInURL();
+}
 
 // ══════════════════════════════════════════════════════════════
 // DETEKSI JURNAL PENYESUAIAN OTOMATIS — FIXED
@@ -21112,7 +21127,7 @@ async function getMyCompanies() {
     const { data: memberships } = await _supa
       .from('org_members')
       .select('company_id')
-      .eq('email', currentUser.email);
+      .eq('user_id', currentUser.id);
     if (memberships && memberships.length) {
       const ids = memberships.map(m => m.company_id);
       const { data: mcos } = await _supa
