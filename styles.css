@@ -1944,6 +1944,50 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
   to   { opacity: 0; }
 }
 
+@keyframes bhpPickerIn {
+  from { opacity:0; transform:scale(0.88) translateY(12px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+.bhp-picker-trigger {
+  width:100%; display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; cursor:pointer; font-family:var(--sans); font-size:14px;
+  color:var(--text); transition:all 0.18s; text-align:left; gap:8px;
+}
+.bhp-picker-trigger:hover { border-color:var(--accent); background:rgba(74,222,128,0.05); }
+.bhp-picker-trigger:active { transform:scale(0.98); }
+.bhp-picker-trigger svg { flex-shrink:0; color:var(--muted); transition:transform 0.2s; }
+.bhp-picker-trigger.open svg { transform:rotate(180deg); }
+.bhp-picker-option {
+  display:flex; align-items:center; gap:14px; padding:14px 16px;
+  border-radius:14px; border:2px solid var(--border); background:var(--surface2);
+  cursor:pointer; font-family:var(--sans); width:100%; text-align:left;
+  transition:all 0.15s; position:relative; overflow:hidden;
+}
+.bhp-picker-option:hover { border-color:var(--accent2); background:rgba(34,211,238,0.06); }
+.bhp-picker-option.selected {
+  border-color:var(--accent); background:rgba(74,222,128,0.08);
+  box-shadow:0 0 0 1px rgba(74,222,128,0.15);
+}
+.bhp-picker-option .opt-icon { font-size:22px; flex-shrink:0; }
+.bhp-picker-option .opt-body { flex:1; min-width:0; }
+.bhp-picker-option .opt-label { display:block; font-size:14px; font-weight:700; color:var(--text); }
+.bhp-picker-option.selected .opt-label { color:var(--accent); }
+.bhp-picker-option .opt-sub { display:block; font-size:11px; color:var(--muted); margin-top:2px; }
+.bhp-picker-option .opt-check {
+  width:22px; height:22px; border-radius:50%; border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  transition:all 0.18s;
+}
+.bhp-picker-option.selected .opt-check {
+  background:var(--accent); border-color:var(--accent);
+  box-shadow:0 0 8px rgba(74,222,128,0.4);
+}
+.bhp-picker-option.selected .opt-check::after {
+  content:''; display:block; width:8px; height:8px; border-radius:50%;
+  background:var(--bg);
+}
+
 #ptr-indicator {
   position: fixed;
   top: 0; left: 0; right: 0;
