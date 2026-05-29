@@ -521,10 +521,7 @@ function openJualAkunPicker() {
       if (hidden) hidden.value = value;
       const lblEl = document.getElementById('jual-akun-pendapatan-label');
       if (lblEl) {
-        const iconHtml = opt && opt.icon
-          ? `<span style="display:inline-flex;align-items:center;margin-right:6px;vertical-align:-2px;">${opt.icon.replace(/width="18" height="18"/, 'width="15" height="15"')}</span>`
-          : '';
-        lblEl.innerHTML = iconHtml + label;
+        lblEl.textContent = label;
       }
       if (btn) btn.dataset.value = value;
     }
@@ -541,10 +538,7 @@ function initJualAkunPendapatan() {
     const opt = _jualAkunOptions.find(o => o.value === def.kode);
     const lblEl = document.getElementById('jual-akun-pendapatan-label');
     if (lblEl && opt) {
-      const iconHtml = opt.icon
-        ? `<span style="display:inline-flex;align-items:center;margin-right:6px;vertical-align:-2px;">${opt.icon.replace(/width="18" height="18"/, 'width="15" height="15"')}</span>`
-        : '';
-      lblEl.innerHTML = iconHtml + opt.label;
+      lblEl.textContent = opt.label;
     }
     if (lbl) lbl.textContent = '(otomatis dari tipe bisnis)';
   } else {
@@ -926,11 +920,53 @@ function renderAkun() {
   const grouped = document.getElementById('coa-group-tipe')?.checked !== false;
   const saldoMap = computeSaldoAll ? computeSaldoAll() : {};
 
-  // Update category filter options
+  // Update category filter options — rebuild tiap render agar selalu sinkron dgn data
   const katSel = document.getElementById('coa-filter-kat');
-  if(katSel && katSel.options.length <= 1) {
-    const kats = [...new Set(akuns.map(a=>a.kat).filter(Boolean))].sort();
-    kats.forEach(k => { const o=document.createElement('option'); o.value=k; o.textContent=k; katSel.appendChild(o); });
+  if (katSel) {
+    const curVal = katSel.value;
+    // Ambil semua kat unik dari akuns yang ada
+    const usedKats = new Set(akuns.map(a => a.kat).filter(Boolean));
+    // Urutan kategori yang diinginkan
+    const katOrder = ['Lancar','Tetap','Tidak Berwujud','Investasi','Jk Panjang',
+      'Kontra','Kontra HPP','Modal','Laba','HPP',
+      'Operasional','SDM','Administrasi','Pemasaran','Produksi','Penyusutan',
+      'Non-Operasional','Lain-lain'];
+    const katLabels = {
+      'Lancar':'Aset / Liabilitas Lancar','Tetap':'Aset Tetap',
+      'Tidak Berwujud':'Aset Tidak Berwujud','Investasi':'Investasi',
+      'Jk Panjang':'Jk Panjang','Kontra':'Akun Kontra','Kontra HPP':'Akun Kontra HPP',
+      'Modal':'Modal / Ekuitas','Laba':'Laba Ditahan','HPP':'Harga Pokok Penjualan',
+      'Operasional':'Beban Operasional','SDM':'Beban SDM / Karyawan',
+      'Administrasi':'Beban Administrasi','Pemasaran':'Beban Pemasaran',
+      'Produksi':'Beban Produksi','Penyusutan':'Beban Penyusutan',
+      'Non-Operasional':'Non-Operasional','Lain-lain':'Lain-lain'
+    };
+    // Rebuild options
+    while (katSel.options.length > 1) katSel.remove(1);
+    const orderedKats = katOrder.filter(k => usedKats.has(k));
+    // Tambah kat yang ada di data tapi tidak di katOrder
+    usedKats.forEach(k => { if (!katOrder.includes(k)) orderedKats.push(k); });
+    orderedKats.forEach(k => {
+      const o = document.createElement('option');
+      o.value = k;
+      o.textContent = katLabels[k] ? `${k} — ${katLabels[k]}` : k;
+      katSel.appendChild(o);
+    });
+    // Restore nilai yang dipilih sebelumnya
+    if (curVal && [...katSel.options].some(o => o.value === curVal)) katSel.value = curVal;
+    // Jika picker sudah di-upgrade, rebuild juga
+    if (katSel.dataset.upgraded) {
+      delete katSel.dataset.upgraded;
+      const coaKat2 = document.getElementById('coa-filter-kat');
+      if (typeof upgradeFormPickers === 'function') {
+        // Hapus tombol lama dan upgrade ulang
+        const oldBtn = katSel.nextElementSibling;
+        if (oldBtn && oldBtn.classList.contains('opt-picker-btn')) oldBtn.remove();
+        katSel.style.display = '';
+        upgradeSelectToOptPicker(coaKat2, { title: 'Filter Kategori Akun' });
+        katSel.style.display = 'none';
+      }
+    }
   }
 
   let filtered = akuns.filter(a => {
@@ -3792,6 +3828,8 @@ function initTheme() {
 }
 
 function applyTheme(mode) {
+  // Pastikan mode valid - cegah nilai corrupt dari localStorage
+  if (mode !== 'light' && mode !== 'dark') mode = 'dark';
   const body = document.body;
   const thumb = document.getElementById('theme-thumb');
   const navIcon = document.getElementById('theme-nav-icon');
@@ -5559,7 +5597,7 @@ function deteksiPenyesuaianOtomatis() {
             id: 'adj_bdd',
             tipe: 'beban_dibayar_dimuka',
             level: 'warning',
-            judul: '[Tanggal] Beban Dibayar Dimuka Belum Diakui',
+            judul: '📅 Beban Dibayar Dimuka Belum Diakui',
             deskripsi: `Akun <b>1601 — Biaya Dibayar Dimuka</b> saldo <b>${rp(saldoBDD)}</b>. Dibayar ${jTerbaru.tanggal} senilai <b>${rp(nilaiAwal)}</b>. Estimasi beban bulan ini: <b>${rp(nilaiSesuaikan)}</b> (1/12 nilai).`,
             alasan: 'Biaya dibayar dimuka diakui sebagai beban pada periode yang dinikmati (matching principle).',
             nilaiSuggested: nilaiSesuaikan,
@@ -8260,7 +8298,7 @@ function getReminders() {
   if(daysToEOM <= 5 && daysToEOM >= 0) {
     const dismissKey = `bhp_dismiss_penyesuaian_${now.getFullYear()}_${now.getMonth()}`;
     if(!localStorage.getItem(dismissKey)) {
-      reminders.push({ type:'info', icon:'[Tanggal]', text:`Akhir bulan dalam ${daysToEOM} hari — buat jurnal penyesuaian?`, action:`dismissAndOpenPenyesuaian('${dismissKey}')` });
+      reminders.push({ type:'info', icon:'📅', text:`Akhir bulan dalam ${daysToEOM} hari — buat jurnal penyesuaian?`, action:`dismissAndOpenPenyesuaian('${dismissKey}')` });
     }
   }
 
@@ -8278,7 +8316,7 @@ function getReminders() {
 
   // 4. Profil belum diisi
   const p = getProfil();
-  if(!p.nama) reminders.push({ type:'info', icon:'building', text:'Lengkapi profil perusahaan untuk laporan yang lebih profesional', action:"openModal('modal-profil');loadProfil()" });
+  if(!p.nama) reminders.push({ type:'info', icon:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M4 21V7a2 2 0 012-2h12a2 2 0 012 2v14M9 21V11h6v10M9 11V7"/></svg>', text:'Lengkapi profil perusahaan untuk laporan yang lebih profesional', action:"openModal('modal-profil');loadProfil()" });
 
   // Pajak compliance reminders
   const pajakNotifs = typeof getPajakNotifications === 'function' ? getPajakNotifications() : [];
@@ -9191,7 +9229,7 @@ function showAIRateLimitInfo(keys, cooldownSec, limitType) {
           const info = window.groqKeyInfo?.[hash];
           const isCD = Date.now() < cd;
           const resetT = isCD ? new Date(cd).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '-';
-          const lType = info?.limitType === 'daily' ? '[Tanggal] Batas harian' : '⏱ Per-menit';
+          const lType = info?.limitType === 'daily' ? '📅 Batas harian' : '⏱ Per-menit';
           return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border-radius:6px;margin-bottom:4px;font-size:11.5px;">
             <span style="color:${isCD?'var(--accent3)':'var(--accent)'};">${isCD?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite;vertical-align:-2px"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>':'<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>'}</span>
             <span style="font-family:var(--mono);color:var(--muted);">Key ${i+1} (...${hash})</span>
@@ -9903,7 +9941,12 @@ document.getElementById('current-date').textContent = new Date().toLocaleDateStr
 // initStorage & auth are handled by the Supabase init block (DOMContentLoaded)
 // which overrides initStorage() to be a no-op until auth completes.
 // Here we only run UI-agnostic setup:
-initTheme();
+// Jalankan initTheme - jika body belum ada (rare edge case), tunggu DOM
+if (document.body) {
+  initTheme();
+} else {
+  document.addEventListener('DOMContentLoaded', initTheme);
+}
 setTimeout(setupNumberInputs, 500);
 setTimeout(updateAIKeyStatus, 200);
 setTimeout(addPeriodFilterToReports, 500);
@@ -13591,7 +13634,7 @@ const TUT_MODULES = {
         body:'Halaman Analitik menampilkan 10+ grafik visual dari data jurnal kamu:\n\n<i class="ti ti-chart-bar ti-inline"></i> Pendapatan vs Beban per Bulan\n<i class="ti ti-trending-up" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Tren Laba Bersih\n<i class="ti ti-droplet ti-inline"></i> Arus Kas Bersih per Bulan\n🌊 Waterfall Laba-Rugi\n📉 Growth MoM (%)\n🍩 Distribusi Beban (Donut)\n💰 Posisi Keuangan\n🎯 Margin per Bulan\n🔮 Proyeksi Keuangan',
         navTo: 'analitik' },
       { icon:'📱', title:'Scroll Horizontal di Mobile',
-        body:'Di HP, chart kadang tampak sempit karena banyak data bulan.\n\n👆 <b>Geser kiri-kanan</b> di area chart untuk scroll horizontal\n[Tanggal] Label bulan dan tahun tampil 2 baris (tidak bertabrakan)\n\nScrollbar tipis muncul di bawah chart sebagai indikator posisi.',
+        body:'Di HP, chart kadang tampak sempit karena banyak data bulan.\n\n👆 <b>Geser kiri-kanan</b> di area chart untuk scroll horizontal\n• Label bulan dan tahun tampil 2 baris (tidak bertabrakan)\n\nScrollbar tipis muncul di bawah chart sebagai indikator posisi.',
         target: null },
       { icon:'🔍', title:'Tampilan Chart HD',
         body:'Ketuk/klik chart mana saja untuk membuka modal HD!\n\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Chart diperbesar mengisi layar penuh\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Resolusi super tajam\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Scroll horizontal jika data banyak\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tutup dengan ketuk ✕ atau area gelap atau tekan Escape',
@@ -13609,7 +13652,7 @@ const TUT_MODULES = {
         body:'Semua chart di halaman Analitik bisa diklik untuk membuka tampilan HD!\n\nCaranya:\n👆 <b>Mobile</b>: Tap chart\n🖱️ <b>Desktop</b>: Klik chart\n\nModal akan terbuka dengan chart diperbesar mengisi layar — sangat berguna untuk presentasi atau analisis detail.',
         navTo: 'analitik' },
       { icon:'📱', title:'Scroll Horizontal',
-        body:'Setiap chart di mobile punya scroll horizontal sendiri (bukan seluruh halaman).\n\nLabel format baru:\n[Tanggal] Baris atas: nama bulan (Jan, Feb, Mar)\n[Tanggal] Baris bawah: tahun (2025, 2026)\n\nLabel tidak bertabrakan lagi meski data banyak!',
+        body:'Setiap chart di mobile punya scroll horizontal sendiri (bukan seluruh halaman).\n\nLabel format baru:\n• Baris atas: nama bulan (Jan, Feb, Mar)\n• Baris bawah: tahun (2025, 2026)\n\nLabel tidak bertabrakan lagi meski data banyak!',
         target: null }
     ]
   },
@@ -14091,9 +14134,7 @@ function selectOptPicker(value, label, icon) {
 
   // Update button label if linked
   if (_optPickerBtnEl) {
-    const dotHtml = `<span class="opt-picker-dot"></span>`;
-    const iconHtml = icon ? `<span>${icon}</span>` : '';
-    _optPickerBtnEl.querySelector('.opt-picker-label').innerHTML = `${iconHtml}${label}`;
+    _optPickerBtnEl.querySelector('.opt-picker-label').textContent = label;
     _optPickerBtnEl.classList.add('open');
     // Update data
     _optPickerBtnEl.dataset.value = value;
@@ -14136,7 +14177,7 @@ function upgradeSelectToOptPicker(selectEl, config = {}) {
 
   const currentOpt = options.find(o => o.value === selectEl.value) || options[0];
   btn.innerHTML = `
-    <span class="opt-picker-label">${currentOpt?.icon ? `<span>${currentOpt.icon}</span> ` : ''}${currentOpt?.label || 'Pilih...'}</span>
+    <span class="opt-picker-label">${currentOpt?.label || 'Pilih...'}</span>
     <span class="opt-picker-arrow">▾</span>
   `;
   btn.dataset.value = selectEl.value;
@@ -14181,8 +14222,11 @@ function upgradeSelectToOptPicker(selectEl, config = {}) {
 // Upgrades all .report-period-sel and #dash-filter-period selects
 function upgradeAllPeriodPickers() {
   const periodIconMap = {
-    'all': '<i class="ti ti-layout-list" style="font-size:14px;"></i>', 'this-month': '<i class="ti ti-calendar-event" style="font-size:14px;"></i>', 'last-month': '<i class="ti ti-calendar-minus" style="font-size:14px;"></i>',
-    'this-quarter': '<i class="ti ti-chart-bar ti-inline"></i>', 'this-year': '<i class="ti ti-calendar" style="font-size:14px;"></i>'
+    'all': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>',
+    'this-month': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent2)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>',
+    'last-month': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 16l2-2-2-2"/></svg>',
+    'this-quarter': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent2)"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg>',
+    'this-year': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 15h8"/></svg>'
   };
   const periodSubMap = {
     'all': 'Tampilkan semua data', 'this-month': 'Dari awal bulan ini',
@@ -14246,7 +14290,24 @@ function upgradeFormPickers() {
   if (coaTipe) upgradeSelectToOptPicker(coaTipe, { title: 'Filter Tipe Akun' });
 
   const coaKat = document.getElementById('coa-filter-kat');
-  if (coaKat) upgradeSelectToOptPicker(coaKat, { title: 'Filter Kategori' });
+  if (coaKat) {
+    // Selalu reset agar picker rebuild dengan opsi kat terbaru
+    if (coaKat.dataset.upgraded) {
+      delete coaKat.dataset.upgraded;
+      const oldBtn = coaKat.nextElementSibling;
+      if (oldBtn && oldBtn.classList.contains('opt-picker-btn')) oldBtn.remove();
+      coaKat.style.display = '';
+    }
+    upgradeSelectToOptPicker(coaKat, {
+      title: 'Kategori Akun',
+      iconMap: {'Lancar': '<i class=\"ti ti-droplet\" style=\"font-size:18px;color:var(--accent2);\"></i>', 'Tetap': '<i class=\"ti ti-home\" style=\"font-size:18px;color:var(--accent3);\"></i>', 'Tidak Berwujud': '<i class=\"ti ti-diamond\" style=\"font-size:18px;color:#a78bfa;\"></i>', 'Investasi': '<i class=\"ti ti-trending-up\" style=\"font-size:18px;color:var(--accent);\"></i>', 'Jk Panjang': '<i class=\"ti ti-clock\" style=\"font-size:18px;color:var(--muted);\"></i>', 'Kontra': '<i class=\"ti ti-minus-circle\" style=\"font-size:18px;color:var(--red);\"></i>', 'Kontra HPP': '<i class=\"ti ti-shopping-cart-x\" style=\"font-size:18px;color:var(--red);\"></i>', 'Modal': '<i class=\"ti ti-building-bank\" style=\"font-size:18px;color:var(--accent2);\"></i>', 'Laba': '<i class=\"ti ti-moneybag\" style=\"font-size:18px;color:var(--accent);\"></i>', 'HPP': '<i class=\"ti ti-shopping-cart\" style=\"font-size:18px;color:var(--accent3);\"></i>', 'Operasional': '<i class=\"ti ti-settings\" style=\"font-size:18px;color:var(--muted);\"></i>', 'SDM': '<i class=\"ti ti-users\" style=\"font-size:18px;color:var(--accent2);\"></i>', 'Administrasi': '<i class=\"ti ti-clipboard-list\" style=\"font-size:18px;color:var(--muted);\"></i>', 'Pemasaran': '<i class=\"ti ti-speakerphone\" style=\"font-size:18px;color:var(--accent3);\"></i>', 'Produksi': '<i class=\"ti ti-tools\" style=\"font-size:18px;color:var(--accent3);\"></i>', 'Penyusutan': '<i class=\"ti ti-trending-down\" style=\"font-size:18px;color:var(--red);\"></i>', 'Non-Operasional': '<i class=\"ti ti-arrows-exchange\" style=\"font-size:18px;color:var(--muted);\"></i>', 'Lain-lain': '<i class=\"ti ti-dots\" style=\"font-size:18px;color:var(--muted);\"></i>'},
+      subMap: {'Lancar': 'Kas, piutang, persediaan, pajak dibayar dimuka', 'Tetap': 'Tanah, bangunan, kendaraan, peralatan', 'Tidak Berwujud': 'Goodwill, lisensi, paten, software', 'Investasi': 'Investasi jangka panjang', 'Jk Panjang': 'Liabilitas/aset jangka panjang', 'Kontra': 'Akumulasi penyusutan, cadangan kerugian piutang', 'Kontra HPP': 'Retur dan diskon pembelian', 'Modal': 'Modal disetor, tambahan modal', 'Laba': 'Laba ditahan, saldo laba/rugi', 'HPP': 'Harga pokok penjualan langsung', 'Operasional': 'Beban operasional umum perusahaan', 'SDM': 'Gaji, tunjangan, BPJS, THR karyawan', 'Administrasi': 'Listrik, telepon, perlengkapan kantor', 'Pemasaran': 'Iklan, promosi, komisi penjualan', 'Produksi': 'Bahan baku, tenaga kerja produksi', 'Penyusutan': 'Beban penyusutan aset tetap', 'Non-Operasional': 'Pendapatan atau beban di luar usaha pokok', 'Lain-lain': 'Akun yang tidak terkategori'}
+    });
+  } upgradeSelectToOptPicker(coaKat, {
+    title: '<i class="ti ti-category" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Kategori Akun',
+    iconMap: {'Lancar': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent2)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>', 'Tetap': '<i class="ti ti-home" style="font-size:18px;color:var(--accent3);"></i>', 'Tidak Berwujud': '<i class="ti ti-diamond" style="font-size:18px;color:#a78bfa;"></i>', 'Investasi': '<i class="ti ti-trending-up" style="font-size:18px;color:var(--accent);"></i>', 'Jk Panjang': '<i class="ti ti-clock" style="font-size:18px;color:var(--muted);"></i>', 'Kontra': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--red)"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>', 'Kontra HPP': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--red)"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="10" y1="10" x2="14" y2="14"/><line x1="14" y1="10" x2="10" y2="14"/></svg>', 'Modal': '<i class="ti ti-building-bank" style="font-size:18px;color:var(--accent2);"></i>', 'Laba': '<i class="ti ti-moneybag" style="font-size:18px;color:var(--accent);"></i>', 'HPP': '<i class="ti ti-shopping-cart" style="font-size:18px;color:var(--accent3);"></i>', 'Operasional': '<i class="ti ti-settings" style="font-size:18px;color:var(--muted);"></i>', 'SDM': '<i class="ti ti-users" style="font-size:18px;color:var(--accent2);"></i>', 'Administrasi': '<i class="ti ti-clipboard-list" style="font-size:18px;color:var(--muted);"></i>', 'Pemasaran': '<i class="ti ti-speakerphone" style="font-size:18px;color:var(--accent3);"></i>', 'Produksi': '<i class="ti ti-tools" style="font-size:18px;color:var(--accent3);"></i>', 'Penyusutan': '<i class="ti ti-trending-down" style="font-size:18px;color:var(--red);"></i>', 'Non-Operasional': '<i class="ti ti-arrows-exchange" style="font-size:18px;color:var(--muted);"></i>', 'Lain-lain': '<i class="ti ti-dots" style="font-size:18px;color:var(--muted);"></i>'},
+    subMap: {'Lancar': 'Kas, piutang, persediaan, pajak dibayar dimuka', 'Tetap': 'Tanah, bangunan, kendaraan, peralatan', 'Tidak Berwujud': 'Goodwill, lisensi, paten, software', 'Investasi': 'Investasi jangka panjang', 'Jk Panjang': 'Liabilitas/aset jangka panjang', 'Kontra': 'Akumulasi penyusutan, cadangan kerugian piutang', 'Kontra HPP': 'Retur & diskon pembelian', 'Modal': 'Modal disetor, tambahan modal', 'Laba': 'Laba ditahan, saldo laba/rugi', 'HPP': 'Harga pokok penjualan langsung', 'Operasional': 'Beban operasional umum perusahaan', 'SDM': 'Gaji, tunjangan, BPJS, THR karyawan', 'Administrasi': 'Listrik, telepon, perlengkapan kantor', 'Pemasaran': 'Iklan, promosi, komisi penjualan', 'Produksi': 'Bahan baku, tenaga kerja produksi', 'Penyusutan': 'Beban penyusutan aset tetap', 'Non-Operasional': 'Pendapatan/beban di luar usaha pokok', 'Lain-lain': 'Beban/pendapatan yang tidak terkategori'}
+  });
 
   // Jurnal umum type filter
   const juType = document.getElementById('filter-ju-type');
@@ -16013,7 +16074,7 @@ async function loadDataFromSupabase() {
     .order('kode');
 
   if (akunData && akunData.length > 0) {
-    akuns = akunData.map(r => ({ kode: r.kode, nama: r.nama, tipe: r.tipe, normal: r.normal, _id: r.id }));
+    akuns = akunData.map(r => ({ kode: r.kode, nama: r.nama, tipe: r.tipe, normal: r.normal, kat: r.kat || '', _id: r.id }));
   } else {
     // Default chart of accounts jika belum ada
     akuns = getDefaultAkuns();
@@ -16091,7 +16152,8 @@ async function saveAkunsToSupabase() {
   const payload = akuns.map(a => ({
     company_id: currentCompany.id,
     kode: a.kode, nama: a.nama,
-    tipe: a.tipe, normal: a.normal
+    tipe: a.tipe, normal: a.normal,
+    kat: a.kat || ''
   }));
   await _supa.from('akuns').upsert(payload, { onConflict: 'company_id,kode' });
 }

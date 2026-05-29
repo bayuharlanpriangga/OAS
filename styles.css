@@ -248,6 +248,21 @@ body.light-mode .p21-kat-btn.active { background: rgba(22,163,74,0.08); }
 }
 body.light-mode .theme-toggle-track { background: var(--accent2); }
 body.light-mode .theme-toggle-thumb { transform: translateX(20px); background: white; }
+
+/* ═══ DEFENSIVE THEME SAFETY ═══
+   Mencegah white cards muncul di dark mode saat theme belum diinit.
+   Selama body tidak punya .light-mode, semua surface tetap dark. */
+body:not(.light-mode) {
+  background: var(--bg, #0d0f14) !important;
+}
+body:not(.light-mode) .stat-card,
+body:not(.light-mode) .table-card,
+body:not(.light-mode) .modal,
+body:not(.light-mode) .sidebar,
+body:not(.light-mode) .topbar {
+  background: var(--surface, #141720);
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { overflow-x: clip; }
 body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; display: flex; overflow-x: clip; }
