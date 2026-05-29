@@ -19,6 +19,7 @@
 <!-- ANTI-GLITCH: sembunyikan konten SEBELUM CSS/font load agar loading screen tidak berkedip -->
 <script>
 (function(){
+  // Baca tema sebelum apapun dirender — ikuti sistem jika belum ada preferensi tersimpan
   try {
     var saved = localStorage.getItem('bhp_theme');
     if(saved) {
@@ -27,6 +28,7 @@
       window.__initialTheme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
     }
   } catch(e) { window.__initialTheme = 'dark'; }
+  // Tulis style inline — body invisible sampai loading screen siap
   var isLight = window.__initialTheme === 'light';
   var bg = isLight ? '#f8fafc' : '#0d0f14';
   var agStyle = document.createElement('style');
@@ -47,7 +49,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <link rel="stylesheet" href="styles.css?v=1780029154">
+  <link rel="stylesheet" href="styles.css?v=1780030300">
 </head>
 <body>
 
@@ -2896,109 +2898,6 @@
   </div>
 </div>
 
-<script>
-(function(){
-  // Terapkan tema ke loading screen SEBELUM apapun terlihat
-  var theme = window.__initialTheme || 'dark';
-  var isLight = theme === 'light';
-
-  var screen = document.getElementById('app-loading');
-  if(!screen) return;
-
-  // Warna berdasarkan tema
-  var bg         = isLight ? '#f8fafc' : '#0d0f14';
-  var surface    = isLight ? '#ffffff' : '#1c2030';
-  var accent     = isLight ? '#16a34a' : '#4ade80';
-  var accent2    = isLight ? '#0891b2' : '#22d3ee';
-  var textColor  = isLight ? '#0f172a' : '#e2e8f0';
-  var mutedColor = isLight ? '#64748b' : '#64748b';
-  var trackBg    = isLight ? '#e2e8f0' : '#252a3a';
-  var strokeClr  = isLight ? '#16a34a' : '#4ade80';
-
-  // Terapkan ke loading screen
-  screen.style.background = bg;
-
-  // Logo circle
-  var bgCircle = document.getElementById('logo-bg-circle');
-  if(bgCircle) { bgCircle.setAttribute('fill', surface); bgCircle.setAttribute('stroke', strokeClr); }
-
-  // Teks Rp dan = di piring timbangan — warna text harus kontras dengan piring
-  var rpText = document.getElementById('logo-rp-text');
-  var eqText = document.getElementById('logo-eq-text');
-  if(rpText) rpText.setAttribute('fill', isLight ? '#ffffff' : '#0d0f14');
-  if(eqText) eqText.setAttribute('fill', isLight ? '#ffffff' : '#0d0f14');
-
-  // Nama perusahaan
-  var nameEl = document.getElementById('loading-company-name');
-  if(nameEl) nameEl.style.color = textColor;
-  var accentEl = document.getElementById('loading-name-accent');
-  if(accentEl) accentEl.style.color = accent;
-
-  // Subtitle
-  var subEl = document.getElementById('loading-subtitle');
-  if(subEl) subEl.style.color = mutedColor;
-
-  // Progress bar track
-  var track = document.getElementById('loading-bar-track');
-  if(track) track.style.background = trackBg;
-
-  // Status & pct text
-  var statusEl = document.getElementById('loading-status');
-  var pctEl = document.getElementById('loading-pct');
-  if(statusEl) statusEl.style.color = mutedColor;
-  if(pctEl) pctEl.style.color = accent;
-
-  // Bar gradient
-  var bar = document.getElementById('loading-bar');
-  if(bar) bar.style.background = `linear-gradient(90deg,${accent},${accent2})`;
-
-  // Version
-  var ver = document.getElementById('loading-version');
-  if(ver) ver.style.color = isLight ? '#94a3b8' : '#334155';
-
-  // Animasi progress
-  var pct = document.getElementById('loading-pct');
-  var status = document.getElementById('loading-status');
-
-  const steps = [
-    [8,  150, 'Memuat akun...'],
-    [20, 200, 'Inisialisasi jurnal...'],
-    [35, 180, 'Memuat data tersimpan...'],
-    [52, 220, 'Menyiapkan laporan...'],
-    [68, 160, 'Memuat kalkulator...'],
-    [80, 200, 'Menyiapkan AI Orias...'],
-    [92, 150, 'Menyelesaikan setup...'],
-    [100, 120, 'Siap!'],
-  ];
-
-  let i = 0;
-  function runStep() {
-    if(i >= steps.length) {
-      setTimeout(() => {
-        screen.classList.add('fade-out');
-        setTimeout(() => {
-          screen.remove();
-          // Restore overflow setelah loading selesai
-          try { document.getElementById('anti-glitch-style')?.remove(); } catch(e){}
-          document.documentElement.style.overflow = '';
-          document.body.style.overflow = '';
-        }, 500);
-      }, 200);
-      return;
-    }
-    const [val, delay, msg] = steps[i++];
-    if(bar) bar.style.width = val + '%';
-    if(pct) pct.textContent = val + '%';
-    if(status) status.textContent = msg;
-    setTimeout(runStep, delay);
-  }
-
-  // Loading screen selalu tampil OAS — tidak berubah mengikuti nama perusahaan user
-
-  // Mulai langsung — tidak ada delay, langsung tampil sebelum konten lain terrender
-  runStep();
-})();
-</script>
 
 <!-- ANALITIK PERIOD POPUP -->
 <div id="an-period-popup-overlay" onclick="closeAnPeriodPopup(event)">
@@ -3008,7 +2907,7 @@
       <button class="an-period-popup-close" onclick="closeAnPeriodPopupDirect()">✕</button>
     </div>
     <div class="an-period-popup-item" data-val="6" data-label="6 Bulan Terakhir" onclick="setAnPeriodPopup(this)">
-      <div class="an-period-popup-icon" style="background:rgba(74,222,128,0.12);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l2.5 2.5"/><path d="M17 3.34A9 9 0 0 1 21 12a9 9 0 0 1-18 0 9 9 0 0 1 4-7.46"/></svg></div>
+      <div class="an-period-popup-icon" style="background:rgba(74,222,128,0.12);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l2.5 2.5"/></svg></div>
       <div class="an-period-popup-texts">
         <div class="an-period-popup-name">6 Bulan Terakhir</div>
         <div class="an-period-popup-desc">Tren 6 bulan ke belakang</div>
@@ -3016,7 +2915,7 @@
       <div class="an-period-popup-check"></div>
     </div>
     <div class="an-period-popup-item active" data-val="12" data-label="12 Bulan Terakhir" onclick="setAnPeriodPopup(this)">
-      <div class="an-period-popup-icon" style="background:rgba(34,211,238,0.12);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent2)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg></div>
+      <div class="an-period-popup-icon" style="background:rgba(34,211,238,0.12);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent2)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg></div>
       <div class="an-period-popup-texts">
         <div class="an-period-popup-name">12 Bulan Terakhir</div>
         <div class="an-period-popup-desc">Analisis setahun penuh</div>
@@ -3639,6 +3538,17 @@
 </div>
 
 <!-- LOADING SCREEN -->
+<script>
+// Set loading screen background IMMEDIATELY based on saved theme
+(function(){
+  var el = document.getElementById('app-loading');
+  if(!el) return;
+  var isLight = (window.__initialTheme || localStorage.getItem('bhp_theme') || 'dark') === 'light';
+  el.style.background = isLight ? '#f8fafc' : '#0d0f14';
+  // Also pre-set text colors so there's no flash
+  el.style.color = isLight ? '#0f172a' : '#e2e8f0';
+})();
+</script>
 <div id="app-loading" style="
   position:fixed;inset:0;z-index:9999;
   display:flex;flex-direction:column;
@@ -3859,7 +3769,7 @@
 </div>
 
 
-  <script src="app.js?v=1780029154"></script>
+  <script src="app.js?v=1780030300"></script>
 </body>
 </html>
 
@@ -4511,4 +4421,107 @@
 
 
 
-</body></html>
+</body></html><script>
+(function(){
+  // Terapkan tema ke loading screen SEBELUM apapun terlihat
+  var theme = window.__initialTheme || 'dark';
+  var isLight = theme === 'light';
+
+  var screen = document.getElementById('app-loading');
+  if(!screen) return;
+
+  // Warna berdasarkan tema
+  var bg         = isLight ? '#f8fafc' : '#0d0f14';
+  var surface    = isLight ? '#ffffff' : '#1c2030';
+  var accent     = isLight ? '#16a34a' : '#4ade80';
+  var accent2    = isLight ? '#0891b2' : '#22d3ee';
+  var textColor  = isLight ? '#0f172a' : '#e2e8f0';
+  var mutedColor = isLight ? '#64748b' : '#64748b';
+  var trackBg    = isLight ? '#e2e8f0' : '#252a3a';
+  var strokeClr  = isLight ? '#16a34a' : '#4ade80';
+
+  // Terapkan ke loading screen
+  screen.style.background = bg;
+
+  // Logo circle
+  var bgCircle = document.getElementById('logo-bg-circle');
+  if(bgCircle) { bgCircle.setAttribute('fill', surface); bgCircle.setAttribute('stroke', strokeClr); }
+
+  // Teks Rp dan = di piring timbangan — warna text harus kontras dengan piring
+  var rpText = document.getElementById('logo-rp-text');
+  var eqText = document.getElementById('logo-eq-text');
+  if(rpText) rpText.setAttribute('fill', isLight ? '#ffffff' : '#0d0f14');
+  if(eqText) eqText.setAttribute('fill', isLight ? '#ffffff' : '#0d0f14');
+
+  // Nama perusahaan
+  var nameEl = document.getElementById('loading-company-name');
+  if(nameEl) nameEl.style.color = textColor;
+  var accentEl = document.getElementById('loading-name-accent');
+  if(accentEl) accentEl.style.color = accent;
+
+  // Subtitle
+  var subEl = document.getElementById('loading-subtitle');
+  if(subEl) subEl.style.color = mutedColor;
+
+  // Progress bar track
+  var track = document.getElementById('loading-bar-track');
+  if(track) track.style.background = trackBg;
+
+  // Status & pct text
+  var statusEl = document.getElementById('loading-status');
+  var pctEl = document.getElementById('loading-pct');
+  if(statusEl) statusEl.style.color = mutedColor;
+  if(pctEl) pctEl.style.color = accent;
+
+  // Bar gradient
+  var bar = document.getElementById('loading-bar');
+  if(bar) bar.style.background = `linear-gradient(90deg,${accent},${accent2})`;
+
+  // Version
+  var ver = document.getElementById('loading-version');
+  if(ver) ver.style.color = isLight ? '#94a3b8' : '#334155';
+
+  // Animasi progress
+  var pct = document.getElementById('loading-pct');
+  var status = document.getElementById('loading-status');
+
+  const steps = [
+    [8,  150, 'Memuat akun...'],
+    [20, 200, 'Inisialisasi jurnal...'],
+    [35, 180, 'Memuat data tersimpan...'],
+    [52, 220, 'Menyiapkan laporan...'],
+    [68, 160, 'Memuat kalkulator...'],
+    [80, 200, 'Menyiapkan AI Orias...'],
+    [92, 150, 'Menyelesaikan setup...'],
+    [100, 120, 'Siap!'],
+  ];
+
+  let i = 0;
+  function runStep() {
+    if(i >= steps.length) {
+      setTimeout(() => {
+        screen.classList.add('fade-out');
+        setTimeout(() => {
+          screen.remove();
+          // Restore overflow setelah loading selesai
+          try { document.getElementById('anti-glitch-style')?.remove(); } catch(e){}
+          document.documentElement.style.overflow = '';
+          document.body.style.overflow = '';
+        }, 500);
+      }, 200);
+      return;
+    }
+    const [val, delay, msg] = steps[i++];
+    if(bar) bar.style.width = val + '%';
+    if(pct) pct.textContent = val + '%';
+    if(status) status.textContent = msg;
+    setTimeout(runStep, delay);
+  }
+
+  // Loading screen selalu tampil OAS — tidak berubah mengikuti nama perusahaan user
+
+  // Mulai langsung — tidak ada delay, langsung tampil sebelum konten lain terrender
+  runStep();
+})();
+</script>
+

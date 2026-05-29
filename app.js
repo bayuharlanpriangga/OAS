@@ -1,31 +1,3 @@
-/* ==================== SCRIPT BLOCK 1 ==================== */
-(function(){
-  // Baca tema sebelum apapun dirender — ikuti sistem jika belum ada preferensi tersimpan
-  try {
-    var saved = localStorage.getItem('bhp_theme');
-    if(saved) {
-      window.__initialTheme = saved;
-    } else {
-      window.__initialTheme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
-    }
-  } catch(e) { window.__initialTheme = 'dark'; }
-  // Tulis style inline — body invisible sampai loading screen siap
-  var isLight = window.__initialTheme === 'light';
-  var bg = isLight ? '#f8fafc' : '#0d0f14';
-  var agStyle = document.createElement('style');
-  agStyle.id = 'anti-glitch-style';
-  agStyle.textContent = 'html,body{background:' + bg + ' !important;overflow:hidden;}' +
-    '.date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator,' +
-    '.date-input-wrap input[type="date"]::-webkit-inner-spin-button{opacity:0;position:absolute;right:0;width:100%;height:100%;cursor:pointer;}' +
-    '.date-input-wrap{position:relative;}' +
-    '.date-input-wrap input[type="date"]{width:100%;padding-right:36px;}' +
-    '.date-input-wrap .date-input-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted);}' +
-    'input[type="month"]{cursor:pointer;color-scheme:dark;}' +
-    'input[type="month"]::-webkit-calendar-picker-indicator{cursor:pointer;filter:invert(0.8);opacity:0.7;}';
-  document.head.appendChild(agStyle);
-})();
-
-/* ==================== SCRIPT BLOCK 2 ==================== */
 // Make kontak picker backdrop show/hide properly (uses display:flex like akun picker)
 const _kpBd = document.getElementById('kontak-picker-backdrop');
 if (_kpBd) {
@@ -41,7 +13,6 @@ if (_kpBd) {
   };
 }
 
-/* ==================== SCRIPT BLOCK 3 ==================== */
 // SIDEBAR TOGGLE — didefinisikan awal agar onclick bisa akses
 function toggleSidebar(){
   document.getElementById('sidebar').classList.toggle('open');
@@ -521,7 +492,10 @@ function openJualAkunPicker() {
       if (hidden) hidden.value = value;
       const lblEl = document.getElementById('jual-akun-pendapatan-label');
       if (lblEl) {
-        lblEl.textContent = label;
+        const iconHtml = opt && opt.icon
+          ? `<span style="display:inline-flex;align-items:center;margin-right:6px;vertical-align:-2px;">${opt.icon.replace(/width="18" height="18"/, 'width="15" height="15"')}</span>`
+          : '';
+        lblEl.innerHTML = iconHtml + label;
       }
       if (btn) btn.dataset.value = value;
     }
@@ -538,7 +512,10 @@ function initJualAkunPendapatan() {
     const opt = _jualAkunOptions.find(o => o.value === def.kode);
     const lblEl = document.getElementById('jual-akun-pendapatan-label');
     if (lblEl && opt) {
-      lblEl.textContent = opt.label;
+      const iconHtml = opt.icon
+        ? `<span style="display:inline-flex;align-items:center;margin-right:6px;vertical-align:-2px;">${opt.icon.replace(/width="18" height="18"/, 'width="15" height="15"')}</span>`
+        : '';
+      lblEl.innerHTML = iconHtml + opt.label;
     }
     if (lbl) lbl.textContent = '(otomatis dari tipe bisnis)';
   } else {
@@ -920,53 +897,11 @@ function renderAkun() {
   const grouped = document.getElementById('coa-group-tipe')?.checked !== false;
   const saldoMap = computeSaldoAll ? computeSaldoAll() : {};
 
-  // Update category filter options — rebuild tiap render agar selalu sinkron dgn data
+  // Update category filter options
   const katSel = document.getElementById('coa-filter-kat');
-  if (katSel) {
-    const curVal = katSel.value;
-    // Ambil semua kat unik dari akuns yang ada
-    const usedKats = new Set(akuns.map(a => a.kat).filter(Boolean));
-    // Urutan kategori yang diinginkan
-    const katOrder = ['Lancar','Tetap','Tidak Berwujud','Investasi','Jk Panjang',
-      'Kontra','Kontra HPP','Modal','Laba','HPP',
-      'Operasional','SDM','Administrasi','Pemasaran','Produksi','Penyusutan',
-      'Non-Operasional','Lain-lain'];
-    const katLabels = {
-      'Lancar':'Aset / Liabilitas Lancar','Tetap':'Aset Tetap',
-      'Tidak Berwujud':'Aset Tidak Berwujud','Investasi':'Investasi',
-      'Jk Panjang':'Jk Panjang','Kontra':'Akun Kontra','Kontra HPP':'Akun Kontra HPP',
-      'Modal':'Modal / Ekuitas','Laba':'Laba Ditahan','HPP':'Harga Pokok Penjualan',
-      'Operasional':'Beban Operasional','SDM':'Beban SDM / Karyawan',
-      'Administrasi':'Beban Administrasi','Pemasaran':'Beban Pemasaran',
-      'Produksi':'Beban Produksi','Penyusutan':'Beban Penyusutan',
-      'Non-Operasional':'Non-Operasional','Lain-lain':'Lain-lain'
-    };
-    // Rebuild options
-    while (katSel.options.length > 1) katSel.remove(1);
-    const orderedKats = katOrder.filter(k => usedKats.has(k));
-    // Tambah kat yang ada di data tapi tidak di katOrder
-    usedKats.forEach(k => { if (!katOrder.includes(k)) orderedKats.push(k); });
-    orderedKats.forEach(k => {
-      const o = document.createElement('option');
-      o.value = k;
-      o.textContent = katLabels[k] ? `${k} — ${katLabels[k]}` : k;
-      katSel.appendChild(o);
-    });
-    // Restore nilai yang dipilih sebelumnya
-    if (curVal && [...katSel.options].some(o => o.value === curVal)) katSel.value = curVal;
-    // Jika picker sudah di-upgrade, rebuild juga
-    if (katSel.dataset.upgraded) {
-      delete katSel.dataset.upgraded;
-      const coaKat2 = document.getElementById('coa-filter-kat');
-      if (typeof upgradeFormPickers === 'function') {
-        // Hapus tombol lama dan upgrade ulang
-        const oldBtn = katSel.nextElementSibling;
-        if (oldBtn && oldBtn.classList.contains('opt-picker-btn')) oldBtn.remove();
-        katSel.style.display = '';
-        upgradeSelectToOptPicker(coaKat2, { title: 'Filter Kategori Akun' });
-        katSel.style.display = 'none';
-      }
-    }
+  if(katSel && katSel.options.length <= 1) {
+    const kats = [...new Set(akuns.map(a=>a.kat).filter(Boolean))].sort();
+    kats.forEach(k => { const o=document.createElement('option'); o.value=k; o.textContent=k; katSel.appendChild(o); });
   }
 
   let filtered = akuns.filter(a => {
@@ -3828,7 +3763,6 @@ function initTheme() {
 }
 
 function applyTheme(mode) {
-  // Pastikan mode valid - cegah nilai corrupt dari localStorage
   if (mode !== 'light' && mode !== 'dark') mode = 'dark';
   const body = document.body;
   const thumb = document.getElementById('theme-thumb');
@@ -9941,12 +9875,7 @@ document.getElementById('current-date').textContent = new Date().toLocaleDateStr
 // initStorage & auth are handled by the Supabase init block (DOMContentLoaded)
 // which overrides initStorage() to be a no-op until auth completes.
 // Here we only run UI-agnostic setup:
-// Jalankan initTheme - jika body belum ada (rare edge case), tunggu DOM
-if (document.body) {
-  initTheme();
-} else {
-  document.addEventListener('DOMContentLoaded', initTheme);
-}
+initTheme();
 setTimeout(setupNumberInputs, 500);
 setTimeout(updateAIKeyStatus, 200);
 setTimeout(addPeriodFilterToReports, 500);
@@ -13960,121 +13889,6 @@ function startTutorial() { showPage('tutorial'); }
   if(jurnalOk) jurnalOk.addEventListener('click', konfirmasiInputJurnalKartu);
 })();
 
-/* ==================== SCRIPT BLOCK 4 ==================== */
-// Set loading screen background IMMEDIATELY based on saved theme
-(function(){
-  var el = document.getElementById('app-loading');
-  if(!el) return;
-  var isLight = (window.__initialTheme || localStorage.getItem('bhp_theme') || 'dark') === 'light';
-  el.style.background = isLight ? '#f8fafc' : '#0d0f14';
-  // Also pre-set text colors so there's no flash
-  el.style.color = isLight ? '#0f172a' : '#e2e8f0';
-})();
-
-/* ==================== SCRIPT BLOCK 5 ==================== */
-(function(){
-  // Terapkan tema ke loading screen SEBELUM apapun terlihat
-  var theme = window.__initialTheme || 'dark';
-  var isLight = theme === 'light';
-
-  var screen = document.getElementById('app-loading');
-  if(!screen) return;
-
-  // Warna berdasarkan tema
-  var bg         = isLight ? '#f8fafc' : '#0d0f14';
-  var surface    = isLight ? '#ffffff' : '#1c2030';
-  var accent     = isLight ? '#16a34a' : '#4ade80';
-  var accent2    = isLight ? '#0891b2' : '#22d3ee';
-  var textColor  = isLight ? '#0f172a' : '#e2e8f0';
-  var mutedColor = isLight ? '#64748b' : '#64748b';
-  var trackBg    = isLight ? '#e2e8f0' : '#252a3a';
-  var strokeClr  = isLight ? '#16a34a' : '#4ade80';
-
-  // Terapkan ke loading screen
-  screen.style.background = bg;
-
-  // Logo circle
-  var bgCircle = document.getElementById('logo-bg-circle');
-  if(bgCircle) { bgCircle.setAttribute('fill', surface); bgCircle.setAttribute('stroke', strokeClr); }
-
-  // Teks Rp dan = di piring timbangan — warna text harus kontras dengan piring
-  var rpText = document.getElementById('logo-rp-text');
-  var eqText = document.getElementById('logo-eq-text');
-  if(rpText) rpText.setAttribute('fill', isLight ? '#ffffff' : '#0d0f14');
-  if(eqText) eqText.setAttribute('fill', isLight ? '#ffffff' : '#0d0f14');
-
-  // Nama perusahaan
-  var nameEl = document.getElementById('loading-company-name');
-  if(nameEl) nameEl.style.color = textColor;
-  var accentEl = document.getElementById('loading-name-accent');
-  if(accentEl) accentEl.style.color = accent;
-
-  // Subtitle
-  var subEl = document.getElementById('loading-subtitle');
-  if(subEl) subEl.style.color = mutedColor;
-
-  // Progress bar track
-  var track = document.getElementById('loading-bar-track');
-  if(track) track.style.background = trackBg;
-
-  // Status & pct text
-  var statusEl = document.getElementById('loading-status');
-  var pctEl = document.getElementById('loading-pct');
-  if(statusEl) statusEl.style.color = mutedColor;
-  if(pctEl) pctEl.style.color = accent;
-
-  // Bar gradient
-  var bar = document.getElementById('loading-bar');
-  if(bar) bar.style.background = `linear-gradient(90deg,${accent},${accent2})`;
-
-  // Version
-  var ver = document.getElementById('loading-version');
-  if(ver) ver.style.color = isLight ? '#94a3b8' : '#334155';
-
-  // Animasi progress
-  var pct = document.getElementById('loading-pct');
-  var status = document.getElementById('loading-status');
-
-  const steps = [
-    [8,  150, 'Memuat akun...'],
-    [20, 200, 'Inisialisasi jurnal...'],
-    [35, 180, 'Memuat data tersimpan...'],
-    [52, 220, 'Menyiapkan laporan...'],
-    [68, 160, 'Memuat kalkulator...'],
-    [80, 200, 'Menyiapkan AI Orias...'],
-    [92, 150, 'Menyelesaikan setup...'],
-    [100, 120, 'Siap!'],
-  ];
-
-  let i = 0;
-  function runStep() {
-    if(i >= steps.length) {
-      setTimeout(() => {
-        screen.classList.add('fade-out');
-        setTimeout(() => {
-          screen.remove();
-          // Restore overflow setelah loading selesai
-          try { document.getElementById('anti-glitch-style')?.remove(); } catch(e){}
-          document.documentElement.style.overflow = '';
-          document.body.style.overflow = '';
-        }, 500);
-      }, 200);
-      return;
-    }
-    const [val, delay, msg] = steps[i++];
-    if(bar) bar.style.width = val + '%';
-    if(pct) pct.textContent = val + '%';
-    if(status) status.textContent = msg;
-    setTimeout(runStep, delay);
-  }
-
-  // Loading screen selalu tampil OAS — tidak berubah mengikuti nama perusahaan user
-
-  // Mulai langsung — tidak ada delay, langsung tampil sebelum konten lain terrender
-  runStep();
-})();
-
-/* ==================== SCRIPT BLOCK 6 ==================== */
 // CUSTOM OPTION PICKER ENGINE
 // Replaces <select> with a beautiful bottom-sheet/dialog picker
 let _optPickerCallback = null;
@@ -14222,11 +14036,8 @@ function upgradeSelectToOptPicker(selectEl, config = {}) {
 // Upgrades all .report-period-sel and #dash-filter-period selects
 function upgradeAllPeriodPickers() {
   const periodIconMap = {
-    'all': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>',
-    'this-month': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent2)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>',
-    'last-month': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 16l2-2-2-2"/></svg>',
-    'this-quarter': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent2)"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg>',
-    'this-year': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 15h8"/></svg>'
+    'all': '<i class="ti ti-layout-list" style="font-size:14px;"></i>', 'this-month': '<i class="ti ti-calendar-event" style="font-size:14px;"></i>', 'last-month': '<i class="ti ti-calendar-minus" style="font-size:14px;"></i>',
+    'this-quarter': '<i class="ti ti-chart-bar ti-inline"></i>', 'this-year': '<i class="ti ti-calendar" style="font-size:14px;"></i>'
   };
   const periodSubMap = {
     'all': 'Tampilkan semua data', 'this-month': 'Dari awal bulan ini',
@@ -14290,24 +14101,7 @@ function upgradeFormPickers() {
   if (coaTipe) upgradeSelectToOptPicker(coaTipe, { title: 'Filter Tipe Akun' });
 
   const coaKat = document.getElementById('coa-filter-kat');
-  if (coaKat) {
-    // Selalu reset agar picker rebuild dengan opsi kat terbaru
-    if (coaKat.dataset.upgraded) {
-      delete coaKat.dataset.upgraded;
-      const oldBtn = coaKat.nextElementSibling;
-      if (oldBtn && oldBtn.classList.contains('opt-picker-btn')) oldBtn.remove();
-      coaKat.style.display = '';
-    }
-    upgradeSelectToOptPicker(coaKat, {
-      title: 'Kategori Akun',
-      iconMap: {'Lancar': '<i class=\"ti ti-droplet\" style=\"font-size:18px;color:var(--accent2);\"></i>', 'Tetap': '<i class=\"ti ti-home\" style=\"font-size:18px;color:var(--accent3);\"></i>', 'Tidak Berwujud': '<i class=\"ti ti-diamond\" style=\"font-size:18px;color:#a78bfa;\"></i>', 'Investasi': '<i class=\"ti ti-trending-up\" style=\"font-size:18px;color:var(--accent);\"></i>', 'Jk Panjang': '<i class=\"ti ti-clock\" style=\"font-size:18px;color:var(--muted);\"></i>', 'Kontra': '<i class=\"ti ti-minus-circle\" style=\"font-size:18px;color:var(--red);\"></i>', 'Kontra HPP': '<i class=\"ti ti-shopping-cart-x\" style=\"font-size:18px;color:var(--red);\"></i>', 'Modal': '<i class=\"ti ti-building-bank\" style=\"font-size:18px;color:var(--accent2);\"></i>', 'Laba': '<i class=\"ti ti-moneybag\" style=\"font-size:18px;color:var(--accent);\"></i>', 'HPP': '<i class=\"ti ti-shopping-cart\" style=\"font-size:18px;color:var(--accent3);\"></i>', 'Operasional': '<i class=\"ti ti-settings\" style=\"font-size:18px;color:var(--muted);\"></i>', 'SDM': '<i class=\"ti ti-users\" style=\"font-size:18px;color:var(--accent2);\"></i>', 'Administrasi': '<i class=\"ti ti-clipboard-list\" style=\"font-size:18px;color:var(--muted);\"></i>', 'Pemasaran': '<i class=\"ti ti-speakerphone\" style=\"font-size:18px;color:var(--accent3);\"></i>', 'Produksi': '<i class=\"ti ti-tools\" style=\"font-size:18px;color:var(--accent3);\"></i>', 'Penyusutan': '<i class=\"ti ti-trending-down\" style=\"font-size:18px;color:var(--red);\"></i>', 'Non-Operasional': '<i class=\"ti ti-arrows-exchange\" style=\"font-size:18px;color:var(--muted);\"></i>', 'Lain-lain': '<i class=\"ti ti-dots\" style=\"font-size:18px;color:var(--muted);\"></i>'},
-      subMap: {'Lancar': 'Kas, piutang, persediaan, pajak dibayar dimuka', 'Tetap': 'Tanah, bangunan, kendaraan, peralatan', 'Tidak Berwujud': 'Goodwill, lisensi, paten, software', 'Investasi': 'Investasi jangka panjang', 'Jk Panjang': 'Liabilitas/aset jangka panjang', 'Kontra': 'Akumulasi penyusutan, cadangan kerugian piutang', 'Kontra HPP': 'Retur dan diskon pembelian', 'Modal': 'Modal disetor, tambahan modal', 'Laba': 'Laba ditahan, saldo laba/rugi', 'HPP': 'Harga pokok penjualan langsung', 'Operasional': 'Beban operasional umum perusahaan', 'SDM': 'Gaji, tunjangan, BPJS, THR karyawan', 'Administrasi': 'Listrik, telepon, perlengkapan kantor', 'Pemasaran': 'Iklan, promosi, komisi penjualan', 'Produksi': 'Bahan baku, tenaga kerja produksi', 'Penyusutan': 'Beban penyusutan aset tetap', 'Non-Operasional': 'Pendapatan atau beban di luar usaha pokok', 'Lain-lain': 'Akun yang tidak terkategori'}
-    });
-  } upgradeSelectToOptPicker(coaKat, {
-    title: '<i class="ti ti-category" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Kategori Akun',
-    iconMap: {'Lancar': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent2)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>', 'Tetap': '<i class="ti ti-home" style="font-size:18px;color:var(--accent3);"></i>', 'Tidak Berwujud': '<i class="ti ti-diamond" style="font-size:18px;color:#a78bfa;"></i>', 'Investasi': '<i class="ti ti-trending-up" style="font-size:18px;color:var(--accent);"></i>', 'Jk Panjang': '<i class="ti ti-clock" style="font-size:18px;color:var(--muted);"></i>', 'Kontra': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--red)"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>', 'Kontra HPP': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--red)"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="10" y1="10" x2="14" y2="14"/><line x1="14" y1="10" x2="10" y2="14"/></svg>', 'Modal': '<i class="ti ti-building-bank" style="font-size:18px;color:var(--accent2);"></i>', 'Laba': '<i class="ti ti-moneybag" style="font-size:18px;color:var(--accent);"></i>', 'HPP': '<i class="ti ti-shopping-cart" style="font-size:18px;color:var(--accent3);"></i>', 'Operasional': '<i class="ti ti-settings" style="font-size:18px;color:var(--muted);"></i>', 'SDM': '<i class="ti ti-users" style="font-size:18px;color:var(--accent2);"></i>', 'Administrasi': '<i class="ti ti-clipboard-list" style="font-size:18px;color:var(--muted);"></i>', 'Pemasaran': '<i class="ti ti-speakerphone" style="font-size:18px;color:var(--accent3);"></i>', 'Produksi': '<i class="ti ti-tools" style="font-size:18px;color:var(--accent3);"></i>', 'Penyusutan': '<i class="ti ti-trending-down" style="font-size:18px;color:var(--red);"></i>', 'Non-Operasional': '<i class="ti ti-arrows-exchange" style="font-size:18px;color:var(--muted);"></i>', 'Lain-lain': '<i class="ti ti-dots" style="font-size:18px;color:var(--muted);"></i>'},
-    subMap: {'Lancar': 'Kas, piutang, persediaan, pajak dibayar dimuka', 'Tetap': 'Tanah, bangunan, kendaraan, peralatan', 'Tidak Berwujud': 'Goodwill, lisensi, paten, software', 'Investasi': 'Investasi jangka panjang', 'Jk Panjang': 'Liabilitas/aset jangka panjang', 'Kontra': 'Akumulasi penyusutan, cadangan kerugian piutang', 'Kontra HPP': 'Retur & diskon pembelian', 'Modal': 'Modal disetor, tambahan modal', 'Laba': 'Laba ditahan, saldo laba/rugi', 'HPP': 'Harga pokok penjualan langsung', 'Operasional': 'Beban operasional umum perusahaan', 'SDM': 'Gaji, tunjangan, BPJS, THR karyawan', 'Administrasi': 'Listrik, telepon, perlengkapan kantor', 'Pemasaran': 'Iklan, promosi, komisi penjualan', 'Produksi': 'Bahan baku, tenaga kerja produksi', 'Penyusutan': 'Beban penyusutan aset tetap', 'Non-Operasional': 'Pendapatan/beban di luar usaha pokok', 'Lain-lain': 'Beban/pendapatan yang tidak terkategori'}
-  });
+  if (coaKat) upgradeSelectToOptPicker(coaKat, { title: 'Filter Kategori' });
 
   // Jurnal umum type filter
   const juType = document.getElementById('filter-ju-type');
@@ -14867,7 +14661,6 @@ window.addEventListener('load', () => {
   setTimeout(() => { upgradeAllPeriodPickers(); upgradeFormPickers(); }, 600);
 });
 
-/* ==================== SCRIPT BLOCK 7 ==================== */
 // SUPABASE CONFIG — ganti dengan URL & anon key project kamu
 // Buat project gratis di https://supabase.com
 
@@ -16074,7 +15867,7 @@ async function loadDataFromSupabase() {
     .order('kode');
 
   if (akunData && akunData.length > 0) {
-    akuns = akunData.map(r => ({ kode: r.kode, nama: r.nama, tipe: r.tipe, normal: r.normal, kat: r.kat || '', _id: r.id }));
+    akuns = akunData.map(r => ({ kode: r.kode, nama: r.nama, tipe: r.tipe, normal: r.normal, _id: r.id }));
   } else {
     // Default chart of accounts jika belum ada
     akuns = getDefaultAkuns();
@@ -16152,8 +15945,7 @@ async function saveAkunsToSupabase() {
   const payload = akuns.map(a => ({
     company_id: currentCompany.id,
     kode: a.kode, nama: a.nama,
-    tipe: a.tipe, normal: a.normal,
-    kat: a.kat || ''
+    tipe: a.tipe, normal: a.normal
   }));
   await _supa.from('akuns').upsert(payload, { onConflict: 'company_id,kode' });
 }
@@ -16510,7 +16302,6 @@ function showDemoModeBanner() {
   document.body.appendChild(banner);
 }
 
-/* ==================== SCRIPT BLOCK 8 ==================== */
 // PENGATURAN AKUN — Account Settings & Provider Linking
 
 // Daftar provider OAuth yang didukung.
@@ -16807,7 +16598,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 })();
 
-/* ==================== SCRIPT BLOCK 9 ==================== */
 // FIX: Input tidak tertutup keyboard di mobile
 // Saat input/textarea dapat fokus di dalam modal, scroll supaya input terlihat di atas keyboard
 (function() {
@@ -16868,7 +16658,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 })();
 
-/* ==================== SCRIPT BLOCK 10 ==================== */
 // INV METODE CUSTOM SELECT
 const _invMetodeList = [
   { value:'fifo', label:'FIFO', sub:'First In First Out', icon:'<i class="ti ti-download ti-inline"></i>' },
@@ -16910,7 +16699,6 @@ function closeInvMetodeSheet() {
   if (bd) bd.style.display = 'none';
 }
 
-/* ==================== SCRIPT BLOCK 11 ==================== */
 // ── TAHUN BUKU PICKER ──
 const _tahunBukuList = [
   { value:'jan', label:'Januari - Desember', sub:'Fiskal kalender standar', icon:'<i class="ti ti-calendar" style="font-size:18px;"></i>' },
@@ -17006,7 +16794,6 @@ function closeMataUangPicker() {
   }
 })();
 
-/* ==================== SCRIPT BLOCK 12 ==================== */
 // ═══════════════════════════════════════════════════════════════
 //  PHOTO VIEWER
 // ═══════════════════════════════════════════════════════════════
@@ -17338,7 +17125,6 @@ function _applyCompanyLogo(compressed) {
   }
 }
 
-/* ==================== SCRIPT BLOCK 13 ==================== */
 // CUSTOM DATE PICKER (BHP)
 (function() {
   const MONTHS_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -17545,7 +17331,6 @@ function _applyCompanyLogo(compressed) {
   window.bhpDatePicker = { upgrade: upgradeAllDateInputs, formatDisplay: formatDisplay, todayStr: todayStr };
 })();
 
-/* ==================== SCRIPT BLOCK 14 ==================== */
 (function() {
   'use strict';
 
@@ -17756,7 +17541,6 @@ function _applyCompanyLogo(compressed) {
 
 })();
 
-/* ==================== SCRIPT BLOCK 15 ==================== */
 (function() {
   'use strict';
 
@@ -18192,7 +17976,6 @@ function _applyCompanyLogo(compressed) {
 
 })();
 
-/* ==================== SCRIPT BLOCK 16 ==================== */
 // ── 1. Service Worker ─────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
@@ -18574,10 +18357,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 })();
 
-/* ==================== SCRIPT BLOCK 17 ==================== */
 // Placeholder — functions moved to main script block above
 
-/* ==================== SCRIPT BLOCK 18 ==================== */
 function showOrgMembersSQL() {
   const sql = '-- Jalankan di Supabase SQL Editor:\n\n'
     + '-- 1. Tabel org_members\n'
