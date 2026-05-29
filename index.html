@@ -46,10 +46,13 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <link rel="stylesheet" href="styles.css?v=1780030300">
+  <link rel="stylesheet" href="styles.css?v=1780040010">
 </head>
 <body>
 
@@ -2474,6 +2477,8 @@
 </div>
 
 
+
+
 <!-- TUTORIAL OVERLAY -->
 <div id="tut-backdrop" style="display:none;position:fixed;inset:0;z-index:1100;pointer-events:none;">
   <!-- Tooltip window — draggable & minimizable -->
@@ -2897,7 +2902,6 @@
     <div id="op-spinner-dots"><span></span><span></span><span></span></div>
   </div>
 </div>
-
 
 <!-- ANALITIK PERIOD POPUP -->
 <div id="an-period-popup-overlay" onclick="closeAnPeriodPopup(event)">
@@ -3538,6 +3542,13 @@
 </div>
 
 <!-- LOADING SCREEN -->
+<div id="app-loading" style="
+  position:fixed;inset:0;z-index:9999;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:0;
+  background:#0d0f14;
+">
 <script>
 // Set loading screen background IMMEDIATELY based on saved theme
 (function(){
@@ -3549,13 +3560,6 @@
   el.style.color = isLight ? '#0f172a' : '#e2e8f0';
 })();
 </script>
-<div id="app-loading" style="
-  position:fixed;inset:0;z-index:9999;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  gap:0;
-  background:#0d0f14;
-">
   <!-- Logo area -->
   <div style="text-align:center;margin-bottom:40px;">
     <!-- Timbangan/Scales logo SVG -->
@@ -3612,6 +3616,110 @@
 </div>
 
 
+
+<script>
+(function(){
+  // Terapkan tema ke loading screen SEBELUM apapun terlihat
+  var theme = window.__initialTheme || 'dark';
+  var isLight = theme === 'light';
+
+  var screen = document.getElementById('app-loading');
+  if(!screen) return;
+
+  // Warna berdasarkan tema
+  var bg         = isLight ? '#f8fafc' : '#0d0f14';
+  var surface    = isLight ? '#ffffff' : '#1c2030';
+  var accent     = isLight ? '#16a34a' : '#4ade80';
+  var accent2    = isLight ? '#0891b2' : '#22d3ee';
+  var textColor  = isLight ? '#0f172a' : '#e2e8f0';
+  var mutedColor = isLight ? '#64748b' : '#64748b';
+  var trackBg    = isLight ? '#e2e8f0' : '#252a3a';
+  var strokeClr  = isLight ? '#16a34a' : '#4ade80';
+
+  // Terapkan ke loading screen
+  screen.style.background = bg;
+
+  // Logo circle
+  var bgCircle = document.getElementById('logo-bg-circle');
+  if(bgCircle) { bgCircle.setAttribute('fill', surface); bgCircle.setAttribute('stroke', strokeClr); }
+
+  // Teks Rp dan = di piring timbangan — warna text harus kontras dengan piring
+  var rpText = document.getElementById('logo-rp-text');
+  var eqText = document.getElementById('logo-eq-text');
+  if(rpText) rpText.setAttribute('fill', isLight ? '#ffffff' : '#0d0f14');
+  if(eqText) eqText.setAttribute('fill', isLight ? '#ffffff' : '#0d0f14');
+
+  // Nama perusahaan
+  var nameEl = document.getElementById('loading-company-name');
+  if(nameEl) nameEl.style.color = textColor;
+  var accentEl = document.getElementById('loading-name-accent');
+  if(accentEl) accentEl.style.color = accent;
+
+  // Subtitle
+  var subEl = document.getElementById('loading-subtitle');
+  if(subEl) subEl.style.color = mutedColor;
+
+  // Progress bar track
+  var track = document.getElementById('loading-bar-track');
+  if(track) track.style.background = trackBg;
+
+  // Status & pct text
+  var statusEl = document.getElementById('loading-status');
+  var pctEl = document.getElementById('loading-pct');
+  if(statusEl) statusEl.style.color = mutedColor;
+  if(pctEl) pctEl.style.color = accent;
+
+  // Bar gradient
+  var bar = document.getElementById('loading-bar');
+  if(bar) bar.style.background = `linear-gradient(90deg,${accent},${accent2})`;
+
+  // Version
+  var ver = document.getElementById('loading-version');
+  if(ver) ver.style.color = isLight ? '#94a3b8' : '#334155';
+
+  // Animasi progress
+  var pct = document.getElementById('loading-pct');
+  var status = document.getElementById('loading-status');
+
+  const steps = [
+    [8,  150, 'Memuat akun...'],
+    [20, 200, 'Inisialisasi jurnal...'],
+    [35, 180, 'Memuat data tersimpan...'],
+    [52, 220, 'Menyiapkan laporan...'],
+    [68, 160, 'Memuat kalkulator...'],
+    [80, 200, 'Menyiapkan AI Orias...'],
+    [92, 150, 'Menyelesaikan setup...'],
+    [100, 120, 'Siap!'],
+  ];
+
+  let i = 0;
+  function runStep() {
+    if(i >= steps.length) {
+      setTimeout(() => {
+        screen.classList.add('fade-out');
+        setTimeout(() => {
+          screen.remove();
+          // Restore overflow setelah loading selesai
+          try { document.getElementById('anti-glitch-style')?.remove(); } catch(e){}
+          document.documentElement.style.overflow = '';
+          document.body.style.overflow = '';
+        }, 500);
+      }, 200);
+      return;
+    }
+    const [val, delay, msg] = steps[i++];
+    if(bar) bar.style.width = val + '%';
+    if(pct) pct.textContent = val + '%';
+    if(status) status.textContent = msg;
+    setTimeout(runStep, delay);
+  }
+
+  // Loading screen selalu tampil OAS — tidak berubah mengikuti nama perusahaan user
+
+  // Mulai langsung — tidak ada delay, langsung tampil sebelum konten lain terrender
+  runStep();
+})();
+</script>
 
 <!-- CUSTOM CONFIRM MODAL -->
 <div id="custom-confirm-backdrop" style="
@@ -3678,6 +3786,7 @@
 </div>
 
 
+
 <!-- MODAL: LAMPIRAN JURNAL -->
 <div class="modal-backdrop" id="modal-attach">
   <div class="modal" style="max-width:480px;">
@@ -3728,7 +3837,159 @@
 </div>
 
 
+
 <!-- CUSTOM CONFIRM DIALOG HTML -->
+
+
+
+<!-- MODAL PENGATURAN AKUN -->
+<div class="modal-backdrop" id="modal-account-settings">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head">
+      <div class="modal-title"><i class="ti ti-user-cog" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Pengaturan Akun</div>
+      <button class="modal-close" onclick="closeModal('modal-account-settings')">✕</button>
+    </div>
+    <div class="modal-body" style="padding-top:20px;">
+      <!-- Avatar & info -->
+      <div id="accs-user-header" style="text-align:center;margin-bottom:20px;">
+        <div style="position:relative;display:inline-block;">
+          <div class="accs-avatar-ring" id="accs-avatar">?</div>
+          <div class="accs-avatar-badge" style="position:absolute;bottom:4px;right:4px;width:18px;height:18px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:9px;z-index:3;">✓</div>
+          <!-- Tombol upload foto -->
+          <label for="accs-photo-input" title="Ganti foto profil"
+            style="position:absolute;bottom:0px;left:-2px;width:26px;height:26px;border-radius:50%;
+            background:var(--accent2);cursor:pointer;display:flex;align-items:center;justify-content:center;
+            font-size:12px;border:2px solid var(--bg);z-index:10;box-shadow:0 2px 6px rgba(0,0,0,0.3);">📷</label>
+          <input type="file" id="accs-photo-input" accept="image/*" style="display:none"
+            onchange="handleProfilePhotoUpload(this)">
+        </div>
+        <div id="accs-display-name" style="font-weight:700;font-size:15px;margin:8px 0 2px;"></div>
+        <div class="accs-email-label" id="accs-email-label">—</div>
+        <div class="accs-uid-label" id="accs-uid-label"></div>
+        <div id="accs-photo-msg" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
+      </div>
+      <!-- Tabs -->
+      <div class="accs-tabs">
+        <button class="accs-tab active" onclick="switchAccsTab('providers')" id="accs-tab-providers"><i class="ti ti-plug" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Login Platform</button>
+        <button class="accs-tab" onclick="switchAccsTab('profile')" id="accs-tab-profile"><i class="ti ti-user-edit" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Profil Akun</button>
+        <button class="accs-tab" onclick="switchAccsTab('password')" id="accs-tab-password"><i class="ti ti-lock" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Password</button>
+      </div>
+      <!-- PANEL: Provider Linking -->
+      <div class="accs-panel active" id="accs-panel-providers">
+        <div class="accs-info-box">
+          <strong>Multi-login aktif:</strong> Satu akun bisa login dengan beberapa cara sekaligus.
+          Data jurnal &amp; bisnis kamu tetap sama tidak peduli login lewat mana.
+        </div>
+        <div id="accs-providers-list">
+          <div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite;vertical-align:-2px"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Memuat...</div>
+        </div>
+        <div id="accs-msg-providers" class="accs-msg"></div>
+      </div>
+      <!-- PANEL: Edit Profil Akun -->
+      <div class="accs-panel" id="accs-panel-profile">
+        <div class="accs-field">
+          <label>NAMA TAMPILAN</label>
+          <input type="text" id="accs-input-name" placeholder="Nama kamu">
+        </div>
+        <div class="accs-field">
+          <label>EMAIL (tidak bisa diubah langsung)</label>
+          <input type="email" id="accs-input-email" disabled>
+        </div>
+        <button class="auth-btn-primary" onclick="accsUpdateProfile()" id="accs-btn-save-profile" style="margin-top:4px;">
+          <i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Simpan Perubahan
+        </button>
+        <div id="accs-msg-profile" class="accs-msg"></div>
+      </div>
+      <!-- PANEL: Ganti Password -->
+      <div class="accs-panel" id="accs-panel-password">
+        <div class="accs-info-box">
+          Atur password untuk akun ini. Jika kamu hanya login via Google sebelumnya,
+          mengatur password di sini memungkinkan login dengan email + password juga.
+        </div>
+        <div class="accs-field">
+          <label>PASSWORD BARU</label>
+          <div style="position:relative;">
+            <input type="password" id="accs-input-pw1" placeholder="Minimal 6 karakter" style="padding-right:44px;">
+            <button onclick="toggleAccsPw('accs-input-pw1')" class="auth-pw-toggle"><i class="ti ti-eye" style="font-size:15px;"></i></button>
+          </div>
+        </div>
+        <div class="accs-field">
+          <label>KONFIRMASI PASSWORD BARU</label>
+          <div style="position:relative;">
+            <input type="password" id="accs-input-pw2" placeholder="Ulangi password" style="padding-right:44px;">
+            <button onclick="toggleAccsPw('accs-input-pw2')" class="auth-pw-toggle"><i class="ti ti-eye" style="font-size:15px;"></i></button>
+          </div>
+        </div>
+        <button class="auth-btn-primary" onclick="accsUpdatePassword()" id="accs-btn-save-pw" style="margin-top:4px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Simpan Password
+        </button>
+        <div id="accs-msg-password" class="accs-msg"></div>
+        <div class="accs-danger-zone">
+          <div class="accs-danger-title"><i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ZONA BERBAHAYA</div>
+          <div class="accs-danger-desc">Logout dari semua perangkat. Data bisnis &amp; jurnal <strong>tidak</strong> akan terhapus.</div>
+          <button class="provider-action btn-unlink" onclick="accsLogoutAll()" style="width:100%;padding:10px;margin-bottom:8px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Logout dari Semua Perangkat
+          </button>
+          <button class="provider-action btn-unlink" onclick="doLogout()" style="width:100%;padding:10px;background:rgba(248,113,113,0.08);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Keluar dari Akun Ini
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+<!-- INV METODE SHEET -->
+<div id="inv-metode-sheet-backdrop" onclick="if(event.target===this)closeInvMetodeSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);z-index:99998;align-items:flex-end;justify-content:center;">
+  <div style="background:var(--surface);width:100%;max-width:480px;border-radius:24px 24px 0 0;padding-bottom:env(safe-area-inset-bottom,16px);box-shadow:0 -12px 48px rgba(0,0,0,0.5);animation:slideUpSheet 0.28s cubic-bezier(0.34,1.2,0.64,1);">
+    <div style="width:38px;height:4px;border-radius:2px;background:var(--border);margin:12px auto 8px;"></div>
+    <div style="padding:12px 20px 14px;border-bottom:1px solid var(--border);">
+      <div style="font-size:15px;font-weight:700;"><i class="ti ti-settings ti-inline"></i> Pilih Metode Persediaan</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px;">Pilih metode valuasi yang sesuai</div>
+    </div>
+    <div style="padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;" id="inv-metode-options">
+    </div>
+  </div>
+</div>
+
+
+<!-- SHARED BHP SELECT POPUP -->
+
+<!-- TAHUN BUKU PICKER MODAL -->
+<div id="bhp-tahun-buku-backdrop" onclick="if(event.target===this)closeTahunBukuPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);width:calc(100% - 40px);max-width:360px;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06);animation:bhpPickerIn 0.22s cubic-bezier(0.34,1.3,0.64,1);overflow:hidden;">
+    <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);"><i class="ti ti-calendar" style="font-size:16px;vertical-align:-2px;margin-right:6px;"></i> Pilih Tahun Buku</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Periode fiskal perusahaan Anda</div>
+      </div>
+      <button onclick="closeTahunBukuPicker()" style="background:var(--surface2);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);">✕</button>
+    </div>
+    <div style="padding:12px 16px 20px;display:flex;flex-direction:column;gap:8px;" id="bhp-tahun-buku-options"></div>
+  </div>
+</div>
+
+<!-- MATA UANG PICKER MODAL -->
+<div id="bhp-mata-uang-backdrop" onclick="if(event.target===this)closeMataUangPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);width:calc(100% - 40px);max-width:360px;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06);animation:bhpPickerIn 0.22s cubic-bezier(0.34,1.3,0.64,1);overflow:hidden;">
+    <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);"><i class="ti ti-currency" style="font-size:16px;vertical-align:-2px;margin-right:6px;"></i> Pilih Mata Uang</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Satuan moneter laporan keuangan</div>
+      </div>
+      <button onclick="closeMataUangPicker()" style="background:var(--surface2);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);">✕</button>
+    </div>
+    <div style="padding:12px 16px 20px;display:flex;flex-direction:column;gap:8px;" id="bhp-mata-uang-options"></div>
+  </div>
+</div>
+
+
+
 
 
 <!-- ═══ PHOTO VIEWER OVERLAY ═══ -->
@@ -3769,14 +4030,17 @@
 </div>
 
 
-  <script src="app.js?v=1780030300"></script>
+
+  <script src="app.js?v=1780040010"></script>
 </body>
 </html>
+
 
 
 <!-- ═══════════════════════════════════════════════════════════════
      PULL-TO-REFRESH — tarik dari atas untuk refresh halaman
      ═══════════════════════════════════════════════════════════════ -->
+
 
 <!-- Pull-to-Refresh Indicator HTML -->
 <div id="ptr-indicator">
@@ -3793,10 +4057,12 @@
 </div>
 
 
+
 <!-- ═══════════════════════════════════════════════════════════════
      GLOBAL SPINNER WRAPPER — semua proses save/delete/input
      Durasi spinner menyesuaikan jaringan (tidak fixed timeout)
      ═══════════════════════════════════════════════════════════════ -->
+
 <!-- ═══════════════════════════════════════════════════════
      MODAL: JURNAL BERULANG
 ════════════════════════════════════════════════════════ -->
@@ -4137,6 +4403,8 @@
 <!-- PWA: Service Worker + Install Prompt -->
 
 
+
+
 <div class="modal-backdrop" id="modal-aset-tetap" onclick="if(event.target===this)closeModal('modal-aset-tetap')">
   <div class="modal" style="max-width:520px;">
     <div class="modal-head"><div class="modal-title"><i class="ti ti-building-factory ti-btn"></i> Tambah / Edit Aset Tetap</div><button class="modal-close" onclick="closeModal('modal-aset-tetap')"><i class="ti ti-x"></i></button></div>
@@ -4421,107 +4689,6 @@
 
 
 
-</body></html><script>
-(function(){
-  // Terapkan tema ke loading screen SEBELUM apapun terlihat
-  var theme = window.__initialTheme || 'dark';
-  var isLight = theme === 'light';
 
-  var screen = document.getElementById('app-loading');
-  if(!screen) return;
 
-  // Warna berdasarkan tema
-  var bg         = isLight ? '#f8fafc' : '#0d0f14';
-  var surface    = isLight ? '#ffffff' : '#1c2030';
-  var accent     = isLight ? '#16a34a' : '#4ade80';
-  var accent2    = isLight ? '#0891b2' : '#22d3ee';
-  var textColor  = isLight ? '#0f172a' : '#e2e8f0';
-  var mutedColor = isLight ? '#64748b' : '#64748b';
-  var trackBg    = isLight ? '#e2e8f0' : '#252a3a';
-  var strokeClr  = isLight ? '#16a34a' : '#4ade80';
-
-  // Terapkan ke loading screen
-  screen.style.background = bg;
-
-  // Logo circle
-  var bgCircle = document.getElementById('logo-bg-circle');
-  if(bgCircle) { bgCircle.setAttribute('fill', surface); bgCircle.setAttribute('stroke', strokeClr); }
-
-  // Teks Rp dan = di piring timbangan — warna text harus kontras dengan piring
-  var rpText = document.getElementById('logo-rp-text');
-  var eqText = document.getElementById('logo-eq-text');
-  if(rpText) rpText.setAttribute('fill', isLight ? '#ffffff' : '#0d0f14');
-  if(eqText) eqText.setAttribute('fill', isLight ? '#ffffff' : '#0d0f14');
-
-  // Nama perusahaan
-  var nameEl = document.getElementById('loading-company-name');
-  if(nameEl) nameEl.style.color = textColor;
-  var accentEl = document.getElementById('loading-name-accent');
-  if(accentEl) accentEl.style.color = accent;
-
-  // Subtitle
-  var subEl = document.getElementById('loading-subtitle');
-  if(subEl) subEl.style.color = mutedColor;
-
-  // Progress bar track
-  var track = document.getElementById('loading-bar-track');
-  if(track) track.style.background = trackBg;
-
-  // Status & pct text
-  var statusEl = document.getElementById('loading-status');
-  var pctEl = document.getElementById('loading-pct');
-  if(statusEl) statusEl.style.color = mutedColor;
-  if(pctEl) pctEl.style.color = accent;
-
-  // Bar gradient
-  var bar = document.getElementById('loading-bar');
-  if(bar) bar.style.background = `linear-gradient(90deg,${accent},${accent2})`;
-
-  // Version
-  var ver = document.getElementById('loading-version');
-  if(ver) ver.style.color = isLight ? '#94a3b8' : '#334155';
-
-  // Animasi progress
-  var pct = document.getElementById('loading-pct');
-  var status = document.getElementById('loading-status');
-
-  const steps = [
-    [8,  150, 'Memuat akun...'],
-    [20, 200, 'Inisialisasi jurnal...'],
-    [35, 180, 'Memuat data tersimpan...'],
-    [52, 220, 'Menyiapkan laporan...'],
-    [68, 160, 'Memuat kalkulator...'],
-    [80, 200, 'Menyiapkan AI Orias...'],
-    [92, 150, 'Menyelesaikan setup...'],
-    [100, 120, 'Siap!'],
-  ];
-
-  let i = 0;
-  function runStep() {
-    if(i >= steps.length) {
-      setTimeout(() => {
-        screen.classList.add('fade-out');
-        setTimeout(() => {
-          screen.remove();
-          // Restore overflow setelah loading selesai
-          try { document.getElementById('anti-glitch-style')?.remove(); } catch(e){}
-          document.documentElement.style.overflow = '';
-          document.body.style.overflow = '';
-        }, 500);
-      }, 200);
-      return;
-    }
-    const [val, delay, msg] = steps[i++];
-    if(bar) bar.style.width = val + '%';
-    if(pct) pct.textContent = val + '%';
-    if(status) status.textContent = msg;
-    setTimeout(runStep, delay);
-  }
-
-  // Loading screen selalu tampil OAS — tidak berubah mengikuti nama perusahaan user
-
-  // Mulai langsung — tidak ada delay, langsung tampil sebelum konten lain terrender
-  runStep();
-})();
-</script>
-
+</body></html>
