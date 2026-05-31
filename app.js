@@ -227,6 +227,10 @@ const pageTitles = {
   'notifikasi':['Notifikasi & Alert','Peringatan otomatis · Batas anggaran · Jatuh tempo'],
   'anggaran':['Anggaran vs Aktual','Target per akun · Monitoring realisasi · Variance'],
   'pajak':['Pajak Otomatis','PPN 12% · PPh 21 · PPh 23 · Laporan SPT'],
+  'arus-kas':['Laporan Arus Kas','Metode Tidak Langsung · PSAK 2'],
+  'perubahan-ekuitas':['Laporan Perubahan Ekuitas','Mutasi modal pemilik · PSAK 1'],
+  'aset-tetap':['Register Aset Tetap','Daftar aset · Penyusutan otomatis · Nilai buku'],
+  'kontak':['Master Kontak','Pelanggan & Supplier · Histori transaksi'],
 };
 
 let currentPage = 'dashboard';
@@ -488,15 +492,9 @@ function openJualAkunPicker() {
     currentValue: hidden ? hidden.value : '4101',
     btnEl: btn,
     onSelect: function(value, label) {
-      const opt = _jualAkunOptions.find(o => o.value === value);
       if (hidden) hidden.value = value;
       const lblEl = document.getElementById('jual-akun-pendapatan-label');
-      if (lblEl) {
-        const iconHtml = opt && opt.icon
-          ? `<span style="display:inline-flex;align-items:center;margin-right:6px;vertical-align:-2px;">${opt.icon.replace(/width="18" height="18"/, 'width="15" height="15"')}</span>`
-          : '';
-        lblEl.innerHTML = iconHtml + label;
-      }
+      if (lblEl) lblEl.textContent = label;
       if (btn) btn.dataset.value = value;
     }
   });
@@ -511,12 +509,7 @@ function initJualAkunPendapatan() {
     hidden.value = def.kode;
     const opt = _jualAkunOptions.find(o => o.value === def.kode);
     const lblEl = document.getElementById('jual-akun-pendapatan-label');
-    if (lblEl && opt) {
-      const iconHtml = opt.icon
-        ? `<span style="display:inline-flex;align-items:center;margin-right:6px;vertical-align:-2px;">${opt.icon.replace(/width="18" height="18"/, 'width="15" height="15"')}</span>`
-        : '';
-      lblEl.innerHTML = iconHtml + opt.label;
-    }
+    if (lblEl && opt) lblEl.textContent = opt.label;
     if (lbl) lbl.textContent = '(otomatis dari tipe bisnis)';
   } else {
     if (lbl) lbl.textContent = '(pilih sesuai jenis)';
@@ -983,7 +976,7 @@ function buildAkunRow(a, saldoMap) {
       ${isContra?'<span style="color:var(--muted);margin-right:4px;font-size:10px;">↳</span>':''}${a.nama}
     </td>
     <td><span class="badge ${tipeBadge(a.tipe)}" style="font-size:10px;">${a.tipe}</span></td>
-    <td style="color:var(--muted);font-size:11.5px;">${a.kat}</td>
+    <td style="color:var(--muted);font-size:11.5px;">${a.kat || a.kategori || '—'}</td>
     <td><span class="badge ${a.normal==='D'?'badge-blue':'badge-red'}" style="font-size:10px;">${a.normal==='D'?'Debit':'Kredit'}</span></td>
     <td style="text-align:right;font-family:var(--mono);font-size:12px;color:${saldoColor};">${saldo?'Rp '+Math.abs(saldo).toLocaleString('id-ID'):'—'}</td>
     <td style="text-align:center;">
@@ -4720,7 +4713,7 @@ function renderArusKas() {
   const kenaikan=totalOperasi+beliAset+totalPendanaan;
   const rpFn=v=>{const f='Rp '+Math.abs(Math.round(v)).toLocaleString('id-ID');return v<0?`<span style="color:var(--red);">(${f})</span>`:`<span>${f}</span>`;};
   const rpP=v=>{const f='Rp '+Math.abs(Math.round(v)).toLocaleString('id-ID');return v<0?`(${f})`:f;};
-  const sec=(icon,title,rows,total)=>`<div class="table-card" style="margin-bottom:14px;"><div class="table-header"><div class="table-title"><i class="ti ti-${icon} ti-btn"></i> ${title}</div></div><table><tbody>${rows.filter(([,v])=>v!==0).map(([l,v])=>`<tr><td style="padding-left:28px;color:var(--muted);font-size:13px;">${l}</td><td style="text-align:right;font-family:var(--mono);font-size:13px;">${rpFn(v)}</td></tr>`).join('')}</tbody><tfoot><tr class="total-row"><td>Total ${title}</td><td style="text-align:right;font-family:var(--mono);color:${total>=0?'var(--accent)':'var(--red)'};">${rpP(total)}</td></tr></tfoot></table></div>`;
+  const sec=(icon,title,rows,total)=>`<div class="table-card" style="margin-bottom:16px;"><div class="table-header"><div class="table-title"><i class="ti ti-${icon} ti-btn"></i> ${title}</div></div><table><tbody>${rows.filter(([,v])=>v!==0).map(([l,v])=>`<tr><td style="padding-left:28px;color:var(--muted);font-size:13px;">${l}</td><td style="text-align:right;font-family:var(--mono);font-size:13px;">${rpFn(v)}</td></tr>`).join('')}</tbody><tfoot><tr class="total-row"><td>Total ${title}</td><td style="text-align:right;font-family:var(--mono);color:${total>=0?'var(--accent)':'var(--red)'};">${rpP(total)}</td></tr></tfoot></table></div>`;
   const sel=document.getElementById('arus-kas-period');
   const lbl=sel?sel.options[sel.selectedIndex].text:'Semua Periode';
   el.innerHTML=`<div style="text-align:center;margin-bottom:20px;"><div style="font-weight:600;font-size:15px;">${namaPerusahaan}</div><div style="color:var(--muted);font-size:12px;margin-top:2px;">Laporan Arus Kas · ${lbl} · Metode Tidak Langsung (PSAK 2)</div></div>
@@ -4751,7 +4744,7 @@ function renderPerubahanEkuitas(){
   const rpN=v=>{const f='Rp '+Math.abs(Math.round(v)).toLocaleString('id-ID');return v<0?`(${f})`:f;};
   const sel=document.getElementById('pe-period');const lbl=sel?sel.options[sel.selectedIndex].text:'Semua Periode';
   el.innerHTML=`<div style="text-align:center;margin-bottom:20px;"><div style="font-weight:600;font-size:15px;">${profil.nama||'Perusahaan'}</div><div style="color:var(--muted);font-size:12px;margin-top:2px;">Laporan Perubahan Ekuitas · ${lbl}</div></div>
-    <div class="table-card" style="margin-bottom:14px;"><div class="table-header"><div class="table-title"><i class="ti ti-chart-area ti-btn"></i> Perubahan Ekuitas Pemilik</div></div><table><thead><tr><th>Keterangan</th><th style="text-align:right">Modal Disetor</th><th style="text-align:right">Laba Ditahan</th><th style="text-align:right">Total Ekuitas</th></tr></thead><tbody>
+    <div class="table-card" style="margin-bottom:16px;"><div class="table-header"><div class="table-title"><i class="ti ti-chart-area ti-btn"></i> Perubahan Ekuitas Pemilik</div></div><table><thead><tr><th>Keterangan</th><th style="text-align:right">Modal Disetor</th><th style="text-align:right">Laba Ditahan</th><th style="text-align:right">Total Ekuitas</th></tr></thead><tbody>
       <tr><td style="color:var(--muted);font-size:13px;">Saldo Awal Periode</td><td style="text-align:right;font-family:var(--mono);font-size:13px;">${rpR(modalDisetor)}</td><td style="text-align:right;font-family:var(--mono);font-size:13px;">${rpR(labaDitahan)}</td><td style="text-align:right;font-family:var(--mono);font-size:13px;">${rpR(ekuitasAwal)}</td></tr>
       ${modalDisetor?`<tr><td style="padding-left:24px;color:var(--muted);font-size:13px;">+ Setoran Modal</td><td style="text-align:right;font-family:var(--mono);font-size:13px;">${rpR(modalDisetor)}</td><td style="text-align:right;font-family:var(--mono);font-size:13px;">—</td><td style="text-align:right;font-family:var(--mono);font-size:13px;">${rpR(modalDisetor)}</td></tr>`:''}
       <tr><td style="padding-left:24px;color:var(--muted);font-size:13px;">+ Laba Bersih Periode</td><td style="text-align:right;font-family:var(--mono);font-size:13px;">—</td><td style="text-align:right;font-family:var(--mono);font-size:13px;">${rpR(labaBersih)}</td><td style="text-align:right;font-family:var(--mono);font-size:13px;">${rpR(labaBersih)}</td></tr>
@@ -7961,7 +7954,7 @@ function renderAnggaranPage() {
       const pct=Math.min(aktual/a.nominal*100,100);
       const over=aktual>a.nominal;
       const nama=akuns.find(x=>x.kode===a.akunKode)?.nama||a.akunKode;
-      return `<div style="margin-bottom:14px;">
+      return `<div style="margin-bottom:16px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
           <span style="font-size:13px;font-weight:600;">${nama}</span>
           <span style="font-size:12px;color:${over?'var(--red)':'var(--muted)'};font-family:var(--mono);">${rp(aktual)} / ${rp(a.nominal)}</span>
@@ -8232,7 +8225,7 @@ function getReminders() {
   if(daysToEOM <= 5 && daysToEOM >= 0) {
     const dismissKey = `bhp_dismiss_penyesuaian_${now.getFullYear()}_${now.getMonth()}`;
     if(!localStorage.getItem(dismissKey)) {
-      reminders.push({ type:'info', icon:'📅', text:`Akhir bulan dalam ${daysToEOM} hari — buat jurnal penyesuaian?`, action:`dismissAndOpenPenyesuaian('${dismissKey}')` });
+      reminders.push({ type:'info', icon:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', text:`Akhir bulan dalam ${daysToEOM} hari — buat jurnal penyesuaian?`, action:`dismissAndOpenPenyesuaian('${dismissKey}')` });
     }
   }
 
@@ -8972,7 +8965,7 @@ function showCustomInputModal({ icon, iconColor, iconBorder, title, subtitle, ro
         </div>
         <!-- Body -->
         <div style="padding:16px 20px;">
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px;">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;">
             ${(rows||[]).map(r=>`
               <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);">
                 <span style="font-size:12.5px;color:var(--muted);">${r.label}</span>
@@ -16671,7 +16664,7 @@ function openInvMetodeSheet() {
   const optEl = document.getElementById('inv-metode-options');
   if (!optEl) return;
   optEl.innerHTML = _invMetodeList.map(m => `
-    <button onclick="selectInvMetode('${m.value}')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;border:${_invMetodeVal===m.value?'2px solid var(--accent)':'1px solid var(--border)'};background:${_invMetodeVal===m.value?'rgba(74,222,128,0.08)':'var(--surface2)'};cursor:pointer;font-family:var(--sans);width:100%;text-align:left;transition:all 0.15s;">
+    <button onclick="selectInvMetode('${m.value}')" style="display:flex;align-items:center;gap:16px;padding:14px 16px;border-radius:12px;border:${_invMetodeVal===m.value?'2px solid var(--accent)':'1px solid var(--border)'};background:${_invMetodeVal===m.value?'rgba(74,222,128,0.08)':'var(--surface2)'};cursor:pointer;font-family:var(--sans);width:100%;text-align:left;transition:all 0.15s;">
       <span style="font-size:22px;flex-shrink:0;">${m.icon}</span>
       <span style="flex:1;min-width:0;">
         <span style="display:block;font-size:14px;font-weight:700;color:${_invMetodeVal===m.value?'var(--accent)':'var(--text)'};">${m.label}</span>

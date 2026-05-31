@@ -426,7 +426,7 @@ body.light-mode .nav-card.active { background: rgba(22,163,74,0.07); border-colo
 .page.active { display: block; }
 
 /* Dashboard cards */
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+/* stats-grid and grid-2 defined below in consistent spacing section */
 .stat-card {
   background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
   padding: 18px 20px; position: relative; overflow: hidden;
@@ -448,7 +448,13 @@ body.light-mode .nav-card.active { background: rgba(22,163,74,0.07); border-colo
 /* Tables */
 .table-card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; overflow: hidden; margin-bottom: 20px;
+  border-radius: 10px; overflow: hidden; margin-bottom: 16px;
+}
+/* Inside any grid container, table-card should not add extra margin — gap handles it */
+.kalk-grid .table-card,
+.grid-2 .table-card,
+[style*="display:grid"] .table-card {
+  margin-bottom: 0;
 }
 .table-header {
   padding: 14px 20px; border-bottom: 1px solid var(--border);
@@ -690,7 +696,7 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 }
 .opt-picker-btn:hover { border-color: var(--accent); }
 .opt-picker-btn:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(74,222,128,0.12); }
-.opt-picker-btn .opt-picker-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.opt-picker-btn .opt-picker-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .opt-picker-btn .opt-picker-arrow {
   flex-shrink: 0; width: 18px; height: 18px;
   border-radius: 50%; background: var(--surface);
@@ -870,8 +876,15 @@ body.light-mode .opt-picker-item.selected {
 /* Responsive scroll */
 .table-scroll { overflow-x: auto; }
 
-/* Two-col layout */
+/* ─ CONSISTENT SPACING ─ */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+/* kalk-grid: reusable 2-col grid with consistent 16px gap and bottom margin */
+.kalk-grid {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 16px;
+}
 
 /* Neraca saldo table highlight */
 .total-row td { font-weight: 700; background: var(--surface2); border-top: 2px solid var(--border); }
