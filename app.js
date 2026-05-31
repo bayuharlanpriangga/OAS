@@ -6148,7 +6148,7 @@ function renderProfilView() {
 
 function loadProfilToEditForm() {
   const p = getProfil();
-  ['nama','jenis','pemilik','alamat','telp','npwp','email'].forEach(k => {
+  ['nama','jenis','pemilik','alamat','telp','npwp','email','website','provinsi','kabkota','kecamatan','kelurahan'].forEach(k => {
     const el = document.getElementById('prof-'+k);
     if(el) el.value = p[k] || '';
   });
@@ -6217,6 +6217,11 @@ function saveProfil() {
       telp: document.getElementById('prof-telp').value.trim(),
       npwp: document.getElementById('prof-npwp').value.trim(),
       email: document.getElementById('prof-email').value.trim(),
+      website: document.getElementById('prof-website')?.value.trim() || '',
+      provinsi: document.getElementById('prof-provinsi')?.value.trim() || '',
+      kabkota: document.getElementById('prof-kabkota')?.value.trim() || '',
+      kecamatan: document.getElementById('prof-kecamatan')?.value.trim() || '',
+      kelurahan: document.getElementById('prof-kelurahan')?.value.trim() || '',
       tahunBuku: document.getElementById('prof-tahun-buku').value,
       matauang: document.getElementById('prof-mata-uang').value,
     };
