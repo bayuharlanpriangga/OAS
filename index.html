@@ -498,9 +498,9 @@
 
         <div id="simpel-jurnal-preview" style="display:none;margin-bottom:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;font-family:var(--mono);color:var(--muted);"></div>
 
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
           <button class="btn btn-ghost btn-sm" onclick="previewSimpel()"><i class="ti ti-eye ti-btn"></i> Preview Jurnal</button>
-          <button class="btn btn-primary" onclick="simpanSimpel()" style="flex:1;min-width:160px;font-size:14px;padding:10px;">✓ Simpan Transaksi</button>
+          <button class="btn btn-primary" onclick="simpanSimpel()" style="flex:1;min-width:160px;font-size:14px;padding:10px;">Simpan Transaksi</button>
         </div>
       </div>
     </div>
@@ -541,8 +541,10 @@
           </div>
         </div>
         <div id="kas-preview" style="display:none;margin-bottom:12px;"></div>
-        <button class="btn btn-ghost btn-sm" onclick="previewKas()" style="margin-right:8px;">Preview Jurnal</button>
-        <button class="btn btn-primary" onclick="simpanKas()">Simpan & Buat Jurnal</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+          <button class="btn btn-ghost btn-sm" onclick="previewKas()"><i class="ti ti-eye ti-btn"></i> Preview Jurnal</button>
+          <button class="btn btn-primary" onclick="simpanKas()" style="flex:1;min-width:160px;">Simpan &amp; Buat Jurnal</button>
+        </div>
       </div>
     </div>
   </div>
@@ -593,8 +595,8 @@
             <input type="number" id="jual-produk-qty" placeholder="1" value="1" inputmode="numeric" oninput="onJualQtyChange()">
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
+        <div class="form-row" id="jual-jumlah-row">
+          <div class="form-group" id="jual-jumlah-group">
             <label>Jumlah Penjualan (Rp)</label>
             <input type="number" id="jual-jumlah" placeholder="0" inputmode="numeric" onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)">
           </div>
@@ -615,7 +617,7 @@
             <input type="text" id="jual-ket" placeholder="Penjualan barang/jasa...">
           </div>
         </div>
-        <button class="btn btn-primary" onclick="simpanPenjualan()">Simpan &amp; Buat Jurnal</button>
+        <button class="btn btn-primary" onclick="simpanPenjualan()" style="margin-top:10px;">Simpan &amp; Buat Jurnal</button>
       </div>
     </div>
   </div>
@@ -670,7 +672,7 @@
             <button class="form-picker-btn" type="button" id="beli-kontak-btn" onclick="openKontakPicker('beli-kontak-id','beli-kontak-btn')">Pilih kontak...</button>
           </div>
         </div>
-        <button class="btn btn-primary" onclick="simpanPembelian()">Simpan &amp; Buat Jurnal</button>
+        <button class="btn btn-primary" onclick="simpanPembelian()" style="margin-top:10px;">Simpan &amp; Buat Jurnal</button>
       </div>
     </div>
   </div>
@@ -706,9 +708,9 @@
           </div>
           <div id="manual-lines"></div>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="addManualLine()" style="margin-top:8px;margin-bottom:12px;">+ Tambah Baris</button>
-        <div id="manual-balance" style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:12px;"></div>
-        <button class="btn btn-primary" onclick="simpanManual()">Simpan Jurnal</button>
+        <button class="btn btn-ghost btn-sm" onclick="addManualLine()" style="margin-top:10px;">+ Tambah Baris</button>
+        <div id="manual-balance" style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:10px;margin-bottom:0;"></div>
+        <button class="btn btn-primary" onclick="simpanManual()" style="margin-top:10px;">Simpan Jurnal</button>
       </div>
     </div>
   </div>
@@ -1548,7 +1550,7 @@
         </div>
       </div>
     </div>
-    <div id="rasio-hasil">
+    <div id="rasio-hasil" style="display:flex;flex-direction:column;gap:16px;">
       <div class="table-card"><div class="table-header"><div class="table-title"><i class="ti ti-droplet ti-inline"></i> Rasio Likuiditas</div></div>
         <table><tbody id="rasio-likuiditas"></tbody></table></div>
       <div class="table-card"><div class="table-header"><div class="table-title"><i class="ti ti-barbell ti-inline"></i> Rasio Solvabilitas / Leverage</div></div>

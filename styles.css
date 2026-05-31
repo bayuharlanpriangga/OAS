@@ -468,6 +468,7 @@ body.light-mode .nav-card.active { background: rgba(22,163,74,0.07); border-colo
 [style*="display:grid"] .table-card {
   margin-bottom: 0;
 }
+#rasio-hasil .table-card { margin-bottom: 0; }
 .table-header {
   padding: 14px 20px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
@@ -518,10 +519,12 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 @media (min-width: 480px) { .modal-footer .btn { flex: none; } }
 
 /* Form */
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; margin-bottom: 6px; align-items: start; }
 .form-row.full { grid-template-columns: 1fr; }
 .form-group label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 6px; white-space: normal; overflow: visible; }
-.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; }
+.modal-body > .form-group:first-child,
+.form-row:first-child > .form-group { padding-top: 0; }
 .form-group input, .form-group select, .form-group textarea {
   background: var(--surface2); border: 1px solid var(--border);
   border-radius: 6px; padding: 9px 12px; color: var(--text);
@@ -888,7 +891,10 @@ body.light-mode .opt-picker-item.selected {
 .alert.show { transform: translateY(0); opacity: 1; }
 
 /* Responsive scroll */
-.table-scroll { overflow-x: auto; }
+.table-scroll { overflow-x: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.table-scroll::-webkit-scrollbar { height: 4px; width: 4px; }
+.table-scroll::-webkit-scrollbar-track { background: transparent; }
+.table-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 /* ─ DASHBOARD CARD SCROLLABLE CONTENT ─ */
 .dash-card-scroll {
