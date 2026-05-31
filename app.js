@@ -15884,6 +15884,13 @@ function showDeleteCompanyConfirm(company) {
 function closeDeleteCompanyConfirm() {
   document.getElementById('cp-delete-confirm-backdrop').classList.remove('open');
   _cpDeleteTarget = null;
+  // Reset tombol ke state semula agar bisa dipakai lagi
+  const okBtn = document.getElementById('cp-del-btn-ok');
+  if (okBtn) {
+    okBtn.classList.remove('loading');
+    okBtn.disabled = false;
+    okBtn.innerHTML = '<i class="ti ti-trash ti-btn"></i> Hapus Permanen';
+  }
 }
 
 async function confirmDeleteCompany() {
@@ -15891,6 +15898,7 @@ async function confirmDeleteCompany() {
   const company = _cpDeleteTarget;
   const okBtn = document.getElementById('cp-del-btn-ok');
   okBtn.classList.add('loading');
+  okBtn.disabled = true;
   okBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite;vertical-align:-2px"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Menghapus...';
   try {
     await _supa.from('journal_entries').delete().eq('company_id', company.id);
@@ -15907,7 +15915,8 @@ async function confirmDeleteCompany() {
     }
   } catch(e) {
     okBtn.classList.remove('loading');
-    okBtn.textContent = '<i class="ti ti-trash ti-btn"></i> Hapus Permanen';
+    okBtn.disabled = false;
+    okBtn.innerHTML = '<i class="ti ti-trash ti-btn"></i> Hapus Permanen';
     showAlert('❌ Gagal menghapus bisnis: ' + (e.message || e));
   }
 }
