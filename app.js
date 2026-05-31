@@ -3344,10 +3344,14 @@ function setSelectVal(id, val) {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // STORAGE SYSTEM
-const STORAGE_KEY = 'bhp_data_v2';
-const STORAGE_SLOTS_KEY = 'bhp_slots_v2';
-const AUTOSAVE_KEY = 'bhp_autosave_enabled';
-const META_KEY = 'bhp_meta_v2';
+// Storage keys — per bisnis agar data tidak bocor antar perusahaan
+function getStorageKey()  { return 'bhp_data_v2_'  + (window.currentCompany?.id || 'guest'); }
+function getMetaKey()     { return 'bhp_meta_v2_'  + (window.currentCompany?.id || 'guest'); }
+// Legacy fallback key (single-company / guest)
+const STORAGE_KEY_LEGACY  = 'bhp_data_v2';
+const META_KEY_LEGACY     = 'bhp_meta_v2';
+const STORAGE_SLOTS_KEY   = 'bhp_slots_v2';
+const AUTOSAVE_KEY        = 'bhp_autosave_enabled';
 
 let autoSaveEnabled = true;
 let autoSaveTimer = null;
@@ -3383,14 +3387,14 @@ function scheduleAutoSave() {
 function saveToStorage(showToast = true) {
   try {
     const data = serializeData();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(getStorageKey(), JSON.stringify(data));
     const meta = {
       lastSave: new Date().toISOString(),
       jurnalCount: jurnalEntries.length,
       akunCount: akuns.length,
       version: '2.0'
     };
-    localStorage.setItem(META_KEY, JSON.stringify(meta));
+    localStorage.setItem(getMetaKey(), JSON.stringify(meta));
     hasUnsavedChanges = false;
     lastSaveTime = new Date();
     updateSaveIndicator('saved');
@@ -3415,7 +3419,8 @@ function manualSave() {
 // LOAD FROM LOCALSTORAGE
 function loadFromStorage() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    // Coba key per-bisnis dulu, fallback ke key lama (legacy/guest)
+    const raw = localStorage.getItem(getStorageKey()) || localStorage.getItem(STORAGE_KEY_LEGACY);
     if(!raw) return false;
     const data = JSON.parse(raw);
     if(data.jurnalEntries) {
@@ -3426,7 +3431,7 @@ function loadFromStorage() {
     if(data.akuns && data.akuns.length > 0) {
       akuns = data.akuns;
     }
-    const meta = JSON.parse(localStorage.getItem(META_KEY) || '{}');
+    const meta = JSON.parse(localStorage.getItem(getMetaKey()) || localStorage.getItem(META_KEY_LEGACY) || '{}');
     lastSaveTime = meta.lastSave ? new Date(meta.lastSave) : null;
     renderDashboard();
     return true;
@@ -3571,7 +3576,7 @@ function renderStorageSlots() {
 function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function getSizeKB() {
-  const raw = localStorage.getItem(STORAGE_KEY) || '';
+  const raw = localStorage.getItem(getStorageKey()) || '';
   return (new Blob([raw]).size / 1024).toFixed(1);
 }
 
@@ -3700,7 +3705,7 @@ async function doResetAll() {
   jurnalEntries = [];
   jurnalCounter = 1;
   // Also clear auto-save storage
-  try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(META_KEY); } catch(e) {}
+  try { localStorage.removeItem(getStorageKey()); localStorage.removeItem(getMetaKey()); } catch(e) {}
   hasUnsavedChanges = false;
   updateSaveIndicator('saved');
   renderDashboard();
