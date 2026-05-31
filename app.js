@@ -10966,9 +10966,13 @@ function getCardSaldo(card, _depth) {
 
 /** Inisialisasi: jika belum ada multi KS, migrate data lama ke struktur baru */
 function initMultiKartuStock() {
-  const stored = localStorage.getItem('bhp_mks_' + (window.currentCompany?.id || 'guest'));
-  if (stored) {
-    try { multiKartuStock = JSON.parse(stored); } catch(e) { multiKartuStock = {}; }
+  // Hanya load dari localStorage jika multiKartuStock masih kosong
+  // (jika sudah diisi dari cloud via loadKartuStockFromData, jangan di-overwrite)
+  if (Object.keys(multiKartuStock || {}).length === 0) {
+    const stored = localStorage.getItem('bhp_mks_' + (window.currentCompany?.id || 'guest'));
+    if (stored) {
+      try { multiKartuStock = JSON.parse(stored); } catch(e) { multiKartuStock = {}; }
+    }
   }
 
   // Migrate format lama (langsung punya data) ke format baru (card → kategori → data)
@@ -16982,6 +16986,12 @@ async function selectCompany(company) {
   currentCompany = company;
   isGuestMode = false;
   document.getElementById('company-picker').style.display = 'none';
+
+  // Reset semua data agar tidak bocor ke bisnis baru
+  multiKartuStock = {};
+  jurnalEntries = [];
+  activeKartuStockId = null;
+  activeKategoriId = null;
 
   // Update chip di topbar — pastikan currentCompany & currentUser sudah terisi
   updateUserChip();
