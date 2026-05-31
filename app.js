@@ -16300,6 +16300,8 @@ async function saveToStorage(showToast = true) {
     return _origSaveToStorage(showToast);
   }
   showOpSpinner('Menyimpan data...', 'Mengunggah ke cloud');
+  // Safety timeout: maksimal 8 detik, setelah itu spinner pasti hilang
+  const _spinnerTimeout = setTimeout(() => hideOpSpinner(), 8000);
   try {
     // Save semua jurnal baru (yang belum punya _id)
     let saved = 0;
@@ -16316,9 +16318,11 @@ async function saveToStorage(showToast = true) {
     updateSaveIndicator('saved');
     if (showToast) showAutoSaveToast('☁️ Tersimpan ke cloud!', false);
     else showAutoSaveToast('☁️ Auto-saved', true);
+    clearTimeout(_spinnerTimeout);
     hideOpSpinner();
     return true;
   } catch(e) {
+    clearTimeout(_spinnerTimeout);
     hideOpSpinner();
     updateSaveIndicator('error');
     console.error('Supabase save error:', e);
@@ -16333,8 +16337,8 @@ function addJurnal(entry) {
   entry.no = 'JRN-' + String(jurnalCounter++).padStart(3,'0');
   jurnalEntries.push(entry);
   if (currentCompany) {
-    showOpSpinner('Menyimpan jurnal...', 'Mengunggah ke cloud');
-    saveJurnalToSupabase(entry).then(() => hideOpSpinner()).catch(() => hideOpSpinner());
+    // Background save — tidak pakai spinner agar tidak mengganggu UI
+    saveJurnalToSupabase(entry).catch(e => console.warn('Auto-save error:', e));
   }
   if(typeof markDirty === 'function') markDirty();
 }
