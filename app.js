@@ -142,6 +142,7 @@ let akuns = [
 
 let jurnalEntries = []; // [{no,tanggal,ket,jenis,lines:[{akun,ket,debit,kredit}]}]
 let jurnalCounter = 1;
+let produkList = []; // [{id,kode,nama,kat,satuan,hargaJual,hpp,stok,stokMin,akunPend,akunHpp,deskripsi}]
 
 // Seed sample data
 function seedData() {
@@ -229,6 +230,7 @@ const pageTitles = {
   'pajak':['Pajak Otomatis','PPN 12% · PPh 21 · PPh 23 · Laporan SPT'],
   'arus-kas':['Laporan Arus Kas','Metode Tidak Langsung · PSAK 2'],
   'perubahan-ekuitas':['Laporan Perubahan Ekuitas','Mutasi modal pemilik · PSAK 1'],
+  'produk':['Master Produk','Daftar produk & layanan · Stok · Harga'],
   'aset-tetap':['Register Aset Tetap','Daftar aset · Penyusutan otomatis · Nilai buku'],
   'kontak':['Master Kontak','Pelanggan & Supplier · Histori transaksi'],
 };
@@ -310,6 +312,10 @@ function switchTab(group, tab) {
   event.target.classList.add('active');
   if(tab==='umum') initManualLines();
   if(tab==='penjualan') initJualAkunPendapatan();
+  if(tab==='simpel') {
+    const tgl = document.getElementById('simpel-tanggal');
+    if(tgl && !tgl.value) tgl.value = new Date().toISOString().split('T')[0];
+  }
 }
 
 // AKUN DROPDOWN
@@ -496,6 +502,8 @@ function openJualAkunPicker() {
       const lblEl = document.getElementById('jual-akun-pendapatan-label');
       if (lblEl) lblEl.textContent = label;
       if (btn) btn.dataset.value = value;
+      // Sembunyikan/tampilkan kolom produk & HPP sesuai jenis
+      onJualJenisChange(value);
     }
   });
 }
@@ -521,7 +529,7 @@ function simpanPenjualan() {
   const inv = document.getElementById('jual-inv').value || autoNo('INV');
   const metode = document.getElementById('jual-metode').value;
   const jumlah = parseFloat(document.getElementById('jual-jumlah').value)||0;
-  const hpp = parseFloat(document.getElementById('jual-hpp').value)||0;
+  const hpp = parseFloat(document.getElementById('jual-hpp').value)||0; // dihitung otomatis dari kartu stock
   const ket = document.getElementById('jual-ket').value || `Penjualan ${inv}`;
   const kontakId = document.getElementById('jual-kontak-id')?.value || '';
   // Ambil akun pendapatan dari pilihan user
@@ -541,7 +549,7 @@ function simpanPenjualan() {
   ]});
   // Update total transaksi di kontak jika dipilih
   if(kontakId) updateKontakTotalTrx(kontakId, jumlah, 'penjualan');
-  ['jual-inv','jual-jumlah','jual-hpp','jual-ket'].forEach(id => document.getElementById(id).value='');
+  ['jual-inv','jual-jumlah','jual-hpp','jual-ket'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   document.getElementById('jual-kontak-id').value = '';
   const jualKontakBtn = document.getElementById('jual-kontak-btn');
   if(jualKontakBtn){ jualKontakBtn.classList.remove('has-value'); jualKontakBtn.textContent = 'Pilih kontak...'; }
@@ -857,7 +865,7 @@ function renderNeraca() {
       </tbody><tfoot><tr class="total-row"><td>Total ${title}</td><td class="num" style="text-align:right;">${fmtRp(total)}</td></tr></tfoot></table>
     </div>`;
   document.getElementById('neraca-content').innerHTML=`
-    <div class="grid-2">
+    <div class="grid-2" style="align-items:start;">
       <div>${secHtml('Aset',asetRows,aset,'var(--accent)')}</div>
       <div>
         ${secHtml('Liabilitas',liabRows,liab,'var(--red)')}
@@ -933,7 +941,7 @@ function renderAkun() {
       'Liabilitas':'<i class="ti ti-clipboard-list ti-inline"></i> LIABILITAS',
       'Ekuitas':'💎 EKUITAS',
       'Pendapatan':'💰 PENDAPATAN',
-      'HPP':'[Persediaan] HARGA POKOK PENJUALAN',
+      'HPP':'<i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> HARGA POKOK PENJUALAN',
       'Beban':'💸 BEBAN'
     };
     tipeOrder.forEach(tipe => {
@@ -3166,6 +3174,7 @@ function loadFromStorage() {
     if(data.jurnalEntries) {
       jurnalEntries = data.jurnalEntries;
       jurnalCounter = data.jurnalCounter || (jurnalEntries.length + 1);
+      if(data.produkList) produkList = data.produkList;
     }
     if(data.akuns && data.akuns.length > 0) {
       akuns = data.akuns;
@@ -3188,6 +3197,7 @@ function serializeData() {
     jurnalEntries: jurnalEntries,
     jurnalCounter: jurnalCounter,
     akuns: akuns,
+    produkList: produkList,
     appName: 'Bayu Harlan Priangga'
   };
 }
@@ -5613,7 +5623,7 @@ function deteksiPenyesuaianOtomatis() {
         id: 'adj_perlengkapan_' + kode,
         tipe: 'perlengkapan',
         level: 'info',
-        judul: `[Persediaan] Pemakaian ${nama} Belum Disesuaikan`,
+        judul: `<i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Pemakaian ${nama} Belum Disesuaikan`,
         deskripsi: `Akun <b>${kode} — ${nama}</b> saldo <b>${rp(saldo)}</b>. Perlengkapan yang terpakai harus diakui sebagai beban. Isi nilai yang benar-benar terpakai bulan ini.`,
         alasan: 'Perlengkapan yang sudah digunakan dipindahkan ke Beban Perlengkapan agar saldo neraca akurat.',
         nilaiSuggested: estimasi,
@@ -8256,7 +8266,182 @@ function getReminders() {
   return reminders;
 }
 
-// CHART (CANVAS)
+// ── DASHBOARD: PIUTANG & UTANG SUMMARY ──
+function renderDashPiutangUtang() {
+  const fmtRpShort = v => {
+    if(Math.abs(v) >= 1e9) return 'Rp ' + (v/1e9).toFixed(1) + ' M';
+    if(Math.abs(v) >= 1e6) return 'Rp ' + (v/1e6).toFixed(1) + ' jt';
+    return fmtRp(v);
+  };
+  // Gunakan global emptyState() — sudah include icon SVG
+
+  // ── PIUTANG ──
+  const piutangEl  = document.getElementById('dash-piutang-content');
+  const piutangSub = document.getElementById('dash-piutang-sub');
+  if(piutangEl) {
+    const piutangAkuns = akuns.filter(a => a.tipe === 'Aset' && a.nama.toLowerCase().includes('piutang'));
+    let totalPiutang = 0;
+    const pRows = [];
+    piutangAkuns.forEach(a => {
+      const s = computeSaldoBersih(a.kode);
+      if(!s) return;
+      totalPiutang += s;
+      pRows.push({ nama: a.nama, kode: a.kode, saldo: s });
+    });
+    const penjualanKredit = jurnalEntries.filter(j =>
+      j.jenis === 'Penjualan' && j.lines.some(l => l.akun === '1201' && l.debit > 0)
+    ).length;
+    if(pRows.length === 0) {
+      piutangEl.innerHTML = emptyState('Belum ada piutang', 'Tambah transaksi baru untuk memulai');
+      if(piutangSub) piutangSub.textContent = 'Semua tagihan lunas';
+    } else {
+      if(piutangSub) piutangSub.textContent = `${pRows.length} akun · ${penjualanKredit} transaksi kredit`;
+      piutangEl.innerHTML = `
+        <div style="padding:12px 16px 4px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:8px;margin-bottom:8px;">
+            <span style="font-size:12px;color:var(--muted);font-weight:600;">TOTAL PIUTANG</span>
+            <span style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--accent);">${fmtRp(totalPiutang)}</span>
+          </div>
+        </div>
+        <table style="width:100%;"><tbody>
+          ${pRows.map(r => `<tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:9px 16px;">
+              <div style="font-size:13px;font-weight:500;">${r.nama}</div>
+              <div style="font-size:10px;color:var(--muted);font-family:var(--mono);">${r.kode}</div>
+            </td>
+            <td style="padding:9px 16px;text-align:right;font-family:var(--mono);font-size:13px;font-weight:600;color:${r.saldo>0?'var(--accent)':'var(--red)'};">${fmtRpShort(Math.abs(r.saldo))}</td>
+          </tr>`).join('')}
+        </tbody></table>`;
+    }
+  }
+
+  // ── UTANG ──
+  const utangEl  = document.getElementById('dash-utang-content');
+  const utangSub = document.getElementById('dash-utang-sub');
+  if(utangEl) {
+    const utangAkuns = akuns.filter(a => a.tipe === 'Liabilitas');
+    let totalUtang = 0;
+    const uRows = [];
+    utangAkuns.forEach(a => {
+      const s = computeSaldoBersih(a.kode);
+      if(!s) return;
+      totalUtang += s;
+      uRows.push({ nama: a.nama, kode: a.kode, saldo: s });
+    });
+    if(uRows.length === 0) {
+      utangEl.innerHTML = emptyState('Belum ada utang', 'Tambah transaksi baru untuk memulai');
+      if(utangSub) utangSub.textContent = 'Kewajiban bersih: Rp 0';
+    } else {
+      uRows.sort((a,b) => b.saldo - a.saldo);
+      if(utangSub) utangSub.textContent = `${uRows.length} akun · Total ${fmtRpShort(totalUtang)}`;
+      utangEl.innerHTML = `
+        <div style="padding:12px 16px 4px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.15);border-radius:8px;margin-bottom:8px;">
+            <span style="font-size:12px;color:var(--muted);font-weight:600;">TOTAL KEWAJIBAN</span>
+            <span style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--red);">${fmtRp(totalUtang)}</span>
+          </div>
+        </div>
+        <table style="width:100%;"><tbody>
+          ${uRows.map(r => {
+            const isBank  = r.nama.toLowerCase().includes('bank') || r.nama.toLowerCase().includes('kredit');
+            const isUsaha = r.nama.toLowerCase().includes('usaha') || r.kode.startsWith('210');
+            const tag = isBank
+              ? `<span style="font-size:9px;background:rgba(34,211,238,0.12);color:var(--accent2);padding:1px 6px;border-radius:3px;font-weight:700;margin-left:4px;">BANK</span>`
+              : isUsaha
+              ? `<span style="font-size:9px;background:rgba(245,158,11,0.12);color:var(--accent3);padding:1px 6px;border-radius:3px;font-weight:700;margin-left:4px;">USAHA</span>`
+              : '';
+            return `<tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:9px 16px;">
+                <div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:4px;">${r.nama}${tag}</div>
+                <div style="font-size:10px;color:var(--muted);font-family:var(--mono);">${r.kode}</div>
+              </td>
+              <td style="padding:9px 16px;text-align:right;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--red);">${fmtRpShort(r.saldo)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody></table>`;
+    }
+  }
+
+  // ── INFORMASI PENJUALAN ──
+  const jualEl  = document.getElementById('dash-penjualan-content');
+  const jualSub = document.getElementById('dash-penjualan-sub');
+  if(jualEl) {
+    const now2 = new Date();
+    const y2 = now2.getFullYear(), m2 = now2.getMonth();
+    const fromStr = `${y2}-${String(m2+1).padStart(2,'0')}-01`;
+    const toStr   = new Date(y2, m2+1, 0).toISOString().split('T')[0];
+
+    // 6 bulan terakhir
+    const bulan6 = [];
+    for(let i=5; i>=0; i--) {
+      const d   = new Date(y2, m2-i, 1);
+      const pfx = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      let total = 0;
+      jurnalEntries.filter(j => j.jenis==='Penjualan' && j.tanggal.startsWith(pfx)).forEach(j => {
+        j.lines.forEach(l => {
+          const a = akuns.find(x=>x.kode===l.akun);
+          if(a?.tipe==='Pendapatan') total += l.kredit||0;
+        });
+      });
+      bulan6.push({ label: d.toLocaleDateString('id-ID',{month:'short'}), val: total });
+    }
+
+    const totalBulanIni  = bulan6[5].val;
+    const totalBulanLalu = bulan6[4].val;
+    const delta = totalBulanLalu > 0 ? ((totalBulanIni - totalBulanLalu) / totalBulanLalu * 100) : 0;
+    const deltaStr = totalBulanLalu > 0
+      ? `<span style="font-size:11px;font-weight:700;color:${delta>=0?'var(--accent)':'var(--red)'};">${delta>=0?'▲':'▼'} ${Math.abs(delta).toFixed(1)}%</span>`
+      : '';
+    const jualCount = jurnalEntries.filter(j =>
+      j.jenis==='Penjualan' && j.tanggal >= fromStr && j.tanggal <= toStr
+    ).length;
+
+    // Bar chart mini
+    const maxVal = Math.max(...bulan6.map(b=>b.val), 1);
+    const bars = bulan6.map((b,i) => {
+      const pct = Math.max(Math.round((b.val / maxVal) * 100), b.val > 0 ? 4 : 0);
+      const isNow = i === 5;
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+        <div style="width:100%;background:var(--surface2);border-radius:4px 4px 0 0;height:60px;display:flex;align-items:flex-end;overflow:hidden;">
+          <div style="width:100%;background:${isNow?'var(--accent)':'rgba(74,222,128,0.3)'};border-radius:4px 4px 0 0;height:${pct}%;"></div>
+        </div>
+        <span style="font-size:9px;color:${isNow?'var(--accent)':'var(--muted)'};font-weight:${isNow?700:400};">${b.label}</span>
+      </div>`;
+    }).join('');
+
+    if(jualSub) jualSub.textContent = `${jualCount} transaksi · ${now2.toLocaleDateString('id-ID',{month:'long',year:'numeric'})}`;
+
+    jualEl.innerHTML = `
+      <div style="padding:12px 16px 12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:8px;margin-bottom:12px;">
+          <div>
+            <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:2px;">PENJUALAN BULAN INI</div>
+            <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--accent);">${fmtRp(totalBulanIni)}</div>
+          </div>
+          <div style="text-align:right;">
+            ${deltaStr}
+            <div style="font-size:10px;color:var(--muted);margin-top:2px;">vs bln lalu</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:4px;padding:0 4px;height:80px;">
+          ${bars}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+          <div style="background:var(--surface2);border-radius:8px;padding:8px 10px;">
+            <div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:2px;">BLN LALU</div>
+            <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text);">${fmtRpShort(totalBulanLalu)}</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:8px;padding:8px 10px;">
+            <div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:2px;">JML TRANSAKSI</div>
+            <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text);">${jualCount} transaksi</div>
+          </div>
+        </div>
+      </div>`;
+  }
+}
+
+
+// CHART (CANVAS) — masih dipakai di halaman lain
 function renderChart() {
   const canvas = document.getElementById('dash-chart');
   if(!canvas) return;
@@ -8439,8 +8624,8 @@ function renderDashboard() {
       : emptyState('Belum ada saldo');
   }
 
-  // Chart
-  setTimeout(renderChart, 50);
+  // Piutang & Utang summary
+  renderDashPiutangUtang();
   // Pajak reminders
   renderPajakPanel();
 }
@@ -9619,7 +9804,7 @@ async function downloadAllAttachments(jurnalNo) {
     });
   }
   
-  showAlert('[Persediaan] Menyiapkan ZIP...');
+  showAlert('<i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Menyiapkan ZIP...');
   const zip = new JSZip();
   attachments.forEach(a => {
     // Extract base64 data
@@ -9851,8 +10036,9 @@ function autoNo(prefix) {
   const n=jurnalEntries.filter(j=>j.ref?.startsWith(prefix)).length+1;
   return `${prefix}-${String(n).padStart(3,'0')}`;
 }
-function emptyState(msg){
-  return `<div class="empty-state"><div class="empty-icon"><i class="ti ti-inbox" style="font-size:32px;"></i></div><div class="empty-title">${msg}</div><div class="empty-desc">Tambah transaksi baru untuk memulai</div></div>`;
+function emptyState(msg, desc){
+  const descText = desc !== undefined ? desc : 'Tambah transaksi baru untuk memulai';
+  return `<div class="empty-state"><div class="empty-icon"><svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:0.35"><rect x="4" y="8" width="28" height="20" rx="4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 14h28" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="21" r="2" fill="currentColor"/><rect x="15" y="20" width="10" height="2" rx="1" fill="currentColor"/></svg></div><div class="empty-title">${msg}</div>${descText ? `<div class="empty-desc">${descText}</div>` : ''}</div>`;
 }
 
 let alertTimer;
@@ -10525,26 +10711,40 @@ function renderKartuStockSelector() {
   const container = document.getElementById('ks-selector-wrap');
   if (!container) return;
   const list = Object.values(multiKartuStock);
+  const activeKs = multiKartuStock[activeKartuStockId];
   container.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
       <span style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Kartu Stock:</span>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1;">
-        ${list.map(ks => `
-          <button onclick="switchActiveKS('${ks.id}')" class="ks-selector-btn ${ks.id === activeKartuStockId ? 'active' : ''}"
-            title="${ks.deskripsi || ks.nama}">
-            [Persediaan] ${ks.nama}
-            <span style="font-size:9px;color:var(--muted);margin-left:3px;">(${(ks.data[kartuStockTab]||[]).length})</span>
-          </button>`).join('')}
-      </div>
+      <button class="opt-picker-btn" type="button" id="ks-selector-picker-btn" onclick="openKsSelectorPicker()" style="min-width:200px;max-width:300px;">
+        <span class="opt-picker-label" id="ks-selector-picker-label">${activeKs ? activeKs.nama + ' (' + (activeKs.data[kartuStockTab]||[]).length + ')' : 'Pilih Kartu Stock...'}</span>
+        <span class="opt-picker-arrow">▾</span>
+      </button>
       <button onclick="openModalTambahKS()" class="btn btn-sm" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:var(--accent2);font-size:11px;white-space:nowrap;">+ Kartu Baru</button>
       ${list.length > 1 ? `<button onclick="openModalKelolaKS()" class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:11px;"><i class="ti ti-settings ti-inline"></i> Kelola</button>` : ''}
     </div>
     <div style="font-size:12px;color:var(--accent2);font-weight:600;margin-bottom:6px;">
-      [Persediaan] ${multiKartuStock[activeKartuStockId]?.nama || ''}
-      ${multiKartuStock[activeKartuStockId]?.deskripsi ? `<span style="color:var(--muted);font-weight:400;"> — ${multiKartuStock[activeKartuStockId].deskripsi}</span>` : ''}
-      ${multiKartuStock[activeKartuStockId]?.satuan ? `<span style="color:var(--muted);font-size:11px;"> · ${multiKartuStock[activeKartuStockId].satuan}</span>` : ''}
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:4px;opacity:0.7"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>${activeKs?.nama || ''}
+      ${activeKs?.deskripsi ? `<span style="color:var(--muted);font-weight:400;"> — ${activeKs.deskripsi}</span>` : ''}
+      ${activeKs?.satuan ? `<span style="color:var(--muted);font-size:11px;"> · ${activeKs.satuan}</span>` : ''}
       <button onclick="openModalEditKS('${activeKartuStockId}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;margin-left:6px;">[Edit]</button>
     </div>`;
+}
+
+function openKsSelectorPicker() {
+  const list = Object.values(multiKartuStock);
+  if(!list.length) return;
+  openOptPicker({
+    title: 'Pilih Kartu Stock',
+    options: list.map(ks => ({
+      value: ks.id,
+      label: ks.nama,
+      sub: `${ks.satuan||'unit'} · ${(ks.data[kartuStockTab]||[]).length} catatan${ks.deskripsi?' · '+ks.deskripsi:''}`,
+    })),
+    currentValue: activeKartuStockId,
+    onSelect: (ksId) => {
+      switchActiveKS(ksId);
+    }
+  });
 }
 
 function openModalTambahKS() {
@@ -10631,22 +10831,27 @@ function hapusKS(ksId) {
 }
 
 /** Popup pilih kartu stock saat user klik Input dari preview persediaan */
-function showPilihKartuStockPopup(onSelect) {
+function showPilihKartuStockPopup(onSelect, tujuanMetode) {
   const list = Object.values(multiKartuStock);
   // Jika hanya 1, langsung pilih tanpa popup
   if (list.length === 1) { onSelect(list[0].id); return; }
 
+  // Gunakan metode dari parameter (metode transaksi) jika ada, bukan kartuStockTab (filter)
+  const metodeLabel = tujuanMetode
+    ? { fifo:'FIFO (First In First Out)', lifo:'LIFO (Last In First Out)', wa:'Weighted Average', mwa:'Moving Weighted Average' }[tujuanMetode] || tujuanMetode.toUpperCase()
+    : kartuStockTab.toUpperCase();
+  const metodeKey = tujuanMetode || kartuStockTab;
+
   const el = document.getElementById('mks-pilih-modal');
   document.getElementById('mks-pilih-list').innerHTML = list.map(ks => {
-    const total = (ks.data[kartuStockTab] || []).length;
+    const total = (ks.data[metodeKey] || []).length;
     const isActive = ks.id === activeKartuStockId;
     return `<div onclick="document.querySelectorAll('.mks-pilih-item').forEach(x=>x.classList.remove('selected'));this.classList.add('selected');document.getElementById('mks-pilih-ok').dataset.ksId=this.dataset.ksId"
       class="mks-pilih-item ${isActive?'selected':''}" data-ks-id="${ks.id}"
       style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:12px;border:1px solid ${isActive?'var(--accent)':'var(--border)'};margin-bottom:8px;cursor:pointer;transition:all 0.15s;">
-      <span style="font-size:24px;">[Persediaan]</span>
       <div style="flex:1;">
         <div style="font-size:13px;font-weight:600;">${ks.nama}</div>
-        <div style="font-size:11px;color:var(--muted);">${ks.deskripsi||'—'} · ${ks.satuan} · ${total} entri di tab ${kartuStockTab.toUpperCase()}</div>
+        <div style="font-size:11px;color:var(--muted);">${ks.deskripsi||'—'} · ${ks.satuan} · ${total} entri · Tujuan: <b>${metodeLabel}</b></div>
       </div>
       <div class="mks-pilih-radio" style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;">
         ${isActive?'<div style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></div>':''}
@@ -10906,15 +11111,16 @@ function switchKartuStockTab(tab, el) {
 
 function inputKeKartuStock() {
   const kartu = window._invKartu;
-  const metode = window._invMetode;
+  // Selalu ambil metode dari picker "Metode & Transaksi" (inv-metode), bukan dari kartuStockTab (filter)
+  const metode = document.getElementById('inv-metode')?.value || window._invMetode || 'fifo';
   if(!kartu || !kartu.length) { showAlert('Hitung persediaan dulu!'); return; }
 
-  // Tanya ke kartu stock mana jika lebih dari 1
+  // Kirim tujuanMetode ke popup agar keterangan tampil benar
   showPilihKartuStockPopup((ksId) => {
     // Switch active KS ke pilihan user
     switchActiveKS(ksId);
     _doInputKeKartuStock(kartu, metode);
-  });
+  }, metode);
 }
 
 function _doInputKeKartuStock(kartu, metode) {
@@ -13154,9 +13360,9 @@ const TUT_MODULES = {
       { icon:'<i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i>', title:'Penjualan Tunai vs Kredit',
         body:'Pilih metode pembayaran:\n\n<b>Tunai (Kas)</b>\nPelanggan bayar langsung.\nJurnal: Dr. Kas — Kr. Penjualan\n\n<b>Kredit (Piutang)</b>\nPelanggan bayar nanti.\nJurnal: Dr. Piutang Usaha — Kr. Penjualan\n\nNanti saat piutang dilunasi, catat lagi via tab Kas: penerimaan kas, akun lawan = Piutang Usaha.',
         target: '#jual-metode', highlight: true },
-      { icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M12 3l9 5v8l-9 5-9-5V8l9-5zm0 0v9m9-4l-9 4-9-4"/></svg>', title:'HPP — Harga Pokok Penjualan',
-        body:'<b>HPP (Harga Pokok Penjualan)</b> adalah biaya produksi/pembelian barang yang terjual.\n\nContoh: Jual buku seharga Rp 50.000, modal beli Rp 30.000\n→ Jumlah Penjualan: 50.000\n→ HPP: 30.000\n→ Laba Kotor: 20.000\n\nJika kamu menjual jasa (bukan barang), HPP bisa dikosongkan.\n\nSistem otomatis buat 2 jurnal: jurnal pendapatan + jurnal HPP.',
-        target: '#jual-hpp', highlight: true },
+      { icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M12 3l9 5v8l-9 5-9-5V8l9-5zm0 0v9m9-4l-9 4-9-4"/></svg>', title:'Pilih Produk — HPP Otomatis',
+        body:'<b>Pilih Produk</b> dari kartu stock persediaan.\n\nSaat produk dipilih, sistem otomatis:\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Mengisi <b>harga jual</b> sesuai Master Produk\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Menghitung <b>HPP otomatis</b> dari kartu stock (FIFO/LIFO/WA)\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Membuat <b>jurnal HPP + persediaan keluar</b> secara otomatis\n\nTidak perlu isi HPP manual — sistem sudah mendeteksi dari persediaan.',
+        target: '#jual-produk-btn', highlight: true },
       { icon:'<i class="ti ti-chart-bar ti-inline"></i>', title:'Otomatis Masuk ke Laporan',
         body:'Setelah simpan penjualan, data langsung masuk ke:\n\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <b>Jurnal Penjualan</b> — daftar semua transaksi jual\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <b>Laporan Laba Rugi</b> — menambah pendapatan\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <b>Neraca</b> — menambah kas/piutang\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <b>Dashboard</b> — update angka ringkasan\n\nSemua laporan otomatis — tidak perlu isi manual!',
         target: null },
@@ -13176,7 +13382,7 @@ const TUT_MODULES = {
         body:'Klik tab <b>"Pembelian"</b> di halaman Transaksi.\n\nForm yang tersedia:\n• Tanggal & No. Faktur\n• Metode (Tunai/Kredit)\n• Jumlah Pembelian\n• Akun Beban/Aset\n• Keterangan',
         target: '.tab[onclick*="pembelian"]', highlight: true },
       { icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>', title:'Pilih Akun yang Tepat',
-        body:'Ini bagian paling penting! Pilih akun sesuai apa yang dibeli:\n\n[Persediaan] Beli stok/barang dagangan → <b>Persediaan Barang</b>\n🖥️ Beli komputer/mesin → <b>Peralatan</b>\n📄 Beli ATK/perlengkapan → <b>Perlengkapan</b>\n💊 Beli bahan baku → <b>Persediaan Barang</b>\n\nPilih akun yang salah → laporan keuangan jadi tidak akurat.',
+        body:'Ini bagian paling penting! Pilih akun sesuai apa yang dibeli:\n\n<i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Beli stok/barang dagangan → <b>Persediaan Barang</b>\n🖥️ Beli komputer/mesin → <b>Peralatan</b>\n📄 Beli ATK/perlengkapan → <b>Perlengkapan</b>\n💊 Beli bahan baku → <b>Persediaan Barang</b>\n\nPilih akun yang salah → laporan keuangan jadi tidak akurat.',
         target: '#beli-akun', highlight: true },
       { icon:'<i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i>', title:'Tunai vs Kredit (Hutang)',
         body:'<b>Pembelian Tunai</b>\nBayar langsung dengan kas.\nJurnal: Dr. [Aset/Beban] — Kr. Kas\n\n<b>Pembelian Kredit</b>\nBayar nanti (jadi hutang ke supplier).\nJurnal: Dr. [Aset/Beban] — Kr. Utang Usaha\n\nNanti saat bayar hutang ke supplier:\n→ Catat via tab Kas: pengeluaran kas, akun lawan = Utang Usaha.',
@@ -13311,7 +13517,7 @@ const TUT_MODULES = {
   },
 
   'kalk-persediaan': {
-    title: 'Kalkulator Persediaan', icon: '[Persediaan]',
+    title: 'Kalkulator Persediaan', icon: '<i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
     steps: [
       { icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M12 3l9 5v8l-9 5-9-5V8l9-5zm0 0v9m9-4l-9 4-9-4"/></svg>', title:'Kalkulator Persediaan',
         body:'Kalkulator ini untuk menghitung <b>nilai persediaan akhir</b> dan <b>HPP</b> menggunakan metode:\n\n• <b>FIFO</b> — barang masuk pertama, keluar pertama\n• <b>LIFO</b> — barang masuk terakhir, keluar pertama\n• <b>Weighted Average</b> — rata-rata tertimbang\n• <b>Moving Average</b> — rata-rata bergerak\n\nMasing-masing metode hasilkan nilai yang berbeda!',
@@ -13433,7 +13639,7 @@ const TUT_MODULES = {
     title: 'Jurnal Berulang', icon: '<i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i>',
     steps: [
       { icon:'<i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i>', title:'Apa itu Jurnal Berulang?',
-        body:'Jurnal Berulang adalah template transaksi yang berjalan otomatis sesuai jadwal.\n\nContoh penggunaan:\n💼 Gaji karyawan → tiap bulan tanggal 25\n🏠 Sewa kantor → tiap bulan tanggal 1\n<i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Cicilan → tiap bulan\n[Persediaan] Langganan software → tiap tahun\n\nSekali setup, sistem yang mencatat otomatis!',
+        body:'Jurnal Berulang adalah template transaksi yang berjalan otomatis sesuai jadwal.\n\nContoh penggunaan:\n💼 Gaji karyawan → tiap bulan tanggal 25\n🏠 Sewa kantor → tiap bulan tanggal 1\n<i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Cicilan → tiap bulan\n<i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Langganan software → tiap tahun\n\nSekali setup, sistem yang mencatat otomatis!',
         navTo: 'jurnal-berulang' },
       { icon:'+', title:'Cara Membuat Jurnal Berulang',
         body:'1. Buka menu <b>J. Berulang</b> di sidebar\n2. Ketuk <b>+ Tambah Berulang</b>\n3. Isi nama template (contoh: "Gaji Karyawan")\n4. Pilih frekuensi: Harian / Mingguan / Bulanan / Triwulan / Tahunan\n5. Pilih tanggal mulai\n6. Pilih akun Debit dan Kredit\n7. Isi nominal dan keterangan\n8. Ketuk <b>Simpan</b>',
@@ -16661,20 +16867,17 @@ const _invMetodeList = [
 let _invMetodeVal = 'fifo';
 
 function openInvMetodeSheet() {
-  const optEl = document.getElementById('inv-metode-options');
-  if (!optEl) return;
-  optEl.innerHTML = _invMetodeList.map(m => `
-    <button onclick="selectInvMetode('${m.value}')" style="display:flex;align-items:center;gap:16px;padding:14px 16px;border-radius:12px;border:${_invMetodeVal===m.value?'2px solid var(--accent)':'1px solid var(--border)'};background:${_invMetodeVal===m.value?'rgba(74,222,128,0.08)':'var(--surface2)'};cursor:pointer;font-family:var(--sans);width:100%;text-align:left;transition:all 0.15s;">
-      <span style="font-size:22px;flex-shrink:0;">${m.icon}</span>
-      <span style="flex:1;min-width:0;">
-        <span style="display:block;font-size:14px;font-weight:700;color:${_invMetodeVal===m.value?'var(--accent)':'var(--text)'};">${m.label}</span>
-        <span style="display:block;font-size:11px;color:var(--muted);margin-top:1px;">${m.sub}</span>
-      </span>
-      ${_invMetodeVal===m.value?'<span style="color:var(--accent);font-size:18px;">✓</span>':''}
-    </button>`).join('');
-  const bd = document.getElementById('inv-metode-sheet-backdrop');
-  bd.style.display = 'flex';
-  requestAnimationFrame(() => bd.style.display = 'flex');
+  openOptPicker({
+    title: 'Pilih Metode Persediaan',
+    options: _invMetodeList.map(m => ({
+      value: m.value,
+      label: m.label,
+      sub:   m.sub,
+      icon:  m.icon,
+    })),
+    currentValue: _invMetodeVal,
+    onSelect: (val) => selectInvMetode(val),
+  });
 }
 
 function selectInvMetode(val) {
@@ -16683,11 +16886,14 @@ function selectInvMetode(val) {
   if (hidden) hidden.value = val;
   const found = _invMetodeList.find(m => m.value === val);
   const btn = document.getElementById('inv-metode-label-btn');
-  if (btn && found) btn.textContent = found.label + (found.sub ? ' — ' + found.sub : '');
+  // Tampilkan label + penjelasan dengan kurung, bukan dash — konsisten dengan tampilan awal
+  if (btn && found) btn.textContent = found.label + (found.sub ? ' (' + found.sub + ')' : '');
   closeInvMetodeSheet();
 }
 
 function closeInvMetodeSheet() {
+  closeOptPicker();
+  // fallback: tutup custom backdrop jika masih ada
   const bd = document.getElementById('inv-metode-sheet-backdrop');
   if (bd) bd.style.display = 'none';
 }
@@ -18445,3 +18651,907 @@ async function prosesJoinCode() {
     if (st) st.innerHTML = '<span style="color:var(--red);">Gagal: ' + e.message + '</span>';
   }
 }
+// ══════════════════════════════════════════════════════════
+// PRIORITAS 1 — MASTER PRODUK
+// ══════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════
+// MASTER PRODUK — Deteksi otomatis dari Kartu Stock Persediaan
+// ══════════════════════════════════════════════════════════
+
+/**
+ * Hitung saldo & layer HPP dari satu kartu stock berdasarkan metode aktif.
+ * Return: { metode, totalQty, totalNilai, hppRata, layers:[{qty,harga}] }
+ */
+function getKsSaldo(ks) {
+  // Cari metode yang punya data terbanyak (metode aktif yang dipakai user)
+  const metodeArr = ['fifo','lifo','wa','mwa'];
+  let metode = 'fifo';
+  let maxLen  = 0;
+  metodeArr.forEach(m => {
+    const len = (ks.data[m]||[]).length;
+    if(len > maxLen) { maxLen = len; metode = m; }
+  });
+
+  const rows = (ks.data[metode]||[]);
+  if(!rows.length) return { metode, totalQty:0, totalNilai:0, hppRata:0, layers:[] };
+
+  // Ambil saldoLayers dari baris terakhir
+  const lastRow = rows[rows.length - 1];
+  const layers  = (lastRow.saldoLayers || []).filter(l => l.qty > 0);
+
+  const totalQty  = layers.reduce((s,l) => s + l.qty, 0);
+  const totalNilai= layers.reduce((s,l) => s + l.qty * l.harga, 0);
+  const hppRata   = totalQty > 0 ? totalNilai / totalQty : 0;
+
+  return { metode, totalQty, totalNilai, hppRata, layers };
+}
+
+/**
+ * Hitung HPP lines untuk penjualan qty unit dari kartu stock ks.
+ * FIFO: bisa multi-layer. WA/LIFO/MWA: satu baris rata-rata.
+ */
+function getHppLayersForSale(ks, qtySell) {
+  const { metode, layers, hppRata, totalQty } = getKsSaldo(ks);
+
+  if(qtySell > totalQty) qtySell = totalQty; // cap di stok tersedia
+  if(qtySell <= 0) return [];
+
+  if(metode === 'fifo') {
+    // FIFO: ambil layer per layer dari depan
+    const result = [];
+    let sisa = qtySell;
+    const snapLayers = layers.map(l => ({...l})); // copy agar tidak mutate
+    for(const layer of snapLayers) {
+      if(sisa <= 0) break;
+      const ambil = Math.min(layer.qty, sisa);
+      result.push({ qty: ambil, harga: layer.harga });
+      sisa -= ambil;
+    }
+    return result;
+  } else {
+    // WA / LIFO / MWA: satu layer dengan harga rata-rata
+    return [{ qty: qtySell, harga: hppRata }];
+  }
+}
+
+/**
+ * Buat jurnal HPP lines dari hasil getHppLayersForSale.
+ * Jika FIFO multi-layer → beberapa baris jurnal.
+ */
+function buildHppJurnalLines(hppLayers, akunHpp, akunPersediaan) {
+  return hppLayers.map(layer => ([
+    { akun: akunHpp,        ket: `HPP Persediaan (${layer.qty} unit × ${fmtRp(layer.harga)})`, debit: layer.qty * layer.harga, kredit: 0 },
+    { akun: akunPersediaan, ket: `Keluar persediaan ${layer.qty} unit`,                        debit: 0, kredit: layer.qty * layer.harga },
+  ])).flat();
+}
+
+/**
+ * Render tabel Master Produk — baca dari multiKartuStock
+ */
+function renderProduk() {
+  const search = (document.getElementById('produk-search')?.value||'').toLowerCase();
+  const tbody  = document.getElementById('produk-tbody');
+  const sub    = document.getElementById('produk-count-sub');
+  if(!tbody) return;
+
+  const ksList = Object.values(multiKartuStock || {});
+
+  if(!ksList.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:40px;">
+      <i class="ti ti-package" style="font-size:28px;display:block;margin-bottom:10px;opacity:0.4;"></i>
+      Belum ada kartu stock persediaan.<br>
+      <span style="font-size:12px;">Tambahkan barang di menu <b>Persediaan → + Kartu Baru</b> terlebih dahulu.</span>
+    </td></tr>`;
+    if(sub) sub.textContent = '0 produk terdeteksi dari kartu stock';
+    return;
+  }
+
+  // Filter search
+  const filtered = ksList.filter(ks =>
+    !search || ks.nama.toLowerCase().includes(search)
+  );
+
+  if(sub) sub.textContent = `${ksList.length} produk terdeteksi dari kartu stock persediaan`;
+
+  const metodeLabel = { fifo:'FIFO', lifo:'LIFO', wa:'Weighted Avg', mwa:'Moving WA' };
+  const metodeBadge = {
+    fifo: 'background:rgba(74,222,128,0.12);color:var(--accent);border:1px solid rgba(74,222,128,0.3);',
+    lifo: 'background:rgba(34,211,238,0.12);color:var(--accent2);border:1px solid rgba(34,211,238,0.3);',
+    wa:   'background:rgba(245,158,11,0.12);color:var(--accent3);border:1px solid rgba(245,158,11,0.3);',
+    mwa:  'background:rgba(245,158,11,0.12);color:var(--accent3);border:1px solid rgba(245,158,11,0.3);',
+  };
+
+  if(!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">Tidak ada produk yang cocok</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(ks => {
+    const saldo = getKsSaldo(ks);
+    // Harga jual: ambil dari produkList override jika ada, default 0
+    const override   = produkList.find(p => p.ksId === ks.id);
+    const hargaJual  = override?.hargaJual || 0;
+    const akunPend   = override?.akunPend  || '4101';
+    const akunHpp    = override?.akunHpp   || '5101';
+    const akunPendNm = akuns.find(a=>a.kode===akunPend)?.nama || akunPend;
+
+    const stokColor  = saldo.totalQty <= 0 ? 'var(--red)' : saldo.totalQty <= 5 ? 'var(--accent3)' : 'var(--accent)';
+    const badge      = metodeBadge[saldo.metode] || '';
+
+    // Layer detail (hanya FIFO)
+    let layerDetail = '';
+    if(saldo.metode === 'fifo' && saldo.layers.length > 1) {
+      layerDetail = saldo.layers.map(l =>
+        `<div style="font-size:10px;color:var(--muted);">${l.qty} unit @ ${fmtRp(l.harga)}</div>`
+      ).join('');
+    }
+
+    return `<tr>
+      <td style="font-weight:600;font-size:13px;">
+        ${ks.nama}
+        ${ks.deskripsi ? `<div style="font-size:11px;color:var(--muted);font-weight:400;">${ks.deskripsi}</div>` : ''}
+      </td>
+      <td style="font-size:12px;color:var(--muted);">${ks.satuan||'unit'}</td>
+      <td>
+        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;${badge}">${metodeLabel[saldo.metode]||saldo.metode}</span>
+      </td>
+      <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${stokColor};">
+        ${saldo.totalQty.toLocaleString('id-ID')} <span style="font-size:10px;font-weight:400;color:var(--muted);">${ks.satuan||'unit'}</span>
+      </td>
+      <td style="text-align:right;font-family:var(--mono);font-size:12px;">
+        <div style="color:var(--text);font-weight:600;">${fmtRp(saldo.hppRata)}</div>
+        ${layerDetail}
+        <div style="font-size:10px;color:var(--muted);">Total: ${fmtRp(saldo.totalNilai)}</div>
+      </td>
+      <td style="text-align:right;font-family:var(--mono);font-size:13px;color:${hargaJual?'var(--accent)':'var(--muted)'};">
+        ${hargaJual ? fmtRp(hargaJual) : '<span style="font-size:11px;">Belum diset</span>'}
+      </td>
+      <td style="font-size:11px;color:var(--muted);">${akunPendNm}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="openModalEditProdukHarga('${ks.id}')" title="Edit harga jual & akun">
+          <i class="ti ti-pencil" style="font-size:12px;"></i> Edit
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/**
+ * Modal edit — hanya harga jual & akun. HPP read-only dari kartu stock.
+ */
+function openModalEditProdukHarga(ksId) {
+  const ks       = multiKartuStock[ksId];
+  if(!ks) return;
+  const override = produkList.find(p => p.ksId === ksId);
+  const saldo    = getKsSaldo(ks);
+  const metodeLabel = { fifo:'FIFO', lifo:'LIFO', wa:'Weighted Average', mwa:'Moving WA' };
+
+  document.getElementById('modal-produk-title').textContent = `Edit: ${ks.nama}`;
+  document.getElementById('produk-edit-id').value    = ksId;
+  document.getElementById('produk-nama').value       = ks.nama;
+  document.getElementById('produk-satuan').value     = ks.satuan||'unit';
+  document.getElementById('produk-harga-jual').value = override?.hargaJual || '';
+
+  // Akun buttons
+  const akunPend = override?.akunPend || '4101';
+  const akunHpp  = override?.akunHpp  || '5101';
+  document.getElementById('produk-akun-pend').value = akunPend;
+  document.getElementById('produk-akun-hpp').value  = akunHpp;
+  const pendBtn = document.getElementById('produk-akun-pend-btn');
+  const hppBtn  = document.getElementById('produk-akun-hpp-btn');
+  if(pendBtn) pendBtn.textContent = akuns.find(a=>a.kode===akunPend)?.nama || 'Pilih Akun...';
+  if(hppBtn)  hppBtn.textContent  = akuns.find(a=>a.kode===akunHpp)?.nama  || 'Pilih Akun...';
+
+  // Update read-only HPP info
+  const hppInfo = document.getElementById('produk-hpp-readonly');
+  if(hppInfo) {
+    hppInfo.innerHTML = `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">HPP (otomatis dari kartu stock — <b>${metodeLabel[saldo.metode]||saldo.metode}</b>)</div>
+        <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text);">${fmtRp(saldo.hppRata)} / unit</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;">Stok: ${saldo.totalQty} ${ks.satuan||'unit'} · Total nilai: ${fmtRp(saldo.totalNilai)}</div>
+        ${saldo.metode==='fifo' && saldo.layers.length > 1 ?
+          `<div style="margin-top:6px;font-size:10px;color:var(--accent2);">Layer FIFO: ` +
+          saldo.layers.map(l=>`${l.qty}×${fmtRp(l.harga)}`).join(' + ') + `</div>` : ''}
+      </div>`;
+  }
+  openModal('modal-produk');
+}
+
+function simpanProduk() {
+  const ksId     = document.getElementById('produk-edit-id').value;
+  const hargaJual= parseFloat(document.getElementById('produk-harga-jual').value)||0;
+  const akunPend = document.getElementById('produk-akun-pend').value||'4101';
+  const akunHpp  = document.getElementById('produk-akun-hpp').value||'5101';
+  const ks       = multiKartuStock[ksId];
+  if(!ks) { showAlert('Kartu stock tidak ditemukan!'); return; }
+
+  closeModal('modal-produk');
+  showOpSpinner('Menyimpan pengaturan produk...', ks.nama);
+  setTimeout(() => {
+    try {
+      // Simpan override ke produkList (indexed by ksId)
+      const idx = produkList.findIndex(p => p.ksId === ksId);
+      const data = { ksId, hargaJual, akunPend, akunHpp };
+      if(idx >= 0) produkList[idx] = { ...produkList[idx], ...data };
+      else produkList.push(data);
+      saveData();
+      renderProduk();
+      showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Produk <b>${ks.nama}</b> berhasil diperbarui!`);
+    } catch(e) { console.error(e); } finally { hideOpSpinner(); }
+  }, 350);
+}
+
+function hapusProduk(id) {
+  // Tidak dipakai lagi — produk tidak bisa dihapus manual, ikut kartu stock
+}
+
+// Produk Picker (untuk Mode Cepat)
+let _produkPickerCallback = null;
+function openProdukPicker() {
+  // Build list from multiKartuStock (same as penjualan picker)
+  const ksList = Object.values(multiKartuStock || {});
+  if(!ksList.length && !produkList.length) {
+    showAlert('Belum ada produk. Tambahkan di Master Produk terlebih dahulu.');
+    return;
+  }
+  // Prefer kartu stock list (has real stock data), fallback to produkList
+  const options = ksList.length ? ksList.map(ks => {
+    const override = produkList.find(p => p.ksId === ks.id);
+    const hargaJual = override?.hargaJual || 0;
+    return {
+      value: ks.id,
+      label: ks.nama,
+      sub: `${ks.satuan||'unit'} · Harga: ${hargaJual ? 'Rp ' + hargaJual.toLocaleString('id-ID') : 'Belum diset'}`,
+    };
+  }) : produkList.map(p => ({
+    value: p.ksId,
+    label: p.nama || p.ksId,
+    sub: `Harga: ${p.hargaJual ? 'Rp ' + p.hargaJual.toLocaleString('id-ID') : 'Belum diset'}`,
+  }));
+
+  openOptPicker({
+    title: 'Pilih Produk',
+    options,
+    currentValue: document.getElementById('simpel-produk-id')?.value||'',
+    onSelect: (ksId, label) => {
+      const ks = multiKartuStock[ksId];
+      const override = produkList.find(p => p.ksId === ksId);
+      document.getElementById('simpel-produk-id').value = ksId;
+      document.getElementById('simpel-produk-btn').textContent = label;
+      // Auto-fill harga dari master produk override
+      const qty = parseFloat(document.getElementById('simpel-qty')?.value)||1;
+      if(override?.hargaJual) {
+        document.getElementById('simpel-jumlah').value = override.hargaJual * qty;
+      }
+      if(!document.getElementById('simpel-ket').value) {
+        document.getElementById('simpel-ket').value = ks ? ks.nama : label;
+      }
+    }
+  });
+}
+
+function onSimpelQtyChange() {
+  const ksId = document.getElementById('simpel-produk-id')?.value;
+  if(!ksId) return;
+  const override = produkList.find(p => p.ksId === ksId);
+  if(!override?.hargaJual) return;
+  const qty = parseFloat(document.getElementById('simpel-qty')?.value)||1;
+  document.getElementById('simpel-jumlah').value = override.hargaJual * qty;
+}
+
+// ── Handle jenis penjualan: sembunyikan produk saat bukan penjualan barang ──
+function onJualJenisChange(value) {
+  const isProduk = (value === '4101'); // Penjualan Barang saja yang punya produk & HPP
+  const produkRow = document.getElementById('jual-produk-row');
+  if(produkRow) produkRow.style.display = isProduk ? '' : 'none';
+  if(!isProduk) {
+    const idEl  = document.getElementById('jual-produk-id');
+    const lblEl = document.getElementById('jual-produk-label');
+    const hppEl = document.getElementById('jual-hpp');
+    if(idEl)  idEl.value  = '';
+    if(lblEl) { lblEl.textContent = 'Pilih produk...'; lblEl.style.color = 'var(--muted)'; }
+    if(hppEl) hppEl.value = '0';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// PRIORITAS 2 — MODE CEPAT / SIMPEL (tanpa tahu debit/kredit)
+// ══════════════════════════════════════════════════════════
+
+let _simpelTipe = 'masuk';
+
+function setSimpelTipe(tipe, btn) {
+  _simpelTipe = tipe;
+  document.querySelectorAll('.simpel-tipe-btn').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background  = 'var(--surface2)';
+    b.style.color       = 'var(--muted)';
+  });
+  btn.style.borderColor = 'var(--accent)';
+  btn.style.background  = 'rgba(74,222,128,0.1)';
+  btn.style.color       = 'var(--accent)';
+
+  // Tampilkan/sembunyikan produk picker
+  const showProduk = tipe === 'jual' || tipe === 'beli';
+  const wrap = document.getElementById('simpel-produk-wrap');
+  if(wrap) wrap.style.display = showProduk ? 'grid' : 'none';
+
+  // Reset produk
+  const produkId = document.getElementById('simpel-produk-id');
+  const produkBtn = document.getElementById('simpel-produk-btn');
+  if(produkId) produkId.value = '';
+  if(produkBtn) produkBtn.textContent = 'Pilih produk...';
+
+  // Update placeholder keterangan
+  const ketMap = {
+    masuk:  'Contoh: Terima modal, Penerimaan piutang...',
+    keluar: 'Contoh: Bayar listrik, Gaji karyawan...',
+    jual:   'Contoh: Jual baju, Jasa konsultasi...',
+    beli:   'Contoh: Beli bahan baku, Stok barang...',
+  };
+  const ketEl = document.getElementById('simpel-ket');
+  if(ketEl) ketEl.placeholder = ketMap[tipe]||'';
+  document.getElementById('simpel-jurnal-preview').style.display = 'none';
+}
+
+function getSimpelJurnalLines(tipe, jumlah, ketEl, ksId, qty) {
+  const ket = ketEl || 'Transaksi';
+  const ks        = ksId ? multiKartuStock[ksId] : null;
+  const override  = ksId ? produkList.find(p => p.ksId === ksId) : null;
+  const akunPend  = override?.akunPend  || '4101';
+  const akunHppKd = override?.akunHpp   || '5101';
+  const akunPers  = '1301'; // Persediaan
+
+  if(tipe === 'masuk') {
+    return [
+      { akun:'1101', ket, debit: jumlah, kredit: 0 },
+      { akun:'3101', ket: 'Modal / Penerimaan', debit: 0, kredit: jumlah },
+    ];
+  }
+  if(tipe === 'keluar') {
+    const akunBeban = akuns.find(a=>a.tipe==='Beban'&&a.kode==='6101')
+                   || akuns.find(a=>a.tipe==='Beban')
+                   || {kode:'6101'};
+    return [
+      { akun: akunBeban.kode, ket, debit: jumlah, kredit: 0 },
+      { akun:'1101', ket, debit: 0, kredit: jumlah },
+    ];
+  }
+  if(tipe === 'jual') {
+    const lines = [
+      { akun:'1101', ket, debit: jumlah, kredit: 0 },
+      { akun: akunPend, ket, debit: 0, kredit: jumlah },
+    ];
+    // HPP otomatis dari kartu stock (FIFO multi-layer atau WA/LIFO satu baris)
+    if(ks && qty > 0) {
+      const hppLayers = getHppLayersForSale(ks, qty);
+      const hppLines  = buildHppJurnalLines(hppLayers, akunHppKd, akunPers);
+      lines.push(...hppLines);
+    }
+    return lines;
+  }
+  if(tipe === 'beli') {
+    // Pembelian: masuk ke persediaan
+    const akunBeli = akunPers; // Dr Persediaan
+    return [
+      { akun: akunBeli, ket, debit: jumlah, kredit: 0 },
+      { akun:'1101', ket, debit: 0, kredit: jumlah },
+    ];
+  }
+  return [];
+}
+
+function previewSimpel() {
+  const jumlah = parseFloat(document.getElementById('simpel-jumlah')?.value)||0;
+  const ket    = document.getElementById('simpel-ket')?.value.trim() || 'Transaksi';
+  const produkId = document.getElementById('simpel-produk-id')?.value;
+  const produk = produkId ? produkList.find(p=>p.id===produkId) : null;
+  if(!jumlah) { showAlert('Isi jumlah terlebih dahulu!'); return; }
+
+  const lines = getSimpelJurnalLines(_simpelTipe, jumlah, ket, produkId, qty_s);
+  const el = document.getElementById('simpel-jurnal-preview');
+  el.style.display = 'block';
+  el.innerHTML = `<div style="font-size:11px;color:var(--accent2);font-weight:700;margin-bottom:8px;letter-spacing:0.06em;">JURNAL YANG AKAN DIBUAT:</div>` +
+    lines.map(l => {
+      const a = akuns.find(x=>x.kode===l.akun);
+      return `<div style="display:flex;gap:8px;margin-bottom:4px;">
+        <span style="color:var(--muted);min-width:80px;">${l.akun}</span>
+        <span style="flex:1;color:var(--text);">${a?.nama||l.akun}</span>
+        ${l.debit  ? `<span style="color:var(--accent);min-width:80px;text-align:right;">Dr ${fmtRp(l.debit)}</span>` : '<span style="min-width:80px;"></span>'}
+        ${l.kredit ? `<span style="color:var(--red);min-width:80px;text-align:right;">Kr ${fmtRp(l.kredit)}</span>` : '<span style="min-width:80px;"></span>'}
+      </div>`;
+    }).join('');
+}
+
+function simpanSimpel() {
+  const tanggal  = document.getElementById('simpel-tanggal')?.value;
+  const jumlah   = parseFloat(document.getElementById('simpel-jumlah')?.value)||0;
+  const ket      = document.getElementById('simpel-ket')?.value.trim();
+  const produkId = document.getElementById('simpel-produk-id')?.value;
+  const qty_s    = parseFloat(document.getElementById('simpel-qty')?.value)||1;
+
+  if(!tanggal) { showAlert('Pilih tanggal!'); return; }
+  if(!jumlah)  { showAlert('Isi jumlah terlebih dahulu!'); return; }
+  if(!ket)     { showAlert('Isi keterangan!'); return; }
+
+  const lines = getSimpelJurnalLines(_simpelTipe, jumlah, ket, produk);
+  if(!lines.length) { showAlert('Tipe transaksi tidak valid'); return; }
+
+  showOpSpinner('Menyimpan transaksi...', ket);
+  setTimeout(() => {
+    const jenisMap = { masuk:'Kas', keluar:'Kas', jual:'Penjualan', beli:'Pembelian' };
+    addJurnal({ tanggal, ket, jenis: jenisMap[_simpelTipe]||'Kas', lines });
+
+    // Stok dikelola di kartu stock persediaan — tidak perlu update manual
+
+    saveData();
+    // Reset form
+    document.getElementById('simpel-jumlah').value = '';
+    document.getElementById('simpel-ket').value    = '';
+    document.getElementById('simpel-jurnal-preview').style.display = 'none';
+    const produkBtn = document.getElementById('simpel-produk-btn');
+    if(produkBtn) { produkBtn.textContent = 'Pilih produk...'; }
+    const simpelPId = document.getElementById('simpel-produk-id');
+    if(simpelPId) simpelPId.value = '';
+    const simpelQty = document.getElementById('simpel-qty');
+    if(simpelQty) simpelQty.value = '1';
+    hideOpSpinner();
+    showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Transaksi berhasil disimpan!`);
+    renderDashboard();
+  }, 400);
+}
+
+// ══════════════════════════════════════════════════════════
+// PRIORITAS 3 — BEBAN USAHA DI DASHBOARD
+// ══════════════════════════════════════════════════════════
+
+function renderDashBebanPajak() {
+  const fmtS = v => {
+    if(Math.abs(v)>=1e9) return 'Rp '+(v/1e9).toFixed(1)+' M';
+    if(Math.abs(v)>=1e6) return 'Rp '+(v/1e6).toFixed(1)+' jt';
+    return fmtRp(v);
+  };
+
+  // ── BEBAN USAHA ──
+  const bebanEl  = document.getElementById('dash-beban-content');
+  const bebanSub = document.getElementById('dash-beban-sub');
+  if(bebanEl) {
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth();
+    const fromStr = `${y}-${String(m+1).padStart(2,'0')}-01`;
+    const toStr   = new Date(y, m+1, 0).toISOString().split('T')[0];
+
+    const bebanAkuns = akuns.filter(a => a.tipe==='Beban'||a.tipe==='HPP');
+    let totalBeban = 0;
+    const rows = [];
+    bebanAkuns.forEach(a => {
+      // Hitung beban bulan ini saja
+      let d = 0;
+      jurnalEntries.filter(j => j.tanggal >= fromStr && j.tanggal <= toStr).forEach(j =>
+        j.lines.forEach(l => { if(l.akun===a.kode) d += l.debit||0; })
+      );
+      if(!d) return;
+      totalBeban += d;
+      rows.push({ nama: a.nama, kode: a.kode, val: d, tipe: a.tipe });
+    });
+    rows.sort((a,b) => b.val - a.val);
+
+    if(!rows.length) {
+      bebanEl.innerHTML = emptyState('Belum ada beban', 'Tambah transaksi baru untuk memulai');
+      if(bebanSub) bebanSub.textContent = 'Belum ada pengeluaran tercatat';
+    } else {
+      if(bebanSub) bebanSub.textContent = `${rows.length} akun · ${now.toLocaleDateString('id-ID',{month:'long'})}`;
+      bebanEl.innerHTML = `
+        <div style="padding:10px 16px 4px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.15);border-radius:8px;margin-bottom:6px;">
+            <span style="font-size:12px;color:var(--muted);font-weight:600;">TOTAL BEBAN BLN INI</span>
+            <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--red);">${fmtRp(totalBeban)}</span>
+          </div>
+        </div>
+        <table style="width:100%;"><tbody>
+          ${rows.map(r => {
+            const pct = Math.round((r.val/totalBeban)*100);
+            return `<tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:7px 16px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+                  <span style="font-size:12px;font-weight:500;">${r.nama}</span>
+                  <span style="font-family:var(--mono);font-size:12px;color:var(--red);">${fmtS(r.val)}</span>
+                </div>
+                <div style="height:3px;background:var(--border);border-radius:2px;">
+                  <div style="height:100%;width:${pct}%;background:var(--red);border-radius:2px;opacity:0.7;"></div>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody></table>`;
+    }
+  }
+
+  // ── REKAP PAJAK MINI DI DASHBOARD ──
+  const pajakEl  = document.getElementById('dash-pajak-rekap');
+  const pajakSub = document.getElementById('dash-pajak-sub');
+  if(pajakEl) {
+    const now2 = new Date();
+    const y2 = now2.getFullYear(), m2 = now2.getMonth();
+    const fromStr2 = `${y2}-${String(m2+1).padStart(2,'0')}-01`;
+    const toStr2   = new Date(y2, m2+1, 0).toISOString().split('T')[0];
+
+    const penjBln = jurnalEntries.filter(j => j.jenis==='Penjualan' && j.tanggal>=fromStr2 && j.tanggal<=toStr2);
+    const beliBln = jurnalEntries.filter(j => j.jenis==='Pembelian' && j.tanggal>=fromStr2 && j.tanggal<=toStr2);
+
+    const totalPenj = penjBln.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a?.tipe==='Pendapatan'?l.kredit:0);},0),0);
+    const totalBeli = beliBln.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(['HPP','Beban'].includes(a?.tipe)?l.debit:0);},0),0);
+    const ppnKeluar = totalPenj * 0.12;
+    const ppnMasuk  = totalBeli * 0.12;
+    const kurangBayar = Math.max(0, ppnKeluar - ppnMasuk);
+
+    if(pajakSub) pajakSub.textContent = `${now2.toLocaleDateString('id-ID',{month:'long',year:'numeric'})}`;
+
+    pajakEl.innerHTML = `
+      <div style="padding:10px 16px 12px;display:flex;flex-direction:column;gap:8px;">
+        ${[
+          ['PPN Keluaran (12% × Penjualan)', ppnKeluar, 'var(--red)'],
+          ['PPN Masukan (12% × Pembelian)', ppnMasuk, 'var(--accent)'],
+          ['PPN Kurang Bayar', kurangBayar, kurangBayar>0?'var(--accent3)':'var(--muted)'],
+        ].map(([l,v,clr])=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface2);border-radius:8px;">
+            <span style="font-size:12px;color:var(--muted);">${l}</span>
+            <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:${clr};">${fmtRp(v)}</span>
+          </div>`).join('')}
+        <button onclick="showPage('pajak')" style="width:100%;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:7px;padding:7px;font-size:12px;font-weight:600;color:var(--accent3);cursor:pointer;font-family:var(--sans);margin-top:2px;">
+          <i class="ti ti-receipt-tax ti-inline"></i> Lihat Rekap Lengkap & Cetak
+        </button>
+      </div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// PRIORITAS 5 — REKAP PAJAK SIAP SETOR
+// ══════════════════════════════════════════════════════════
+
+function initRekapPajakBulanSelect() {
+  const sel = document.getElementById('pajak-setor-bulan');
+  if(!sel) return;
+  const now = new Date();
+  sel.innerHTML = '';
+  const monthNames = [];
+  for(let i=0; i<12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const lbl = d.toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = lbl;
+    if(i===0) opt.selected = true;
+    sel.appendChild(opt);
+    monthNames.push({ val, lbl });
+  }
+  // Sync label to opt-picker button
+  const btnLbl = document.getElementById('pajak-setor-bulan-label');
+  if(btnLbl && monthNames.length) btnLbl.textContent = monthNames[0].lbl;
+  renderRekapSiapSetor();
+}
+
+function openPajakBulanPicker() {
+  const sel = document.getElementById('pajak-setor-bulan');
+  if(!sel) return;
+  const options = Array.from(sel.options).map(o => ({ value: o.value, label: o.textContent }));
+  openOptPicker({
+    title: 'Pilih Periode Pajak',
+    options,
+    currentValue: sel.value,
+    onSelect: (val, lbl) => {
+      sel.value = val;
+      const btnLbl = document.getElementById('pajak-setor-bulan-label');
+      if(btnLbl) btnLbl.textContent = lbl;
+      renderRekapSiapSetor();
+    }
+  });
+}
+
+function renderRekapSiapSetor() {
+  const bln = document.getElementById('pajak-setor-bulan')?.value;
+  const el  = document.getElementById('rekap-setor-content');
+  if(!el || !bln) return;
+
+  const [y,m] = bln.split('-').map(Number);
+  const fromStr = `${y}-${String(m).padStart(2,'0')}-01`;
+  const toStr   = new Date(y, m, 0).toISOString().split('T')[0];
+  const blnLabel = new Date(y, m-1, 1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+
+  const penjEntries = jurnalEntries.filter(j => j.jenis==='Penjualan' && j.tanggal>=fromStr && j.tanggal<=toStr);
+  const beliEntries = jurnalEntries.filter(j => j.jenis==='Pembelian' && j.tanggal>=fromStr && j.tanggal<=toStr);
+
+  const totalDPPKeluar = penjEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a?.tipe==='Pendapatan'?l.kredit:0);},0),0);
+  const totalDPPMasuk  = beliEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(['HPP','Beban'].includes(a?.tipe)?l.debit:0);},0),0);
+  const ppnKeluar  = totalDPPKeluar * 0.12;
+  const ppnMasuk   = totalDPPMasuk  * 0.12;
+  const kurangBayar = ppnKeluar - ppnMasuk;
+
+  // Estimasi PPh Badan (25% dari laba bersih)
+  let laba = 0;
+  jurnalEntries.filter(j=>j.tanggal>=fromStr&&j.tanggal<=toStr).forEach(j=>j.lines.forEach(l=>{
+    const a=akuns.find(x=>x.kode===l.akun);
+    if(a?.tipe==='Pendapatan') laba += l.kredit||0;
+    if(['Beban','HPP'].includes(a?.tipe)) laba -= l.debit||0;
+  }));
+  const pphBadan = Math.max(0, laba * 0.22);
+
+  el.innerHTML = `
+    <div style="border:2px solid var(--accent2);border-radius:12px;overflow:hidden;margin-bottom:16px;">
+      <div style="background:rgba(34,211,238,0.08);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:14px;font-weight:700;">SPT Masa PPN · ${blnLabel}</div>
+        <span style="font-size:11px;color:var(--muted);">Formulir 1111</span>
+      </div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600;">BAGIAN I — PENYERAHAN BKP/JKP</div>
+            <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:12px;color:var(--muted);">Jumlah Transaksi</span>
+                <span style="font-weight:600;">${penjEntries.length} faktur</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:12px;color:var(--muted);">DPP</span>
+                <span style="font-family:var(--mono);font-size:13px;">${fmtRp(totalDPPKeluar)}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--border);">
+                <span style="font-size:12px;font-weight:700;">PPN Keluaran</span>
+                <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--red);">${fmtRp(ppnKeluar)}</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600;">BAGIAN II — PEROLEHAN BKP/JKP</div>
+            <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:12px;color:var(--muted);">Jumlah Transaksi</span>
+                <span style="font-weight:600;">${beliEntries.length} faktur</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:12px;color:var(--muted);">DPP</span>
+                <span style="font-family:var(--mono);font-size:13px;">${fmtRp(totalDPPMasuk)}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--border);">
+                <span style="font-size:12px;font-weight:700;">PPN Masukan</span>
+                <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);">${fmtRp(ppnMasuk)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="background:${kurangBayar>0?'rgba(248,113,113,0.08)':'rgba(74,222,128,0.08)'};border:1px solid ${kurangBayar>0?'rgba(248,113,113,0.3)':'rgba(74,222,128,0.3)'};border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:2px;">${kurangBayar>0?'PPN KURANG BAYAR (WAJIB SETOR)':'PPN LEBIH BAYAR (DAPAT DIKOMPENSASI)'}</div>
+            <div style="font-size:11px;color:var(--muted);">Batas setor: tgl 15 bulan berikutnya</div>
+          </div>
+          <div style="font-family:var(--mono);font-size:22px;font-weight:800;color:${kurangBayar>0?'var(--red)':'var(--accent)'};">${fmtRp(Math.abs(kurangBayar))}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;">
+      <div style="background:var(--surface2);padding:10px 16px;">
+        <div style="font-size:14px;font-weight:700;">Estimasi PPh Badan · ${blnLabel}</div>
+      </div>
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
+        ${[
+          ['Penghasilan Bruto', totalDPPKeluar, 'var(--accent)'],
+          ['Biaya-biaya', totalDPPMasuk, 'var(--red)'],
+          ['Laba Bersih Estimasi', laba, laba>=0?'var(--text)':'var(--red)'],
+          ['Estimasi PPh Badan (22%)', pphBadan, 'var(--accent3)'],
+        ].map(([l,v,clr])=>`
+          <div style="display:flex;justify-content:space-between;">
+            <span style="font-size:13px;color:var(--muted);">${l}</span>
+            <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:${clr};">${fmtRp(v)}</span>
+          </div>`).join('')}
+        <div style="margin-top:4px;font-size:11px;color:var(--muted);background:rgba(245,158,11,0.07);border-radius:6px;padding:8px 10px;">
+          ⚠️ Estimasi saja. Konsultasikan dengan akuntan/konsultan pajak untuk perhitungan resmi.
+        </div>
+      </div>
+    </div>`;
+}
+
+function exportRekapPajakPDF() {
+  showAlert('Fitur cetak PDF rekap pajak akan tersedia setelah data terisi. Gunakan Ctrl+P untuk mencetak.');
+}
+
+// ── Patch showPage to init produk & pajak pages ──
+(function(){
+  const _orig = showPage;
+  window.showPage = function(id) {
+    _orig(id);
+    if(id==='produk') {
+      showOpSpinner('Memuat Master Produk...');
+      setTimeout(() => { try { renderProduk(); } catch(e) { console.error(e); } finally { hideOpSpinner(); } }, 200);
+    }
+    if(id==='pajak')  { setTimeout(initRekapPajakBulanSelect, 100); }
+  };
+})();
+
+// ── Patch renderDashboard to include beban & pajak ──
+(function(){
+  const _origDash = renderDashboard;
+  window.renderDashboard = function() {
+    _origDash();
+    renderDashBebanPajak();
+  };
+})();
+
+// ── Patch renderRekapSiapSetor to use spinner ──
+(function(){
+  const _origRekap = renderRekapSiapSetor;
+  window.renderRekapSiapSetor = function() {
+    showOpSpinner('Menghitung rekap pajak...');
+    setTimeout(() => { _origRekap(); hideOpSpinner(); }, 300);
+  };
+})();
+
+// ── Init Mode Cepat default date ──
+document.addEventListener('DOMContentLoaded', () => {
+  const tgl = document.getElementById('simpel-tanggal');
+  if(tgl) tgl.value = new Date().toISOString().split('T')[0];
+  // Ensure simpel tab is default hidden (kas tab active in original)
+  const simpelDiv = document.getElementById('trx-simpel');
+  if(simpelDiv) simpelDiv.style.display = 'block'; // shown since it's the active tab now
+});
+
+// ══════════════════════════════════════════════════════════
+// FIFO/LIFO METHOD PICKER — ganti tab button jadi opt-picker
+// ══════════════════════════════════════════════════════════
+function openKsMetodePicker() {
+  const cur = document.getElementById('ks-metode-current')?.value || 'fifo';
+  const opts = [
+    { value:'fifo', label:'FIFO', sub:'First In First Out — Barang masuk pertama, keluar pertama' },
+    { value:'lifo', label:'LIFO', sub:'Last In First Out — Barang masuk terakhir, keluar pertama' },
+    { value:'wa',   label:'Weighted Average', sub:'Rata-rata Tertimbang — rata-rata dari semua pembelian' },
+    { value:'mwa',  label:'Moving Average', sub:'Rata-rata Bergerak — diperbarui setiap transaksi masuk' },
+  ];
+  openOptPicker({
+    title: 'Pilih Metode Persediaan',
+    options: opts,
+    currentValue: cur,
+    onSelect: (val, label) => {
+      document.getElementById('ks-metode-current').value = val;
+      const btn = document.getElementById('ks-metode-picker-btn');
+      const lbl = document.getElementById('ks-metode-picker-label');
+      // Tampilkan label lengkap dengan penjelasan dalam kurung — konsisten
+      const foundOpt = opts.find(o=>o.value===val);
+      const subPart = foundOpt?.sub ? foundOpt.sub.split(' — ')[0] : ''; // ambil bagian singkatan saja
+      if(lbl) lbl.textContent = (foundOpt?.label || label) + (subPart ? ' (' + subPart + ')' : '');
+      // Trigger the original tab switch
+      const tabEl = document.getElementById('ks-tab-' + val) || _makeKsTabEl(val);
+      if(typeof switchKartuStockTab === 'function') switchKartuStockTab(val, tabEl);
+    }
+  });
+}
+// Helper to create a fake element for switchKartuStockTab if original buttons removed
+function _makeKsTabEl(val) {
+  const el = document.createElement('button');
+  el.id = 'ks-tab-' + val;
+  return el;
+}
+
+// ── Patch switchKartuStockTab to sync picker label ──
+(function(){
+  const _origKS = typeof switchKartuStockTab === 'function' ? switchKartuStockTab : null;
+  if(!_origKS) return;
+  window.switchKartuStockTab = function(tab, el) {
+    _origKS(tab, el);
+    const lbl = document.getElementById('ks-metode-picker-label');
+    const cur = document.getElementById('ks-metode-current');
+    const map = {
+      fifo:'FIFO (First In First Out)',
+      lifo:'LIFO (Last In First Out)',
+      wa:'Weighted Average (Rata-rata Tertimbang)',
+      mwa:'Moving Average (Rata-rata Bergerak)'
+    };
+    if(lbl) lbl.textContent = map[tab] || tab;
+    if(cur) cur.value = tab;
+  };
+})();
+
+// ══════════════════════════════════════════════════════════
+// PRODUK PICKER UNTUK FORM PENJUALAN
+// ══════════════════════════════════════════════════════════
+function openProdukPickerJual() {
+  const ksList = Object.values(multiKartuStock || {});
+  if(!ksList.length) {
+    showAlert('Belum ada kartu stock persediaan. Tambahkan di menu Persediaan.');
+    return;
+  }
+  const cur = document.getElementById('jual-produk-id')?.value || '';
+  openOptPicker({
+    title: 'Pilih Produk',
+    options: ksList.map(ks => {
+      const saldo    = getKsSaldo(ks);
+      const override = produkList.find(p => p.ksId === ks.id);
+      const hJual    = override?.hargaJual || 0;
+      const mLabel   = {fifo:'FIFO',lifo:'LIFO',wa:'WA',mwa:'MWA'};
+      return {
+        value: ks.id,
+        label: ks.nama,
+        sub: `${mLabel[saldo.metode]} · Stok: ${saldo.totalQty} · HPP: ${fmtRp(saldo.hppRata)} · Jual: ${hJual ? fmtRp(hJual) : 'Belum diset'}`,
+      };
+    }),
+    currentValue: cur,
+    onSelect: (ksId, label) => {
+      const ks       = multiKartuStock[ksId];
+      const saldo    = getKsSaldo(ks);
+      const override = produkList.find(p => p.ksId === ksId);
+      document.getElementById('jual-produk-id').value = ksId;
+      const lbl = document.getElementById('jual-produk-label');
+      if(lbl) { lbl.textContent = ks.nama; lbl.style.color = 'var(--text)'; }
+      const qty = parseFloat(document.getElementById('jual-produk-qty')?.value)||1;
+      if(override?.hargaJual) document.getElementById('jual-jumlah').value = override.hargaJual * qty;
+      // HPP diisi ke hidden field — dihitung otomatis dari kartu stock untuk jurnal
+      document.getElementById('jual-hpp').value = Math.round(saldo.hppRata * qty);
+      if(!document.getElementById('jual-ket').value) document.getElementById('jual-ket').value = ks.nama;
+    }
+  });
+}
+
+function onJualQtyChange() {
+  const ksId = document.getElementById('jual-produk-id')?.value;
+  if(!ksId) return;
+  const ks       = multiKartuStock[ksId];
+  const saldo    = getKsSaldo(ks);
+  const override = produkList.find(p => p.ksId === ksId);
+  const qty      = parseFloat(document.getElementById('jual-produk-qty')?.value)||1;
+  if(override?.hargaJual) document.getElementById('jual-jumlah').value = override.hargaJual * qty;
+  document.getElementById('jual-hpp').value = Math.round(saldo.hppRata * qty);
+}
+
+// ── Patch simpanPenjualan to inject FIFO HPP lines ──
+(function(){
+  const _origSP = typeof simpanPenjualan === 'function' ? simpanPenjualan : null;
+  if(!_origSP) return;
+  window.simpanPenjualan = function() {
+    const ksId   = document.getElementById('jual-produk-id')?.value;
+    const qty    = parseFloat(document.getElementById('jual-produk-qty')?.value)||1;
+
+    if(ksId) {
+      // Inject FIFO HPP into jual-hpp field before original saves
+      const ks       = multiKartuStock[ksId];
+      const override = produkList.find(p => p.ksId === ksId);
+      if(ks) {
+        const hppLayers = getHppLayersForSale(ks, qty);
+        const totalHpp  = hppLayers.reduce((s,l) => s + l.qty * l.harga, 0);
+        // Store FIFO layers for post-save jurnal injection
+        window._pendingHppLayers = {
+          layers:  hppLayers,
+          akunHpp: override?.akunHpp || '5101',
+          akunPers:'1301',
+        };
+        document.getElementById('jual-hpp').value = totalHpp;
+      }
+    }
+
+    _origSP();
+
+    // After original save, inject HPP jurnal lines if FIFO multi-layer
+    if(window._pendingHppLayers) {
+      const { layers, akunHpp, akunPers } = window._pendingHppLayers;
+      window._pendingHppLayers = null;
+      if(layers.length > 1) {
+        // Find the last jurnal entry just saved and patch its lines
+        const last = jurnalEntries[jurnalEntries.length - 1];
+        if(last) {
+          // Remove old single HPP lines then add multi-layer
+          last.lines = last.lines.filter(l => l.akun !== akunHpp && l.akun !== akunPers);
+          const hppLines = buildHppJurnalLines(layers, akunHpp, akunPers);
+          last.lines.push(...hppLines);
+          saveData();
+        }
+      }
+    }
+
+    // Reset produk fields
+    document.getElementById('jual-produk-id').value = '';
+    const lbl = document.getElementById('jual-produk-label');
+    if(lbl) { lbl.textContent = 'Pilih produk...'; lbl.style.color = 'var(--muted)'; }
+    const qtyEl = document.getElementById('jual-produk-qty');
+    if(qtyEl) qtyEl.value = '1';
+  };
+})();

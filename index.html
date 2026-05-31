@@ -145,6 +145,9 @@
 
     <div class="nav-group-label">Master</div>
     <div class="nav-grid single">
+      <div class="nav-card" onclick="showPage('produk')" data-page="produk">
+        <span class="nav-card-icon"><i class="ti ti-package"></i></span>Master Produk
+      </div>
       <div class="nav-card" onclick="showPage('akun')" data-page="akun">
         <span class="nav-card-icon"><i class="ti ti-list"></i></span>Chart of Accounts
       </div>
@@ -336,15 +339,23 @@
   <div class="grid-2" style="margin-bottom:16px;">
     <div class="table-card">
       <div class="table-header">
-        <div class="table-title"><i class="ti ti-chart-bar ti-inline"></i> Trend Keuangan (6 Bulan)</div>
-        <div style="display:flex;gap:6px;">
-          <span style="font-size:10px;color:var(--accent);background:rgba(74,222,128,0.1);padding:3px 8px;border-radius:4px;">■ Pendapatan</span>
-          <span style="font-size:10px;color:var(--red);background:rgba(248,113,113,0.1);padding:3px 8px;border-radius:4px;">■ Beban</span>
+        <div>
+          <div class="table-title"><i class="ti ti-arrow-up-right ti-inline"></i> Piutang Usaha</div>
+          <div class="table-subtitle" id="dash-piutang-sub">Tagihan belum diterima</div>
         </div>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('jurnal-penjualan')">Lihat Semua</button>
       </div>
-      <div style="padding:12px;">
-        <canvas id="dash-chart" height="140"></canvas>
+      <div id="dash-piutang-content" class="dash-card-scroll"></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <div>
+          <div class="table-title"><i class="ti ti-arrow-down-left ti-inline"></i> Utang Usaha & Bank</div>
+          <div class="table-subtitle" id="dash-utang-sub">Kewajiban yang harus dibayar</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('neraca')">Lihat Semua</button>
       </div>
+      <div id="dash-utang-content" class="dash-card-scroll"></div>
     </div>
     <div class="table-card">
       <div class="table-header">
@@ -361,10 +372,44 @@
         <button onclick="openExportModal()" class="quick-action-btn" data-tooltip="Export PDF/Excel/CSV"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Laporan</button>
       </div>
     </div>
+    <div class="table-card">
+      <div class="table-header">
+        <div>
+          <div class="table-title"><i class="ti ti-receipt ti-inline"></i> Informasi Penjualan</div>
+          <div class="table-subtitle" id="dash-penjualan-sub">Ringkasan penjualan periode ini</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('jurnal-penjualan')">Detail</button>
+      </div>
+      <div id="dash-penjualan-content" class="dash-card-scroll"></div>
+    </div>
   </div>
 
   <!-- Pajak Panel -->
   <div id="dash-pajak-panel" style="display:none;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;"></div>
+
+  <!-- Beban Usaha + Laba Summary -->
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div class="table-card">
+      <div class="table-header">
+        <div>
+          <div class="table-title"><i class="ti ti-trending-down ti-inline"></i> Beban Usaha</div>
+          <div class="table-subtitle" id="dash-beban-sub">Pengeluaran operasional</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('laba-rugi')">Detail</button>
+      </div>
+      <div id="dash-beban-content" class="dash-card-scroll"></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <div>
+          <div class="table-title"><i class="ti ti-receipt-tax ti-inline"></i> Rekap Pajak Bulan Ini</div>
+          <div class="table-subtitle" id="dash-pajak-sub">PPN & estimasi kewajiban</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('pajak')">Detail</button>
+      </div>
+      <div id="dash-pajak-rekap" class="dash-card-scroll"></div>
+    </div>
+  </div>
 
   <!-- Recent + Saldo -->
   <div class="grid-2">
@@ -373,14 +418,14 @@
         <div><div class="table-title"><i class="ti ti-clock ti-inline"></i> Transaksi Terbaru</div><div class="table-subtitle" id="dash-recent-sub">5 entri terakhir</div></div>
         <button class="btn btn-ghost btn-sm" onclick="showPage('jurnal-umum')">Lihat Semua</button>
       </div>
-      <div id="dash-recent"></div>
+      <div id="dash-recent" class="dash-card-scroll"></div>
     </div>
     <div class="table-card">
       <div class="table-header">
         <div><div class="table-title"><i class="ti ti-scale ti-inline"></i> Neraca Saldo Utama</div><div class="table-subtitle">Saldo akun dengan transaksi</div></div>
         <button class="btn btn-ghost btn-sm" onclick="showPage('neraca-saldo')">Lengkap</button>
       </div>
-      <div id="dash-saldo"></div>
+      <div id="dash-saldo" class="dash-card-scroll"></div>
     </div>
   </div>
 </div>
@@ -394,14 +439,74 @@
     </div>
   </div>
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('trx','kas')">Penerimaan/Pengeluaran Kas</div>
+    <div class="tab active" onclick="switchTab('trx','simpel')" style="color:var(--accent);font-weight:700;">⚡ Mode Cepat</div>
+    <div class="tab" onclick="switchTab('trx','kas')">Penerimaan/Pengeluaran Kas</div>
     <div class="tab" onclick="switchTab('trx','penjualan')">Penjualan</div>
     <div class="tab" onclick="switchTab('trx','pembelian')">Pembelian</div>
     <div class="tab" onclick="switchTab('trx','umum')">Jurnal Manual</div>
   </div>
 
   <!-- KAS -->
-  <div id="trx-kas" class="trx-tab">
+  <!-- MODE CEPAT / KASIR -->
+  <div id="trx-simpel" class="trx-tab">
+    <div class="table-card">
+      <div class="table-header">
+        <div>
+          <div class="table-title">⚡ Mode Cepat</div>
+          <div class="table-subtitle">Input transaksi tanpa perlu tahu jurnal · Otomatis dijurnalkan</div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <!-- Tipe transaksi pill selector -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="simpel-tipe-wrap">
+          <button class="simpel-tipe-btn active" onclick="setSimpelTipe('masuk',this)" style="flex:1;min-width:100px;padding:10px;border-radius:10px;border:2px solid var(--accent);background:rgba(74,222,128,0.1);color:var(--accent);font-weight:700;cursor:pointer;font-family:var(--sans);font-size:13px;"><i class="ti ti-arrow-up-circle" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Uang Masuk</button>
+          <button class="simpel-tipe-btn" onclick="setSimpelTipe('keluar',this)" style="flex:1;min-width:100px;padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);color:var(--muted);font-weight:700;cursor:pointer;font-family:var(--sans);font-size:13px;"><i class="ti ti-arrow-down-circle" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Uang Keluar</button>
+          <button class="simpel-tipe-btn" onclick="setSimpelTipe('jual',this)" style="flex:1;min-width:100px;padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);color:var(--muted);font-weight:700;cursor:pointer;font-family:var(--sans);font-size:13px;"><i class="ti ti-receipt" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Penjualan</button>
+          <button class="simpel-tipe-btn" onclick="setSimpelTipe('beli',this)" style="flex:1;min-width:100px;padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);color:var(--muted);font-weight:700;cursor:pointer;font-family:var(--sans);font-size:13px;"><i class="ti ti-shopping-cart" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Pembelian</button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tanggal</label>
+            <input type="date" id="simpel-tanggal">
+          </div>
+          <div class="form-group">
+            <label>Jumlah (Rp) *</label>
+            <input type="number" id="simpel-jumlah" placeholder="0" inputmode="numeric" style="font-size:18px;font-weight:700;font-family:var(--mono);">
+          </div>
+        </div>
+
+        <!-- Produk picker — muncul hanya saat tipe jual/beli -->
+        <div id="simpel-produk-wrap" class="form-row" style="display:none;">
+          <div class="form-group">
+            <label>Produk <span style="color:var(--muted);font-size:11px;">(opsional — isi otomatis harga)</span></label>
+            <input type="hidden" id="simpel-produk-id" value="">
+            <button class="form-picker-btn" type="button" id="simpel-produk-btn" onclick="openProdukPicker()">Pilih produk...</button>
+          </div>
+          <div class="form-group">
+            <label>Qty</label>
+            <input type="number" id="simpel-qty" placeholder="1" value="1" inputmode="numeric" oninput="onSimpelQtyChange()">
+          </div>
+        </div>
+
+        <div class="form-row full">
+          <div class="form-group">
+            <label>Keterangan *</label>
+            <input type="text" id="simpel-ket" placeholder="Contoh: Bayar listrik, Terima modal, Jual baju...">
+          </div>
+        </div>
+
+        <div id="simpel-jurnal-preview" style="display:none;margin-bottom:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;font-family:var(--mono);color:var(--muted);"></div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-ghost btn-sm" onclick="previewSimpel()"><i class="ti ti-eye ti-btn"></i> Preview Jurnal</button>
+          <button class="btn btn-primary" onclick="simpanSimpel()" style="flex:1;min-width:160px;font-size:14px;padding:10px;">✓ Simpan Transaksi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="trx-kas" class="trx-tab" style="display:none;">
     <div class="table-card">
       <div class="table-header"><div class="table-title">Penerimaan / Pengeluaran Kas</div></div>
       <div class="modal-body">
@@ -474,24 +579,25 @@
             </button>
           </div>
         </div>
+        <div class="form-row" id="jual-produk-row">
+          <div class="form-group">
+            <label><i class="ti ti-package ti-inline"></i> Produk <span style="color:var(--muted);font-weight:400;font-size:11px;">(opsional — isi otomatis harga & HPP)</span></label>
+            <input type="hidden" id="jual-produk-id" value="">
+            <button class="opt-picker-btn" type="button" id="jual-produk-btn" onclick="openProdukPickerJual()">
+              <span class="opt-picker-label" id="jual-produk-label" style="color:var(--muted);">Pilih produk...</span>
+              <span class="opt-picker-arrow">▾</span>
+            </button>
+          </div>
+          <div class="form-group">
+            <label>Qty</label>
+            <input type="number" id="jual-produk-qty" placeholder="1" value="1" inputmode="numeric" oninput="onJualQtyChange()">
+          </div>
+        </div>
         <div class="form-row">
           <div class="form-group">
             <label>Jumlah Penjualan (Rp)</label>
             <input type="number" id="jual-jumlah" placeholder="0" inputmode="numeric" onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)">
           </div>
-          <div class="form-group">
-            <label>HPP / Harga Pokok (Rp)</label>
-            <input type="number" id="jual-hpp" placeholder="0 (opsional)" inputmode="numeric" onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)">
-          </div>
-        </div>
-        <div class="form-row full">
-          <div class="form-group">
-            <label>Keterangan</label>
-            <input type="text" id="jual-ket" placeholder="Penjualan barang/jasa...">
-          </div>
-        </div>
-        <!-- KONTAK OPSIONAL -->
-        <div class="form-row" style="margin-top:4px;">
           <div class="form-group">
             <label>
               <i class="ti ti-users" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i>
@@ -499,6 +605,14 @@
             </label>
             <input type="hidden" id="jual-kontak-id" value="">
             <button class="form-picker-btn" type="button" id="jual-kontak-btn" onclick="openKontakPicker('jual-kontak-id','jual-kontak-btn')">Pilih kontak...</button>
+          </div>
+        </div>
+        <!-- HPP dihitung otomatis dari kartu stock, tidak ditampilkan ke user -->
+        <input type="hidden" id="jual-hpp" value="0">
+        <div class="form-row full">
+          <div class="form-group">
+            <label>Keterangan</label>
+            <input type="text" id="jual-ket" placeholder="Penjualan barang/jasa...">
           </div>
         </div>
         <button class="btn btn-primary" onclick="simpanPenjualan()">Simpan &amp; Buat Jurnal</button>
@@ -880,6 +994,38 @@
   </table></div></div>
 </div>
 
+<!-- MASTER PRODUK -->
+<div class="page" id="page-produk">
+  <div class="section-header">
+    <div>
+      <div class="section-title">Master Produk</div>
+      <div class="section-sub" id="produk-count-sub">Daftar produk & layanan</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="showPage('kalk-persediaan')"><i class="ti ti-arrow-left ti-btn"></i> Ke Persediaan</button>
+  </div>
+  <div class="filter-bar">
+    <input type="text" id="produk-search" placeholder="Cari nama produk..." oninput="renderProduk()" style="min-width:220px;">
+
+  </div>
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead><tr>
+          <th>Nama Produk</th>
+          <th>Satuan</th>
+          <th>Metode</th>
+          <th style="text-align:right">Stok</th>
+          <th style="text-align:right">HPP (otomatis)</th>
+          <th style="text-align:right">Harga Jual</th>
+          <th>Akun Pend.</th>
+          <th style="width:70px"></th>
+        </tr></thead>
+        <tbody id="produk-tbody"><tr><td colspan="9" style="text-align:center;color:var(--muted);padding:32px;">Belum ada produk. Klik Tambah Produk untuk mulai.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- CHART OF ACCOUNTS -->
 <div class="page" id="page-akun">
   <div class="section-header" style="margin-bottom:12px;">
@@ -1108,9 +1254,9 @@
   <div class="table-card">
     <div class="table-header">
       <div class="table-title"><i class="ti ti-settings ti-inline"></i> Metode & Transaksi</div>
-      <button id="inv-metode-btn" onclick="openInvMetodeSheet()" style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;color:var(--text);font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;min-width:200px;justify-content:space-between;">
-        <span id="inv-metode-label-btn">FIFO (First In First Out)</span>
-        <span style="color:var(--muted);font-size:10px;">▼</span>
+      <button id="inv-metode-btn" class="opt-picker-btn" onclick="openInvMetodeSheet()" style="min-width:220px;max-width:300px;padding:8px 12px;">
+        <span class="opt-picker-label" id="inv-metode-label-btn">FIFO (First In First Out)</span>
+        <span class="opt-picker-arrow">▾</span>
       </button>
       <input type="hidden" id="inv-metode" value="fifo">
     </div>
@@ -1152,11 +1298,12 @@
   <div class="table-card" id="catatan-persediaan-wrap" style="margin-top:0;">
     <div class="table-header" style="flex-wrap:wrap;gap:10px;">
       <div class="table-title"><i class="ti ti-clipboard-list ti-inline"></i> Catatan Persediaan / Kartu Stock</div>      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <div id="kartu-stock-tabs" style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="btn btn-sm" id="ks-tab-fifo" onclick="switchKartuStockTab('fifo',this)" style="background:rgba(74,222,128,0.1);border:1px solid var(--accent);color:var(--accent);font-size:12px;">FIFO</button>
-          <button class="btn btn-sm" id="ks-tab-lifo" onclick="switchKartuStockTab('lifo',this)" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;">LIFO</button>
-          <button class="btn btn-sm" id="ks-tab-wa" onclick="switchKartuStockTab('wa',this)" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;">Weighted Avg</button>
-          <button class="btn btn-sm" id="ks-tab-mwa" onclick="switchKartuStockTab('mwa',this)" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:12px;">Moving WA</button>
+        <div id="ks-metode-picker-wrap" style="display:flex;align-items:center;gap:8px;">
+          <button class="opt-picker-btn" type="button" id="ks-metode-picker-btn" onclick="openKsMetodePicker()" style="min-width:180px;max-width:220px;padding:7px 12px;">
+            <span class="opt-picker-label" id="ks-metode-picker-label">FIFO (First In First Out)</span>
+            <span class="opt-picker-arrow">▾</span>
+          </button>
+          <input type="hidden" id="ks-metode-current" value="fifo">
         </div>
         <button onclick="openKonversiKartuStock()" class="btn btn-sm" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:var(--accent2);font-size:12px;" title="Konversi kartu stock ke metode lain">↔ Konversi Metode</button>
         <button id="ks-clear-btn" class="btn btn-danger btn-sm" style="font-size:12px;"><i class="ti ti-trash ti-btn"></i> Hapus Catatan</button>
@@ -1827,7 +1974,7 @@
       </button>
     </div>
     <div id="ai-chips" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;flex-shrink:0;">
-      <button class="chip" onclick="useChip(this)">[Persediaan] Beli barang dagangan Rp 5jt tunai</button>
+      <button class="chip" onclick="useChip(this)"><i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Beli barang dagangan Rp 5jt tunai</button>
       <button class="chip" onclick="useChip(this)">💰 Hitung penyusutan mesin Rp 100jt umur 5 tahun</button>
       <button class="chip" onclick="useChip(this)">[Invoice] Jual barang Rp 15jt kredit, HPP Rp 9jt</button>
       <button class="chip" onclick="useChip(this)"><i class="ti ti-chart-bar ti-inline"></i> Analisis rasio keuangan saya</button>
@@ -2146,6 +2293,22 @@
       <div style="padding:16px;" id="pajak-spt-summary"></div>
     </div>
   </div>
+  <!-- REKAP SIAP SETOR -->
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title"><i class="ti ti-file-invoice ti-inline"></i> Rekap Pajak Siap Setor</div>
+      <div style="display:flex;gap:8px;">
+        <select id="pajak-setor-bulan" onchange="renderRekapSiapSetor()" style="display:none;"></select>
+        <button class="opt-picker-btn" type="button" id="pajak-setor-bulan-btn" onclick="openPajakBulanPicker()" style="min-width:160px;">
+          <span class="opt-picker-label" id="pajak-setor-bulan-label">Pilih Periode...</span>
+          <span class="opt-picker-arrow">▾</span>
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="exportRekapPajakPDF()"><i class="ti ti-printer ti-btn"></i> Cetak PDF</button>
+      </div>
+    </div>
+    <div id="rekap-setor-content" style="padding:16px;"></div>
+  </div>
+
   <div class="table-card">
     <div class="table-header"><div class="table-title"><i class="ti ti-clipboard-list ti-inline"></i> Riwayat Transaksi Kena Pajak</div></div>
     <div class="table-scroll"><table>
@@ -2412,6 +2575,62 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-akun')">Batal</button>
       <button class="btn btn-primary" onclick="simpanAkun()">Simpan Akun</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL PRODUK -->
+<div class="modal-backdrop" id="modal-produk">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <div class="modal-title" id="modal-produk-title">Tambah Produk Baru</div>
+      <button class="modal-close" onclick="closeModal('modal-produk')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="produk-edit-id">
+      <input type="hidden" id="produk-nama">
+      <input type="hidden" id="produk-satuan">
+
+      <!-- HPP Read-only dari kartu stock -->
+      <div id="produk-hpp-readonly" style="margin-bottom:14px;"></div>
+
+      <!-- Harga jual bisa diset -->
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Harga Jual (Rp)</label>
+          <input type="number" id="produk-harga-jual" placeholder="Masukkan harga jual..." inputmode="numeric" style="font-size:16px;font-weight:700;font-family:var(--mono);">
+        </div>
+      </div>
+
+      <!-- Akun -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Akun Pendapatan</label>
+          <input type="hidden" id="produk-akun-pend" value="4101">
+          <button class="opt-picker-btn" type="button" id="produk-akun-pend-btn" onclick="openSimplePicker('produk-akun-pend','produk-akun-pend-btn','pendapatan')">
+            <span class="opt-picker-label">Pilih Akun...</span>
+            <span class="opt-picker-arrow">▾</span>
+          </button>
+        </div>
+        <div class="form-group">
+          <label>Akun HPP / Persediaan Keluar</label>
+          <input type="hidden" id="produk-akun-hpp" value="5101">
+          <button class="opt-picker-btn" type="button" id="produk-akun-hpp-btn" onclick="openSimplePicker('produk-akun-hpp','produk-akun-hpp-btn','hpp')">
+            <span class="opt-picker-label">Pilih Akun...</span>
+            <span class="opt-picker-arrow">▾</span>
+          </button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);background:rgba(34,211,238,0.06);border:1px solid rgba(34,211,238,0.15);border-radius:8px;padding:9px 12px;">
+        <i class="ti ti-info-circle ti-inline"></i>
+        HPP dihitung otomatis dari kartu stock persediaan dan tidak bisa diubah manual.
+        Ubah data di menu <b>Persediaan</b> untuk memperbarui HPP.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-produk')">Batal</button>
+      <button class="btn btn-primary" onclick="simpanProduk()"><i class="ti ti-device-floppy ti-btn"></i> Simpan Produk</button>
     </div>
   </div>
 </div>
@@ -2822,7 +3041,7 @@
       <div id="storage-slots" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
 
       <!-- Import/Export JSON -->
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">[Persediaan] Backup & Restore File</div>
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;"><i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Backup & Restore File</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
         <div style="background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:14px;text-align:center;">
           <div style="font-size:24px;margin-bottom:6px;"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div>
@@ -3574,7 +3793,7 @@
       OAS
     </div>
     <div id="loading-subtitle" style="font-size:12px;margin-top:6px;letter-spacing:0.1em;text-transform:uppercase;color:#64748b;">
-      Software Akuntansi Profesional
+      Orias Accounting System
     </div>
   </div>
 
@@ -3925,14 +4144,16 @@
 
 
 <!-- INV METODE SHEET -->
-<div id="inv-metode-sheet-backdrop" onclick="if(event.target===this)closeInvMetodeSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);z-index:99998;align-items:flex-end;justify-content:center;">
-  <div style="background:var(--surface);width:100%;max-width:480px;border-radius:24px 24px 0 0;padding-bottom:env(safe-area-inset-bottom,16px);box-shadow:0 -12px 48px rgba(0,0,0,0.5);animation:slideUpSheet 0.28s cubic-bezier(0.34,1.2,0.64,1);">
-    <div style="width:38px;height:4px;border-radius:2px;background:var(--border);margin:12px auto 8px;"></div>
-    <div style="padding:12px 20px 14px;border-bottom:1px solid var(--border);">
-      <div style="font-size:15px;font-weight:700;"><i class="ti ti-settings ti-inline"></i> Pilih Metode Persediaan</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:3px;">Pilih metode valuasi yang sesuai</div>
+<div id="inv-metode-sheet-backdrop" onclick="if(event.target===this)closeInvMetodeSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:99998;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);width:calc(100% - 40px);max-width:400px;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06);animation:bhpPickerIn 0.22s cubic-bezier(0.34,1.3,0.64,1);overflow:hidden;">
+    <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);"><i class="ti ti-settings ti-inline"></i> Pilih Metode Persediaan</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Pilih metode valuasi yang sesuai</div>
+      </div>
+      <button onclick="closeInvMetodeSheet()" style="background:var(--surface2);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);">✕</button>
     </div>
-    <div style="padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;" id="inv-metode-options">
+    <div style="padding:12px 16px 20px;display:flex;flex-direction:column;gap:8px;" id="inv-metode-options">
     </div>
   </div>
 </div>

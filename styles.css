@@ -1,3 +1,15 @@
+
+/* Hapus spinner up/down pada semua input number di seluruh aplikasi */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* ═══ SELF-CONTAINED SVG ICON SYSTEM (replaces Tabler webfont) ═══ */
 .ti {
   display: inline-block;
@@ -499,6 +511,8 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 .modal-title { font-size: 15px; font-weight: 600; }
 .modal-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; }
 .modal-body { padding: 20px 22px; }
+.modal-body > .form-group + .form-group { margin-top: 14px; }
+.modal-body > .form-row { margin-bottom: 0; }
 .modal-footer { padding: 14px 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .modal-footer .btn { flex: 1; min-width: 0; justify-content: center; white-space: nowrap; }
 @media (min-width: 480px) { .modal-footer .btn { flex: none; } }
@@ -876,7 +890,52 @@ body.light-mode .opt-picker-item.selected {
 /* Responsive scroll */
 .table-scroll { overflow-x: auto; }
 
-/* ─ CONSISTENT SPACING ─ */
+/* ─ DASHBOARD CARD SCROLLABLE CONTENT ─ */
+.dash-card-scroll {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+/* Semua table-card di dashboard: fixed height */
+#page-dashboard .table-card {
+  height: 260px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* Scroll area mengisi sisa ruang card — scroll HANYA aktif jika konten meluap */
+#page-dashboard .table-card .dash-card-scroll {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+/* Aksi Cepat: grid tombol, tidak perlu scroll */
+#page-dashboard .table-card > div:not(.table-header):not(.dash-card-scroll) {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+/* Empty state di dalam dashboard card: center sempurna secara vertikal & horizontal */
+#page-dashboard .table-card .dash-card-scroll .empty-state {
+  padding: 0 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+#page-dashboard .table-card .dash-card-scroll .empty-state .empty-icon {
+  margin-bottom: 10px;
+}
+/* Scrollbar hanya muncul saat hover — tidak terlihat saat konten pas */
+.dash-card-scroll { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+.dash-card-scroll:hover { scrollbar-color: var(--border) transparent; }
+.dash-card-scroll::-webkit-scrollbar { width: 4px; }
+.dash-card-scroll::-webkit-scrollbar-track { background: transparent; }
+.dash-card-scroll::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; }
+.dash-card-scroll:hover::-webkit-scrollbar-thumb { background: var(--border); }
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 /* kalk-grid: reusable 2-col grid with consistent 16px gap and bottom margin */
@@ -2095,3 +2154,9 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
   from { transform: translateY(100%); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
+
+/* Missing icon definitions */
+.ti-arrow-left { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 12H5M12 5l-7 7 7 7'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 12H5M12 5l-7 7 7 7'/%3E%3C/svg%3E"); }
+.ti-tag { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z'/%3E%3Ccircle cx='7' cy='7' r='1'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z'/%3E%3Ccircle cx='7' cy='7' r='1'/%3E%3C/svg%3E"); }
+.ti-info-circle { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='16' x2='12' y2='12'/%3E%3Cline x1='12' y1='8' x2='12.01' y2='8'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='16' x2='12' y2='12'/%3E%3Cline x1='12' y1='8' x2='12.01' y2='8'/%3E%3C/svg%3E"); }
+.ti-alert-circle { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='8' x2='12' y2='12'/%3E%3Cline x1='12' y1='16' x2='12.01' y2='16'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='8' x2='12' y2='12'/%3E%3Cline x1='12' y1='16' x2='12.01' y2='16'/%3E%3C/svg%3E"); }
