@@ -18992,7 +18992,7 @@ function simpanProduk() {
       const data = { ksId, hargaJual, akunPend, akunHpp };
       if(idx >= 0) produkList[idx] = { ...produkList[idx], ...data };
       else produkList.push(data);
-      saveData();
+      saveToStorage(false);
       renderProduk();
       showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Produk <b>${ks.nama}</b> berhasil diperbarui!`);
     } catch(e) { console.error(e); } finally { hideOpSpinner(); }

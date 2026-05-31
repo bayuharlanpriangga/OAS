@@ -519,12 +519,12 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 @media (min-width: 480px) { .modal-footer .btn { flex: none; } }
 
 /* Form */
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; margin-bottom: 6px; align-items: start; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; align-items: start; }
 .form-row.full { grid-template-columns: 1fr; }
-.form-group label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 6px; white-space: normal; overflow: visible; }
-.form-group { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; }
-.modal-body > .form-group:first-child,
-.form-row:first-child > .form-group { padding-top: 0; }
+.form-group label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: block; margin-top: 4px; margin-bottom: 4px; white-space: normal; overflow: visible; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.modal-body .form-row { margin-bottom: 8px; }
+.modal-body .form-row:last-of-type { margin-bottom: 0; }
 .form-group input, .form-group select, .form-group textarea {
   background: var(--surface2); border: 1px solid var(--border);
   border-radius: 6px; padding: 9px 12px; color: var(--text);
