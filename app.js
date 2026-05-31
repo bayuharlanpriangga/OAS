@@ -10805,7 +10805,7 @@ function openKsSelectorPicker() {
     options: list.map(ks => ({
       value: ks.id,
       label: ks.nama,
-      sub: (()=>{ const _s=getKsSaldo(ks); return `Stok: ${_s.totalQty.toLocaleString('id-ID')} ${ks.satuan||'unit'} · HPP: ${fmtRp(_s.hppRata)}${ks.deskripsi?' · '+ks.deskripsi:''}`; })(),
+      sub: (()=>{ const _s=getKsSaldo(ks); return `Stok: ${_s.totalQty.toLocaleString('id-ID')} ${ks.satuan||'unit'} · HPP: ${fmtRp(_s.hppNext)}${ks.deskripsi?' · '+ks.deskripsi:''}`; })(),
     })),
     currentValue: activeKartuStockId,
     onSelect: (ksId) => {
@@ -18751,7 +18751,13 @@ function getKsSaldo(ks) {
   const totalNilai= layers.reduce((s,l) => s + l.qty * l.harga, 0);
   const hppRata   = totalQty > 0 ? totalNilai / totalQty : 0;
 
-  return { metode, totalQty, totalNilai, hppRata, layers };
+  // hppNext: HPP unit berikutnya yang akan dijual (sesuai metode)
+  // FIFO: harga layer pertama, LIFO: harga layer terakhir, WA/MWA: rata-rata
+  let hppNext = hppRata;
+  if(metode === 'fifo' && layers.length > 0) hppNext = layers[0].harga;
+  else if(metode === 'lifo' && layers.length > 0) hppNext = layers[layers.length - 1].harga;
+
+  return { metode, totalQty, totalNilai, hppRata, hppNext, layers };
 }
 
 /**
@@ -18915,7 +18921,7 @@ function renderProduk() {
         ${saldo.totalQty.toLocaleString('id-ID')} <span style="font-size:10px;font-weight:400;color:var(--muted);">${ks.satuan||'unit'}</span>
       </td>
       <td style="text-align:right;font-family:var(--mono);font-size:12px;">
-        <div style="color:var(--text);font-weight:600;">${fmtRp(saldo.hppRata)}</div>
+        <div style="color:var(--text);font-weight:600;">${fmtRp(saldo.hppNext)}</div>
         ${layerDetail}
         <div style="font-size:10px;color:var(--muted);">Total: ${fmtRp(saldo.totalNilai)}</div>
       </td>
@@ -18964,7 +18970,7 @@ function openModalEditProdukHarga(ksId) {
     hppInfo.innerHTML = `
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
         <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">HPP (otomatis dari kartu stock — <b>${metodeLabel[saldo.metode]||saldo.metode}</b>)</div>
-        <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text);">${fmtRp(saldo.hppRata)} / unit</div>
+        <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text);">${fmtRp(saldo.hppNext)} / unit</div>
         <div style="font-size:11px;color:var(--muted);margin-top:3px;">Stok: ${saldo.totalQty} ${ks.satuan||'unit'} · Total nilai: ${fmtRp(saldo.totalNilai)}</div>
         ${saldo.metode==='fifo' && saldo.layers.length > 1 ?
           `<div style="margin-top:6px;font-size:10px;color:var(--accent2);">Layer FIFO: ` +
@@ -19599,7 +19605,7 @@ function openProdukPickerJual() {
       return {
         value: ks.id,
         label: ks.nama,
-        sub: `${mLabel[saldo.metode]} · Stok: ${saldo.totalQty} · HPP: ${fmtRp(saldo.hppRata)} · Jual: ${hJual ? fmtRp(hJual) : 'Belum diset'}`,
+        sub: `${mLabel[saldo.metode]} · Stok: ${saldo.totalQty} · HPP: ${fmtRp(saldo.hppNext)} · Jual: ${hJual ? fmtRp(hJual) : 'Belum diset'}`,
       };
     }),
     currentValue: cur,
