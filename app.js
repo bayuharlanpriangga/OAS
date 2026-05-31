@@ -524,6 +524,56 @@ function initJualAkunPendapatan() {
   }
 }
 
+
+function previewJual() {
+  const jumlah = parseFloat(document.getElementById('jual-jumlah').value)||0;
+  const metode = document.getElementById('jual-metode').value;
+  const akunPend = document.getElementById('jual-akun-pendapatan')?.value||'4101';
+  const akunNama = akuns.find(a=>a.kode===akunPend)?.nama||'Penjualan';
+  const debNama  = metode==='tunai'?'Kas':'Piutang Usaha';
+  const hpp = parseFloat(document.getElementById('jual-hpp').value)||0;
+  const prev = document.getElementById('jual-preview');
+  if(!jumlah) { if(prev) prev.style.display='none'; return; }
+  const lines = [
+    {akun:debNama, d:jumlah, k:0},
+    {akun:akunNama, d:0, k:jumlah},
+  ];
+  if(hpp>0) { lines.push({akun:'HPP - Harga Pokok Penjualan',d:hpp,k:0}); lines.push({akun:'Persediaan Barang Dagangan',d:0,k:hpp}); }
+  if(prev) {
+    prev.style.display='block';
+    prev.innerHTML = `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:12.5px;margin-bottom:0;">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--accent2);">Preview Jurnal</div>
+      ${lines.map(l=>`<div style="display:flex;justify-content:space-between;padding:4px 0;font-family:var(--mono);">
+        <span style="${l.d?'':'padding-left:24px'}">${l.akun}</span>
+        <span style="color:var(--accent)">${l.d?fmtRp(l.d):''}</span>
+        <span style="color:var(--red)">${l.k?fmtRp(l.k):''}</span>
+      </div>`).join('')}
+    </div>`;
+  }
+}
+
+function previewBeli() {
+  const jumlah = parseFloat(document.getElementById('beli-jumlah').value)||0;
+  const metode = document.getElementById('beli-metode').value;
+  const akunKode = document.getElementById('beli-akun').value;
+  const akunNama = akunKode ? (akuns.find(a=>a.kode===akunKode)?.nama||akunKode) : 'Akun Beban/Aset';
+  const krNama   = metode==='tunai'?'Kas':'Utang Usaha';
+  const prev = document.getElementById('beli-preview');
+  if(!jumlah) { if(prev) prev.style.display='none'; return; }
+  const lines = [{akun:akunNama,d:jumlah,k:0},{akun:krNama,d:0,k:jumlah}];
+  if(prev) {
+    prev.style.display='block';
+    prev.innerHTML = `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:12.5px;margin-bottom:0;">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--accent2);">Preview Jurnal</div>
+      ${lines.map(l=>`<div style="display:flex;justify-content:space-between;padding:4px 0;font-family:var(--mono);">
+        <span style="${l.d?'':'padding-left:24px'}">${l.akun}</span>
+        <span style="color:var(--accent)">${l.d?fmtRp(l.d):''}</span>
+        <span style="color:var(--red)">${l.k?fmtRp(l.k):''}</span>
+      </div>`).join('')}
+    </div>`;
+  }
+}
+
 function simpanPenjualan() {
   const tanggal = document.getElementById('jual-tanggal').value;
   const inv = document.getElementById('jual-inv').value || autoNo('INV');
@@ -564,6 +614,7 @@ function simpanPenjualan() {
   if(jualProdukLbl) { jualProdukLbl.textContent = 'Pilih produk...'; jualProdukLbl.style.color = 'var(--muted)'; }
   if(jualProdukQty) jualProdukQty.value = '1';
   if(typeof _toggleJualJumlahRow === 'function') _toggleJualJumlahRow(true);
+  const _prevJual = document.getElementById('jual-preview'); if(_prevJual) _prevJual.style.display='none';
   showAlert('✓ Jurnal Penjualan berhasil disimpan!');
 }
 
@@ -594,6 +645,7 @@ function simpanPembelian() {
   const btn = document.getElementById('beli-akun-btn');
   if(btn){ btn.classList.remove('has-value'); btn.textContent = 'Pilih Akun...'; }
   document.getElementById('beli-akun').value = '';
+  const _prevBeli = document.getElementById('beli-preview'); if(_prevBeli) _prevBeli.style.display='none';
   showAlert('✓ Jurnal Pembelian berhasil disimpan!');
 }
 
@@ -8995,9 +9047,7 @@ function renderNeracaSaldoFiltered(periodVal='all') {
     if(net > 0) d=net; else if(net < 0) k=-net;
     if(!d&&!k) return '';
     td+=d; tk+=k;
-    const isContra = (a.normal==='D'&&k>0)||(a.normal==='K'&&d>0);
-    const contraStyle = isContra ? 'color:var(--red);' : '';
-    return `<tr><td style="font-family:var(--mono);font-size:12px;">${a.kode}</td><td style="${contraStyle}">${a.nama}${isContra?` <span style="font-size:10px;color:var(--red);">(contra)</span>`:''}</td><td><span class="badge badge-gray">${a.tipe}</span></td><td style="text-align:right" class="debit">${d?fmtRp(d):''}</td><td style="text-align:right;padding-right:20px;" class="kredit">${k?fmtRp(k):''}</td></tr>`;
+    return `<tr><td style="font-family:var(--mono);font-size:12px;">${a.kode}</td><td>${a.nama}</td><td><span class="badge badge-gray">${a.tipe}</span></td><td style="text-align:right" class="debit">${d?fmtRp(d):''}</td><td style="text-align:right;padding-right:20px;" class="kredit">${k?fmtRp(k):''}</td></tr>`;
   }).filter(Boolean);
   const ok=Math.abs(td-tk)<1;
   body.innerHTML=rows.join('')+`<tr class="total-row"><td colspan="3">TOTAL</td><td style="text-align:right;font-family:var(--mono);">${fmtRp(td)}</td><td style="text-align:right;padding-right:20px;font-family:var(--mono);">${fmtRp(tk)}</td></tr>

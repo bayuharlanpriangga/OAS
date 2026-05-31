@@ -500,7 +500,7 @@
 
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
           <button class="btn btn-ghost btn-sm" onclick="previewSimpel()"><i class="ti ti-eye ti-btn"></i> Preview Jurnal</button>
-          <button class="btn btn-primary" onclick="simpanSimpel()" style="flex:1;min-width:160px;font-size:14px;padding:10px;">Simpan Transaksi</button>
+          <button class="btn btn-primary" onclick="simpanSimpel()">Simpan Transaksi</button>
         </div>
       </div>
     </div>
@@ -541,9 +541,9 @@
           </div>
         </div>
         <div id="kas-preview" style="display:none;margin-bottom:12px;"></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-          <button class="btn btn-ghost btn-sm" onclick="previewKas()"><i class="ti ti-eye ti-btn"></i> Preview Jurnal</button>
-          <button class="btn btn-primary" onclick="simpanKas()" style="flex:1;min-width:160px;">Simpan &amp; Buat Jurnal</button>
+        <div style="margin-top:10px;">
+          <button class="btn btn-ghost btn-sm" onclick="previewKas()" style="margin-right:8px;"><i class="ti ti-eye ti-btn"></i> Preview Jurnal</button>
+          <button class="btn btn-primary" onclick="simpanKas()">Simpan &amp; Buat Jurnal</button>
         </div>
       </div>
     </div>
@@ -617,7 +617,11 @@
             <input type="text" id="jual-ket" placeholder="Penjualan barang/jasa...">
           </div>
         </div>
-        <button class="btn btn-primary" onclick="simpanPenjualan()" style="margin-top:10px;">Simpan &amp; Buat Jurnal</button>
+        <div id="jual-preview" style="display:none;margin-top:10px;"></div>
+        <div style="margin-top:10px;">
+          <button class="btn btn-ghost btn-sm" onclick="previewJual()" style="margin-right:8px;"><i class="ti ti-eye ti-btn"></i> Preview Jurnal</button>
+          <button class="btn btn-primary" onclick="simpanPenjualan()">Simpan &amp; Buat Jurnal</button>
+        </div>
       </div>
     </div>
   </div>
@@ -672,7 +676,11 @@
             <button class="form-picker-btn" type="button" id="beli-kontak-btn" onclick="openKontakPicker('beli-kontak-id','beli-kontak-btn')">Pilih kontak...</button>
           </div>
         </div>
-        <button class="btn btn-primary" onclick="simpanPembelian()" style="margin-top:10px;">Simpan &amp; Buat Jurnal</button>
+        <div id="beli-preview" style="display:none;margin-top:10px;"></div>
+        <div style="margin-top:10px;">
+          <button class="btn btn-ghost btn-sm" onclick="previewBeli()" style="margin-right:8px;"><i class="ti ti-eye ti-btn"></i> Preview Jurnal</button>
+          <button class="btn btn-primary" onclick="simpanPembelian()">Simpan &amp; Buat Jurnal</button>
+        </div>
       </div>
     </div>
   </div>
