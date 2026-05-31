@@ -16310,34 +16310,30 @@ async function saveAttachmentToSupabase(jurnalEntry, attachments) {
 const _origSaveToStorage = saveToStorage;
 async function saveToStorage(showToast = true) {
   if (!currentCompany) {
-    // Fallback ke localStorage jika belum login
     return _origSaveToStorage(showToast);
   }
-  showOpSpinner('Menyimpan data...', 'Mengunggah ke cloud');
-  // Safety timeout: maksimal 8 detik, setelah itu spinner pasti hilang
-  const _spinnerTimeout = setTimeout(() => hideOpSpinner(), 8000);
+  // Hanya tampilkan spinner jika belum ada spinner aktif
+  const _overlay = document.getElementById('op-spinner-overlay');
+  const _spinnerAlreadyActive = _overlay && _overlay.style.display !== 'none' && _overlay.style.display !== '';
+  if (!_spinnerAlreadyActive) {
+    showOpSpinner('Menyimpan data...', 'Mengunggah ke cloud');
+  }
   try {
-    // Save semua jurnal baru (yang belum punya _id)
-    let saved = 0;
     for (const j of jurnalEntries) {
       if (!j._id) {
         await saveJurnalToSupabase(j);
-        saved++;
       }
     }
-    // Save akun jika ada perubahan
     await saveAkunsToSupabase();
     hasUnsavedChanges = false;
     lastSaveTime = new Date();
     updateSaveIndicator('saved');
     if (showToast) showAutoSaveToast('☁️ Tersimpan ke cloud!', false);
     else showAutoSaveToast('☁️ Auto-saved', true);
-    clearTimeout(_spinnerTimeout);
-    hideOpSpinner();
+    if (!_spinnerAlreadyActive) hideOpSpinner();
     return true;
   } catch(e) {
-    clearTimeout(_spinnerTimeout);
-    hideOpSpinner();
+    if (!_spinnerAlreadyActive) hideOpSpinner();
     updateSaveIndicator('error');
     console.error('Supabase save error:', e);
     return false;
@@ -19236,8 +19232,7 @@ function simpanSimpel() {
     }
 
     // Stok dikelola di kartu stock persediaan — tidak perlu update manual
-
-    saveData();
+    // saveData tidak dipanggil di sini — addJurnal sudah handle cloud save
     // Reset form
     document.getElementById('simpel-jumlah').value = '';
     document.getElementById('simpel-ket').value    = '';
