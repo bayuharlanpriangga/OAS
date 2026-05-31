@@ -457,14 +457,18 @@
         </div>
       </div>
       <div class="modal-body">
-        <!-- Tipe transaksi pill selector -->
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="simpel-tipe-wrap">
-          <button class="simpel-tipe-btn active" onclick="setSimpelTipe('masuk',this)" style="flex:1;min-width:100px;padding:10px;border-radius:10px;border:2px solid var(--accent);background:rgba(74,222,128,0.1);color:var(--accent);font-weight:700;cursor:pointer;font-family:var(--sans);font-size:13px;"><i class="ti ti-arrow-up-circle" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Uang Masuk</button>
-          <button class="simpel-tipe-btn" onclick="setSimpelTipe('keluar',this)" style="flex:1;min-width:100px;padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);color:var(--muted);font-weight:700;cursor:pointer;font-family:var(--sans);font-size:13px;"><i class="ti ti-arrow-down-circle" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Uang Keluar</button>
-          <button class="simpel-tipe-btn" onclick="setSimpelTipe('jual',this)" style="flex:1;min-width:100px;padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);color:var(--muted);font-weight:700;cursor:pointer;font-family:var(--sans);font-size:13px;"><i class="ti ti-receipt" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Penjualan</button>
-          <button class="simpel-tipe-btn" onclick="setSimpelTipe('beli',this)" style="flex:1;min-width:100px;padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);color:var(--muted);font-weight:700;cursor:pointer;font-family:var(--sans);font-size:13px;"><i class="ti ti-shopping-cart" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Pembelian</button>
+        <!-- Jenis Transaksi picker -->
+        <div class="form-row full" style="margin-bottom:4px;">
+          <div class="form-group">
+            <label>Jenis Transaksi</label>
+            <button class="opt-picker-btn" type="button" id="simpel-tipe-btn" onclick="openSimpelTipePicker()">
+              <span class="opt-picker-label" id="simpel-tipe-label">Uang Masuk</span>
+              <span class="opt-picker-arrow">▾</span>
+            </button>
+          </div>
         </div>
 
+        <!-- Tanggal + Jumlah -->
         <div class="form-row">
           <div class="form-group">
             <label>Tanggal</label>
@@ -473,19 +477,6 @@
           <div class="form-group">
             <label>Jumlah (Rp) *</label>
             <input type="number" id="simpel-jumlah" placeholder="0" inputmode="numeric">
-          </div>
-        </div>
-
-        <!-- Produk picker — muncul hanya saat tipe jual/beli -->
-        <div id="simpel-produk-wrap" class="form-row" style="display:none;">
-          <div class="form-group">
-            <label>Produk <span style="color:var(--muted);font-size:11px;">(opsional — isi otomatis harga)</span></label>
-            <input type="hidden" id="simpel-produk-id" value="">
-            <button class="form-picker-btn" type="button" id="simpel-produk-btn" onclick="openProdukPicker()">Pilih produk...</button>
-          </div>
-          <div class="form-group">
-            <label>Qty</label>
-            <input type="number" id="simpel-qty" placeholder="1" value="1" inputmode="numeric" oninput="onSimpelQtyChange()">
           </div>
         </div>
 
@@ -631,6 +622,8 @@
     <div class="table-card">
       <div class="table-header"><div class="table-title">Transaksi Pembelian</div></div>
       <div class="modal-body">
+
+        <!-- Baris 1: Tanggal + No. Faktur -->
         <div class="form-row">
           <div class="form-group">
             <label>Tanggal</label>
@@ -641,6 +634,8 @@
             <input type="text" id="beli-faktur" placeholder="PO-001">
           </div>
         </div>
+
+        <!-- Baris 2: Metode Pembayaran + Jenis Pembelian -->
         <div class="form-row">
           <div class="form-group">
             <label>Metode Pembayaran</label>
@@ -650,23 +645,39 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Jumlah Pembelian (Rp)</label>
-            <input type="number" id="beli-jumlah" placeholder="0" inputmode="numeric" onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)">
+            <label>Jenis Pembelian</label>
+            <input type="hidden" id="beli-akun" value="1301">
+            <button class="opt-picker-btn" type="button" id="beli-akun-btn" onclick="openBeliAkunPicker()">
+              <span class="opt-picker-label" id="beli-akun-label">Persediaan Barang Dagangan</span>
+              <span class="opt-picker-arrow">▾</span>
+            </button>
           </div>
         </div>
+
+        <!-- Baris 3: Produk + Qty -->
+        <div class="form-row" id="beli-produk-row">
+          <div class="form-group">
+            <label><i class="ti ti-package ti-inline"></i> Produk <span style="color:var(--muted);font-weight:400;font-size:11px;">(opsional — otomatis update kartu stock)</span></label>
+            <input type="hidden" id="beli-produk-id" value="">
+            <button class="opt-picker-btn" type="button" id="beli-produk-btn" onclick="openBeliProdukPicker()">
+              <span class="opt-picker-label" id="beli-produk-label" style="color:var(--muted);">Pilih produk...</span>
+              <span class="opt-picker-arrow">▾</span>
+            </button>
+          </div>
+          <div class="form-group">
+            <label>Qty</label>
+            <input type="number" id="beli-produk-qty" placeholder="1" value="1" min="1" inputmode="numeric" oninput="onBeliQtyChange()">
+          </div>
+        </div>
+
+        <!-- Baris 4: Harga/Unit + Total hint -->
         <div class="form-row">
           <div class="form-group">
-            <label>Akun Beban/Aset</label>
-            <input type="hidden" id="beli-akun" value="">
-            <button class="form-picker-btn" type="button" id="beli-akun-btn" onclick="openSimplePicker('beli-akun','beli-akun-btn','beli')">Pilih Akun...</button>
+            <label id="beli-jumlah-label">Harga per Unit (Rp) *</label>
+            <input type="number" id="beli-jumlah" placeholder="0" inputmode="numeric"
+              onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)" oninput="onBeliJumlahChange()">
+            <div id="beli-total-hint" style="display:none;font-size:11px;color:var(--accent);margin-top:3px;"></div>
           </div>
-          <div class="form-group">
-            <label>Keterangan</label>
-            <input type="text" id="beli-ket" placeholder="Pembelian persediaan/aset...">
-          </div>
-        </div>
-        <!-- KONTAK OPSIONAL -->
-        <div class="form-row" style="margin-top:4px;">
           <div class="form-group">
             <label>
               <i class="ti ti-users" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i>
@@ -676,6 +687,15 @@
             <button class="form-picker-btn" type="button" id="beli-kontak-btn" onclick="openKontakPicker('beli-kontak-id','beli-kontak-btn')">Pilih kontak...</button>
           </div>
         </div>
+
+        <!-- Baris 5: Keterangan -->
+        <div class="form-row full">
+          <div class="form-group">
+            <label>Keterangan</label>
+            <input type="text" id="beli-ket" placeholder="Pembelian persediaan/aset...">
+          </div>
+        </div>
+
         <div id="beli-preview" style="display:none;margin-top:10px;"></div>
         <div style="margin-top:10px;">
           <button class="btn btn-ghost btn-sm" onclick="previewBeli()" style="margin-right:8px;"><i class="ti ti-eye ti-btn"></i> Preview Jurnal</button>
@@ -1014,6 +1034,11 @@
     <button class="btn btn-ghost btn-sm" onclick="showPage('kalk-persediaan')"><i class="ti ti-arrow-left ti-btn"></i> Ke Persediaan</button>
   </div>
   <div class="filter-bar">
+    <button class="opt-picker-btn" type="button" id="produk-filter-card-btn" onclick="openProdukFilterCardPicker()" style="min-width:160px;">
+      <span class="opt-picker-label" id="produk-filter-card-label">Semua Kartu</span>
+      <span class="opt-picker-arrow">▾</span>
+    </button>
+    <input type="hidden" id="produk-filter-card" value="">
     <input type="text" id="produk-search" placeholder="Cari nama produk..." oninput="renderProduk()" style="min-width:220px;">
 
   </div>
@@ -1271,11 +1296,15 @@
       <input type="hidden" id="inv-metode" value="fifo">
     </div>
     <div class="modal-body">
-      <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+      <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
         <button class="btn btn-primary btn-sm" onclick="addInvRow('masuk')">+ Pembelian/Masuk</button>
         <button class="btn btn-ghost btn-sm" onclick="addInvRow('keluar')">+ Penjualan/Keluar</button>
         <button class="btn btn-ghost btn-sm" onclick="hitungPersediaan()"><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Hitung</button>
         <button class="btn btn-danger btn-sm" onclick="resetInv()">Reset</button>
+        <div style="margin-left:auto;display:flex;gap:6px;">
+          <button onclick="openModalTambahKS()" class="btn btn-sm" style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);color:var(--accent);font-size:12px;font-weight:700;">+ Kartu Stock</button>
+          <button onclick="openModalKelolaSemuaKartuStock()" class="btn btn-sm" style="font-size:12px;background:var(--surface2);border:1px solid var(--border);color:var(--text);" id="hapus-extra-card-btn"><i class="ti ti-settings ti-btn"></i> Kelola Kartu Stock</button>
+        </div>
       </div>
       <div class="table-scroll"><table>
         <thead><tr><th>No</th><th>Tanggal</th><th>Jenis</th><th>Qty</th><th>Harga/Unit (Rp)</th><th>Keterangan</th><th></th></tr></thead>
@@ -1307,35 +1336,39 @@
   <!-- CATATAN PERSEDIAAN / KARTU STOCK TERINTEGRASI -->
   <div class="table-card" id="catatan-persediaan-wrap" style="margin-top:0;">
     <div class="table-header" style="flex-wrap:wrap;gap:10px;">
-      <div class="table-title"><i class="ti ti-clipboard-list ti-inline"></i> Catatan Persediaan / Kartu Stock</div>      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <div id="ks-metode-picker-wrap" style="display:flex;align-items:center;gap:8px;">
-          <button class="opt-picker-btn" type="button" id="ks-metode-picker-btn" onclick="openKsMetodePicker()" style="min-width:180px;max-width:220px;padding:7px 12px;">
-            <span class="opt-picker-label" id="ks-metode-picker-label">FIFO (First In First Out)</span>
-            <span class="opt-picker-arrow">▾</span>
-          </button>
-          <input type="hidden" id="ks-metode-current" value="fifo">
-        </div>
-        <button onclick="openKonversiKartuStock()" class="btn btn-sm" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:var(--accent2);font-size:12px;" title="Konversi kartu stock ke metode lain">↔ Konversi Metode</button>
-        <button id="ks-clear-btn" class="btn btn-danger btn-sm" style="font-size:12px;"><i class="ti ti-trash ti-btn"></i> Hapus Catatan</button>
+      <div class="table-title"><i class="ti ti-clipboard-list ti-inline"></i> Catatan Persediaan / Kartu Stock</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="opt-picker-btn" type="button" id="ks-metode-picker-btn" onclick="openKsMetodePicker()" style="min-width:180px;max-width:220px;padding:7px 12px;">
+          <span class="opt-picker-label" id="ks-metode-picker-label">FIFO (First In First Out)</span>
+          <span class="opt-picker-arrow">▾</span>
+        </button>
+        <input type="hidden" id="ks-metode-current" value="fifo">
       </div>
     </div>
     <div id="catatan-persediaan-content" style="padding:12px 16px;">
       <div id="ks-selector-wrap"></div>
       <div id="ks-active-tab-label" style="font-size:12px;color:var(--accent);margin-bottom:8px;font-weight:600;">Metode: FIFO</div>
-      <div class="table-scroll"><table id="ks-table">
+      <div class="ks-table-wrap" id="ks-table-scroll-wrap"><table id="ks-table">
         <thead><tr>
-          <th>Tgl</th><th>Ket</th>
-          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">MASUK</th>
-          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">KELUAR</th>
-          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">SALDO</th>
-          <th>Aksi</th>
+          <th style="min-width:72px;white-space:nowrap;position:sticky;top:0;z-index:2">Tgl</th>
+          <th style="min-width:80px;position:sticky;top:0;z-index:2">Ket</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border);position:sticky;top:0;z-index:2">MASUK</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border);position:sticky;top:0;z-index:2">KELUAR</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border);position:sticky;top:0;z-index:2">SALDO</th>
+          <th style="position:sticky;top:0;z-index:2">Aksi</th>
         </tr>
         <tr>
-          <th></th><th></th>
-          <th style="border-left:1px solid var(--border)">Qty</th><th>Hrg Beli</th><th>Jumlah</th>
-          <th style="border-left:1px solid var(--border)">Qty</th><th>HPP/Unit</th><th>Jumlah</th>
-          <th style="border-left:1px solid var(--border)">Qty</th><th>Hrg</th><th>Jumlah</th>
-          <th></th>
+          <th style="position:sticky;top:36px;z-index:2"></th><th style="position:sticky;top:36px;z-index:2"></th>
+          <th style="border-left:1px solid var(--border);min-width:56px;position:sticky;top:36px;z-index:2">Qty</th>
+          <th style="min-width:96px;position:sticky;top:36px;z-index:2">Hrg Beli</th>
+          <th style="min-width:108px;position:sticky;top:36px;z-index:2">Jumlah</th>
+          <th style="border-left:1px solid var(--border);min-width:56px;position:sticky;top:36px;z-index:2">Qty</th>
+          <th style="min-width:96px;position:sticky;top:36px;z-index:2">HPP/Unit</th>
+          <th style="min-width:108px;position:sticky;top:36px;z-index:2">Jumlah</th>
+          <th style="border-left:1px solid var(--border);min-width:56px;position:sticky;top:36px;z-index:2">Qty</th>
+          <th style="min-width:96px;position:sticky;top:36px;z-index:2">Hrg</th>
+          <th style="min-width:108px;position:sticky;top:36px;z-index:2">Jumlah</th>
+          <th style="min-width:44px;position:sticky;top:36px;z-index:2"></th>
         </tr></thead>
         <tbody id="ks-table-body">
           <tr><td colspan="12" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Belum ada catatan. Hitung persediaan lalu klik "Input ke Kartu Stock".</td></tr>
@@ -1350,6 +1383,8 @@
       </div>
     </div>
   </div>
+  <!-- Container kartu stock tambahan — diisi oleh + Kartu Stock -->
+  <div id="ks-extra-cards-container"></div>
 </div>
 
 <!-- POPUP: Pilih transaksi keluar untuk input ke jurnal -->
@@ -3900,14 +3935,14 @@
   var status = document.getElementById('loading-status');
 
   const steps = [
-    [8,  150, 'Memuat akun...'],
-    [20, 200, 'Inisialisasi jurnal...'],
-    [35, 180, 'Memuat data tersimpan...'],
-    [52, 220, 'Menyiapkan laporan...'],
-    [68, 160, 'Memuat kalkulator...'],
-    [80, 200, 'Menyiapkan AI Orias...'],
-    [92, 150, 'Menyelesaikan setup...'],
-    [100, 120, 'Siap!'],
+    [8,  120, 'Memuat akun...'],
+    [20, 150, 'Inisialisasi jurnal...'],
+    [35, 140, 'Memuat data tersimpan...'],
+    [52, 120, 'Menyiapkan laporan...'],
+    [68, 130, 'Memuat kalkulator...'],
+    [80, 150, 'Menyiapkan AI Orias...'],
+    [92, 120, 'Menyelesaikan setup...'],
+    [100, 100, 'Siap!'],
   ];
 
   let i = 0;
@@ -4251,7 +4286,7 @@
 
 
 
-  <script src="app.js?v=1780040010"></script>
+  <script src="app.js?v=1780267545"></script>
 </body>
 </html>
 
@@ -4537,18 +4572,15 @@
       <button class="modal-close" onclick="closeModal('mks-modal')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="form-group">
-        <label>Nama Barang / Kartu Stock <span style="color:var(--red)">*</span></label>
-        <input type="text" id="mks-input-nama" placeholder="contoh: Beras Premium 5kg, Minyak Goreng 1L">
+      <div class="form-group" id="mks-field-nama">
+        <label id="mks-label-nama">Nama <span style="color:var(--red)">*</span></label>
+        <input type="text" id="mks-input-nama" placeholder="contoh: Beras Premium, Minyak Goreng">
       </div>
-      <div class="form-group">
-        <label>Deskripsi / Keterangan</label>
-        <input type="text" id="mks-input-desc" placeholder="Opsional — kode SKU, keterangan tambahan">
-      </div>
-      <div class="form-group">
+      <div class="form-group" id="mks-field-satuan" style="display:none;">
         <label>Satuan</label>
-        <input type="text" id="mks-input-satuan" placeholder="unit, kg, liter, pcs, karton..." value="unit">
+        <input type="text" id="mks-input-satuan" placeholder="unit, kg, liter, pcs..." value="unit">
       </div>
+      <input type="hidden" id="mks-input-desc" value="">
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('mks-modal')">Batal</button>
@@ -4564,9 +4596,8 @@
       <div class="modal-title"><i class="ti ti-settings ti-inline"></i> Kelola Kartu Stock</div>
       <button class="modal-close" onclick="closeModal('mks-kelola-modal')">✕</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" style="max-height:65vh;overflow-y:auto;">
       <div id="mks-kelola-list"></div>
-      <button onclick="openModalTambahKS();closeModal('mks-kelola-modal')" style="width:100%;background:rgba(34,211,238,0.08);border:1px dashed rgba(34,211,238,0.3);border-radius:10px;padding:10px;color:var(--accent2);font-size:12px;cursor:pointer;font-family:var(--sans);margin-top:8px;">+ Tambah Kartu Stock Baru</button>
     </div>
   </div>
 </div>

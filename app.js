@@ -89,6 +89,8 @@ let akuns = [
   // ═══════ PENDAPATAN ═══════
   {kode:'4101',nama:'Penjualan Barang',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
   {kode:'4102',nama:'Penjualan Jasa',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
+  {kode:'4105',nama:'Penjualan Produk Manufaktur',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
+  {kode:'4106',nama:'Pendapatan Properti / Sewa',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
   {kode:'4103',nama:'Retur & Potongan Penjualan',tipe:'Pendapatan',kat:'Kontra',normal:'D'},
   {kode:'4104',nama:'Diskon Penjualan',tipe:'Pendapatan',kat:'Kontra',normal:'D'},
   {kode:'4201',nama:'Pendapatan Komisi',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
@@ -479,10 +481,14 @@ function getAkunPendapatanDefault() {
 }
 
 const _jualAkunOptions = [
-  { value: '4101', label: 'Penjualan Barang', sub: 'Akun 4101 · Pendapatan Operasional',
+  { value: '4101', label: 'Penjualan Barang', sub: 'Akun 4101 · Penjualan Barang',
     icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg>` },
-  { value: '4102', label: 'Penjualan Jasa',   sub: 'Akun 4102 · Pendapatan Operasional',
+  { value: '4102', label: 'Penjualan Jasa',   sub: 'Akun 4102 · Penjualan Jasa',
     icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>` },
+  { value: '4105', label: 'Manufaktur',       sub: 'Akun 4105 · Penjualan Produk Manufaktur',
+    icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>` },
+  { value: '4106', label: 'Properti',         sub: 'Akun 4106 · Pendapatan Properti / Sewa',
+    icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` },
   { value: '4103', label: 'Pendapatan Sewa',  sub: 'Akun 4103 · Pendapatan Lain-lain',
     icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` },
   { value: '4104', label: 'Pendapatan Lainnya', sub: 'Akun 4104 · Non-Operasional',
@@ -552,24 +558,167 @@ function previewJual() {
   }
 }
 
+// ═══ TRANSAKSI PEMBELIAN — FUNGSI PENDUKUNG ═══════════════════════
+
+/** Picker jenis pembelian (akun target) */
+function openBeliAkunPicker() {
+  openOptPicker({
+    title: 'Pilih Jenis Pembelian',
+    options: _beliAkunOptions.map(o => ({ value: o.value, label: o.label, icon: o.icon, sub: o.sub })),
+    currentValue: document.getElementById('beli-akun')?.value || '1301',
+    onSelect: (val, label) => {
+      document.getElementById('beli-akun').value = val;
+      const lbl = document.getElementById('beli-akun-label');
+      if(lbl) lbl.textContent = label;
+      // Jika akun bukan persediaan, sembunyikan produk picker
+      const isPersediaan = ['1301','1302','1303','1304'].includes(val);
+      const produkRow = document.getElementById('beli-produk-row');
+      if(produkRow) produkRow.style.display = isPersediaan ? '' : 'none';
+      if(!isPersediaan) {
+        const beliProdukId = document.getElementById('beli-produk-id');
+        if(beliProdukId) beliProdukId.value = '';
+        const beliProdukBtn = document.getElementById('beli-produk-btn');
+        const beliProdukLbl = document.getElementById('beli-produk-label');
+        if(beliProdukBtn) { beliProdukLbl.textContent = 'Pilih produk...'; beliProdukLbl.style.color='var(--muted)'; }
+        // Update label jumlah kembali ke mode normal
+        const jLabel = document.getElementById('beli-jumlah-label');
+        if(jLabel) jLabel.textContent = 'Jumlah Pembelian (Rp) *';
+        const hint = document.getElementById('beli-total-hint');
+        if(hint) hint.style.display='none';
+      } else {
+        const jLabel = document.getElementById('beli-jumlah-label');
+        if(jLabel) jLabel.textContent = 'Harga per Unit (Rp) *';
+      }
+    }
+  });
+}
+
+/** Picker produk 2-level untuk pembelian (semua kartu stock, tidak filter lock) */
+function openBeliProdukPicker() {
+  const allCards = Object.values(multiKartuStock || {});
+  if(!allCards.length) { showAlert('Belum ada kartu stock. Tambahkan di menu Persediaan.'); return; }
+
+  const cur = document.getElementById('beli-produk-id')?.value || '';
+  const _pickLevel2Beli = (card) => {
+    const kats = Object.values(card.kategori || {});
+    if(!kats.length) { showAlert('Kartu stock ini belum punya barang.'); return; }
+    if(kats.length === 1) { _applyBeliProduk(kats[0].id, kats[0].nama); return; }
+    openOptPicker({
+      title: 'Pilih Barang — ' + card.nama,
+      options: kats.map(kat => {
+        const saldo = getKsSaldo(kat);
+        const metodeLabel = {fifo:'FIFO',lifo:'LIFO',wa:'WA',mwa:'MWA'};
+        return { value: kat.id, label: kat.nama,
+          sub: `${metodeLabel[saldo.metode]||'FIFO'} · Stok: ${saldo.totalQty} ${card.satuan||'unit'}` };
+      }),
+      currentValue: cur,
+      onSelect: (katId, label) => { _applyBeliProduk(katId, label); }
+    });
+  };
+
+  if(allCards.length === 1) { _pickLevel2Beli(allCards[0]); return; }
+
+  openOptPicker({
+    title: 'Pilih Kartu Stock',
+    options: allCards.map(card => {
+      const s = getCardSaldo(card);
+      return { value: card.id, label: card.nama,
+        sub: `${Object.keys(card.kategori||{}).length} barang · Stok: ${s.totalQty} ${card.satuan||'unit'}` };
+    }),
+    currentValue: '',
+    onSelect: (cardId) => {
+      const card = multiKartuStock[cardId]; if(!card) return;
+      _pickLevel2Beli(card);
+    }
+  });
+}
+
+/** Apply produk yang dipilih ke form pembelian */
+function _applyBeliProduk(katId, label) {
+  const found = _findKatById(katId);
+  if(!found) return;
+  const { kat, card } = found;
+  document.getElementById('beli-produk-id').value = katId;
+  const lbl = document.getElementById('beli-produk-label');
+  if(lbl) { lbl.textContent = label || kat.nama; lbl.style.color = 'var(--text)'; }
+
+  // Set akun jenis pembelian otomatis sesuai jenis kartu stock (jika bisa dideteksi)
+  const saldo = getKsSaldo(kat);
+  const metodeLabel = {fifo:'FIFO',lifo:'LIFO',wa:'Weighted Average',mwa:'Moving Average'};
+  // Update label jumlah
+  const jLabel = document.getElementById('beli-jumlah-label');
+  if(jLabel) jLabel.textContent = 'Harga per Unit (Rp) *';
+
+  // Isi keterangan otomatis
+  const ketEl = document.getElementById('beli-ket');
+  if(ketEl && !ketEl.value) ketEl.value = 'Pembelian ' + (label || kat.nama);
+
+  _updateBeliTotalHint();
+}
+
+/** Update hint total saat qty atau harga berubah */
+function _updateBeliTotalHint() {
+  const qty    = parseFloat(document.getElementById('beli-produk-qty')?.value)||1;
+  const harga  = parseFloat(document.getElementById('beli-jumlah')?.value)||0;
+  const total  = qty * harga;
+  const hint   = document.getElementById('beli-total-hint');
+  if(hint) {
+    hint.style.display = total > 0 ? '' : 'none';
+    hint.textContent   = total > 0 ? `= Total: ${fmtRp(total)}` : '';
+  }
+}
+
+function onBeliQtyChange()    { _updateBeliTotalHint(); }
+function onBeliJumlahChange() { _updateBeliTotalHint(); }
+
+/** Build jurnal lines untuk pembelian */
+function _getBeliJurnalLines(akunKode, totalBeli, metode, ket) {
+  const krAkun = metode === 'tunai' ? '1101' : '2101';
+  const krNama = metode === 'tunai' ? 'Kas' : 'Utang Usaha';
+  const akunNama = akuns.find(a=>a.kode===akunKode)?.nama || akunKode;
+  return [
+    { akun: akunKode, ket, debit: totalBeli, kredit: 0 },
+    { akun: krAkun,   ket: krNama, debit: 0, kredit: totalBeli },
+  ];
+}
+
 function previewBeli() {
-  const jumlah = parseFloat(document.getElementById('beli-jumlah').value)||0;
-  const metode = document.getElementById('beli-metode').value;
-  const akunKode = document.getElementById('beli-akun').value;
-  const akunNama = akunKode ? (akuns.find(a=>a.kode===akunKode)?.nama||akunKode) : 'Akun Beban/Aset';
-  const krNama   = metode==='tunai'?'Kas':'Utang Usaha';
-  const prev = document.getElementById('beli-preview');
-  if(!jumlah) { if(prev) prev.style.display='none'; return; }
-  const lines = [{akun:akunNama,d:jumlah,k:0},{akun:krNama,d:0,k:jumlah}];
+  const hargaPerUnit = parseFloat(document.getElementById('beli-jumlah')?.value)||0;
+  const qty          = parseFloat(document.getElementById('beli-produk-qty')?.value)||1;
+  const produkId     = document.getElementById('beli-produk-id')?.value;
+  const akunKode     = document.getElementById('beli-akun')?.value || '1301';
+  const metode       = document.getElementById('beli-metode')?.value || 'tunai';
+  const ket          = document.getElementById('beli-ket')?.value || 'Pembelian';
+  const prev         = document.getElementById('beli-preview');
+
+  if(!hargaPerUnit) { if(prev) prev.style.display='none'; showAlert('Isi harga per unit terlebih dahulu!'); return; }
+
+  const totalBeli = produkId ? hargaPerUnit * qty : hargaPerUnit;
+  const lines     = _getBeliJurnalLines(akunKode, totalBeli, metode, ket);
+
   if(prev) {
-    prev.style.display='block';
-    prev.innerHTML = `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:12.5px;margin-bottom:0;">
+    prev.style.display = 'block';
+    const found = produkId ? _findKatById(produkId) : null;
+    const saldoInfo = found ? (() => {
+      const s = getKsSaldo(found.kat);
+      const mLabel = {fifo:'FIFO',lifo:'LIFO',wa:'WA',mwa:'MWA'};
+      return `<div style="font-size:11px;color:var(--accent2);margin-bottom:8px;padding:6px 8px;background:rgba(34,211,238,0.06);border-radius:6px;">
+        <i class="ti ti-package" style="font-size:12px;vertical-align:-2px;margin-right:4px;"></i>
+        <b>${found.kat.nama}</b> · ${mLabel[s.metode]||'FIFO'} · ${qty} unit @ ${fmtRp(hargaPerUnit)} = <b>${fmtRp(totalBeli)}</b>
+        <br><span style="color:var(--muted);">Stok saat ini: ${s.totalQty} → setelah: ${s.totalQty + qty}</span>
+      </div>` })() : '';
+    prev.innerHTML = `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:12.5px;">
       <div style="font-weight:600;margin-bottom:8px;color:var(--accent2);">Preview Jurnal</div>
-      ${lines.map(l=>`<div style="display:flex;justify-content:space-between;padding:4px 0;font-family:var(--mono);">
-        <span style="${l.d?'':'padding-left:24px'}">${l.akun}</span>
-        <span style="color:var(--accent)">${l.d?fmtRp(l.d):''}</span>
-        <span style="color:var(--red)">${l.k?fmtRp(l.k):''}</span>
-      </div>`).join('')}
+      ${saldoInfo}
+      ${lines.map(l => {
+        const a = akuns.find(x=>x.kode===l.akun);
+        return `<div style="display:flex;gap:8px;margin-bottom:4px;font-family:var(--mono);">
+          <span style="color:var(--muted);min-width:50px;">${l.akun}</span>
+          <span style="flex:1;">${a?.nama||l.akun}</span>
+          ${l.debit  ? `<span style="color:var(--accent);min-width:80px;text-align:right;">Dr ${fmtRp(l.debit)}</span>`  : '<span style="min-width:80px;"></span>'}
+          ${l.kredit ? `<span style="color:var(--red);min-width:80px;text-align:right;">Kr ${fmtRp(l.kredit)}</span>` : '<span style="min-width:80px;"></span>'}
+        </div>`;
+      }).join('')}
     </div>`;
   }
 }
@@ -620,33 +769,68 @@ function simpanPenjualan() {
 
 // PEMBELIAN
 function simpanPembelian() {
-  const tanggal = document.getElementById('beli-tanggal').value;
-  const faktur = document.getElementById('beli-faktur').value || autoNo('PO');
-  const metode = document.getElementById('beli-metode').value;
-  const jumlah = parseFloat(document.getElementById('beli-jumlah').value)||0;
-  const akunKode = document.getElementById('beli-akun').value;
-  const ket = document.getElementById('beli-ket').value || `Pembelian ${faktur}`;
-  const kontakId = document.getElementById('beli-kontak-id')?.value || '';
-  if(!tanggal||!jumlah) { showAlert('Lengkapi tanggal dan jumlah!'); return; }
-  if(!akunKode) { showAlert('Pilih akun beban/aset terlebih dahulu!'); return; }
-  const krAkun = metode==='tunai'?'1101':'2101';
-  const krNama = metode==='tunai'?'Kas keluar':'Utang usaha';
-  addJurnal({tanggal,ket,jenis:'Pembelian',ref:faktur,kontakId,lines:[
-    {akun:akunKode,ket,debit:jumlah,kredit:0},
-    {akun:krAkun,ket:krNama,debit:0,kredit:jumlah},
-  ]});
-  // Update total transaksi di kontak jika dipilih
-  if(kontakId) updateKontakTotalTrx(kontakId, jumlah, 'pembelian');
-  ['beli-faktur','beli-jumlah','beli-ket'].forEach(id => document.getElementById(id).value='');
+  const tanggal      = document.getElementById('beli-tanggal')?.value;
+  const faktur       = document.getElementById('beli-faktur')?.value || autoNo('PO');
+  const metode       = document.getElementById('beli-metode')?.value || 'tunai';
+  const hargaPerUnit = parseFloat(document.getElementById('beli-jumlah')?.value)||0;
+  const qty          = parseFloat(document.getElementById('beli-produk-qty')?.value)||1;
+  const akunKode     = document.getElementById('beli-akun')?.value || '1301';
+  const produkId     = document.getElementById('beli-produk-id')?.value || '';
+  const ket          = document.getElementById('beli-ket')?.value || `Pembelian ${faktur}`;
+  const kontakId     = document.getElementById('beli-kontak-id')?.value || '';
+
+  if(!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
+  if(!hargaPerUnit) { showAlert('Isi harga per unit terlebih dahulu!'); return; }
+
+  // Total = harga × qty (jika ada produk), atau langsung harga (jika tanpa produk)
+  const totalBeli = produkId ? hargaPerUnit * qty : hargaPerUnit;
+
+  // Build jurnal lines
+  const lines = _getBeliJurnalLines(akunKode, totalBeli, metode, ket);
+
+  addJurnal({ tanggal, ket, jenis:'Pembelian', ref: faktur, kontakId, lines });
+
+  // ── Auto-update kartu stock jika produk dipilih ──────────────
+  if(produkId) {
+    const found = _findKatById(produkId);
+    if(found) {
+      const { kat, card } = found;
+      // Gunakan metode aktif kartu stock produk tersebut (sesuai pengaturan asal)
+      addKartuStockOnBuy(produkId, qty, hargaPerUnit, tanggal, ket);
+      // Render ulang jika kartu stock ini sedang aktif
+      if(card.id === activeKartuStockId) {
+        syncKartuStockDataFromKategori();
+        if(typeof renderKartuStock === 'function') renderKartuStock();
+        if(typeof renderKartuStockSelector === 'function') renderKartuStockSelector();
+      }
+    }
+  }
+
+  // Update total di kontak
+  if(kontakId) updateKontakTotalTrx(kontakId, totalBeli, 'pembelian');
+
+  // ── Reset form ───────────────────────────────────────────────
+  ['beli-faktur','beli-jumlah','beli-ket'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  const beliQty = document.getElementById('beli-produk-qty');
+  if(beliQty) beliQty.value = '1';
   document.getElementById('beli-kontak-id').value = '';
   const beliKontakBtn = document.getElementById('beli-kontak-btn');
-  if(beliKontakBtn){ beliKontakBtn.classList.remove('has-value'); beliKontakBtn.textContent = 'Pilih kontak...'; }
-  // Reset picker button
-  const btn = document.getElementById('beli-akun-btn');
-  if(btn){ btn.classList.remove('has-value'); btn.textContent = 'Pilih Akun...'; }
-  document.getElementById('beli-akun').value = '';
-  const _prevBeli = document.getElementById('beli-preview'); if(_prevBeli) _prevBeli.style.display='none';
-  showAlert('✓ Jurnal Pembelian berhasil disimpan!');
+  if(beliKontakBtn) { beliKontakBtn.classList.remove('has-value'); beliKontakBtn.textContent = 'Pilih kontak...'; }
+  // Reset produk picker
+  const beliProdukId  = document.getElementById('beli-produk-id');
+  const beliProdukLbl = document.getElementById('beli-produk-label');
+  if(beliProdukId)  beliProdukId.value = '';
+  if(beliProdukLbl) { beliProdukLbl.textContent = 'Pilih produk...'; beliProdukLbl.style.color = 'var(--muted)'; }
+  // Reset hint
+  const hint = document.getElementById('beli-total-hint');
+  if(hint) hint.style.display = 'none';
+  const _prevBeli = document.getElementById('beli-preview');
+  if(_prevBeli) _prevBeli.style.display = 'none';
+
+  renderDashboard();
+  showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Jurnal Pembelian berhasil disimpan' + (produkId ? ' & kartu stock diperbarui!' : '!'));
 }
 
 // MANUAL
@@ -4411,12 +4595,9 @@ function inputAnuitasJurnal() {
 function inputPersediaanJurnal() {
   const metode = window._invMetode || document.getElementById('inv-metode')?.value || 'fifo';
   kartuStockTab = metode;
-  // Jika hanya 1 kartu stock → langsung buka popup jurnal
-  // Jika lebih dari 1 → tanya dulu ke kartu stock mana
-  showPilihKartuStockPopup((ksId) => {
-    // Switch ke kartu stock yang dipilih
-    switchActiveKS(ksId);
-    // Lanjut buka popup jurnal (addToKartuStockDanBukaPopup)
+  // showPilihKartuStockPopup callback dipanggil dengan katId — _doSelectKartuForInput sudah menangani switch
+  showPilihKartuStockPopup((katId) => {
+    // _doSelectKartuForInput sudah switch card+kategori aktif, langsung buka popup jurnal
     bukaPopupJurnalSemua();
   });
 }
@@ -10722,158 +10903,712 @@ let kartuStockTab = 'fifo';
 let kartuStockIdCounter = 0;
 
 // ── MULTI KARTU STOCK ─────────────────────────────────────────
-// Format: { [ksId]: { id, nama, deskripsi, satuan, createdAt, data: {fifo,lifo,wa,mwa} } }
-let multiKartuStock = {};         // semua kartu stock
-let activeKartuStockId = null;    // ID kartu stock yang sedang aktif
+// Format baru:
+// { [cardId]: { id, nama, satuan, createdAt,
+//   kategori: { [katId]: { id, nama, satuan, deskripsi, data:{fifo,lifo,wa,mwa} } }
+// } }
+let multiKartuStock = {};         // semua card kartu stock
+let activeKartuStockId = null;    // ID card yang sedang aktif
+let activeKategoriId = null;      // ID kategori yang sedang aktif dalam card
 
 function _ksDefaultData() {
   return { fifo:[], lifo:[], wa:[], mwa:[] };
 }
 
-/** Inisialisasi: jika belum ada multi KS, migrate data lama ke KS pertama */
+/** Ambil kategori aktif dari card aktif */
+function getActiveKategori() {
+  const card = multiKartuStock[activeKartuStockId];
+  if (!card || !card.kategori) return null;
+  return card.kategori[activeKategoriId] || null;
+}
+
+/** Ambil kartuStockData dari kategori aktif */
+function syncKartuStockDataFromKategori() {
+  const kat = getActiveKategori();
+  if (kat) {
+    // Deep copy agar tidak shared reference — modifikasi kartuStockData tidak mempengaruhi kategori lain
+    kartuStockData = JSON.parse(JSON.stringify(kat.data));
+  }
+}
+
+/** Simpan kartuStockData kembali ke kategori aktif */
+function syncKategoriFromKartuStockData() {
+  if (!activeKartuStockId || !activeKategoriId) return;
+  const card = multiKartuStock[activeKartuStockId];
+  if (card && card.kategori && card.kategori[activeKategoriId]) {
+    // Deep copy wajib — agar data tiap kategori benar-benar independen
+    card.kategori[activeKategoriId].data = JSON.parse(JSON.stringify(kartuStockData));
+  }
+}
+
+/** getKsSaldo compat: bisa terima card (iterate semua kategori) atau kategori langsung */
+function getKsSaldoKat(kat) {
+  // kat = { id, nama, data:{fifo,lifo,wa,mwa} }
+  // Pastikan fakeKs tidak punya property 'kategori' agar tidak trigger infinite recursion
+  const data = (kat && kat.data && typeof kat.data === 'object') ? kat.data : {};
+  const fakeKs = { data };
+  return getKsSaldo(fakeKs);
+}
+
+/** Hitung saldo total semua kategori dalam sebuah card */
+function getCardSaldo(card, _depth) {
+  const _empty = { totalQty:0, totalNilai:0, hppRata:0 };
+  if (!card || (_depth || 0) > 2) return _empty;
+  let totalQty = 0, totalNilai = 0;
+  Object.values(card.kategori || {}).forEach(kat => {
+    const s = getKsSaldoKat(kat);
+    totalQty   += s.totalQty;
+    totalNilai += s.totalNilai;
+  });
+  const hppRata = totalQty > 0 ? totalNilai / totalQty : 0;
+  return { totalQty, totalNilai, hppRata };
+}
+
+/** Inisialisasi: jika belum ada multi KS, migrate data lama ke struktur baru */
 function initMultiKartuStock() {
   const stored = localStorage.getItem('bhp_mks_' + (window.currentCompany?.id || 'guest'));
   if (stored) {
     try { multiKartuStock = JSON.parse(stored); } catch(e) { multiKartuStock = {}; }
   }
-  // Migrate data lama jika multiKartuStock kosong tapi kartuStockData ada isinya
+
+  // Migrate format lama (langsung punya data) ke format baru (card → kategori → data)
+  let needsMigrate = false;
+  Object.values(multiKartuStock).forEach(card => {
+    if (card.data && !card.kategori) needsMigrate = true;
+  });
+  if (needsMigrate) {
+    const migrated = {};
+    Object.values(multiKartuStock).forEach(card => {
+      const katId = 'kat_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+      migrated[card.id] = {
+        id: card.id, nama: card.nama, satuan: card.satuan || 'unit',
+        createdAt: card.createdAt || new Date().toISOString(),
+        kategori: {
+          [katId]: { id: katId, nama: card.nama, satuan: card.satuan || 'unit',
+            deskripsi: card.deskripsi || '', data: JSON.parse(JSON.stringify(card.data || _ksDefaultData())) }
+        }
+      };
+    });
+    multiKartuStock = migrated;
+    saveMKS();
+  }
+
   const hasOldData = Object.values(kartuStockData).some(arr => arr.length > 0);
   if (Object.keys(multiKartuStock).length === 0) {
-    const firstId = 'ks_' + Date.now();
-    multiKartuStock[firstId] = {
-      id: firstId, nama: 'Persediaan Barang 1', deskripsi: '', satuan: 'unit',
+    const cardId = 'card_' + Date.now();
+    const katId  = 'kat_'  + Date.now();
+    multiKartuStock[cardId] = {
+      id: cardId, nama: 'Persediaan Barang', satuan: 'unit',
       createdAt: new Date().toISOString(),
-      data: hasOldData ? { ...kartuStockData } : _ksDefaultData()
+      kategori: {
+        [katId]: { id: katId, nama: 'Barang Dagangan', satuan: 'unit',
+          deskripsi: '', data: hasOldData ? JSON.parse(JSON.stringify(kartuStockData)) : _ksDefaultData() }
+      }
     };
-    activeKartuStockId = firstId;
+    activeKartuStockId = cardId;
+    activeKategoriId   = katId;
     saveMKS();
   } else {
     if (!activeKartuStockId || !multiKartuStock[activeKartuStockId]) {
       activeKartuStockId = Object.keys(multiKartuStock)[0];
     }
+    const card = multiKartuStock[activeKartuStockId];
+    if (!activeKategoriId || !card?.kategori?.[activeKategoriId]) {
+      activeKategoriId = card?.kategori ? Object.keys(card.kategori)[0] : null;
+    }
   }
-  // Sync kartuStockData dengan active KS
-  kartuStockData = multiKartuStock[activeKartuStockId].data;
+  // Sync kartuStockData dengan active KS (gunakan syncKartuStockDataFromKategori agar pakai struktur baru)
+  syncKartuStockDataFromKategori();
   renderKartuStockSelector();
 }
 
 function saveMKS() {
-  // Sync dulu data aktif
-  if (activeKartuStockId && multiKartuStock[activeKartuStockId]) {
-    multiKartuStock[activeKartuStockId].data = kartuStockData;
-  }
+  // Sync data aktif ke kategori sebelum save
+  syncKategoriFromKartuStockData();
   const key = 'bhp_mks_' + (window.currentCompany?.id || 'guest');
   try { localStorage.setItem(key, JSON.stringify(multiKartuStock)); } catch(e) {}
   saveKartuStockToCloud();
 }
 
-function switchActiveKS(ksId) {
-  if (!multiKartuStock[ksId]) return;
-  // Simpan data aktif sekarang
-  if (activeKartuStockId && multiKartuStock[activeKartuStockId]) {
-    multiKartuStock[activeKartuStockId].data = kartuStockData;
+function switchActiveKS(cardId, katId) {
+  if (!multiKartuStock[cardId]) return;
+  // Simpan data aktif sekarang ke kategori sebelumnya
+  syncKategoriFromKartuStockData();
+  saveMKS();
+
+  activeKartuStockId = cardId;
+  const card = multiKartuStock[cardId];
+
+  // Jika katId diberikan pakai itu, kalau tidak pakai kategori pertama
+  if (katId && card.kategori?.[katId]) {
+    activeKategoriId = katId;
+  } else {
+    activeKategoriId = card.kategori ? Object.keys(card.kategori)[0] : null;
   }
-  activeKartuStockId = ksId;
-  kartuStockData = multiKartuStock[ksId].data;
+
+  syncKartuStockDataFromKategori();
   renderKartuStockSelector();
   renderKartuStock();
+}
+
+function switchActiveKategori(katId) {
+  syncKategoriFromKartuStockData();
+  activeKategoriId = katId;
+  syncKartuStockDataFromKategori();
+  renderKartuStock();
+  renderKartuStockSelector();
 }
 
 function renderKartuStockSelector() {
   const container = document.getElementById('ks-selector-wrap');
   if (!container) return;
-  const list = Object.values(multiKartuStock);
-  const activeKs = multiKartuStock[activeKartuStockId];
+  const cards = Object.values(multiKartuStock);
+  const activeCard = multiKartuStock[activeKartuStockId];
+
+  // Ambil semua kategori dari card aktif sebagai "kartu" yang bisa dipilih
+  const katList = activeCard ? Object.values(activeCard.kategori || {}) : [];
+  const activeKat = activeCard?.kategori?.[activeKategoriId];
+
+  // Nama card sebagai judul yang bisa diedit
+  const cardSaldoMain = activeCard ? getCardSaldo(activeCard) : null;
+  const katListMain   = activeCard ? Object.values(activeCard.kategori||{}) : [];
+  const firstKat      = katListMain[0];
+  const selKatLabel   = activeKat
+    ? activeKat.nama
+    : (firstKat ? firstKat.nama : 'Belum ada kategori');
+
   container.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <span style="font-size:13px;font-weight:700;color:var(--accent2);">${activeCard?.nama||''}</span>
+      <span style="font-size:11px;color:var(--muted);">${cardSaldoMain ? cardSaldoMain.totalQty.toLocaleString('id-ID')+' '+(activeCard?.satuan||'unit') : ''}</span>
+      <button onclick="openModalEditCard('${activeKartuStockId}')" title="Edit nama kartu stock" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 4px;line-height:1;vertical-align:middle;border-radius:4px;transition:color .15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+    </div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-      <span style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Kartu Stock:</span>
+      <span style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">KARTU STOCK:</span>
       <button class="opt-picker-btn" type="button" id="ks-selector-picker-btn" onclick="openKsSelectorPicker()" style="min-width:200px;max-width:300px;">
-        <span class="opt-picker-label" id="ks-selector-picker-label">${(()=>{ if(!activeKs) return 'Pilih Kartu Stock...'; const _s=getKsSaldo(activeKs); return activeKs.nama + ' (Stok: ' + _s.totalQty.toLocaleString('id-ID') + ' ' + (activeKs.satuan||'unit') + ')'; })()}</span>
+        <span class="opt-picker-label" id="ks-selector-picker-label">${selKatLabel}</span>
         <span class="opt-picker-arrow">▾</span>
       </button>
-      <button onclick="openModalTambahKS()" class="btn btn-sm" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:var(--accent2);font-size:11px;white-space:nowrap;">+ Kartu Baru</button>
-      ${list.length > 1 ? `<button onclick="openModalKelolaKS()" class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:11px;"><i class="ti ti-settings ti-inline"></i> Kelola</button>` : ''}
+      <button onclick="openModalTambahKategori('${activeKartuStockId}')" class="btn btn-sm" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:var(--accent2);font-size:11px;white-space:nowrap;">+ Kategori</button>
+      <button onclick="openModalKelolaKategoriCard('${activeKartuStockId}')" class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:11px;"><i class="ti ti-settings ti-inline"></i> Kelola</button>
+      <button onclick="openKonversiKartuStock()" class="btn btn-sm" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:var(--accent2);font-size:12px;white-space:nowrap;">↔ Konversi Metode</button>
+      <button id="ks-clear-btn" class="btn btn-danger btn-sm" style="font-size:12px;white-space:nowrap;"><i class="ti ti-trash ti-btn"></i> Hapus Semua Catatan</button>
+      <button id="ks-lock-header-btn" onclick="toggleKartuStockLock('${activeKartuStockId}')" title="${multiKartuStock[activeKartuStockId]?.lockedFromTrx ? 'Dikunci dari transaksi — klik untuk buka' : 'Klik untuk kunci dari picker transaksi'}" style="padding:5px 8px;${multiKartuStock[activeKartuStockId]?.lockedFromTrx ? 'background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:var(--red);' : 'background:var(--surface2);border:1px solid var(--border);color:var(--muted);'}" class="btn btn-sm">${multiKartuStock[activeKartuStockId]?.lockedFromTrx ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>'}</button>
     </div>
-    <div style="font-size:12px;color:var(--accent2);font-weight:600;margin-bottom:6px;">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:4px;opacity:0.7"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>${activeKs?.nama || ''}
-      ${activeKs?.deskripsi ? `<span style="color:var(--muted);font-weight:400;"> — ${activeKs.deskripsi}</span>` : ''}
-      ${activeKs?.satuan ? `<span style="color:var(--muted);font-size:11px;"> · ${activeKs.satuan}</span>` : ''}
-      <button onclick="openModalEditKS('${activeKartuStockId}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;margin-left:6px;">[Edit]</button>
+  `;
+
+  // Update active tab label
+  const tabLabel = document.getElementById('ks-active-tab-label');
+  if(tabLabel) {
+    const activeCard2 = multiKartuStock[activeKartuStockId];
+    const activeKat2  = activeCard2?.kategori?.[activeKategoriId];
+    const katList2    = activeCard2 ? Object.values(activeCard2.kategori||{}) : [];
+    tabLabel.textContent = `${activeKat2 ? activeKat2.nama : (katList2[0]?.nama||'')} · Metode: ${kartuStockTab.toUpperCase()}`;
+    tabLabel.style.display = '';
+  }
+
+  // Render kartu stock tambahan (hasil + Kartu Stock)
+  _renderExtraKsCards();
+  _updateLockHeaderBtn();
+  // Tampilkan/sembunyikan tombol Hapus Kartu Stock
+  const hapusBtn = document.getElementById('hapus-extra-card-btn');
+  if (hapusBtn) hapusBtn.style.display = Object.keys(multiKartuStock).length > 1 ? '' : 'none';
+}
+
+function _renderExtraKsCards() {
+  const container = document.getElementById('ks-extra-cards-container');
+  if (!container) return;
+  const cards = Object.values(multiKartuStock);
+  // Tampilkan semua card KECUALI yang sedang aktif (activeKartuStockId tampil di section utama)
+  const extraCards = cards.filter(card => card.id !== activeKartuStockId);
+  if (!extraCards.length) { container.innerHTML = ''; return; }
+
+  container.innerHTML = extraCards.map(card => {
+    const isActive  = card.id === activeKartuStockId;
+    const katList   = Object.values(card.kategori || {});
+    const activeKat = isActive ? card.kategori?.[activeKategoriId] : katList[0];
+    const metodeLabel = {fifo:'FIFO (First In First Out)',lifo:'LIFO (Last In First Out)',wa:'Weighted Average',mwa:'Moving Average'};
+    const cardMetode  = isActive ? kartuStockTab : 'fifo';
+    const saldoNow    = getCardSaldo(card);
+
+    // Render tabel untuk kategori aktif card ini
+    const katForTable = isActive ? (card.kategori?.[activeKategoriId] || katList[0]) : katList[0];
+    const storageForTable = katForTable ? (JSON.parse(JSON.stringify(katForTable.data?.[cardMetode] || []))) : [];
+
+    // Selector label
+    const selLabel = (()=>{
+      const s = getCardSaldo(card);
+      return card.nama + ' (Stok: ' + s.totalQty.toLocaleString('id-ID') + ' ' + (card.satuan||'unit') + ')';
+    })();
+
+    return `<div class="table-card" style="margin-top:0;" id="ks-extra-${card.id}">
+      <div class="table-header" style="flex-wrap:wrap;gap:8px;">
+        <div class="table-title"><i class="ti ti-clipboard-list ti-inline"></i> Catatan Persediaan / Kartu Stock</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="opt-picker-btn" type="button" onclick="openKsExtraMetodePicker('${card.id}')" style="min-width:180px;max-width:220px;padding:7px 12px;">
+            <span class="opt-picker-label" id="ks-extra-metode-label-${card.id}">${metodeLabel[cardMetode]||cardMetode}</span>
+            <span class="opt-picker-arrow">▾</span>
+          </button>
+        </div>
+      </div>
+      <div style="padding:12px 16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:700;color:var(--accent2);">${card.nama}</span>
+          <span style="font-size:11px;color:var(--muted);">${saldoNow.totalQty.toLocaleString('id-ID')} ${card.satuan||'unit'}</span>
+          <button onclick="openModalEditCard('${card.id}')" title="Edit nama kartu stock" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 4px;line-height:1;vertical-align:middle;border-radius:4px;transition:color .15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <span style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">KARTU STOCK:</span>
+          <button class="opt-picker-btn" type="button" onclick="openKsExtraKatPicker('${card.id}')" style="min-width:200px;max-width:300px;">
+            <span class="opt-picker-label" id="ks-extra-sel-label-${card.id}">${(()=>{ const ak=activeKat||katList[0]; return ak ? ak.nama : 'Pilih kategori...'; })()}</span>
+            <span class="opt-picker-arrow">▾</span>
+          </button>
+          <button onclick="openModalTambahKategori('${card.id}')" class="btn btn-sm" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:var(--accent2);font-size:11px;white-space:nowrap;">+ Kategori</button>
+          <button onclick="openModalKelolaKSExtra('${card.id}')" class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:11px;white-space:nowrap;"><i class="ti ti-settings ti-inline"></i> Kelola</button>
+          <button onclick="openKonversiKartuStock()" class="btn btn-sm" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:var(--accent2);font-size:12px;white-space:nowrap;">↔ Konversi Metode</button>
+          <button onclick="clearExtraCard('${card.id}')" class="btn btn-danger btn-sm" style="font-size:12px;white-space:nowrap;"><i class="ti ti-trash ti-btn"></i> Hapus Semua Catatan</button>
+          <button onclick="toggleKartuStockLock('${card.id}')" class="btn btn-sm" title="${card.lockedFromTrx ? 'Dikunci dari transaksi — klik untuk buka' : 'Klik untuk kunci dari transaksi'}" style="padding:5px 8px;${card.lockedFromTrx ? 'background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:var(--red);' : 'background:var(--surface2);border:1px solid var(--border);color:var(--muted);'}">${card.lockedFromTrx ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>'}</button>
+        </div>
+        <div style="font-size:12px;color:var(--accent);margin-bottom:8px;font-weight:600;" id="ks-extra-active-label-${card.id}">${(()=>{ const ak=activeKat||katList[0]; return (ak?ak.nama:'')+' · Metode: '+cardMetode.toUpperCase(); })()}</div>
+
+
+        <div class="ks-table-wrap"><table>
+          <thead><tr>
+            <th style="min-width:72px;white-space:nowrap">Tgl</th><th style="min-width:80px">Ket</th>
+            <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">MASUK</th>
+            <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">KELUAR</th>
+            <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">SALDO</th>
+            <th style="min-width:44px">Aksi</th>
+          </tr><tr>
+            <th></th><th></th>
+            <th style="border-left:1px solid var(--border);min-width:56px">Qty</th><th style="min-width:96px">Hrg Beli</th><th style="min-width:108px">Jumlah</th>
+            <th style="border-left:1px solid var(--border);min-width:56px">Qty</th><th style="min-width:96px">HPP/Unit</th><th style="min-width:108px">Jumlah</th>
+            <th style="border-left:1px solid var(--border);min-width:56px">Qty</th><th style="min-width:96px">Hrg</th><th style="min-width:108px">Jumlah</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="ks-extra-tbody-${card.id}">
+            ${(()=>{
+              if(!storageForTable.length) return '<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Belum ada catatan. Hitung persediaan lalu klik "Input ke Kartu Stock".</td></tr>';
+              const isLayeredE = (cardMetode==='fifo'||cardMetode==='lifo');
+              const tdS = (row) => {
+                const q = row ? row.qty : 0, h = row ? row.harga : 0;
+                return '<td style="border-left:1px solid var(--border)" class="num">'+(q||0)+'</td><td class="num">'+rp(h||0)+'</td><td class="num">'+rp((q||0)*(h||0))+'</td>';
+              };
+              const getRows = (e) => {
+                if (!isLayeredE) {
+                  const tq = (e.saldoLayers||[]).reduce((s,x)=>s+x.qty,0);
+                  const tv = (e.saldoLayers||[]).reduce((s,x)=>s+x.qty*x.harga,0);
+                  return [{qty:tq, harga:tq?tv/tq:0}];
+                }
+                const l = (e.saldoLayers||[]).filter(x=>x.qty>0);
+                return l.length ? l : [{qty:0,harga:0}];
+              };
+              let html = '';
+              storageForTable.forEach((e, idx) => {
+                const saldoRows = getRows(e);
+                const nS = saldoRows.length;
+                if(e.mQty > 0) {
+                  html += '<tr>'
+                    +'<td rowspan="'+nS+'" style="font-size:11px;vertical-align:top">'+e.tgl+'</td>'
+                    +'<td rowspan="'+nS+'" style="font-size:12px;vertical-align:top">'+(e.ket||'masuk')+'</td>'
+                    +'<td rowspan="'+nS+'" style="border-left:1px solid var(--border)" class="num debit">'+e.mQty+'</td>'
+                    +'<td rowspan="'+nS+'" class="num">'+rp(e.mHarga)+'</td>'
+                    +'<td rowspan="'+nS+'" class="debit">'+rp(e.mQty*e.mHarga)+'</td>'
+                    +'<td rowspan="'+nS+'" style="border-left:1px solid var(--border)" class="num"></td>'
+                    +'<td rowspan="'+nS+'" class="num"></td>'
+                    +'<td rowspan="'+nS+'" class="num"></td>'
+                    +tdS(saldoRows[0])
+                    +'<td rowspan="'+nS+'" style="text-align:center;vertical-align:top"><i class="ti ti-trash" style="color:var(--muted);font-size:13px;"></i></td>'
+                    +'</tr>';
+                  for(let i=1;i<nS;i++) html += '<tr>'+tdS(saldoRows[i])+'</tr>';
+                } else {
+                  const kRows = (isLayeredE && e.keluarLayers && e.keluarLayers.length>1) ? e.keluarLayers : null;
+                  const nK = kRows ? kRows.length : 1;
+                  const maxR = Math.max(nK, nS);
+                  if (!kRows) {
+                    html += '<tr>'
+                      +'<td rowspan="'+maxR+'" style="font-size:11px;vertical-align:top">'+e.tgl+'</td>'
+                      +'<td rowspan="'+maxR+'" style="font-size:12px;vertical-align:top">'+(e.ket||'keluar')+'</td>'
+                      +'<td rowspan="'+maxR+'" style="border-left:1px solid var(--border)" class="num"></td>'
+                      +'<td rowspan="'+maxR+'" class="num"></td>'
+                      +'<td rowspan="'+maxR+'" class="num"></td>'
+                      +'<td rowspan="'+maxR+'" style="border-left:1px solid var(--border)" class="num kredit">'+e.kQty+'</td>'
+                      +'<td rowspan="'+maxR+'" class="num">'+rp(e.kHarga)+'</td>'
+                      +'<td rowspan="'+maxR+'" class="num kredit">'+rp(e.kJml)+'</td>'
+                      +tdS(saldoRows[0])
+                      +'<td rowspan="'+maxR+'" style="text-align:center;vertical-align:top"><i class="ti ti-trash" style="color:var(--muted);font-size:13px;"></i></td>'
+                      +'</tr>';
+                    for(let i=1;i<maxR;i++) html += '<tr>'+tdS(saldoRows[i]||null)+'</tr>';
+                  } else {
+                    html += '<tr>'
+                      +'<td rowspan="'+maxR+'" style="font-size:11px;vertical-align:top">'+e.tgl+'</td>'
+                      +'<td rowspan="'+maxR+'" style="font-size:12px;vertical-align:top">'+(e.ket||'keluar')+'</td>'
+                      +'<td rowspan="'+maxR+'" style="border-left:1px solid var(--border)" class="num"></td>'
+                      +'<td rowspan="'+maxR+'" class="num"></td>'
+                      +'<td rowspan="'+maxR+'" class="num"></td>'
+                      +'<td style="border-left:1px solid var(--border)" class="num kredit">'+kRows[0].qty+'</td>'
+                      +'<td class="num">'+rp(kRows[0].harga)+'</td>'
+                      +'<td class="num kredit">'+rp(kRows[0].qty*kRows[0].harga)+'</td>'
+                      +tdS(saldoRows[0]||null)
+                      +'<td rowspan="'+maxR+'" style="text-align:center;vertical-align:top"><i class="ti ti-trash" style="color:var(--muted);font-size:13px;"></i></td>'
+                      +'</tr>';
+                    for(let i=1;i<maxR;i++) {
+                      const kr=kRows[i]||null, sr=saldoRows[i]||null;
+                      const tdK = kr
+                        ? '<td style="border-left:1px solid var(--border)" class="num kredit">'+kr.qty+'</td><td class="num">'+rp(kr.harga)+'</td><td class="num kredit">'+rp(kr.qty*kr.harga)+'</td>'
+                        : '<td style="border-left:1px solid var(--border)" class="num"></td><td class="num"></td><td class="num"></td>';
+                      html += '<tr>'+tdK+tdS(sr)+'</tr>';
+                    }
+                  }
+                }
+              });
+              return html;
+            })()}
+          </tbody>
+        </table></div>
+        <div id="ks-extra-summary-${card.id}" style="margin-top:12px;${saldoNow.totalQty>0?'':'display:none'}">
+          <div style="grid-template-columns:1fr 1fr 1fr;" class="kalk-grid">
+            <div class="stat-card green"><div class="stat-label">Saldo Qty</div><div class="stat-value">${saldoNow.totalQty.toLocaleString('id-ID')}</div></div>
+            <div class="stat-card blue"><div class="stat-label">Nilai Persediaan</div><div class="stat-value">${fmtRp(saldoNow.totalNilai)}</div></div>
+            <div class="stat-card yellow"><div class="stat-label">Total HPP Tercatat</div><div class="stat-value">${fmtRp(Object.values(card.kategori||{}).reduce((s,k)=>s+Object.values(k.data||{}).flat().reduce((ss,r)=>ss+(r.kJml||0),0),0))}</div></div>
+          </div>
+        </div>
+      </div>
     </div>`;
+  }).join('');
+}
+
+function openKsExtraKatPicker(cardId) {
+  const card = multiKartuStock[cardId]; if(!card) return;
+  const kats = Object.values(card.kategori || {});
+  openOptPicker({
+    title: 'Pilih Kategori — ' + card.nama,
+    options: kats.map(kat => { const s=getKsSaldoKat(kat); return {value:kat.id, label:kat.nama, sub:`Stok: ${s.totalQty} · HPP: ${fmtRp(s.hppNext)}`}; }),
+    currentValue: activeKategoriId,
+    onSelect: (katId) => { switchActiveKS(cardId, katId); }
+  });
+}
+
+function openModalKelolaKSExtra(cardId) {
+  openModalKelolaKategoriCard(cardId);
+}
+
+/** Modal kelola kategori dalam satu card tertentu */
+function openModalKelolaKategoriCard(cardId) {
+  const card = multiKartuStock[cardId]; if(!card) return;
+  const kats = Object.values(card.kategori || {});
+  document.getElementById('mks-kelola-list').innerHTML =
+    `<div style="font-size:12px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+       <i class="ti ti-tag" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Kategori Barang — <span style="color:var(--text)">${card.nama}</span>
+     </div>` +
+    (kats.length === 0
+      ? `<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">Belum ada kategori barang.</div>`
+      : kats.map(kat => {
+          const s = getKsSaldoKat(kat);
+          const isAktif = (cardId === activeKartuStockId && kat.id === activeKategoriId);
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:10px;border:1px solid ${isAktif?'var(--accent)':'var(--border)'};margin-bottom:8px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${isAktif?'▶ ':''}${kat.nama}</div>
+              <div style="font-size:11px;color:var(--muted);">Satuan: ${kat.satuan||card.satuan||'unit'} · Stok: ${s.totalQty.toLocaleString('id-ID')}</div>
+            </div>
+            <button onclick="switchActiveKS('${cardId}','${kat.id}');closeModal('mks-kelola-modal')" class="btn btn-ghost btn-sm" ${isAktif?'disabled':''}>${isAktif?'Aktif':'Buka'}</button>
+            <button onclick="openModalEditKategori('${cardId}','${kat.id}');closeModal('mks-kelola-modal')" class="btn btn-ghost btn-sm"><i class="ti ti-pencil" style="font-size:13px;vertical-align:-2px;"></i></button>
+            ${kats.length > 1 ? `<button onclick="hapusKategori('${cardId}','${kat.id}')" class="btn btn-danger btn-sm" ${isAktif?'disabled':''}><i class="ti ti-trash" style="font-size:13px;vertical-align:-2px;"></i></button>` : ''}
+          </div>`;
+        }).join('')
+    ) +
+    `<button onclick="openModalTambahKategori('${cardId}');closeModal('mks-kelola-modal')" class="btn btn-primary btn-sm" style="margin-top:10px;width:100%;padding:10px;">
+       <i class="ti ti-plus" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Tambah Kategori Baru
+     </button>`;
+  // Update judul modal
+  document.getElementById('mks-kelola-modal').querySelector('.modal-title').textContent = 'Kelola Kategori Barang';
+  openModal('mks-kelola-modal');
+}
+
+function hapusKategori(cardId, katId) {
+  const card = multiKartuStock[cardId]; if(!card) return;
+  const kat = card.kategori?.[katId]; if(!kat) return;
+  _ksConfirm('Hapus kategori "' + kat.nama + '"? Data entri akan hilang permanen.', '<i class="ti ti-trash" style="color:var(--red);font-size:18px;"></i>', function() {
+    _doHapusKategori(cardId, katId);
+  });
+}
+function _doHapusKategori(cardId, katId) {
+  const card = multiKartuStock[cardId]; if(!card) return;
+  const kat = card.kategori?.[katId]; if(!kat) return;
+  if (cardId === activeKartuStockId && katId === activeKategoriId) {
+    const remaining = Object.keys(card.kategori).filter(k => k !== katId);
+    if (remaining.length) { syncKategoriFromKartuStockData(); activeKategoriId = remaining[0]; syncKartuStockDataFromKategori(); }
+  }
+  delete card.kategori[katId];
+  saveMKS();
+  renderKartuStockSelector();
+  renderKartuStock();
+  showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Kategori berhasil dihapus');
+}
+
+function clearExtraCard(cardId) {
+  const card = multiKartuStock[cardId]; if(!card) return;
+  const hasAny = Object.values(card.kategori||{}).some(kat =>
+    Object.values(kat.data||{}).some(arr => arr && arr.length > 0)
+  );
+  if (!hasAny) {
+    showAlert('<i class="ti ti-info-circle" style="color:var(--accent2);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tidak ada catatan yang terdeteksi di kartu stock ini.');
+    return;
+  }
+  _ksConfirm(
+    'Hapus semua catatan di kartu stock "' + card.nama + '"?',
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
+    () => {
+      Object.values(card.kategori||{}).forEach(kat => { kat.data = _ksDefaultData(); });
+      saveMKS();
+      renderKartuStockSelector();
+      renderKartuStock();
+      showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Semua catatan di "' + card.nama + '" berhasil dihapus.');
+    }
+  );
+}
+
+function hapusExtraCardPicker() {
+  // Sekarang fungsi ini membuka modal Kelola Kartu Stock (bukan hanya hapus)
+  openModalKelolaSemuaKartuStock();
+}
+
+/** Modal kelola semua kartu stock: edit nama + hapus */
+function openModalKelolaSemuaKartuStock() {
+  const cards = Object.values(multiKartuStock);
+  document.getElementById('mks-kelola-list').innerHTML =
+    `<div style="font-size:12px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+       Semua Kartu Stock
+     </div>` +
+    cards.map(card => {
+      const s = getCardSaldo(card);
+      const nKat = Object.keys(card.kategori||{}).length;
+      const isAktif = card.id === activeKartuStockId;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:10px;border:1px solid ${isAktif?'var(--accent)':'var(--border)'};margin-bottom:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;">${isAktif?'▶ ':''}${card.nama}</div>
+          <div style="font-size:11px;color:var(--muted);">${nKat} kategori · Stok: ${s.totalQty.toLocaleString('id-ID')} ${card.satuan||'unit'}</div>
+        </div>
+        <button onclick="switchActiveKS('${card.id}');closeModal('mks-kelola-modal')" class="btn btn-ghost btn-sm" ${isAktif?'disabled':''}>${isAktif?'Aktif':'Buka'}</button>
+        <button onclick="openModalEditCard('${card.id}');closeModal('mks-kelola-modal')" class="btn btn-ghost btn-sm"><i class="ti ti-pencil" style="font-size:13px;vertical-align:-2px;"></i></button>
+        <button onclick="toggleKartuStockLock('${card.id}')" class="btn btn-sm" title="${card.lockedFromTrx?'Dikunci dari transaksi':'Klik untuk kunci dari transaksi'}" style="padding:4px 8px;${card.lockedFromTrx?'background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:var(--red);':'background:var(--surface2);border:1px solid var(--border);color:var(--muted);'}">${card.lockedFromTrx?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>'}</button>
+        ${cards.length > 1 ? `<button onclick="hapusCardDenganValidasi('${card.id}')" class="btn btn-danger btn-sm"><i class="ti ti-trash" style="font-size:13px;vertical-align:-2px;"></i></button>` : ''}
+      </div>`;
+    }).join('') +
+    `<button onclick="openModalTambahKS();closeModal('mks-kelola-modal')" class="btn btn-sm" style="margin-top:10px;width:100%;padding:10px;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);color:var(--accent);">
+       <i class="ti ti-plus" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Tambah Kartu Stock Baru
+     </button>`;
+  document.getElementById('mks-kelola-modal').querySelector('.modal-title').textContent = 'Kelola Kartu Stock';
+  openModal('mks-kelola-modal');
+}
+
+function hapusCardDenganValidasi(cardId) {
+  const card = multiKartuStock[cardId]; if(!card) return;
+  const isAktif = (cardId === activeKartuStockId);
+  const sisaCards = Object.keys(multiKartuStock).filter(k => k !== cardId);
+  _ksConfirm('Hapus kartu stock "' + card.nama + '"?\nSemua data akan hilang permanen.', '<i class="ti ti-trash" style="color:var(--red);font-size:18px;"></i>', function() {
+    _doHapusCard(cardId);
+  });
+}
+function _doHapusCard(cardId) {
+  const card = multiKartuStock[cardId]; if(!card) return;
+  const isAktif = (cardId === activeKartuStockId);
+  const sisaCards = Object.keys(multiKartuStock).filter(k => k !== cardId);
+  if (sisaCards.length === 0) {
+    delete multiKartuStock[cardId];
+    activeKartuStockId = null; activeKategoriId = null; kartuStockData = _ksDefaultData();
+    saveMKS(); renderKartuStockSelector(); renderKartuStock();
+    closeModal('mks-kelola-modal');
+    showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Semua kartu stock dihapus. Silakan buat kartu stock baru.');
+    setTimeout(() => openModalTambahKS(), 500);
+    return;
+  }
+  if (isAktif) {
+    const newActiveId = sisaCards[0];
+    syncKategoriFromKartuStockData();
+    delete multiKartuStock[cardId];
+    activeKartuStockId = newActiveId;
+    const newCard = multiKartuStock[newActiveId];
+    activeKategoriId = newCard?.kategori ? Object.keys(newCard.kategori)[0] : null;
+    syncKartuStockDataFromKategori();
+  } else {
+    delete multiKartuStock[cardId];
+  }
+  saveMKS(); renderKartuStockSelector(); renderKartuStock();
+  closeModal('mks-kelola-modal');
+  showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Kartu stock "' + card.nama + '" berhasil dihapus');
 }
 
 function openKsSelectorPicker() {
-  const list = Object.values(multiKartuStock);
-  if(!list.length) return;
+  const card = multiKartuStock[activeKartuStockId];
+  if(!card) return;
+  const katList = Object.values(card.kategori || {});
+  if(!katList.length) { showAlert('Belum ada kategori. Klik + Kategori untuk menambah.'); return; }
+
   openOptPicker({
-    title: 'Pilih Kartu Stock',
-    options: list.map(ks => ({
-      value: ks.id,
-      label: ks.nama,
-      sub: (()=>{ const _s=getKsSaldo(ks); return `Stok: ${_s.totalQty.toLocaleString('id-ID')} ${ks.satuan||'unit'} · HPP: ${fmtRp(_s.hppNext)}${ks.deskripsi?' · '+ks.deskripsi:''}`; })(),
-    })),
-    currentValue: activeKartuStockId,
-    onSelect: (ksId) => {
-      switchActiveKS(ksId);
+    title: 'Pilih Kategori',
+    options: katList.map(kat => {
+      const s = getKsSaldoKat(kat);
+      return {
+        value: kat.id,
+        label: kat.nama,
+        sub: `Stok: ${s.totalQty.toLocaleString('id-ID')} · HPP: ${fmtRp(s.hppNext)}`,
+      };
+    }),
+    currentValue: activeKategoriId,
+    onSelect: (katId) => { switchActiveKategori(katId); }
+  });
+}
+
+function openKsExtraMetodePicker(cardId) {
+  openOptPicker({
+    title: 'Pilih Metode',
+    options: [
+      {value:'fifo', label:'FIFO', sub:'First In First Out'},
+      {value:'lifo', label:'LIFO', sub:'Last In First Out'},
+      {value:'wa',   label:'Weighted Average', sub:'Rata-rata Tertimbang'},
+      {value:'mwa',  label:'Moving Average', sub:'Rata-rata Bergerak'},
+    ],
+    currentValue: kartuStockTab,
+    onSelect: (val, label) => {
+      const lbl = document.getElementById('ks-extra-metode-label-' + cardId);
+      if(lbl) lbl.textContent = label;
+      // Switch ke card ini dan render tabelnya
+      switchActiveKS(cardId);
+      const tabMap = {fifo:'FIFO',lifo:'LIFO',wa:'Weighted Average (Rata-rata Tertimbang)',mwa:'Moving Average (Rata-rata Bergerak)'};
+      if(typeof switchKartuStockTab === 'function') {
+        const el = document.getElementById('ks-tab-' + val) || _makeKsTabEl(val);
+        switchKartuStockTab(val, el);
+      }
     }
   });
 }
 
 function openModalTambahKS() {
-  document.getElementById('mks-modal-title').textContent = '+ Tambah Kartu Stock Baru';
+  document.getElementById('mks-modal-title').textContent = '+ Tambah Kartu Stock';
   document.getElementById('mks-input-nama').value = '';
-  document.getElementById('mks-input-desc').value = '';
   document.getElementById('mks-input-satuan').value = 'unit';
+  document.getElementById('mks-label-nama').innerHTML = 'Nama Kartu Stock <span style="color:var(--red)">*</span>';
+  document.getElementById('mks-field-satuan').style.display = 'none'; // kartu stock tidak perlu satuan
   document.getElementById('mks-modal')._editId = null;
+  document.getElementById('mks-modal')._mode = 'card';
+  openModal('mks-modal');
+  setTimeout(()=>document.getElementById('mks-input-nama')?.focus(), 100);
+}
+
+function openModalTambahKategori(cardId) {
+  document.getElementById('mks-modal-title').textContent = '+ Tambah Barang / Kategori';
+  document.getElementById('mks-input-nama').value = '';
+  document.getElementById('mks-label-nama').innerHTML = 'Nama Barang <span style="color:var(--red)">*</span>';
+  document.getElementById('mks-field-satuan').style.display = ''; // kategori barang perlu satuan
+  document.getElementById('mks-input-satuan').value = multiKartuStock[cardId]?.satuan || 'unit';
+  document.getElementById('mks-modal')._editId = null;
+  document.getElementById('mks-modal')._mode = 'kategori';
+  document.getElementById('mks-modal')._cardId = cardId;
+  openModal('mks-modal');
+  setTimeout(()=>document.getElementById('mks-input-nama')?.focus(), 100);
+}
+
+function openModalEditCard(cardId) {
+  const card = multiKartuStock[cardId]; if(!card) return;
+  document.getElementById('mks-modal-title').textContent = 'Ganti Nama';
+  document.getElementById('mks-input-nama').value = card.nama;
+  document.getElementById('mks-label-nama').innerHTML = 'Nama Kartu Stock <span style="color:var(--red)">*</span>';
+  document.getElementById('mks-field-satuan').style.display = 'none';
+  document.getElementById('mks-modal')._editId = cardId;
+  document.getElementById('mks-modal')._mode = 'editcard';
   openModal('mks-modal');
   setTimeout(()=>document.getElementById('mks-input-nama')?.focus(), 100);
 }
 
 function openModalEditKS(ksId) {
-  const ks = multiKartuStock[ksId]; if(!ks) return;
-  document.getElementById('mks-modal-title').textContent = '[Edit] Edit Kartu Stock';
-  document.getElementById('mks-input-nama').value = ks.nama;
-  document.getElementById('mks-input-desc').value = ks.deskripsi || '';
-  document.getElementById('mks-input-satuan').value = ks.satuan || 'unit';
-  document.getElementById('mks-modal')._editId = ksId;
+  // Legacy: ksId bisa card atau kategori — coba card dulu
+  openModalEditCard(ksId);
+}
+
+function openModalEditKategori(cardId, katId) {
+  const card = multiKartuStock[cardId]; if(!card) return;
+  const kat = card.kategori?.[katId]; if(!kat) return;
+  document.getElementById('mks-modal-title').textContent = 'Edit Kategori';
+  document.getElementById('mks-input-nama').value = kat.nama;
+  document.getElementById('mks-input-desc').value = kat.deskripsi || '';
+  document.getElementById('mks-input-satuan').value = kat.satuan || card.satuan || 'unit';
+  document.getElementById('mks-modal')._editId = katId;
+  document.getElementById('mks-modal')._mode = 'editkategori';
+  document.getElementById('mks-modal')._cardId = cardId;
   openModal('mks-modal');
 }
 
 function simpanModalKS() {
-  const nama = document.getElementById('mks-input-nama').value.trim();
-  const desc = document.getElementById('mks-input-desc').value.trim();
+  const nama   = document.getElementById('mks-input-nama').value.trim();
+  const desc   = document.getElementById('mks-input-desc').value.trim();
   const satuan = document.getElementById('mks-input-satuan').value.trim() || 'unit';
-  if (!nama) { showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Nama kartu stock wajib diisi'); return; }
-  const editId = document.getElementById('mks-modal')._editId;
-  if (editId) {
-    multiKartuStock[editId].nama = nama;
-    multiKartuStock[editId].deskripsi = desc;
-    multiKartuStock[editId].satuan = satuan;
-  } else {
-    const newId = 'ks_' + Date.now();
-    multiKartuStock[newId] = {
-      id: newId, nama, deskripsi: desc, satuan,
-      createdAt: new Date().toISOString(), data: _ksDefaultData()
+  if (!nama) { showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Nama wajib diisi'); return; }
+
+  const modal  = document.getElementById('mks-modal');
+  const mode   = modal._mode || 'card';
+  const editId = modal._editId;
+  const cardId = modal._cardId;
+
+  if (mode === 'card') {
+    // Buat CARD baru — section terpisah di bawah
+    const newCardId = 'card_' + Date.now();
+    const newKatId  = 'kat_'  + Date.now();
+    syncKategoriFromKartuStockData();
+    multiKartuStock[newCardId] = {
+      id: newCardId, nama, satuan, createdAt: new Date().toISOString(),
+      kategori: {
+        [newKatId]: { id: newKatId, nama, satuan, deskripsi: desc, data: _ksDefaultData() }
+      }
     };
-    // Otomatis switch ke kartu baru
-    if (activeKartuStockId && multiKartuStock[activeKartuStockId]) {
-      multiKartuStock[activeKartuStockId].data = kartuStockData;
+    // Tidak switch active — card baru tampil di section tambahan
+    showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Kartu stock "${nama}" berhasil dibuat!`);
+
+  } else if (mode === 'kategori') {
+    // Tambah KATEGORI ke card
+    const card = multiKartuStock[cardId]; if(!card) return;
+    const newKatId = 'kat_' + Date.now();
+    if (!card.kategori) card.kategori = {};
+    card.kategori[newKatId] = { id: newKatId, nama, satuan, deskripsi: desc, data: _ksDefaultData() };
+    // Switch ke kategori baru
+    if (cardId === activeKartuStockId) {
+      syncKategoriFromKartuStockData();
+      activeKategoriId = newKatId;
+      syncKartuStockDataFromKategori();
     }
-    activeKartuStockId = newId;
-    kartuStockData = multiKartuStock[newId].data;
+    showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Kategori "${nama}" berhasil ditambahkan!`);
+
+  } else if (mode === 'editcard') {
+    // Edit CARD
+    if (multiKartuStock[editId]) {
+      multiKartuStock[editId].nama   = nama;
+      multiKartuStock[editId].satuan = satuan;
+    }
+    showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> "${nama}" berhasil diperbarui`);
+
+  } else if (mode === 'editkategori') {
+    // Edit KATEGORI
+    const card = multiKartuStock[cardId];
+    if (card?.kategori?.[editId]) {
+      card.kategori[editId].nama    = nama;
+      card.kategori[editId].satuan  = satuan;
+      card.kategori[editId].deskripsi = desc;
+    }
+    showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> "${nama}" berhasil diperbarui`);
   }
+
   closeModal('mks-modal');
   saveMKS();
   renderKartuStockSelector();
   renderKartuStock();
-  showAlert(editId ? `<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> "${nama}" berhasil diperbarui` : `<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Kartu stock "${nama}" berhasil dibuat!`);
 }
 
 function openModalKelolaKS() {
   const list = Object.values(multiKartuStock);
   const el = document.getElementById('mks-kelola-modal');
   document.getElementById('mks-kelola-list').innerHTML = list.map(ks => {
-    const total = Object.values(ks.data).reduce((s,arr)=>s+(arr?.length||0),0);
+    const total = Object.values(ks.kategori || {}).reduce((s, kat) =>
+      s + Object.values(kat.data || {}).reduce((ss, arr) => ss + (arr?.length || 0), 0), 0);
     const isActive = ks.id === activeKartuStockId;
     return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:10px;border:1px solid ${isActive?'var(--accent)':'var(--border)'};margin-bottom:8px;">
       <div style="flex:1;">
@@ -10903,41 +11638,78 @@ function hapusKS(ksId) {
 }
 
 /** Popup pilih kartu stock saat user klik Input dari preview persediaan */
-function showPilihKartuStockPopup(onSelect, tujuanMetode) {
-  const list = Object.values(multiKartuStock);
-  // Jika hanya 1, langsung pilih tanpa popup
-  if (list.length === 1) { onSelect(list[0].id); return; }
+function showPilihKartuStockPopup(onSelectKat, tujuanMetode) {
+  // onSelectKat dipanggil dengan katId (kategori), bukan cardId
+  const cards = Object.values(multiKartuStock);
+  if(!cards.length) { showAlert('Belum ada kartu stock.'); return; }
 
-  // Gunakan metode dari parameter (metode transaksi) jika ada, bukan kartuStockTab (filter)
-  const metodeLabel = tujuanMetode
-    ? { fifo:'FIFO (First In First Out)', lifo:'LIFO (Last In First Out)', wa:'Weighted Average', mwa:'Moving Weighted Average' }[tujuanMetode] || tujuanMetode.toUpperCase()
-    : kartuStockTab.toUpperCase();
-  const metodeKey = tujuanMetode || kartuStockTab;
+  const mLabel = {fifo:'FIFO',lifo:'LIFO',wa:'WA',mwa:'MWA'};
 
-  const el = document.getElementById('mks-pilih-modal');
-  document.getElementById('mks-pilih-list').innerHTML = list.map(ks => {
-    const total = (ks.data[metodeKey] || []).length;
-    const isActive = ks.id === activeKartuStockId;
-    return `<div onclick="document.querySelectorAll('.mks-pilih-item').forEach(x=>x.classList.remove('selected'));this.classList.add('selected');document.getElementById('mks-pilih-ok').dataset.ksId=this.dataset.ksId"
-      class="mks-pilih-item ${isActive?'selected':''}" data-ks-id="${ks.id}"
-      style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:12px;border:1px solid ${isActive?'var(--accent)':'var(--border)'};margin-bottom:8px;cursor:pointer;transition:all 0.15s;">
-      <div style="flex:1;">
-        <div style="font-size:13px;font-weight:600;">${ks.nama}</div>
-        <div style="font-size:11px;color:var(--muted);">${ks.deskripsi||'—'} · ${ks.satuan} · ${total} entri · Tujuan: <b>${metodeLabel}</b></div>
-      </div>
-      <div class="mks-pilih-radio" style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;">
-        ${isActive?'<div style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></div>':''}
-      </div>
-    </div>`;
-  }).join('') + `<button onclick="openModalTambahKS();closeModal('mks-pilih-modal')" style="width:100%;background:rgba(34,211,238,0.08);border:1px dashed rgba(34,211,238,0.3);border-radius:10px;padding:10px;color:var(--accent2);font-size:12px;cursor:pointer;font-family:var(--sans);">+ Buat Kartu Stock Baru</button>`;
+  // Jika hanya 1 card, skip level 1
+  if(cards.length === 1) {
+    const kats = Object.values(cards[0].kategori || {});
+    if(kats.length === 0) { showAlert('Kartu stock belum punya barang. Tambah dulu di Persediaan.'); return; }
+    if(kats.length === 1) { _doSelectKartuForInput(kats[0].id, onSelectKat); return; }
+    // 1 card, >1 kategori — langsung ke level 2
+    const card = cards[0];
+    const mLabel = {fifo:'FIFO',lifo:'LIFO',wa:'WA',mwa:'MWA'};
+    openOptPicker({
+      title: 'Pilih Barang — ' + card.nama,
+      options: kats.map(kat => {
+        const s = getKsSaldoKat(kat);
+        const total = (kat.data?.[tujuanMetode||kartuStockTab] || []).length;
+        return { value: kat.id, label: kat.nama,
+          sub: `Stok: ${s.totalQty} · ${total} entri` };
+      }),
+      currentValue: activeKategoriId,
+      onSelect: (katId) => { _doSelectKartuForInput(katId, onSelectKat); }
+    });
+    return;
+  }
 
-  document.getElementById('mks-pilih-ok').dataset.ksId = activeKartuStockId;
-  document.getElementById('mks-pilih-ok').onclick = () => {
-    const ksId = document.getElementById('mks-pilih-ok').dataset.ksId;
-    closeModal('mks-pilih-modal');
-    onSelect(ksId);
-  };
-  openModal('mks-pilih-modal');
+  // Level 1: pilih kartu stock (card)
+  openOptPicker({
+    title: 'Pilih Kartu Stock',
+    options: cards.map(card => {
+      const s = getCardSaldo(card);
+      return {
+        value: card.id,
+        label: card.nama,
+        sub: `Stok: ${s.totalQty.toLocaleString('id-ID')} ${card.satuan||'unit'} · ${Object.keys(card.kategori||{}).length} barang`,
+      };
+    }),
+    currentValue: activeKartuStockId,
+    onSelect: (cardId) => {
+      const card = multiKartuStock[cardId]; if(!card) return;
+      const kats = Object.values(card.kategori || {});
+      if(!kats.length) { showAlert('Kartu stock ini belum punya barang.'); return; }
+      if(kats.length === 1) { _doSelectKartuForInput(kats[0].id, onSelectKat); return; }
+      // Level 2: pilih kategori/barang
+      openOptPicker({
+        title: 'Pilih Barang — ' + card.nama,
+        options: kats.map(kat => {
+          const s = getKsSaldoKat(kat);
+          const metodeKey = tujuanMetode || kartuStockTab;
+          const total = (kat.data?.[metodeKey] || []).length;
+          return {
+            value: kat.id,
+            label: kat.nama,
+            sub: `Stok: ${s.totalQty} · ${total} entri · Tujuan: ${(mLabel[tujuanMetode]||tujuanMetode||'FIFO').toUpperCase()}`,
+          };
+        }),
+        currentValue: activeKategoriId,
+        onSelect: (katId) => { _doSelectKartuForInput(katId, onSelectKat); }
+      });
+    }
+  });
+}
+
+function _doSelectKartuForInput(katId, onSelectKat) {
+  // Switch ke card+kategori yang dipilih, lalu jalankan callback
+  const found = _findKatById(katId);
+  if(!found) return;
+  switchActiveKS(found.card.id, katId);
+  onSelectKat(katId);
 }
 
 
@@ -11006,9 +11778,9 @@ function updateKsConvPreview() {
   document.getElementById('ks-conv-label-ke').textContent    = _ksLabel[_ksConvKe];
   document.getElementById('ks-conv-count-dari').textContent  = srcMasuk.length + ' entri masuk tersedia';
   document.getElementById('ks-conv-count-ke').textContent    = dstMasuk.length + ' entri sudah ada';
-  document.getElementById('ks-dari-info').textContent        =
+  document.getElementById('ks-dari-info').innerHTML =
     srcData.length ? `${srcData.length} total baris (${srcMasuk.length} masuk, ${srcData.filter(e=>e.kQty>0).length} keluar)` : '<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Belum ada data di metode ini';
-  document.getElementById('ks-ke-info').textContent          =
+  document.getElementById('ks-ke-info').innerHTML =
     dstData.length ? `${dstData.length} total baris (${dstMasuk.length} masuk, ${dstData.filter(e=>e.kQty>0).length} keluar)` : 'Kosong — akan diisi dari konversi';
 }
 
@@ -11188,15 +11960,20 @@ function inputKeKartuStock() {
   if(!kartu || !kartu.length) { showAlert('Hitung persediaan dulu!'); return; }
 
   // Kirim tujuanMetode ke popup agar keterangan tampil benar
-  showPilihKartuStockPopup((ksId) => {
-    // Switch active KS ke pilihan user
-    switchActiveKS(ksId);
+  showPilihKartuStockPopup((katId) => {
+    // _doSelectKartuForInput sudah switch active, langsung input
     _doInputKeKartuStock(kartu, metode);
   }, metode);
 }
 
 function _doInputKeKartuStock(kartu, metode) {
-  const storage = kartuStockData[metode];
+  // Ambil langsung dari kategori aktif (bukan kartuStockData yang sudah deep copy)
+  const activeKat = getActiveKategori();
+  if(!activeKat) { showAlert('Pilih kategori terlebih dahulu!'); return; }
+  if(!activeKat.data[metode]) activeKat.data[metode] = [];
+  const storage = activeKat.data[metode];
+  // Sync kartuStockData agar render benar
+  kartuStockData = activeKat.data;
   let runningStock = rebuildStockFromKartu(storage, metode);
 
   kartu.forEach(k => {
@@ -11289,19 +12066,32 @@ function rebuildStockFromKartu(storage, metode) {
   return stock;
 }
 
-function renderKartuStock() {
-  const storage = kartuStockData[kartuStockTab] || [];
-  const tbody = document.getElementById('ks-table-body');
+function _buildKartuStockTable(storage) {
   const isLayered = (kartuStockTab==='fifo'||kartuStockTab==='lifo');
-  if(!storage.length) {
-    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Belum ada catatan untuk metode ini.</td></tr>';
-    document.getElementById('ks-stock-summary').style.display='none';
-    _attachKartuStockEvents(tbody);
-    return;
-  }
-  let html = '';
+  let html = `<div class="table-scroll"><table style="min-width:700px;">
+    <thead>
+      <tr>
+        <th>Tgl</th><th>Ket</th>
+        <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">MASUK</th>
+        <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">KELUAR</th>
+        <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">SALDO</th>
+        <th>Aksi</th>
+      </tr>
+      <tr>
+        <th></th><th></th>
+        <th style="border-left:1px solid var(--border)">Qty</th><th>Hrg Beli</th><th>Jumlah</th>
+        <th style="border-left:1px solid var(--border)">Qty</th><th>HPP/Unit</th><th>Jumlah</th>
+        <th style="border-left:1px solid var(--border)">Qty</th><th>Hrg</th><th>Jumlah</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="ks-table-body">`;
+
   storage.forEach((e, idx) => {
-    const saldoRows = isLayered ? e.saldoLayers : [{qty:e.saldoLayers.reduce((s,x)=>s+x.qty,0), harga:e.saldoLayers.length?e.saldoLayers.reduce((s,x)=>s+x.qty*x.harga,0)/e.saldoLayers.reduce((s,x)=>s+x.qty,0):0}];
+    const saldoRows = isLayered
+      ? e.saldoLayers
+      : [{qty: e.saldoLayers.reduce((s,x)=>s+x.qty,0), harga: e.saldoLayers.length ? e.saldoLayers.reduce((s,x)=>s+x.qty*x.harga,0)/e.saldoLayers.reduce((s,x)=>s+x.qty,0) : 0}];
+
     if(e.mQty > 0) {
       const rowspan = Math.max(saldoRows.length, 1);
       html += `<tr>
@@ -11316,7 +12106,7 @@ function renderKartuStock() {
         <td style="border-left:1px solid var(--border)" class="num">${saldoRows[0]?.qty||0}</td>
         <td class="num">${rp(saldoRows[0]?.harga||0)}</td>
         <td class="num">${rp((saldoRows[0]?.qty||0)*(saldoRows[0]?.harga||0))}</td>
-        <td rowspan="${rowspan}" style="text-align:center"><button class="ks-hapus-btn" data-idx="${idx}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px 8px;" title="Hapus baris"><i class="ti ti-trash ti-btn"></i></button></td>
+        <td rowspan="${rowspan}" style="text-align:center"><button class="ks-hapus-btn" data-idx="${idx}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px 8px;"><i class="ti ti-trash ti-btn"></i></button></td>
       </tr>`;
       for(let i=1;i<saldoRows.length;i++) {
         html += `<tr><td style="border-left:1px solid var(--border)" class="num">${saldoRows[i].qty}</td><td class="num">${rp(saldoRows[i].harga)}</td><td class="num">${rp(saldoRows[i].qty*saldoRows[i].harga)}</td></tr>`;
@@ -11325,74 +12115,191 @@ function renderKartuStock() {
       const keluarRows = (isLayered && e.keluarLayers && e.keluarLayers.length > 1) ? e.keluarLayers : null;
       const maxRows = Math.max(keluarRows?keluarRows.length:1, saldoRows.length||1);
       const jurnalBadge = e.jurnalDone
-        ? '<span style="color:var(--accent);font-size:10px;display:block;margin-bottom:4px;"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>jurnal</span>'
+        ? '<span style="color:var(--accent);font-size:10px;display:block;margin-bottom:4px;"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;"></i>jurnal</span>'
         : `<button class="ks-jurnal-btn" data-idx="${idx}" style="background:rgba(34,211,238,0.1);border:1px solid var(--accent2);color:var(--accent2);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--sans);display:block;margin-bottom:4px;"><i class="ti ti-download ti-inline"></i> Jurnal</button>`;
       if(!keluarRows) {
         html += `<tr>
           <td rowspan="${maxRows}" style="font-size:11px">${e.tgl}</td>
           <td rowspan="${maxRows}" style="font-size:12px">${e.ket||'keluar'}</td>
           <td rowspan="${maxRows}" style="border-left:1px solid var(--border)" class="num"></td>
-          <td rowspan="${maxRows}" class="num"></td>
-          <td rowspan="${maxRows}" class="num"></td>
+          <td rowspan="${maxRows}" class="num"></td><td rowspan="${maxRows}" class="num"></td>
           <td rowspan="${maxRows}" style="border-left:1px solid var(--border)" class="num kredit">${e.kQty}</td>
           <td rowspan="${maxRows}" class="num">${rp(e.kHarga)}</td>
           <td rowspan="${maxRows}" class="num kredit">${rp(e.kJml)}</td>
           <td style="border-left:1px solid var(--border)" class="num">${saldoRows[0]?.qty||0}</td>
           <td class="num">${rp(saldoRows[0]?.harga||0)}</td>
           <td class="num">${rp((saldoRows[0]?.qty||0)*(saldoRows[0]?.harga||0))}</td>
-          <td rowspan="${maxRows}" style="text-align:center;vertical-align:middle;padding:6px;">${jurnalBadge}<button class="ks-hapus-btn" data-idx="${idx}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px 8px;" title="Hapus"><i class="ti ti-trash ti-btn"></i></button></td>
+          <td rowspan="${maxRows}" style="text-align:center;vertical-align:middle;padding:6px;">${jurnalBadge}<button class="ks-hapus-btn" data-idx="${idx}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px 8px;"><i class="ti ti-trash ti-btn"></i></button></td>
         </tr>`;
         for(let i=1;i<saldoRows.length;i++) {
-          html += `<tr><td style="border-left:1px solid var(--border)" class="num">${saldoRows[i].qty||0}</td><td class="num">${rp(saldoRows[i].harga||0)}</td><td class="num">${rp((saldoRows[i].qty||0)*(saldoRows[i].harga||0))}</td></tr>`;
+          html += `<tr><td style="border-left:1px solid var(--border)" class="num">${saldoRows[i]?.qty||0}</td><td class="num">${rp(saldoRows[i]?.harga||0)}</td><td class="num">${rp((saldoRows[i]?.qty||0)*(saldoRows[i]?.harga||0))}</td></tr>`;
+        }
+      }
+    }
+  });
+  html += '</tbody></table></div>';
+
+  // Attach events after render
+  setTimeout(() => {
+    const tbody = document.getElementById('ks-table-body');
+    if(tbody) _attachKartuStockEvents(tbody);
+  }, 50);
+
+  return html;
+}
+
+function renderKartuStock() {
+  const storage = kartuStockData[kartuStockTab] || [];
+  const tbody = document.getElementById('ks-table-body');
+  const isLayered = (kartuStockTab==='fifo'||kartuStockTab==='lifo');
+  if(!storage.length) {
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Belum ada catatan untuk metode ini.</td></tr>';
+    document.getElementById('ks-stock-summary').style.display='none';
+    _attachKartuStockEvents(tbody);
+    return;
+  }
+
+  // Helper: normalisasi saldoLayers sesuai metode
+  function getSaldoRows(e) {
+    if (!isLayered) {
+      const totalQty   = (e.saldoLayers||[]).reduce((s,x)=>s+x.qty, 0);
+      const totalNilai = (e.saldoLayers||[]).reduce((s,x)=>s+x.qty*x.harga, 0);
+      const harga = totalQty > 0 ? totalNilai / totalQty : 0;
+      return [{qty: totalQty, harga}];
+    }
+    const layers = (e.saldoLayers||[]).filter(x=>x.qty>0);
+    return layers.length ? layers : [{qty:0, harga:0}];
+  }
+
+  // Helper: render sel SALDO (3 kolom)
+  function tdSaldo(row) {
+    const qty   = row ? row.qty   : 0;
+    const harga = row ? row.harga : 0;
+    return `<td style="border-left:1px solid var(--border)" class="num">${qty||0}</td>`
+         + `<td class="num">${rp(harga||0)}</td>`
+         + `<td class="num">${rp((qty||0)*(harga||0))}</td>`;
+  }
+
+  // Helper: render sel kosong (n kolom)
+  function tdEmpty(n) { return '<td></td>'.repeat(n); }
+
+  let html = '';
+  storage.forEach((e, idx) => {
+    const saldoRows = getSaldoRows(e);
+    const nSaldo    = saldoRows.length;   // jumlah baris yang dibutuhkan untuk saldo
+
+    if (e.mQty > 0) {
+      // ── BARIS MASUK ──────────────────────────────────────────────
+      // Baris pertama: semua kolom + saldo baris pertama
+      html += `<tr>
+        <td rowspan="${nSaldo}" style="font-size:11px;vertical-align:top">${e.tgl}</td>
+        <td rowspan="${nSaldo}" style="font-size:12px;vertical-align:top">${e.ket||'masuk'}</td>
+        <td rowspan="${nSaldo}" style="border-left:1px solid var(--border)" class="num debit">${e.mQty}</td>
+        <td rowspan="${nSaldo}" class="num">${rp(e.mHarga)}</td>
+        <td rowspan="${nSaldo}" class="debit">${rp(e.mQty*e.mHarga)}</td>
+        <td rowspan="${nSaldo}" style="border-left:1px solid var(--border)" class="num"></td>
+        <td rowspan="${nSaldo}" class="num"></td>
+        <td rowspan="${nSaldo}" class="num"></td>
+        ${tdSaldo(saldoRows[0])}
+        <td rowspan="${nSaldo}" style="text-align:center;vertical-align:top">
+          <button class="ks-hapus-btn" data-idx="${idx}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px 8px;" title="Hapus baris">
+            <i class="ti ti-trash ti-btn"></i>
+          </button>
+        </td>
+      </tr>`;
+      // Baris tambahan untuk layer saldo ke-2, ke-3, dst
+      for (let i = 1; i < nSaldo; i++) {
+        html += `<tr>${tdSaldo(saldoRows[i])}</tr>`;
+      }
+
+    } else {
+      // ── BARIS KELUAR ─────────────────────────────────────────────
+      const keluarRows = (isLayered && e.keluarLayers && e.keluarLayers.length > 1) ? e.keluarLayers : null;
+      const nKeluar    = keluarRows ? keluarRows.length : 1;
+      const maxRows    = Math.max(nKeluar, nSaldo);
+
+      const jurnalBadge = e.jurnalDone
+        ? `<span style="color:var(--accent);font-size:10px;display:block;margin-bottom:4px;">
+             <i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>jurnal
+           </span>`
+        : `<button class="ks-jurnal-btn" data-idx="${idx}"
+             style="background:rgba(34,211,238,0.1);border:1px solid var(--accent2);color:var(--accent2);
+                    border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;
+                    font-family:var(--sans);display:block;margin-bottom:4px;">
+             <i class="ti ti-download ti-inline"></i> Jurnal
+           </button>`;
+
+      if (!keluarRows) {
+        // Keluar tidak multi-layer — kolom KELUAR pakai rowspan penuh
+        html += `<tr>
+          <td rowspan="${maxRows}" style="font-size:11px;vertical-align:top">${e.tgl}</td>
+          <td rowspan="${maxRows}" style="font-size:12px;vertical-align:top">${e.ket||'keluar'}</td>
+          <td rowspan="${maxRows}" style="border-left:1px solid var(--border)" class="num"></td>
+          <td rowspan="${maxRows}" class="num"></td>
+          <td rowspan="${maxRows}" class="num"></td>
+          <td rowspan="${maxRows}" style="border-left:1px solid var(--border)" class="num kredit">${e.kQty}</td>
+          <td rowspan="${maxRows}" class="num">${rp(e.kHarga)}</td>
+          <td rowspan="${maxRows}" class="num kredit">${rp(e.kJml)}</td>
+          ${tdSaldo(saldoRows[0])}
+          <td rowspan="${maxRows}" style="text-align:center;vertical-align:top;padding:6px;">
+            ${jurnalBadge}
+            <button class="ks-hapus-btn" data-idx="${idx}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px 8px;" title="Hapus">
+              <i class="ti ti-trash ti-btn"></i>
+            </button>
+          </td>
+        </tr>`;
+        for (let i = 1; i < maxRows; i++) {
+          html += `<tr>${tdSaldo(saldoRows[i]||null)}</tr>`;
         }
       } else {
+        // Keluar multi-layer (FIFO/LIFO) — render baris per layer keluar + saldo
         html += `<tr>
-          <td rowspan="${maxRows}" style="font-size:11px">${e.tgl}</td>
-          <td rowspan="${maxRows}" style="font-size:12px">${e.ket||'keluar'}</td>
+          <td rowspan="${maxRows}" style="font-size:11px;vertical-align:top">${e.tgl}</td>
+          <td rowspan="${maxRows}" style="font-size:12px;vertical-align:top">${e.ket||'keluar'}</td>
           <td rowspan="${maxRows}" style="border-left:1px solid var(--border)" class="num"></td>
           <td rowspan="${maxRows}" class="num"></td>
           <td rowspan="${maxRows}" class="num"></td>
           <td style="border-left:1px solid var(--border)" class="num kredit">${keluarRows[0].qty}</td>
           <td class="num">${rp(keluarRows[0].harga)}</td>
           <td class="num kredit">${rp(keluarRows[0].qty*keluarRows[0].harga)}</td>
-          <td style="border-left:1px solid var(--border)" class="num">${saldoRows[0]?.qty||''}</td>
-          <td class="num">${saldoRows[0]?.harga?rp(saldoRows[0].harga):''}</td>
-          <td class="num">${saldoRows[0]?.qty?rp(saldoRows[0].qty*saldoRows[0].harga):''}</td>
-          <td rowspan="${maxRows}" style="text-align:center;vertical-align:middle;padding:6px;">${jurnalBadge}<button class="ks-hapus-btn" data-idx="${idx}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px 8px;"><i class="ti ti-trash ti-btn"></i></button></td>
+          ${tdSaldo(saldoRows[0]||null)}
+          <td rowspan="${maxRows}" style="text-align:center;vertical-align:top;padding:6px;">
+            ${jurnalBadge}
+            <button class="ks-hapus-btn" data-idx="${idx}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px 8px;">
+              <i class="ti ti-trash ti-btn"></i>
+            </button>
+          </td>
         </tr>`;
-        for(let i=1;i<maxRows;i++) {
-          const kr=keluarRows[i]||null; const sr=saldoRows[i]||null;
-          html += `<tr>
-            <td style="border-left:1px solid var(--border)" class="num kredit">${kr?kr.qty:''}</td>
-            <td class="num">${kr?rp(kr.harga):''}</td>
-            <td class="num kredit">${kr?rp(kr.qty*kr.harga):''}</td>
-            <td style="border-left:1px solid var(--border)" class="num">${sr?sr.qty:''}</td>
-            <td class="num">${sr?rp(sr.harga):''}</td>
-            <td class="num">${sr?rp(sr.qty*sr.harga):''}</td>
-          </tr>`;
+        for (let i = 1; i < maxRows; i++) {
+          const kr = keluarRows[i] || null;
+          const sr = saldoRows[i]  || null;
+          const tdK = kr
+            ? `<td style="border-left:1px solid var(--border)" class="num kredit">${kr.qty}</td><td class="num">${rp(kr.harga)}</td><td class="num kredit">${rp(kr.qty*kr.harga)}</td>`
+            : `<td style="border-left:1px solid var(--border)" class="num"></td><td class="num"></td><td class="num"></td>`;
+          html += `<tr>${tdK}${tdSaldo(sr)}</tr>`;
         }
       }
     }
   });
-  tbody.innerHTML = html;
-  _attachKartuStockEvents(tbody);
+
+  if (tbody) { tbody.innerHTML = html; _attachKartuStockEvents(tbody); }
 
   // Update summary
-  const lastEntry = storage[storage.length-1];
-  const sl = lastEntry ? lastEntry.saldoLayers : [];
-  const saldoQty = sl.reduce((s,x)=>s+x.qty,0);
-  const saldoNilai = sl.reduce((s,x)=>s+x.qty*x.harga,0);
-  const totalHppTercatat = storage.filter(e=>e.kQty>0).reduce((s,e)=>s+e.kJml,0);
-  document.getElementById('ks-saldo-qty').textContent = saldoQty.toLocaleString('id-ID');
+  const lastEntry  = storage[storage.length-1];
+  const sl         = lastEntry ? (lastEntry.saldoLayers||[]) : [];
+  const saldoQty   = sl.reduce((s,x)=>s+x.qty, 0);
+  const saldoNilai = sl.reduce((s,x)=>s+x.qty*x.harga, 0);
+  const totalHppTercatat = storage.filter(e=>e.kQty>0).reduce((s,e)=>s+e.kJml, 0);
+  document.getElementById('ks-saldo-qty').textContent   = saldoQty.toLocaleString('id-ID');
   document.getElementById('ks-saldo-nilai').textContent = rp(saldoNilai);
-  document.getElementById('ks-total-hpp').textContent = rp(totalHppTercatat);
+  document.getElementById('ks-total-hpp').textContent   = rp(totalHppTercatat);
   document.getElementById('ks-stock-summary').style.display='block';
 }
 
 function _ksConfirm(msg, icon, onOk) {
   const modal = document.getElementById('ks-confirm-modal');
   document.getElementById('ks-confirm-msg').textContent = msg;
-  document.getElementById('ks-confirm-icon').textContent = icon || '<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>';
+  document.getElementById('ks-confirm-icon').innerHTML = icon || '<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>';
   modal.style.display = 'flex';
   // clone buttons to remove old listeners
   const okBtn = document.getElementById('ks-confirm-ok');
@@ -11415,10 +12322,11 @@ function _attachKartuStockEvents(tbody) {
     btn.addEventListener('click', function() {
       const idx = parseInt(this.getAttribute('data-idx'));
       if(isNaN(idx)) return;
-      _ksConfirm('Hapus entri ini dari Kartu Stock?', '<i class="ti ti-trash ti-btn"></i>', function() {
+      _ksConfirm('Hapus entri ini dari Kartu Stock?', '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>', function() {
         kartuStockData[kartuStockTab].splice(idx, 1);
+        syncKategoriFromKartuStockData();
         renderKartuStock();
-        saveKartuStockToCloud();
+        saveMKS();
       });
     });
   });
@@ -11431,10 +12339,22 @@ function _attachKartuStockEvents(tbody) {
 }
 
 function clearKartuStock() {
-  _ksConfirm('Hapus semua catatan metode ' + kartuStockTab.toUpperCase() + '?', '<i class="ti ti-trash ti-btn"></i>', function() {
-    kartuStockData[kartuStockTab] = [];
+  // Cek apakah ada catatan sama sekali di semua metode kategori aktif
+  const activeKat = getActiveKategori();
+  const hasAny = activeKat && Object.values(activeKat.data || {}).some(arr => arr && arr.length > 0);
+  if (!hasAny) {
+    showAlert('<i class="ti ti-info-circle" style="color:var(--accent2);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tidak ada catatan yang terdeteksi di kategori ini.');
+    return;
+  }
+  _ksConfirm('Hapus semua catatan metode ' + kartuStockTab.toUpperCase() + '?', '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>', function() {
+    // Hapus data di kategori aktif untuk metode yg dipilih
+    const kat = getActiveKategori();
+    if (kat && kat.data) kat.data[kartuStockTab] = [];
+    // Sync kartuStockData dari kategori (agar render benar)
+    syncKartuStockDataFromKategori();
     renderKartuStock();
-    saveKartuStockToCloud();
+    saveMKS();
+    showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Semua catatan metode ' + kartuStockTab.toUpperCase() + ' berhasil dihapus.');
   });
 }
 
@@ -11534,8 +12454,9 @@ function konfirmasiInputJurnalKartu() {
   );
 
   popup.style.display='none';
+  syncKategoriFromKartuStockData();
   renderKartuStock();
-  saveKartuStockToCloud();
+  saveMKS();
   showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ${selectedEntries.length} jurnal HPP berhasil diinput!`);
 }
 
@@ -14182,7 +15103,7 @@ function openOptPicker(config) {
   list._optPickerOptions = config.options;
   list.innerHTML = config.options.map((opt, idx) => {
     const isSel = opt.value === config.currentValue;
-    const safeVal = opt.value.replace(/'/g, "\\'");
+    const safeVal = String(opt.value || '').replace(/'/g, "\\'");
     return `<div class="opt-picker-item${isSel ? ' selected' : ''}" onclick="selectOptPickerByIndex(${idx})" data-value="${safeVal}" data-idx="${idx}">
       ${opt.icon ? `<div class="opt-picker-item-icon">${opt.icon}</div>` : ''}
       <div class="opt-picker-item-text">
@@ -14221,13 +15142,24 @@ function selectOptPicker(value, label, icon) {
   if (_optPickerBtnEl) {
     _optPickerBtnEl.querySelector('.opt-picker-label').textContent = label;
     _optPickerBtnEl.classList.add('open');
-    // Update data
     _optPickerBtnEl.dataset.value = value;
   }
 
+  // Simpan referensi options sebelum callback — untuk deteksi chained picker (Level 2)
+  const listEl = document.getElementById('opt-picker-list');
+  const optsBefore = listEl._optPickerOptions;
+
   if (_optPickerCallback) _optPickerCallback(value, label);
 
-  // Close after short delay for visual feedback
+  // Jika callback membuka picker BARU (options berubah) = Level 2 sudah terbuka
+  // Jangan close — biarkan picker baru tampil
+  const optsAfter = listEl._optPickerOptions;
+  if (optsAfter !== optsBefore) {
+    // Picker baru sudah terbuka (chained Level 2) — jangan close
+    return;
+  }
+
+  // Tidak ada picker baru — close dengan delay visual feedback
   setTimeout(closeOptPicker, 160);
 }
 
@@ -16162,10 +17094,15 @@ async function loadDataFromSupabase() {
     .single();
 
   if (profilData) {
+    const cloudData = profilData.data || {};
+    // Profil disimpan di _profil key (baru), fallback ke root untuk backward compat
+    const profilObj = cloudData._profil || cloudData;
     // Simpan ke localStorage untuk backward compat dengan fungsi getProfil()
-    localStorage.setItem('bhp_profil_v1', JSON.stringify(profilData.data || {}));
+    if (profilObj && (profilObj.nama || profilObj.jenis)) {
+      localStorage.setItem('bhp_profil_v1', JSON.stringify(profilObj));
+    }
     // Load kartu stock dari cloud
-    loadKartuStockFromData(profilData.data || {});
+    loadKartuStockFromData(cloudData);
   }
 
   updateSaveIndicator('saved');
@@ -16233,66 +17170,87 @@ async function saveAkunsToSupabase() {
 // SAVE PROFIL
 async function saveProfilToSupabase(profilData) {
   if (!currentCompany) return;
-  await _supa.from('company_profiles').upsert({
-    company_id: currentCompany.id,
-    data: profilData,
-    updated_at: new Date().toISOString()
-  }, { onConflict: 'company_id' });
+  try {
+    // Ambil data existing dulu agar tidak menimpa _kartu_stock
+    const { data: existing } = await _supa.from('company_profiles')
+      .select('data').eq('company_id', currentCompany.id).single();
+    const existingData = (existing && existing.data) ? existing.data : {};
+    // Merge: simpan profil di key _profil, bukan langsung di root
+    await _supa.from('company_profiles').upsert({
+      company_id: currentCompany.id,
+      data: { ...existingData, _profil: profilData },
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'company_id' });
+  } catch(e) {
+    console.warn('saveProfilToSupabase error:', e);
+  }
 }
 
 // SAVE & LOAD KARTU STOCK KE CLOUD
 async function saveKartuStockToCloud() {
+  // Sync data aktif ke kategori sebelum save ke cloud
+  syncKategoriFromKartuStockData();
   if (!currentCompany) {
     // Fallback ke localStorage jika belum login / mode tamu
-    try { localStorage.setItem('bhp_kartu_stock_v1_guest', JSON.stringify(kartuStockData)); } catch(e) {}
+    try { localStorage.setItem('bhp_mks_guest', JSON.stringify(multiKartuStock)); } catch(e) {}
     return;
   }
   try {
     const { data: existing } = await _supa.from('company_profiles').select('data').eq('company_id', currentCompany.id).single();
     const existingData = (existing && existing.data) ? existing.data : {};
-    const kartuPayload = {};
-    for (const [key, arr] of Object.entries(kartuStockData)) {
-      kartuPayload[key] = arr.map(e => ({
-        id: e.id, tgl: e.tgl, ket: e.ket,
-        mQty: e.mQty, mHarga: e.mHarga,
-        kQty: e.kQty, kHarga: e.kHarga, kJml: e.kJml,
-        saldoLayers: e.saldoLayers || [],
-        keluarLayers: e.keluarLayers || [],
-        jurnalDone: e.jurnalDone || false
-      }));
-    }
     await _supa.from('company_profiles').upsert({
       company_id: currentCompany.id,
-      data: { ...existingData, _kartu_stock: kartuPayload },
+      data: { ...existingData, _multi_kartu_stock: multiKartuStock },
       updated_at: new Date().toISOString()
     }, { onConflict: 'company_id' });
   } catch(e) {
     console.warn('saveKartuStockToCloud error:', e);
-    try { localStorage.setItem('bhp_kartu_stock_v1_' + currentCompany.id, JSON.stringify(kartuStockData)); } catch(e2) {}
+    try { localStorage.setItem('bhp_mks_' + currentCompany.id, JSON.stringify(multiKartuStock)); } catch(e2) {}
   }
 }
 
 function loadKartuStockFromData(profileData) {
-  // Coba dari cloud data dulu
-  const ks = profileData && profileData._kartu_stock;
-  if (ks) {
+  // Coba dari cloud data format baru (_multi_kartu_stock) dulu
+  if (profileData && profileData._multi_kartu_stock && Object.keys(profileData._multi_kartu_stock).length > 0) {
+    try {
+      // Deep copy wajib — agar tiap card/kategori benar-benar independen
+      multiKartuStock = JSON.parse(JSON.stringify(profileData._multi_kartu_stock));
+      const key = 'bhp_mks_' + (currentCompany ? currentCompany.id : 'guest');
+      localStorage.setItem(key, JSON.stringify(multiKartuStock));
+    } catch(e) {}
+  } else if (profileData && profileData._kartu_stock) {
+    // Format lama (flat) — akan di-migrate oleh initMultiKartuStock
     kartuStockData = {
-      fifo: ks.fifo || [],
-      lifo: ks.lifo || [],
-      wa:   ks.wa   || [],
-      mwa:  ks.mwa  || []
+      fifo: profileData._kartu_stock.fifo || [],
+      lifo: profileData._kartu_stock.lifo || [],
+      wa:   profileData._kartu_stock.wa   || [],
+      mwa:  profileData._kartu_stock.mwa  || []
     };
   } else {
-    // Fallback ke localStorage
+    // Fallback ke localStorage format baru dulu, lalu format lama
     try {
-      const key = 'bhp_kartu_stock_v1_' + (currentCompany ? currentCompany.id : 'guest');
-      const stored = localStorage.getItem(key);
-      if (stored) kartuStockData = JSON.parse(stored);
+      const keyMks = 'bhp_mks_' + (currentCompany ? currentCompany.id : 'guest');
+      const storedMks = localStorage.getItem(keyMks);
+      if (storedMks) {
+        multiKartuStock = JSON.parse(storedMks);
+      } else {
+        const key = 'bhp_kartu_stock_v1_' + (currentCompany ? currentCompany.id : 'guest');
+        const stored = localStorage.getItem(key);
+        if (stored) kartuStockData = JSON.parse(stored);
+      }
     } catch(e) {}
   }
-  // Rebuild id counter
+  // Rebuild id counter dari semua kategori
   let maxId = 0;
-  for (const arr of Object.values(kartuStockData)) arr.forEach(e => { if((e.id||0) > maxId) maxId = e.id; });
+  Object.values(multiKartuStock || {}).forEach(card => {
+    Object.values(card.kategori || {}).forEach(kat => {
+      Object.values(kat.data || {}).forEach(arr => {
+        (arr || []).forEach(e => { if((e.id||0) > maxId) maxId = e.id; });
+      });
+    });
+  });
+  // Fallback ke kartuStockData jika multiKartuStock belum ada
+  for (const arr of Object.values(kartuStockData || {})) (arr||[]).forEach(e => { if((e.id||0) > maxId) maxId = e.id; });
   kartuStockIdCounter = maxId + 1;
   // Init multi kartu stock (migrate data lama jika perlu)
   if (typeof initMultiKartuStock === 'function') initMultiKartuStock();
@@ -16308,7 +17266,7 @@ async function saveAttachmentToSupabase(jurnalEntry, attachments) {
 // OVERRIDE saveToStorage — redirect ke Supabase
 
 const _origSaveToStorage = saveToStorage;
-async function saveToStorage(showToast = true) {
+window.saveToStorage = async function(showToast = true) {
   if (!currentCompany) {
     return _origSaveToStorage(showToast);
   }
@@ -16356,7 +17314,7 @@ function addJurnal(entry) {
 // OVERRIDE manualSave — pastikan async Supabase save berjalan benar
 
 const _origManualSave = manualSave;
-async function manualSave() {
+window.manualSave = async function() {
   if (!currentCompany) {
     showOpSpinner('Menyimpan...', 'Menyimpan ke penyimpanan lokal');
     _origManualSave();
@@ -16376,7 +17334,7 @@ async function manualSave() {
     updateSaveIndicator('error');
     showAlert('❌ Gagal menyimpan: ' + (e.message || e));
   }
-}
+};
 
 // OVERRIDE saveProfil — juga save ke Supabase
 (function() {
@@ -16538,7 +17496,7 @@ CREATE POLICY "Users can manage own profiles"
 
 // Override initStorage agar tidak crash sebelum auth selesai
 const _origInitStorage = initStorage;
-function initStorage() {
+window.initStorage = function() {
   // Saat mode Supabase, tunggu auth dulu sebelum load
   // (akan dipanggil manual di enterGuestMode atau loadDataFromSupabase)
   autoSaveEnabled = localStorage.getItem(AUTOSAVE_KEY) !== 'false';
@@ -18744,29 +19702,50 @@ async function prosesJoinCode() {
  * Hitung saldo & layer HPP dari satu kartu stock berdasarkan metode aktif.
  * Return: { metode, totalQty, totalNilai, hppRata, layers:[{qty,harga}] }
  */
-function getKsSaldo(ks) {
-  // Cari metode yang punya data terbanyak (metode aktif yang dipakai user)
+function getKsSaldo(ks, _depth) {
+  // Support dua format:
+  // 1. Kategori: { data:{fifo,lifo,wa,mwa} }
+  // 2. Card lama (legacy): { data:{fifo,lifo,wa,mwa} }
+  // 3. Card baru: { kategori:{} } → aggregate semua kategori
+  const _empty = { metode:'fifo', totalQty:0, totalNilai:0, hppRata:0, hppNext:0, layers:[] };
+  if (!ks) return _empty;
+  if (ks.kategori && !ks.data) {
+    // Card baru — aggregate semua kategori TANPA rekursi (inline loop)
+    let tQty = 0, tNilai = 0;
+    Object.values(ks.kategori).forEach(kat => {
+      if (!kat || !kat.data || typeof kat.data !== 'object') return;
+      const metodeArr = ['fifo','lifo','wa','mwa'];
+      let bestM = 'fifo', bestLen = 0;
+      metodeArr.forEach(m => { const l=(kat.data[m]||[]).length; if(l>bestLen){bestLen=l;bestM=m;} });
+      const rows = kat.data[bestM] || [];
+      if (!rows.length) return;
+      const last = rows[rows.length-1];
+      const layers = (last.saldoLayers||[]).filter(l=>l.qty>0);
+      tQty   += layers.reduce((s,l)=>s+l.qty,0);
+      tNilai += layers.reduce((s,l)=>s+l.qty*l.harga,0);
+    });
+    const hppRata = tQty > 0 ? tNilai / tQty : 0;
+    return { metode:'fifo', totalQty:tQty, totalNilai:tNilai, hppRata, hppNext:hppRata, layers:[] };
+  }
+
+  const data = ks.data || {};
   const metodeArr = ['fifo','lifo','wa','mwa'];
   let metode = 'fifo';
   let maxLen  = 0;
   metodeArr.forEach(m => {
-    const len = (ks.data[m]||[]).length;
+    const len = (data[m]||[]).length;
     if(len > maxLen) { maxLen = len; metode = m; }
   });
 
-  const rows = (ks.data[metode]||[]);
-  if(!rows.length) return { metode, totalQty:0, totalNilai:0, hppRata:0, layers:[] };
+  const rows = (data[metode]||[]);
+  if(!rows.length) return { metode, totalQty:0, totalNilai:0, hppRata:0, hppNext:0, layers:[] };
 
-  // Ambil saldoLayers dari baris terakhir
   const lastRow = rows[rows.length - 1];
   const layers  = (lastRow.saldoLayers || []).filter(l => l.qty > 0);
+  const totalQty   = layers.reduce((s,l) => s + l.qty, 0);
+  const totalNilai = layers.reduce((s,l) => s + l.qty * l.harga, 0);
+  const hppRata    = totalQty > 0 ? totalNilai / totalQty : 0;
 
-  const totalQty  = layers.reduce((s,l) => s + l.qty, 0);
-  const totalNilai= layers.reduce((s,l) => s + l.qty * l.harga, 0);
-  const hppRata   = totalQty > 0 ? totalNilai / totalQty : 0;
-
-  // hppNext: HPP unit berikutnya yang akan dijual (sesuai metode)
-  // FIFO: harga layer pertama, LIFO: harga layer terakhir, WA/MWA: rata-rata
   let hppNext = hppRata;
   if(metode === 'fifo' && layers.length > 0) hppNext = layers[0].harga;
   else if(metode === 'lifo' && layers.length > 0) hppNext = layers[layers.length - 1].harga;
@@ -18781,9 +19760,47 @@ function getKsSaldo(ks) {
 /**
  * Otomatis kurangi stok di kartu stock saat ada penjualan.
  */
-function deductKartuStockOnSale(ksId, qty, tanggal, ket) {
-  const ks = multiKartuStock[ksId];
-  if (!ks || qty <= 0) return;
+function addKartuStockOnBuy(katId, qty, hargaPerUnit, tanggal, ket) {
+  const found = _findKatById(katId);
+  if (!found || qty <= 0 || hargaPerUnit <= 0) return;
+  const kat    = found.kat;
+  const metode = getKsSaldo(kat).metode || 'fifo';
+  if (!kat.data[metode]) kat.data[metode] = [];
+  const storage = kat.data[metode];
+
+  // Rebuild running stock
+  let runningStock = rebuildStockFromKartu(storage, metode);
+
+  // Tambah layer baru
+  if (metode === 'wa') {
+    const tq = runningStock.reduce((s,x)=>s+x.qty,0) + qty;
+    const tv = runningStock.reduce((s,x)=>s+x.qty*x.harga,0) + qty*hargaPerUnit;
+    runningStock = [{qty:tq, harga:tv/tq}];
+  } else if (metode === 'mwa') {
+    const tq = runningStock.reduce((s,x)=>s+x.qty,0) + qty;
+    const tv = runningStock.reduce((s,x)=>s+x.qty*x.harga,0) + qty*hargaPerUnit;
+    runningStock = [{qty:tq, harga:tq?tv/tq:0}];
+  } else {
+    // FIFO / LIFO: tambah layer baru
+    runningStock.push({qty, harga: hargaPerUnit});
+  }
+
+  const sl = runningStock.filter(x=>x.qty>0).map(x=>({...x}));
+  const id  = kartuStockIdCounter++;
+  storage.push({
+    id, tgl: tanggal, ket: ket || 'Pembelian',
+    mQty: qty, mHarga: hargaPerUnit,
+    kQty: 0, kHarga: 0, kJml: 0,
+    saldoLayers: sl, jurnalDone: true
+  });
+  saveMKS();
+}
+
+function deductKartuStockOnSale(katId, qty, tanggal, ket) {
+  // Cari kategori dari katId di semua card
+  const found = _findKatById(katId);
+  if (!found || qty <= 0) return;
+  const ks = found.kat;
   const saldo  = getKsSaldo(ks);
   const metode = saldo.metode;
   if (!ks.data[metode]) ks.data[metode] = [];
@@ -18827,6 +19844,7 @@ function deductKartuStockOnSale(ksId, qty, tanggal, ket) {
 }
 
 function getHppLayersForSale(ks, qtySell) {
+  // ks bisa berupa kategori ({data:{}}) atau card lama
   const { metode, layers, hppRata, totalQty } = getKsSaldo(ks);
 
   if(qtySell > totalQty) qtySell = totalQty; // cap di stok tersedia
@@ -18864,27 +19882,72 @@ function buildHppJurnalLines(hppLayers, akunHpp, akunPersediaan) {
 /**
  * Render tabel Master Produk — baca dari multiKartuStock
  */
+function openProdukFilterCardPicker() {
+  const cards = Object.values(multiKartuStock || {});
+  openOptPicker({
+    title: 'Filter Kartu Stock',
+    options: [
+      { value: '', label: 'Semua Kartu', sub: 'Tampilkan semua kategori' },
+      ...cards.map(c => ({ value: c.id, label: c.nama, sub: `${Object.keys(c.kategori||{}).length} kategori` }))
+    ],
+    currentValue: document.getElementById('produk-filter-card')?.value || '',
+    onSelect: (val, label) => {
+      document.getElementById('produk-filter-card').value = val;
+      document.getElementById('produk-filter-card-label').textContent = label || 'Semua Kartu';
+
+      renderProduk();
+    }
+  });
+}
+
+function openProdukFilterKatPicker() {
+  const cardId = document.getElementById('produk-filter-card')?.value || '';
+  const card   = multiKartuStock[cardId];
+  if(!card) return;
+  const kats   = Object.values(card.kategori || {});
+  openOptPicker({
+    title: 'Filter Kategori',
+    options: [
+      { value: '', label: 'Semua Kategori', sub: card.nama },
+      ...kats.map(k => { const s = getKsSaldoKat(k); return { value: k.id, label: k.nama, sub: `Stok: ${s.totalQty} · HPP: ${fmtRp(s.hppNext)}` }; })
+    ],
+    currentValue: document.getElementById('produk-filter-kat')?.value || '',
+    onSelect: (val, label) => {
+      document.getElementById('produk-filter-kat').value = val;
+      document.getElementById('produk-filter-kat-label').textContent = label || 'Semua Kategori';
+      renderProduk();
+    }
+  });
+}
+
 function renderProduk() {
-  const search = (document.getElementById('produk-search')?.value||'').toLowerCase();
-  const tbody  = document.getElementById('produk-tbody');
-  const sub    = document.getElementById('produk-count-sub');
+  const search   = (document.getElementById('produk-search')?.value||'').toLowerCase();
+  const tbody    = document.getElementById('produk-tbody');
+  const sub      = document.getElementById('produk-count-sub');
   if(!tbody) return;
 
-  const ksList = Object.values(multiKartuStock || {});
+  const filterCardId = document.getElementById('produk-filter-card')?.value || '';
+  const cards = Object.values(multiKartuStock || {});
+  const ksList = [];
+  cards.forEach(card => {
+    if (filterCardId && card.id !== filterCardId) return;
+    Object.values(card.kategori || {}).forEach(kat => {
+      ksList.push({ ...kat, _cardNama: card.nama, _cardId: card.id });
+    });
+  });
 
   if(!ksList.length) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:40px;">
       <i class="ti ti-package" style="font-size:28px;display:block;margin-bottom:10px;opacity:0.4;"></i>
       Belum ada kartu stock persediaan.<br>
-      <span style="font-size:12px;">Tambahkan barang di menu <b>Persediaan → + Kartu Baru</b> terlebih dahulu.</span>
+      <span style="font-size:12px;">Tambahkan di menu <b>Persediaan → + Kartu Stock</b> terlebih dahulu.</span>
     </td></tr>`;
     if(sub) sub.textContent = '0 produk terdeteksi dari kartu stock';
     return;
   }
 
-  // Filter search
   const filtered = ksList.filter(ks =>
-    !search || ks.nama.toLowerCase().includes(search)
+    !search || ks.nama.toLowerCase().includes(search) || (ks._cardNama||'').toLowerCase().includes(search)
   );
 
   if(sub) sub.textContent = `${ksList.length} produk terdeteksi dari kartu stock persediaan`;
@@ -18904,8 +19967,8 @@ function renderProduk() {
 
   tbody.innerHTML = filtered.map(ks => {
     const saldo = getKsSaldo(ks);
-    // Harga jual: ambil dari produkList override jika ada, default 0
-    const override   = produkList.find(p => p.ksId === ks.id);
+    // Harga jual: produkList bisa match by katId atau cardId
+    const override   = produkList.find(p => p.ksId === ks.id || p.ksId === ks._cardId);
     const hargaJual  = override?.hargaJual || 0;
     const akunPend   = override?.akunPend  || '4101';
     const akunHpp    = override?.akunHpp   || '5101';
@@ -18924,6 +19987,7 @@ function renderProduk() {
 
     return `<tr>
       <td style="font-weight:600;font-size:13px;">
+        <div style="font-size:10px;color:var(--muted);font-weight:400;margin-bottom:2px;">${ks._cardNama||''}</div>
         ${ks.nama}
         ${ks.deskripsi ? `<div style="font-size:11px;color:var(--muted);font-weight:400;">${ks.deskripsi}</div>` : ''}
       </td>
@@ -18944,7 +20008,7 @@ function renderProduk() {
       </td>
       <td style="font-size:11px;color:var(--muted);">${akunPendNm}</td>
       <td>
-        <button class="btn btn-ghost btn-sm" onclick="openModalEditProdukHarga('${ks.id}')" title="Edit harga jual & akun">
+        <button class="btn btn-ghost btn-sm" onclick="openModalEditProdukHarga('${ks.id}','${ks._cardId}')" title="Edit harga jual & akun">
           <i class="ti ti-pencil" style="font-size:12px;"></i> Edit
         </button>
       </td>
@@ -18955,10 +20019,11 @@ function renderProduk() {
 /**
  * Modal edit — hanya harga jual & akun. HPP read-only dari kartu stock.
  */
-function openModalEditProdukHarga(ksId) {
-  const ks       = multiKartuStock[ksId];
+function openModalEditProdukHarga(katId, cardId) {
+  const card = cardId ? multiKartuStock[cardId] : null;
+  const ks   = card?.kategori?.[katId] || multiKartuStock[katId]; // fallback legacy
   if(!ks) return;
-  const override = produkList.find(p => p.ksId === ksId);
+  const override = produkList.find(p => p.ksId === katId);
   const saldo    = getKsSaldo(ks);
   const metodeLabel = { fifo:'FIFO', lifo:'LIFO', wa:'Weighted Average', mwa:'Moving WA' };
 
@@ -18999,7 +20064,12 @@ function simpanProduk() {
   const hargaJual= parseFloat(document.getElementById('produk-harga-jual').value)||0;
   const akunPend = document.getElementById('produk-akun-pend').value||'4101';
   const akunHpp  = document.getElementById('produk-akun-hpp').value||'5101';
-  const ks       = multiKartuStock[ksId];
+  // ksId bisa katId atau cardId (legacy) — cari di semua card
+  let ks = null;
+  Object.values(multiKartuStock).forEach(card => {
+    if (card.id === ksId) ks = card;
+    if (card.kategori?.[ksId]) ks = card.kategori[ksId];
+  });
   if(!ks) { showAlert('Kartu stock tidak ditemukan!'); return; }
 
   // Read all values BEFORE closing modal
@@ -19026,63 +20096,106 @@ function hapusProduk(id) {
 // Produk Picker (untuk Mode Cepat)
 let _produkPickerCallback = null;
 function openProdukPicker() {
-  // Build list from multiKartuStock (same as penjualan picker)
-  const ksList = Object.values(multiKartuStock || {});
-  if(!ksList.length && !produkList.length) {
+  // Filter kartu stock yang tidak di-lock dari transaksi
+  const allCards  = Object.values(multiKartuStock || {});
+  const cards     = allCards.filter(c => !c.lockedFromTrx);
+  if(!allCards.length && !produkList.length) {
     showAlert('Belum ada produk. Tambahkan di Master Produk terlebih dahulu.');
     return;
   }
-  // Prefer kartu stock list (has real stock data), fallback to produkList
-  const options = ksList.length ? ksList.map(ks => {
-    const override = produkList.find(p => p.ksId === ks.id);
-    const hargaJual = override?.hargaJual || 0;
-    return {
-      value: ks.id,
-      label: ks.nama,
-      sub: `${ks.satuan||'unit'} · Harga: ${hargaJual ? 'Rp ' + hargaJual.toLocaleString('id-ID') : 'Belum diset'}`,
-    };
-  }) : produkList.map(p => ({
-    value: p.ksId,
-    label: p.nama || p.ksId,
-    sub: `Harga: ${p.hargaJual ? 'Rp ' + p.hargaJual.toLocaleString('id-ID') : 'Belum diset'}`,
-  }));
-
+  if(!cards.length) {
+    showAlert('Tidak ada produk tersedia. Aktifkan kartu stock di menu Persediaan (klik ikon gembok).');
+    return;
+  }
+  // Level 1: pilih kartu stock (hanya yang tidak terkunci)
+  if(cards.length === 1) {
+    const card = cards[0];
+    const kats = Object.values(card.kategori || {});
+    if(!kats.length) { showAlert('Kartu stock belum punya barang.'); return; }
+    if(kats.length === 1) { _applySimpelKategori(kats[0].id, kats[0].nama); return; }
+    openOptPicker({
+      title: 'Pilih Barang — ' + card.nama,
+      options: kats.map(kat => {
+        const override = produkList.find(p => p.ksId === kat.id);
+        const hJual = override?.hargaJual || 0;
+        return { value: kat.id, label: kat.nama, sub: `Harga: ${hJual ? fmtRp(hJual) : 'Belum diset'}` };
+      }),
+      currentValue: document.getElementById('simpel-produk-id')?.value||'',
+      onSelect: (katId, label) => { _applySimpelKategori(katId, label); }
+    });
+    return;
+  }
   openOptPicker({
-    title: 'Pilih Produk',
-    options,
-    currentValue: document.getElementById('simpel-produk-id')?.value||'',
-    onSelect: (ksId, label) => {
-      const ks = multiKartuStock[ksId];
-      const override = produkList.find(p => p.ksId === ksId);
-      document.getElementById('simpel-produk-id').value = ksId;
-      document.getElementById('simpel-produk-btn').textContent = label;
-      // Auto-fill harga dari master produk override
-      const qty = parseFloat(document.getElementById('simpel-qty')?.value)||1;
-      if(override?.hargaJual) {
-        document.getElementById('simpel-jumlah').value = override.hargaJual * qty;
-      }
-      if(!document.getElementById('simpel-ket').value) {
-        document.getElementById('simpel-ket').value = ks ? ks.nama : label;
-      }
+    title: 'Pilih Kartu Stock',
+    options: cards.map(card => ({
+      value: card.id, label: card.nama,
+      sub: `${Object.keys(card.kategori||{}).length} barang`,
+    })),
+    currentValue: '',
+    onSelect: (cardId) => {
+      const card = multiKartuStock[cardId]; if(!card) return;
+      const kats = Object.values(card.kategori || {});
+      if(!kats.length) { showAlert('Kartu stock ini belum punya barang.'); return; }
+      if(kats.length === 1) { _applySimpelKategori(kats[0].id, kats[0].nama); return; }
+      openOptPicker({
+        title: 'Pilih Barang — ' + card.nama,
+        options: kats.map(kat => {
+          const override = produkList.find(p => p.ksId === kat.id);
+          const hJual = override?.hargaJual || 0;
+          return { value: kat.id, label: kat.nama, sub: `Harga: ${hJual ? fmtRp(hJual) : 'Belum diset'}` };
+        }),
+        currentValue: document.getElementById('simpel-produk-id')?.value||'',
+        onSelect: (katId, label) => { _applySimpelKategori(katId, label); }
+      });
     }
   });
 }
 
-function onSimpelQtyChange() {
-  const ksId = document.getElementById('simpel-produk-id')?.value;
-  if(!ksId) return;
-  const override = produkList.find(p => p.ksId === ksId);
-  if(!override?.hargaJual) return;
+function _applySimpelKategori(katId, label) {
+  const found    = _findKatById(katId);
+  const override = produkList.find(p => p.ksId === katId);
+  document.getElementById('simpel-produk-id').value = katId;
+  document.getElementById('simpel-produk-btn').textContent = label || found?.kat?.nama || katId;
   const qty = parseFloat(document.getElementById('simpel-qty')?.value)||1;
-  document.getElementById('simpel-jumlah').value = override.hargaJual * qty;
+  if(_simpelTipe === 'jual') {
+    // Warning jika harga jual belum diset di master produk
+    if(!override?.hargaJual) {
+      showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Harga jual belum diset untuk produk ini. Silakan set harga di Master Produk terlebih dahulu.');
+    }
+    // Tidak perlu isi simpel-jumlah — harga diambil dari master produk saat simpan
+  } else if(_simpelTipe === 'beli') {
+    document.getElementById('simpel-jumlah').value = '';
+  }
+  if(!document.getElementById('simpel-ket').value)
+    document.getElementById('simpel-ket').value = found?.kat?.nama || label || '';
+  _updateSimpelJumlahLabel();
+}
+function onSimpelQtyChange() {
+  const katId = document.getElementById('simpel-produk-id')?.value;
+  if(!katId) return;
+  if(_simpelTipe === 'jual') {
+    // Jual: auto-fill total dari harga jual × qty
+    const override = produkList.find(p => p.ksId === katId);
+    if(!override?.hargaJual) return;
+    const qty = parseFloat(document.getElementById('simpel-qty')?.value)||1;
+    document.getElementById('simpel-jumlah').value = override.hargaJual * qty;
+  } else if(_simpelTipe === 'beli') {
+    // Beli: jumlah = harga/unit, tampilkan total hint
+    _updateSimpelJumlahLabel();
+  }
 }
 
 // ── Handle jenis penjualan: sembunyikan produk saat bukan penjualan barang ──
 function onJualJenisChange(value) {
-  const isProduk = (value === '4101');
+  const isProduk = (value === '4101' || value === '4105'); // Barang & Manufaktur pakai produk picker
   const produkRow = document.getElementById('jual-produk-row');
   if(produkRow) produkRow.style.display = isProduk ? '' : 'none';
-  if(!isProduk) {
+
+  if(isProduk) {
+    // Langsung sembunyikan jumlah — sudah pasti dari produk × qty
+    _toggleJualJumlahRow(false);
+  } else {
+    // Jasa/Properti/dll — tampilkan jumlah untuk input manual, reset produk
     const idEl  = document.getElementById('jual-produk-id');
     const lblEl = document.getElementById('jual-produk-label');
     const hppEl = document.getElementById('jual-hpp');
@@ -19103,49 +20216,119 @@ function _toggleJualJumlahRow(show) {
 // ══════════════════════════════════════════════════════════
 
 let _simpelTipe = 'masuk';
+let _simpelJenisPenjualan = '4101'; // akun pendapatan untuk tipe jual
+let _simpelJenisPembelian = '1301'; // akun persediaan untuk tipe beli
 
-function setSimpelTipe(tipe, btn) {
-  _simpelTipe = tipe;
-  document.querySelectorAll('.simpel-tipe-btn').forEach(b => {
-    b.style.borderColor = 'var(--border)';
-    b.style.background  = 'var(--surface2)';
-    b.style.color       = 'var(--muted)';
+const _beliAkunOptions = [
+  { value: '1301', label: 'Persediaan Barang Dagangan', sub: 'Akun 1301 · Stok barang untuk dijual',
+    icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg>` },
+  { value: '1302', label: 'Persediaan Bahan Baku', sub: 'Akun 1302 · Bahan mentah untuk produksi',
+    icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>` },
+  { value: '1303', label: 'Barang Dalam Proses', sub: 'Akun 1303 · Persediaan WIP / setengah jadi',
+    icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>` },
+  { value: '1304', label: 'Persediaan Barang Jadi', sub: 'Akun 1304 · Produk siap jual dari manufaktur',
+    icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>` },
+  { value: '1401', label: 'Perlengkapan Kantor', sub: 'Akun 1401 · Supplies / ATK kantor',
+    icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>` },
+  { value: '5101', label: 'HPP / Beban Pembelian', sub: 'Akun 5101 · Langsung ke beban HPP',
+    icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>` },
+];
+
+function openSimpelJenisPembelianPicker() {
+  openOptPicker({
+    title: 'Pilih Jenis Pembelian',
+    options: _beliAkunOptions.map(o => ({ value: o.value, label: o.label, icon: o.icon, sub: o.sub })),
+    currentValue: _simpelJenisPembelian,
+    onSelect: (val, label) => {
+      _simpelJenisPembelian = val;
+      const lbl = document.getElementById('simpel-jenis-pembelian-label');
+      if(lbl) lbl.textContent = label;
+    }
   });
-  btn.style.borderColor = 'var(--accent)';
-  btn.style.background  = 'rgba(74,222,128,0.1)';
-  btn.style.color       = 'var(--accent)';
+}
 
-  // Tampilkan/sembunyikan produk picker
-  const showProduk = tipe === 'jual' || tipe === 'beli';
-  const wrap = document.getElementById('simpel-produk-wrap');
-  if(wrap) wrap.style.display = showProduk ? 'grid' : 'none';
+const _simpelTipeOptions = [
+  { value:'masuk',  label:'Uang Masuk',  icon:'<i class="ti ti-arrow-up-circle" style="font-size:14px;vertical-align:-2px;margin-right:6px;color:var(--accent);"></i>',  sub:'Penerimaan kas, modal, piutang' },
+  { value:'keluar', label:'Uang Keluar', icon:'<i class="ti ti-arrow-down-circle" style="font-size:14px;vertical-align:-2px;margin-right:6px;color:var(--red);"></i>',    sub:'Pengeluaran kas, beban operasional' },
+];
 
-  // Reset produk
-  const produkId = document.getElementById('simpel-produk-id');
-  const produkBtn = document.getElementById('simpel-produk-btn');
-  if(produkId) produkId.value = '';
-  if(produkBtn) produkBtn.textContent = 'Pilih produk...';
+function _updateSimpelJumlahLabel() {
+  const lbl   = document.getElementById('simpel-jumlah-label');
+  const hint  = document.getElementById('simpel-total-hint');
+  const katId = document.getElementById('simpel-produk-id')?.value;
+  const isBeli = _simpelTipe === 'beli';
+  const hasProduk = isBeli && katId;
 
-  // Update placeholder keterangan
+  if(lbl) lbl.textContent = hasProduk ? 'Harga per Unit (Rp) *' : 'Jumlah (Rp) *';
+
+  // Update total hint
+  if(hasProduk && hint) {
+    const qty    = parseFloat(document.getElementById('simpel-qty')?.value)||1;
+    const harga  = parseFloat(document.getElementById('simpel-jumlah')?.value)||0;
+    const total  = harga * qty;
+    hint.style.display = total > 0 ? '' : 'none';
+    hint.textContent   = total > 0 ? `= Total: ${fmtRp(total)}` : '';
+  } else if(hint) {
+    hint.style.display = 'none';
+  }
+}
+
+function openSimpelJenisPenjualanPicker() {
+  // Pakai openOptPicker dengan opsi identik seperti picker di tab Penjualan
+  openOptPicker({
+    title: 'Pilih Jenis Penjualan',
+    options: _jualAkunOptions.map(o => ({
+      value: o.value,
+      label: o.label,
+      icon: o.icon,   // icon hanya di dalam sheet
+      sub: o.sub,
+    })),
+    currentValue: _simpelJenisPenjualan,
+    onSelect: (val, label) => {
+      _simpelJenisPenjualan = val;
+      const lbl = document.getElementById('simpel-jenis-penjualan-label');
+      if(lbl) lbl.textContent = label; // tanpa icon di label luar
+      // Tampilkan/sembunyikan produk picker sesuai jenis
+      const isProduk = (val === '4101' || val === '4105');
+      const wrap = document.getElementById('simpel-produk-wrap');
+      if(wrap) wrap.style.display = isProduk ? 'grid' : 'none';
+    }
+  });
+}
+
+function openSimpelTipePicker() {
+  openOptPicker({
+    title: 'Jenis Transaksi',
+    options: _simpelTipeOptions.map(o => ({
+      value: o.value,
+      label: o.label,
+      icon: o.icon,   // icon hanya tampil di dalam sheet
+      sub: o.sub,
+    })),
+    currentValue: _simpelTipe,
+    onSelect: (val, label) => {
+      setSimpelTipe(val);
+    }
+  });
+}
+
+function setSimpelTipe(tipe) {
+  _simpelTipe = tipe;
+  const opt = _simpelTipeOptions.find(o => o.value === tipe);
+  const lbl = document.getElementById('simpel-tipe-label');
+  if(lbl && opt) lbl.textContent = opt.label;
+
   const ketMap = {
     masuk:  'Contoh: Terima modal, Penerimaan piutang...',
     keluar: 'Contoh: Bayar listrik, Gaji karyawan...',
-    jual:   'Contoh: Jual baju, Jasa konsultasi...',
-    beli:   'Contoh: Beli bahan baku, Stok barang...',
   };
   const ketEl = document.getElementById('simpel-ket');
-  if(ketEl) ketEl.placeholder = ketMap[tipe]||'';
+  if(ketEl) ketEl.placeholder = ketMap[tipe] || '';
   document.getElementById('simpel-jurnal-preview').style.display = 'none';
 }
 
-function getSimpelJurnalLines(tipe, jumlah, ketEl, ksId, qty) {
+function getSimpelJurnalLines(tipe, jumlah, ketEl) {
   const ket = ketEl || 'Transaksi';
-  const ks        = ksId ? multiKartuStock[ksId] : null;
-  const override  = ksId ? produkList.find(p => p.ksId === ksId) : null;
-  const akunPend  = override?.akunPend  || '4101';
-  const akunHppKd = override?.akunHpp   || '5101';
-  const akunPers  = '1301'; // Persediaan
-
   if(tipe === 'masuk') {
     return [
       { akun:'1101', ket, debit: jumlah, kredit: 0 },
@@ -19161,38 +20344,14 @@ function getSimpelJurnalLines(tipe, jumlah, ketEl, ksId, qty) {
       { akun:'1101', ket, debit: 0, kredit: jumlah },
     ];
   }
-  if(tipe === 'jual') {
-    const lines = [
-      { akun:'1101', ket, debit: jumlah, kredit: 0 },
-      { akun: akunPend, ket, debit: 0, kredit: jumlah },
-    ];
-    // HPP otomatis dari kartu stock (FIFO multi-layer atau WA/LIFO satu baris)
-    if(ks && qty > 0) {
-      const hppLayers = getHppLayersForSale(ks, qty);
-      const hppLines  = buildHppJurnalLines(hppLayers, akunHppKd, akunPers);
-      lines.push(...hppLines);
-    }
-    return lines;
-  }
-  if(tipe === 'beli') {
-    // Pembelian: masuk ke persediaan
-    const akunBeli = akunPers; // Dr Persediaan
-    return [
-      { akun: akunBeli, ket, debit: jumlah, kredit: 0 },
-      { akun:'1101', ket, debit: 0, kredit: jumlah },
-    ];
-  }
   return [];
 }
 
 function previewSimpel() {
-  const jumlah = parseFloat(document.getElementById('simpel-jumlah')?.value)||0;
   const ket    = document.getElementById('simpel-ket')?.value.trim() || 'Transaksi';
-  const produkId = document.getElementById('simpel-produk-id')?.value;
-  const qty_s  = parseFloat(document.getElementById('simpel-qty')?.value)||1;
+  const jumlah = parseFloat(document.getElementById('simpel-jumlah')?.value)||0;
   if(!jumlah) { showAlert('Isi jumlah terlebih dahulu!'); return; }
-
-  const lines = getSimpelJurnalLines(_simpelTipe, jumlah, ket, produkId, qty_s);
+  const lines = getSimpelJurnalLines(_simpelTipe, jumlah, ket);
   const el = document.getElementById('simpel-jurnal-preview');
   el.style.display = 'block';
   el.innerHTML = `<div style="font-size:11px;color:var(--accent2);font-weight:700;margin-bottom:8px;letter-spacing:0.06em;">JURNAL YANG AKAN DIBUAT:</div>` +
@@ -19208,43 +20367,25 @@ function previewSimpel() {
 }
 
 function simpanSimpel() {
-  const tanggal  = document.getElementById('simpel-tanggal')?.value;
-  const jumlah   = parseFloat(document.getElementById('simpel-jumlah')?.value)||0;
-  const ket      = document.getElementById('simpel-ket')?.value.trim();
-  const produkId = document.getElementById('simpel-produk-id')?.value;
-  const qty_s    = parseFloat(document.getElementById('simpel-qty')?.value)||1;
+  const tanggal = document.getElementById('simpel-tanggal')?.value;
+  const jumlah  = parseFloat(document.getElementById('simpel-jumlah')?.value)||0;
+  const ket     = document.getElementById('simpel-ket')?.value.trim();
 
   if(!tanggal) { showAlert('Pilih tanggal!'); return; }
   if(!jumlah)  { showAlert('Isi jumlah terlebih dahulu!'); return; }
   if(!ket)     { showAlert('Isi keterangan!'); return; }
 
-  const lines = getSimpelJurnalLines(_simpelTipe, jumlah, ket, produkId, qty_s);
+  const lines = getSimpelJurnalLines(_simpelTipe, jumlah, ket);
   if(!lines.length) { showAlert('Tipe transaksi tidak valid'); return; }
 
   showOpSpinner('Menyimpan transaksi...', ket);
   setTimeout(() => {
-    const jenisMap = { masuk:'Kas', keluar:'Kas', jual:'Penjualan', beli:'Pembelian' };
-    addJurnal({ tanggal, ket, jenis: jenisMap[_simpelTipe]||'Kas', lines });
-
-    // Auto-deduct stok di kartu stock saat penjualan
-    if(_simpelTipe === 'jual' && produkId) {
-      deductKartuStockOnSale(produkId, qty_s, tanggal, ket);
-    }
-
-    // Stok dikelola di kartu stock persediaan — tidak perlu update manual
-    // saveData tidak dipanggil di sini — addJurnal sudah handle cloud save
-    // Reset form
+    addJurnal({ tanggal, ket, jenis: 'Kas', lines });
     document.getElementById('simpel-jumlah').value = '';
     document.getElementById('simpel-ket').value    = '';
     document.getElementById('simpel-jurnal-preview').style.display = 'none';
-    const produkBtn = document.getElementById('simpel-produk-btn');
-    if(produkBtn) { produkBtn.textContent = 'Pilih produk...'; }
-    const simpelPId = document.getElementById('simpel-produk-id');
-    if(simpelPId) simpelPId.value = '';
-    const simpelQty = document.getElementById('simpel-qty');
-    if(simpelQty) simpelQty.value = '1';
     hideOpSpinner();
-    showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Transaksi berhasil disimpan!`);
+    showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Transaksi berhasil disimpan!');
     renderDashboard();
   }, 400);
 }
@@ -19601,54 +20742,102 @@ function _makeKsTabEl(val) {
 // ══════════════════════════════════════════════════════════
 // PRODUK PICKER UNTUK FORM PENJUALAN
 // ══════════════════════════════════════════════════════════
+
+// Helper: cari kategori dari katId di semua card
+function _findKatById(katId) {
+  for (const card of Object.values(multiKartuStock)) {
+    if (card.kategori?.[katId]) return { kat: card.kategori[katId], card };
+  }
+  return null;
+}
 function openProdukPickerJual() {
-  const ksList = Object.values(multiKartuStock || {});
-  if(!ksList.length) {
-    showAlert('Belum ada kartu stock persediaan. Tambahkan di menu Persediaan.');
+  // Filter hanya kartu stock yang TIDAK di-lock (locked = disembunyikan dari transaksi)
+  const cards = Object.values(multiKartuStock || {}).filter(card => !card.lockedFromTrx);
+  if (!cards.length) {
+    showAlert('Tidak ada produk tersedia. Aktifkan kartu stock di menu Persediaan (klik ikon gembok).');
     return;
   }
   const cur = document.getElementById('jual-produk-id')?.value || '';
+
+  // Jika hanya 1 kartu stock → langsung tampilkan kategorinya
+  if (cards.length === 1) {
+    _openProdukPickerLevel2Jual(cards[0], cur);
+    return;
+  }
+
+  // Level 1: pilih kartu stock
   openOptPicker({
-    title: 'Pilih Produk',
-    options: ksList.map(ks => {
-      const saldo    = getKsSaldo(ks);
-      const override = produkList.find(p => p.ksId === ks.id);
-      const hJual    = override?.hargaJual || 0;
-      const mLabel   = {fifo:'FIFO',lifo:'LIFO',wa:'WA',mwa:'MWA'};
+    title: 'Pilih Kartu Stock',
+    options: cards.map(card => {
+      const s = getCardSaldo(card);
+      const nKat = Object.keys(card.kategori || {}).length;
       return {
-        value: ks.id,
-        label: ks.nama,
-        sub: `${mLabel[saldo.metode]} · Stok: ${saldo.totalQty} · HPP: ${fmtRp(saldo.hppNext)} · Jual: ${hJual ? fmtRp(hJual) : 'Belum diset'}`,
+        value: card.id,
+        label: card.nama,
+        sub: `${nKat} barang · Stok: ${s.totalQty.toLocaleString('id-ID')} ${card.satuan||'unit'}`
       };
     }),
-    currentValue: cur,
-    onSelect: (ksId, label) => {
-      const ks       = multiKartuStock[ksId];
-      const saldo    = getKsSaldo(ks);
-      const override = produkList.find(p => p.ksId === ksId);
-      document.getElementById('jual-produk-id').value = ksId;
-      const lbl = document.getElementById('jual-produk-label');
-      if(lbl) { lbl.textContent = ks.nama; lbl.style.color = 'var(--text)'; }
-      const qty = parseFloat(document.getElementById('jual-produk-qty')?.value)||1;
-      if(override?.hargaJual) document.getElementById('jual-jumlah').value = override.hargaJual * qty;
-      // HPP diisi ke hidden field — dihitung otomatis dari kartu stock untuk jurnal
-      document.getElementById('jual-hpp').value = Math.round(saldo.hppRata * qty);
-      if(!document.getElementById('jual-ket').value) document.getElementById('jual-ket').value = ks.nama;
-      // Sembunyikan field Jumlah Penjualan — sudah otomatis dari produk × qty
-      _toggleJualJumlahRow(false);
+    currentValue: '',
+    onSelect: (cardId) => {
+      const card = multiKartuStock[cardId]; if(!card) return;
+      _openProdukPickerLevel2Jual(card, cur);
     }
   });
 }
 
+function _openProdukPickerLevel2Jual(card, cur) {
+  const kats = Object.values(card.kategori || {});
+  if (!kats.length) { showAlert('Kartu stock ini belum punya barang.'); return; }
+
+  // Jika hanya 1 kategori → langsung pilih
+  if (kats.length === 1) {
+    _selectProdukJual(kats[0].id); return;
+  }
+
+  const mLabel = {fifo:'FIFO',lifo:'LIFO',wa:'WA',mwa:'MWA'};
+  openOptPicker({
+    title: 'Pilih Barang — ' + card.nama,
+    options: kats.map(kat => {
+      const saldo   = getKsSaldo(kat);
+      const override = produkList.find(p => p.ksId === kat.id);
+      const hJual   = override?.hargaJual || 0;
+      return {
+        value: kat.id,
+        label: kat.nama,
+        sub: `${mLabel[saldo.metode]||'FIFO'} · Stok: ${saldo.totalQty} · HPP: ${fmtRp(saldo.hppNext)} · Jual: ${hJual ? fmtRp(hJual) : 'Belum diset'}`
+      };
+    }),
+    currentValue: cur,
+    onSelect: (katId) => { _selectProdukJual(katId); }
+  });
+}
+
+function _selectProdukJual(katId) {
+  const found = _findKatById(katId);
+  if(!found) return;
+  const { kat, card } = found;
+  const saldo    = getKsSaldo(kat);
+  const override = produkList.find(p => p.ksId === katId);
+  document.getElementById('jual-produk-id').value = katId;
+  const lbl = document.getElementById('jual-produk-label');
+  if(lbl) { lbl.textContent = kat.nama; lbl.style.color = 'var(--text)'; }
+  const qty = parseFloat(document.getElementById('jual-produk-qty')?.value)||1;
+  if(override?.hargaJual) document.getElementById('jual-jumlah').value = override.hargaJual * qty;
+  document.getElementById('jual-hpp').value = Math.round(saldo.hppNext * qty);
+  if(!document.getElementById('jual-ket').value) document.getElementById('jual-ket').value = kat.nama;
+  _toggleJualJumlahRow(false);
+}
+
 function onJualQtyChange() {
-  const ksId = document.getElementById('jual-produk-id')?.value;
-  if(!ksId) return;
-  const ks       = multiKartuStock[ksId];
-  const saldo    = getKsSaldo(ks);
-  const override = produkList.find(p => p.ksId === ksId);
+  const katId = document.getElementById('jual-produk-id')?.value;
+  if(!katId) return;
+  const found = _findKatById(katId);
+  if(!found) return;
+  const saldo    = getKsSaldo(found.kat);
+  const override = produkList.find(p => p.ksId === katId);
   const qty      = parseFloat(document.getElementById('jual-produk-qty')?.value)||1;
   if(override?.hargaJual) document.getElementById('jual-jumlah').value = override.hargaJual * qty;
-  document.getElementById('jual-hpp').value = Math.round(saldo.hppRata * qty);
+  document.getElementById('jual-hpp').value = Math.round(saldo.hppNext * qty);
 }
 
 // ── Patch simpanPenjualan to inject FIFO HPP lines ──
@@ -19703,3 +20892,30 @@ function onJualQtyChange() {
     if(qtyEl) qtyEl.value = '1';
   };
 })();
+
+// ── GEMBOK KARTU STOCK (sembunyikan dari picker transaksi) ───────
+function toggleKartuStockLock(cardId) {
+  const card = multiKartuStock[cardId]; if(!card) return;
+  card.lockedFromTrx = !card.lockedFromTrx;
+  saveMKS();
+  renderKartuStockSelector(); // re-render toolbar + gembok sekaligus
+  const status = card.lockedFromTrx ? 'dikunci (tidak muncul di transaksi)' : 'dibuka (muncul di transaksi)';
+  showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ' + card.nama + ' ' + status);
+}
+
+function _updateLockHeaderBtn() {
+  // Fix: tidak memanggil renderKartuStockSelector() karena itu menyebabkan infinite loop
+  // (renderKartuStockSelector → _updateLockHeaderBtn → renderKartuStockSelector → ...)
+  const btn = document.getElementById('ks-lock-header-btn');
+  if (!btn) return;
+  const card = multiKartuStock[activeKartuStockId];
+  if (!card) return;
+  const isLocked = card.lockedFromTrx === true;
+  const svgLocked = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+  const svgUnlocked = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>';
+  btn.innerHTML = isLocked ? svgLocked : svgUnlocked;
+  btn.title = isLocked ? 'Dikunci dari transaksi — klik untuk buka' : 'Klik untuk kunci dari picker transaksi';
+  btn.style.background = isLocked ? 'rgba(239,68,68,0.15)' : 'var(--surface2)';
+  btn.style.border = isLocked ? '1px solid rgba(239,68,68,0.4)' : '1px solid var(--border)';
+  btn.style.color = isLocked ? 'var(--red)' : 'var(--muted)';
+}
