@@ -749,7 +749,18 @@ function simpanPenjualan() {
   // Auto-deduct stok di kartu stock persediaan
   const _ksIdJual = document.getElementById('jual-produk-id')?.value;
   const _qtyJual  = parseFloat(document.getElementById('jual-produk-qty')?.value)||1;
-  if(_ksIdJual) deductKartuStockOnSale(_ksIdJual, _qtyJual, tanggal, ket);
+  if(_ksIdJual) {
+    deductKartuStockOnSale(_ksIdJual, _qtyJual, tanggal, ket);
+    // Sync tampilan kartu stock ke kategori produk yang dijual
+    const _foundJual = _findKatById(_ksIdJual);
+    if(_foundJual) {
+      if(_foundJual.card.id !== activeKartuStockId) activeKartuStockId = _foundJual.card.id;
+      activeKategoriId = _foundJual.kat.id;
+      syncKartuStockDataFromKategori();
+      if(typeof renderKartuStock === 'function') renderKartuStock();
+      if(typeof renderKartuStockSelector === 'function') renderKartuStockSelector();
+    }
+  }
   // Update total transaksi di kontak jika dipilih
   if(kontakId) updateKontakTotalTrx(kontakId, jumlah, 'penjualan');
   ['jual-inv','jual-jumlah','jual-hpp','jual-ket'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
@@ -797,12 +808,17 @@ function simpanPembelian() {
       const { kat, card } = found;
       // Gunakan metode aktif kartu stock produk tersebut (sesuai pengaturan asal)
       addKartuStockOnBuy(produkId, qty, hargaPerUnit, tanggal, ket);
-      // Render ulang jika kartu stock ini sedang aktif
-      if(card.id === activeKartuStockId) {
-        syncKartuStockDataFromKategori();
-        if(typeof renderKartuStock === 'function') renderKartuStock();
-        if(typeof renderKartuStockSelector === 'function') renderKartuStockSelector();
+      // Render ulang: switch ke card & kategori yang baru diupdate agar
+      // syncKartuStockDataFromKategori() membaca data yang benar
+      if(card.id !== activeKartuStockId) {
+        // Card berbeda — switch aktif ke card ini
+        activeKartuStockId = card.id;
       }
+      // Selalu pastikan activeKategoriId menunjuk ke kategori yang dipilih
+      activeKategoriId = kat.id;
+      syncKartuStockDataFromKategori();
+      if(typeof renderKartuStock === 'function') renderKartuStock();
+      if(typeof renderKartuStockSelector === 'function') renderKartuStockSelector();
     }
   }
 
