@@ -3614,7 +3614,7 @@ function renderStorageSlots() {
   const container = document.getElementById('storage-slots');
   if(!container) return;
   const slots = getSlots();
-  const meta = JSON.parse(localStorage.getItem(META_KEY) || '{}');
+  const meta = JSON.parse(localStorage.getItem(getMetaKey()) || localStorage.getItem(META_KEY_LEGACY) || '{}');
   let html = '';
 
   // Current (auto-save) slot
