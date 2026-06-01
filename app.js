@@ -20065,7 +20065,7 @@ function openModalEditProdukHarga(katId, cardId) {
   const metodeLabel = { fifo:'FIFO', lifo:'LIFO', wa:'Weighted Average', mwa:'Moving WA' };
 
   document.getElementById('modal-produk-title').textContent = `Edit: ${ks.nama}`;
-  document.getElementById('produk-edit-id').value    = ksId;
+  document.getElementById('produk-edit-id').value    = katId;
   document.getElementById('produk-nama').value       = ks.nama;
   document.getElementById('produk-satuan').value     = ks.satuan||'unit';
   document.getElementById('produk-harga-jual').value = override?.hargaJual || '';
