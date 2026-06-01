@@ -462,6 +462,9 @@ body.light-mode .nav-card.active { background: rgba(22,163,74,0.07); border-colo
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 10px; overflow: hidden; margin-bottom: 16px;
 }
+
+#catatan-persediaan-wrap.table-card,
+#ks-extra-cards-container .table-card { overflow: clip; }
 /* Inside any grid container, table-card should not add extra margin — gap handles it */
 .kalk-grid .table-card,
 .grid-2 .table-card,
@@ -532,10 +535,12 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 .modal-body .form-row:last-of-type { margin-bottom: 0; }
 .form-group input, .form-group select, .form-group textarea {
   background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 6px; padding: 9px 12px; color: var(--text);
+  border-radius: 8px; padding: 8px 12px; color: var(--text);
   font-size: 13.5px; font-family: var(--sans); transition: border 0.15s;
-  outline: none;
+  outline: none; height: 38px; box-sizing: border-box;
 }
+/* textarea tidak pakai height fixed */
+.form-group textarea { height: auto; min-height: 70px; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
   border-color: var(--accent);
 }
@@ -673,25 +678,27 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 
 /* Trigger button untuk gantiin select di mobile */
 .akun-trigger-btn {
-  display: none; /* hidden di desktop, tampil di mobile via media query */
+  /* Tampil di semua ukuran layar — pakai bottom sheet picker, bukan select default browser */
+  display: flex; align-items: center;
   width: 100%; background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 5px; padding: 6px 10px;
+  border-radius: 8px; padding: 8px 12px; height: 38px; box-sizing: border-box;
   color: var(--text); font-size: 12.5px; font-family: var(--sans);
   cursor: pointer; text-align: left; transition: border-color 0.15s;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.akun-trigger-btn:hover { border-color: var(--accent); }
 .akun-trigger-btn:focus { border-color: var(--accent); outline: none; }
+/* Select selalu hidden — digantikan akun-trigger-btn */
+.jurnal-line-row select { display: none !important; }
 
 @media (max-width: 768px) {
-  .jurnal-line-row select { display: none; }
-  .akun-trigger-btn { display: block; }
   #akun-picker-sheet { border-radius: 20px 20px 0 0; max-height: 85vh; }
 }
 
 /* Form picker button (untuk kas & pembelian) */
 .form-picker-btn {
   width: 100%; background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 8px; padding: 10px 14px;
+  border-radius: 8px; padding: 8px 12px; height: 38px; box-sizing: border-box;
   color: var(--text); font-size: 13.5px; font-family: var(--sans);
   cursor: pointer; text-align: left; transition: border-color 0.15s;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -711,7 +718,7 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 /* Trigger button */
 .opt-picker-btn {
   width: 100%; background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 8px; padding: 10px 14px;
+  border-radius: 8px; padding: 8px 12px; height: 38px; box-sizing: border-box;
   color: var(--text); font-size: 13.5px; font-family: var(--sans);
   cursor: pointer; text-align: left; transition: border-color 0.2s, box-shadow 0.2s;
   display: flex; align-items: center; gap: 10px; position: relative;
@@ -894,16 +901,66 @@ body.light-mode .opt-picker-item.selected {
 .table-scroll::-webkit-scrollbar-track { background: transparent; }
 .table-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-/* Kartu stock: tbody scroll vertikal, thead tetap */
-.ks-table-wrap { overflow-x:auto; overflow-y:auto; max-height:320px; border-radius:8px; border:1px solid var(--border); scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+/* Kartu stock: tbody scroll vertikal, thead sticky
+   1 table, overflow pada wrapper, sticky thead dengan transform trick */
+.ks-table-wrap {
+  overflow: auto;
+  height: 380px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
 .ks-table-wrap::-webkit-scrollbar { width:5px; height:5px; }
 .ks-table-wrap::-webkit-scrollbar-track { background:transparent; }
 .ks-table-wrap::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
-.ks-table-wrap table { width:max-content; min-width:100%; border-collapse:collapse; }
-.ks-table-wrap thead th { background:var(--surface2); white-space:nowrap; font-size:11px; padding:7px 10px; border-bottom:1px solid var(--border); }
-.ks-table-wrap tbody td { white-space:nowrap; font-size:12px; padding:7px 10px; border-bottom:1px solid var(--border); }
+.ks-table-wrap table {
+  border-collapse: collapse;
+  min-width: 100%;  /* selalu isi wrapper */
+  width: max-content; /* bisa lebih lebar jika konten membutuhkan — scroll horizontal aktif */
+}
+.ks-table-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface2);
+  white-space: nowrap;
+  font-size: 11px;
+  padding: 7px 10px;
+  /* Tidak ada outline/box-shadow yang bisa bocor ke area kanan */
+  border-bottom: none;
+  border-top: none;
+}
+/* Row 1: separator bawah menggunakan after pseudo — tidak bocor ke kanan */
+.ks-table-wrap thead tr:first-child th {
+  border-bottom: 1px solid var(--border);
+}
+/* Row 2: top diset via JS fixKsTableStickyHeaders (fallback 30px).
+   Shadow HANYA ke bawah dengan clip — tidak ke samping */
+.ks-table-wrap thead tr:nth-child(2) th {
+  top: 30px;
+  border-bottom: 2px solid var(--border);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+}
 
-/* ─ DASHBOARD CARD SCROLLABLE CONTENT ─ */
+.ks-table-wrap tbody td {
+  white-space: nowrap;
+  font-size: 12px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+}
+/* Empty state */
+.ks-table-wrap tbody td[colspan] {
+  border-bottom: none;
+  text-align: center;
+  color: var(--muted);
+  padding: 40px 20px;
+  user-select: none;
+  pointer-events: none;
+  cursor: default;
+}
+
+/* ─ DASHBOARD CARD SCROLLABLE CONTENT ─ *//* ─ DASHBOARD CARD SCROLLABLE CONTENT ─ */
 .dash-card-scroll {
   max-height: 260px;
   overflow-y: auto;
@@ -1349,9 +1406,9 @@ body.light-mode .opt-picker-item.selected {
   .filter-bar { flex-wrap: wrap; }
   .filter-bar input, .filter-bar select { width: 100%; min-width: unset; }
 
-  /* Modal bottom sheet */
-  .modal-backdrop { align-items: flex-end; padding: 0; }
-  .modal { max-width: 100% !important; width: 100%; margin: 0; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; left: 0; right: 0; max-height: 90vh; }
+  /* Modal tetap di tengah di mobile — hanya akun-picker yang bottom sheet */
+  .modal-backdrop { align-items: center; padding: 16px; }
+  .modal { max-width: 100%; border-radius: 16px; }
 
   /* Section */
   .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -1854,23 +1911,21 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
   transition: width 0.6s linear;
 }
 
-/* COMPANY ACTION BOTTOM SHEET */
+/* COMPANY ACTION MODAL (center) */
 #cp-action-sheet-backdrop {
   display: none; position: fixed; inset: 0;
   background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
-  z-index: 99998; align-items: flex-end; justify-content: center;
+  z-index: 99998; align-items: center; justify-content: center;
+  padding: 20px;
 }
 #cp-action-sheet-backdrop.open { display: flex; }
 #cp-action-sheet {
   background: var(--surface); width: 100%; max-width: 480px;
-  border-radius: 24px 24px 0 0; padding-bottom: env(safe-area-inset-bottom, 16px);
-  box-shadow: 0 -12px 48px rgba(0,0,0,0.5);
-  animation: slideUpSheet 0.28s cubic-bezier(0.34,1.2,0.64,1);
+  border-radius: 20px; padding-bottom: 16px;
+  box-shadow: 0 8px 48px rgba(0,0,0,0.5);
+  animation: popIn 0.22s cubic-bezier(0.34,1.2,0.64,1);
 }
-.cp-action-handle {
-  width: 38px; height: 4px; border-radius: 2px;
-  background: var(--border); margin: 12px auto 0;
-}
+.cp-action-handle { display: none; }
 .cp-action-header {
   padding: 16px 20px 12px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; gap: 12px;

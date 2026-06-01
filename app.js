@@ -289,6 +289,26 @@ function showPage(id) {
   if(id==='perubahan-ekuitas') { renderPerubahanEkuitas(); setTimeout(upgradeFormPickers, 80); }
   if(id==='aset-tetap') setTimeout(()=>{ renderAsetTetap(); renderAsetTetapKPI(); upgradeFormPickers(); }, 80);
   if(id==='kontak') setTimeout(()=>{ renderKontak(); renderKontakKPI(); upgradeFormPickers(); }, 80);
+  if(id==='kalk-persediaan') setTimeout(()=>{
+    // Pastikan activeKartuStockId/activeKategoriId terisi dan data di-sync sebelum render
+    if(!activeKartuStockId) {
+      const firstCard = Object.values(multiKartuStock)[0];
+      if(firstCard) {
+        activeKartuStockId = firstCard.id;
+        activeKategoriId = firstCard.kategori ? Object.keys(firstCard.kategori)[0] : null;
+      }
+    }
+    if(!activeKategoriId && activeKartuStockId) {
+      const card = multiKartuStock[activeKartuStockId];
+      if(card?.kategori) activeKategoriId = Object.keys(card.kategori)[0];
+    }
+    syncKartuStockDataFromKategori();
+    renderKartuStockSelector();
+    renderKartuStock();
+    upgradeFormPickers();
+    // Fix sticky header setelah semua render selesai
+    fixKsTableStickyHeaders();
+  }, 80);
   if(id==='akun') { renderAkun(); setTimeout(upgradeFormPickers, 80); }
   if(id==='transaksi') { initTransaksiForm(); setTimeout(() => { upgradeFormPickers(); refreshKontakPickers(); }, 80); }
   if(id==='analitik') setTimeout(renderAnalitik, 80);
@@ -422,6 +442,19 @@ function initTransaksiForm() {
   });
   populateAkunSelect('kas-akun-lawan', a => !['1101','1102'].includes(a.kode));
   populateAkunSelect('beli-akun', a => ['Beban','Aset','HPP'].includes(a.tipe));
+
+  // Pastikan beli-produk-row selalu visible (bisa tersembunyi jika akun non-persediaan dipilih sebelumnya)
+  const produkRow = document.getElementById('beli-produk-row');
+  if(produkRow) produkRow.style.display = '';
+
+  // Pastikan akun default beli sudah menunjuk ke persediaan (1301) supaya produk picker tampil
+  const beliAkunEl = document.getElementById('beli-akun');
+  if(beliAkunEl && !['1301','1302','1303','1304'].includes(beliAkunEl.value)) {
+    beliAkunEl.value = '1301';
+    const beliAkunLbl = document.getElementById('beli-akun-label');
+    if(beliAkunLbl) beliAkunLbl.textContent = 'Persediaan Barang Dagangan';
+  }
+
   initManualLines();
 }
 
@@ -524,9 +557,6 @@ function initJualAkunPendapatan() {
     const opt = _jualAkunOptions.find(o => o.value === def.kode);
     const lblEl = document.getElementById('jual-akun-pendapatan-label');
     if (lblEl && opt) lblEl.textContent = opt.label;
-    if (lbl) lbl.textContent = '(otomatis dari tipe bisnis)';
-  } else {
-    if (lbl) lbl.textContent = '(pilih sesuai jenis)';
   }
 }
 
@@ -571,7 +601,11 @@ function openBeliAkunPicker() {
       const lbl = document.getElementById('beli-akun-label');
       if(lbl) lbl.textContent = label;
       // Jika akun bukan persediaan, sembunyikan produk picker
-      const isPersediaan = ['1301','1302','1303','1304'].includes(val);
+      // Cek berdasarkan tipe akun di akuns[] — lebih fleksibel dari hardcode kode
+      const akunObj = akuns.find(a => a.kode === val);
+      const isPersediaan = akunObj
+        ? (akunObj.tipe === 'Persediaan' || akunObj.tipe === 'Aset Lancar' || ['1301','1302','1303','1304'].includes(val))
+        : ['1301','1302','1303','1304'].includes(val);
       const produkRow = document.getElementById('beli-produk-row');
       if(produkRow) produkRow.style.display = isPersediaan ? '' : 'none';
       if(!isPersediaan) {
@@ -587,7 +621,7 @@ function openBeliAkunPicker() {
         if(hint) hint.style.display='none';
       } else {
         const jLabel = document.getElementById('beli-jumlah-label');
-        if(jLabel) jLabel.textContent = 'Harga per Unit (Rp) *';
+        if(jLabel) jLabel.textContent = 'Harga per Unit (Rp)';
       }
     }
   });
@@ -647,7 +681,7 @@ function _applyBeliProduk(katId, label) {
   const metodeLabel = {fifo:'FIFO',lifo:'LIFO',wa:'Weighted Average',mwa:'Moving Average'};
   // Update label jumlah
   const jLabel = document.getElementById('beli-jumlah-label');
-  if(jLabel) jLabel.textContent = 'Harga per Unit (Rp) *';
+  if(jLabel) jLabel.textContent = 'Harga per Unit (Rp)';
 
   // Isi keterangan otomatis
   const ketEl = document.getElementById('beli-ket');
@@ -727,7 +761,12 @@ function simpanPenjualan() {
   const tanggal = document.getElementById('jual-tanggal').value;
   const inv = document.getElementById('jual-inv').value || autoNo('INV');
   const metode = document.getElementById('jual-metode').value;
-  const jumlah = parseFloat(document.getElementById('jual-jumlah').value)||0;
+  let jumlah = parseFloat(document.getElementById('jual-jumlah').value)||0;
+  // Jika mode jasa/non-barang, baca dari manual input
+  if(!jumlah) {
+    const manInp = document.getElementById('jual-jumlah-manual');
+    if(manInp) jumlah = parseFloat(manInp.value)||0;
+  }
   const hpp = parseFloat(document.getElementById('jual-hpp').value)||0; // dihitung otomatis dari kartu stock
   const ket = document.getElementById('jual-ket').value || `Penjualan ${inv}`;
   const kontakId = document.getElementById('jual-kontak-id')?.value || '';
@@ -735,35 +774,66 @@ function simpanPenjualan() {
   const akunPendapatanKode = document.getElementById('jual-akun-pendapatan')?.value || '4101';
   const _jualOpt = _jualAkunOptions?.find(o => o.value === akunPendapatanKode);
   const akunPendapatanNama = _jualOpt ? _jualOpt.label : 'Penjualan';
-  if(!tanggal||!jumlah) { showAlert('Lengkapi tanggal dan jumlah!'); return; }
+
+  if(!tanggal) { showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Pilih tanggal terlebih dahulu!'); return; }
+  // Jika jenis penjualan barang/manufaktur, produk wajib dipilih
+  const _jualKsId = document.getElementById('jual-produk-id')?.value;
+  const _jualAkunPend = document.getElementById('jual-akun-pendapatan')?.value || '4101';
+  const _isProdukJenis = (_jualAkunPend === '4101' || _jualAkunPend === '4105');
+  if(_isProdukJenis && !_jualKsId) {
+    showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Pilih produk terlebih dahulu!');
+    return;
+  }
+  if(!jumlah) { showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Harga jual belum diset — atur di Master Produk terlebih dahulu.'); return; }
   const debAkun = metode==='tunai'?'1101':'1201';
   const debNama = metode==='tunai'?'Kas masuk':'Piutang usaha';
   addJurnal({tanggal,ket,jenis:'Penjualan',ref:inv,kontakId,lines:[
     {akun:debAkun,ket:debNama,debit:jumlah,kredit:0},
     {akun:akunPendapatanKode,ket:akunPendapatanNama,debit:0,kredit:jumlah},
   ]});
-  if(hpp>0) addJurnal({tanggal,ket:'HPP '+ket,jenis:'Penjualan',ref:inv,kontakId,lines:[
-    {akun:'5101',ket:'HPP',debit:hpp,kredit:0},
-    {akun:'1301',ket:'Persediaan',debit:0,kredit:hpp},
-  ]});
-  // Auto-deduct stok di kartu stock persediaan
+  // Auto-deduct stok & hitung HPP multi-layer (FIFO/LIFO/WA) dari kartu stock
   const _ksIdJual = document.getElementById('jual-produk-id')?.value;
   const _qtyJual  = parseFloat(document.getElementById('jual-produk-qty')?.value)||1;
   if(_ksIdJual) {
-    deductKartuStockOnSale(_ksIdJual, _qtyJual, tanggal, ket);
-    // Sync tampilan kartu stock ke kategori produk yang dijual
     const _foundJual = _findKatById(_ksIdJual);
     if(_foundJual) {
-      if(_foundJual.card.id !== activeKartuStockId) activeKartuStockId = _foundJual.card.id;
-      activeKategoriId = _foundJual.kat.id;
+      activeKartuStockId = _foundJual.card.id;
+      activeKategoriId = _ksIdJual;
+    }
+    const hppResult = deductKartuStockOnSale(_ksIdJual, _qtyJual, tanggal, ket);
+    const hppReal = hppResult ? hppResult.hppBatch : (hpp || 0);
+    if(hppReal > 0) {
+      const overrideProduk = produkList.find(p => p.ksId === _ksIdJual);
+      const akunHpp  = overrideProduk?.akunHpp  || '5101';
+      const akunPers = overrideProduk?.akunPers  || '1301';
+      addJurnal({ tanggal, ket: 'HPP ' + ket, jenis: 'Penjualan', ref: inv, kontakId, lines: [
+        { akun: akunHpp,  ket: 'HPP', debit: hppReal, kredit: 0 },
+        { akun: akunPers, ket: 'Persediaan keluar', debit: 0, kredit: hppReal },
+      ]});
+    }
+    if(_foundJual) {
+      kartuStockTab = getKsSaldo(_foundJual.kat).metode || 'fifo';
       syncKartuStockDataFromKategori();
       if(typeof renderKartuStock === 'function') renderKartuStock();
       if(typeof renderKartuStockSelector === 'function') renderKartuStockSelector();
+      _ksJustWroteDirectly = false;
     }
+  } else if(hpp > 0) {
+    // Fallback: tidak ada produk dipilih, pakai hpp manual dari form
+    addJurnal({tanggal, ket:'HPP '+ket, jenis:'Penjualan', ref:inv, kontakId, lines:[
+      {akun:'5101', ket:'HPP', debit:hpp, kredit:0},
+      {akun:'1301', ket:'Persediaan', debit:0, kredit:hpp},
+    ]});
   }
   // Update total transaksi di kontak jika dipilih
   if(kontakId) updateKontakTotalTrx(kontakId, jumlah, 'penjualan');
   ['jual-inv','jual-jumlah','jual-hpp','jual-ket'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  const _manReset = document.getElementById('jual-jumlah-manual');
+  if(_manReset) _manReset.value = '';
+  // Reset display box harga jual
+  const _dispTxt = document.getElementById('jual-harga-display-text');
+  if(_dispTxt) { _dispTxt.style.color = 'var(--muted)'; _dispTxt.innerHTML = '—'; }
+
   document.getElementById('jual-kontak-id').value = '';
   const jualKontakBtn = document.getElementById('jual-kontak-btn');
   if(jualKontakBtn){ jualKontakBtn.classList.remove('has-value'); jualKontakBtn.textContent = 'Pilih kontak...'; }
@@ -790,8 +860,16 @@ function simpanPembelian() {
   const ket          = document.getElementById('beli-ket')?.value || `Pembelian ${faktur}`;
   const kontakId     = document.getElementById('beli-kontak-id')?.value || '';
 
-  if(!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
-  if(!hargaPerUnit) { showAlert('Isi harga per unit terlebih dahulu!'); return; }
+  if(!tanggal) { showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Pilih tanggal terlebih dahulu!'); return; }
+  // Jika akun adalah persediaan, produk wajib dipilih
+  const _isPersediaanAkun = ['1301','1302','1303','1304'].includes(akunKode) ||
+    (akuns.find(a=>a.kode===akunKode)?.tipe === 'Persediaan') ||
+    (akuns.find(a=>a.kode===akunKode)?.tipe === 'Aset Lancar');
+  if(_isPersediaanAkun && !produkId) {
+    showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Pilih produk terlebih dahulu!');
+    return;
+  }
+  if(!hargaPerUnit) { showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Isi harga per unit terlebih dahulu!'); return; }
 
   // Total = harga × qty (jika ada produk), atau langsung harga (jika tanpa produk)
   const totalBeli = produkId ? hargaPerUnit * qty : hargaPerUnit;
@@ -806,19 +884,18 @@ function simpanPembelian() {
     const found = _findKatById(produkId);
     if(found) {
       const { kat, card } = found;
-      // Gunakan metode aktif kartu stock produk tersebut (sesuai pengaturan asal)
+      activeKartuStockId = card.id;
+      activeKategoriId = produkId;
       addKartuStockOnBuy(produkId, qty, hargaPerUnit, tanggal, ket);
-      // Render ulang: switch ke card & kategori yang baru diupdate agar
-      // syncKartuStockDataFromKategori() membaca data yang benar
-      if(card.id !== activeKartuStockId) {
-        // Card berbeda — switch aktif ke card ini
-        activeKartuStockId = card.id;
-      }
-      // Selalu pastikan activeKategoriId menunjuk ke kategori yang dipilih
-      activeKategoriId = kat.id;
+      kartuStockTab = getKsSaldo(kat).metode || 'fifo';
       syncKartuStockDataFromKategori();
-      if(typeof renderKartuStock === 'function') renderKartuStock();
-      if(typeof renderKartuStockSelector === 'function') renderKartuStockSelector();
+      if(typeof renderKartuStock === 'function') {
+        try { renderKartuStock(); } catch(e) {}
+      }
+      if(typeof renderKartuStockSelector === 'function') {
+        try { renderKartuStockSelector(); } catch(e) {}
+      }
+      _ksJustWroteDirectly = false;
     }
   }
 
@@ -839,6 +916,14 @@ function simpanPembelian() {
   const beliProdukLbl = document.getElementById('beli-produk-label');
   if(beliProdukId)  beliProdukId.value = '';
   if(beliProdukLbl) { beliProdukLbl.textContent = 'Pilih produk...'; beliProdukLbl.style.color = 'var(--muted)'; }
+  // Reset akun ke default persediaan agar produk row tetap terlihat
+  const beliAkunEl  = document.getElementById('beli-akun');
+  const beliAkunLbl = document.getElementById('beli-akun-label');
+  if(beliAkunEl)  beliAkunEl.value = '1301';
+  if(beliAkunLbl) beliAkunLbl.textContent = 'Persediaan Barang Dagangan';
+  // Pastikan produk row tetap visible setelah reset
+  const produkRowReset = document.getElementById('beli-produk-row');
+  if(produkRowReset) produkRowReset.style.display = '';
   // Reset hint
   const hint = document.getElementById('beli-total-hint');
   if(hint) hint.style.display = 'none';
@@ -11058,10 +11143,20 @@ function saveMKS(skipSync) {
   saveKartuStockToCloud();
 }
 
+// Flag untuk mencegah syncKategoriFromKartuStockData menimpa data baru
+// yang baru saja ditulis langsung ke kat.data oleh addKartuStockOnBuy / deductKartuStockOnSale
+let _ksJustWroteDirectly = false;
+
 function switchActiveKS(cardId, katId) {
   if (!multiKartuStock[cardId]) return;
   // Simpan data aktif sekarang ke kategori sebelumnya
-  syncKategoriFromKartuStockData();
+  // KECUALI jika addKartuStockOnBuy/deductKartuStockOnSale baru saja menulis
+  // langsung ke kat.data — dalam kasus itu kartuStockData masih state lama
+  // sehingga sync-nya justru akan overwrite data baru yang baru saja tersimpan
+  if (!_ksJustWroteDirectly) {
+    syncKategoriFromKartuStockData();
+  }
+  _ksJustWroteDirectly = false;
   saveMKS();
 
   activeKartuStockId = cardId;
@@ -11141,6 +11236,7 @@ function renderKartuStockSelector() {
   // Tampilkan/sembunyikan tombol Hapus Kartu Stock
   const hapusBtn = document.getElementById('hapus-extra-card-btn');
   if (hapusBtn) hapusBtn.style.display = Object.keys(multiKartuStock).length > 1 ? '' : 'none';
+  fixKsTableStickyHeaders();
 }
 
 function _renderExtraKsCards() {
@@ -11201,22 +11297,29 @@ function _renderExtraKsCards() {
 
 
         <div class="ks-table-wrap"><table>
-          <thead><tr>
-            <th style="min-width:72px;white-space:nowrap">Tgl</th><th style="min-width:80px">Ket</th>
-            <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">MASUK</th>
-            <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">KELUAR</th>
-            <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">SALDO</th>
-            <th style="min-width:44px">Aksi</th>
-          </tr><tr>
-            <th></th><th></th>
-            <th style="border-left:1px solid var(--border);min-width:56px">Qty</th><th style="min-width:96px">Hrg Beli</th><th style="min-width:108px">Jumlah</th>
-            <th style="border-left:1px solid var(--border);min-width:56px">Qty</th><th style="min-width:96px">HPP/Unit</th><th style="min-width:108px">Jumlah</th>
-            <th style="border-left:1px solid var(--border);min-width:56px">Qty</th><th style="min-width:96px">Hrg</th><th style="min-width:108px">Jumlah</th>
-            <th></th>
-          </tr></thead>
+    <thead><tr>
+          <th style="min-width:72px">Tgl</th>
+          <th style="min-width:90px">Ket</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">MASUK</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">KELUAR</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">SALDO</th>
+          <th style="min-width:40px">AK</th>
+        </tr><tr>
+          <th></th><th></th>
+          <th style="border-left:1px solid var(--border);min-width:50px">Qty</th>
+          <th style="min-width:90px">Hrg Beli</th>
+          <th style="min-width:100px">Jumlah</th>
+          <th style="border-left:1px solid var(--border);min-width:50px">Qty</th>
+          <th style="min-width:90px">HPP/Unit</th>
+          <th style="min-width:100px">Jumlah</th>
+          <th style="border-left:1px solid var(--border);min-width:50px">Qty</th>
+          <th style="min-width:90px">Hrg</th>
+          <th style="min-width:100px">Jumlah</th>
+          <th></th>
+        </tr></thead>
           <tbody id="ks-extra-tbody-${card.id}">
             ${(()=>{
-              if(!storageForTable.length) return '<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Belum ada catatan. Hitung persediaan lalu klik "Input ke Kartu Stock".</td></tr>';
+              if(!storageForTable.length) return '<tr><td colspan="12">Belum ada catatan.</td></tr>';
               const isLayeredE = (cardMetode==='fifo'||cardMetode==='lifo');
               const tdS = (row) => {
                 const q = row ? row.qty : 0, h = row ? row.harga : 0;
@@ -11304,6 +11407,7 @@ function _renderExtraKsCards() {
       </div>
     </div>`;
   }).join('');
+  fixKsTableStickyHeaders();
 }
 
 function openKsExtraKatPicker(cardId) {
@@ -12096,23 +12200,27 @@ function rebuildStockFromKartu(storage, metode) {
 
 function _buildKartuStockTable(storage) {
   const isLayered = (kartuStockTab==='fifo'||kartuStockTab==='lifo');
-  let html = `<div class="table-scroll"><table style="min-width:700px;">
-    <thead>
-      <tr>
-        <th>Tgl</th><th>Ket</th>
-        <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">MASUK</th>
-        <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">KELUAR</th>
-        <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">SALDO</th>
-        <th>Aksi</th>
-      </tr>
-      <tr>
-        <th></th><th></th>
-        <th style="border-left:1px solid var(--border)">Qty</th><th>Hrg Beli</th><th>Jumlah</th>
-        <th style="border-left:1px solid var(--border)">Qty</th><th>HPP/Unit</th><th>Jumlah</th>
-        <th style="border-left:1px solid var(--border)">Qty</th><th>Hrg</th><th>Jumlah</th>
-        <th></th>
-      </tr>
-    </thead>
+  let html = `<div class="ks-table-wrap"><table>
+    <thead><tr>
+          <th style="min-width:72px">Tgl</th>
+          <th style="min-width:90px">Ket</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">MASUK</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">KELUAR</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">SALDO</th>
+          <th style="min-width:40px">AK</th>
+        </tr><tr>
+          <th></th><th></th>
+          <th style="border-left:1px solid var(--border);min-width:50px">Qty</th>
+          <th style="min-width:90px">Hrg Beli</th>
+          <th style="min-width:100px">Jumlah</th>
+          <th style="border-left:1px solid var(--border);min-width:50px">Qty</th>
+          <th style="min-width:90px">HPP/Unit</th>
+          <th style="min-width:100px">Jumlah</th>
+          <th style="border-left:1px solid var(--border);min-width:50px">Qty</th>
+          <th style="min-width:90px">Hrg</th>
+          <th style="min-width:100px">Jumlah</th>
+          <th></th>
+        </tr></thead>
     <tbody id="ks-table-body">`;
 
   storage.forEach((e, idx) => {
@@ -12176,12 +12284,31 @@ function _buildKartuStockTable(storage) {
   return html;
 }
 
+
+/** Koreksi top offset sticky header row-2 — dipanggil setelah DOM fully painted */
+function fixKsTableStickyHeaders() {
+  // Double rAF memastikan browser sudah layout + paint sebelum kita baca ukuran
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.ks-table-wrap').forEach(wrap => {
+        const row1 = wrap.querySelector('thead tr:first-child');
+        const row2ths = wrap.querySelectorAll('thead tr:nth-child(2) th');
+        if(!row1 || !row2ths.length) return;
+        // getBoundingClientRect lebih akurat untuk ukuran visual aktual
+        const h = row1.getBoundingClientRect().height;
+        if(h > 0) {
+          row2ths.forEach(th => { th.style.top = Math.round(h) + 'px'; });
+        }
+      });
+    });
+  });
+}
 function renderKartuStock() {
   const storage = kartuStockData[kartuStockTab] || [];
   const tbody = document.getElementById('ks-table-body');
   const isLayered = (kartuStockTab==='fifo'||kartuStockTab==='lifo');
   if(!storage.length) {
-    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Belum ada catatan untuk metode ini.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12">Belum ada catatan.</td></tr>';
     document.getElementById('ks-stock-summary').style.display='none';
     _attachKartuStockEvents(tbody);
     return;
@@ -12322,6 +12449,7 @@ function renderKartuStock() {
   document.getElementById('ks-saldo-nilai').textContent = rp(saldoNilai);
   document.getElementById('ks-total-hpp').textContent   = rp(totalHppTercatat);
   document.getElementById('ks-stock-summary').style.display='block';
+  fixKsTableStickyHeaders();
 }
 
 function _ksConfirm(msg, icon, onOk) {
@@ -17222,8 +17350,10 @@ async function saveProfilToSupabase(profilData) {
 
 // SAVE & LOAD KARTU STOCK KE CLOUD
 async function saveKartuStockToCloud() {
-  // Sync data aktif ke kategori sebelum save ke cloud
-  syncKategoriFromKartuStockData();
+  // PENTING: syncKategoriFromKartuStockData() TIDAK dipanggil di sini.
+  // Dipanggil dari saveMKS(skipSync=true) — kat.data sudah ditulis langsung oleh
+  // addKartuStockOnBuy/deductKartuStockOnSale. Sync di sini overwrite data baru
+  // dengan kartuStockData yang masih stale.
   if (!currentCompany) {
     // Fallback ke localStorage jika belum login / mode tamu
     try { localStorage.setItem('bhp_mks_guest', JSON.stringify(multiKartuStock)); } catch(e) {}
@@ -19795,10 +19925,16 @@ function getKsSaldo(ks, _depth) {
  * Otomatis kurangi stok di kartu stock saat ada penjualan.
  */
 function addKartuStockOnBuy(katId, qty, hargaPerUnit, tanggal, ket) {
+  console.log('[BUY] dipanggil katId='+katId+' qty='+qty+' harga='+hargaPerUnit);
   const found = _findKatById(katId);
-  if (!found || qty <= 0 || hargaPerUnit <= 0) return;
+  console.log('[BUY] found=', found ? 'YA ('+found.kat.nama+')' : 'TIDAK - katId tidak ketemu di multiKartuStock!');
+  if (!found || qty <= 0 || hargaPerUnit < 0) {
+    console.log('[BUY] RETURN AWAL - found:'+!!found+' qty:'+qty+' harga:'+hargaPerUnit);
+    return;
+  }
   const kat    = found.kat;
   const metode = getKsSaldo(kat).metode || 'fifo';
+  console.log('[BUY] metode='+metode+' storage sebelum='+( kat.data[metode]||[]).length+' entri');
   if (!kat.data[metode]) kat.data[metode] = [];
   const storage = kat.data[metode];
 
@@ -19827,57 +19963,80 @@ function addKartuStockOnBuy(katId, qty, hargaPerUnit, tanggal, ket) {
     kQty: 0, kHarga: 0, kJml: 0,
     saldoLayers: sl, jurnalDone: true
   });
-  // skipSync=true: data sudah ditulis langsung ke kat.data, jangan di-overwrite
-  // oleh syncKategoriFromKartuStockData() yang membaca kartuStockData lama
+  console.log('[BUY] BERHASIL push ke storage, total entri sekarang='+storage.length);
+  _ksJustWroteDirectly = true;
   saveMKS(true);
+  console.log('[BUY] saveMKS selesai');
 }
 
 function deductKartuStockOnSale(katId, qty, tanggal, ket) {
   // Cari kategori dari katId di semua card
   const found = _findKatById(katId);
-  if (!found || qty <= 0) return;
+  if (!found || qty <= 0) return { hppBatch: 0, keluarLayers: [], qtySell: 0 };
   const ks = found.kat;
-  const saldo  = getKsSaldo(ks);
-  const metode = saldo.metode;
+  const metode = getKsSaldo(ks).metode || 'fifo';
   if (!ks.data[metode]) ks.data[metode] = [];
   const storage = ks.data[metode];
   let runningStock = rebuildStockFromKartu(storage, metode);
   const maxQty = runningStock.reduce((s,x)=>s+x.qty,0);
-  if (maxQty <= 0) return;
+  if (maxQty <= 0) return { hppBatch: 0, keluarLayers: [], qtySell: 0 };
   const qtySell = Math.min(qty, maxQty);
   let qSisa = qtySell, hppBatch = 0, keluarLayers = [];
+
   if (metode === 'fifo') {
+    // FIFO: ambil dari layer paling lama (depan) dulu
+    // Contoh: jual 209, layer1=200@199, layer2=99@399
+    // → 200×199=39.800 + 9×399=3.591 = total HPP 43.391
     while (qSisa > 0 && runningStock.length) {
       const layer = runningStock[0];
       const ambil = Math.min(layer.qty, qSisa);
-      hppBatch += ambil * layer.harga; keluarLayers.push({qty:ambil,harga:layer.harga});
-      layer.qty -= ambil; qSisa -= ambil; if (layer.qty<=0) runningStock.shift();
+      hppBatch += ambil * layer.harga;
+      keluarLayers.push({ qty: ambil, harga: layer.harga });
+      layer.qty -= ambil;
+      qSisa -= ambil;
+      if (layer.qty <= 0) runningStock.shift(); // layer habis, buang, lanjut ke layer berikutnya
     }
   } else if (metode === 'lifo') {
+    // LIFO: ambil dari layer paling baru (belakang) dulu
     while (qSisa > 0 && runningStock.length) {
-      const layer = runningStock[runningStock.length-1];
+      const layer = runningStock[runningStock.length - 1];
       const ambil = Math.min(layer.qty, qSisa);
-      hppBatch += ambil * layer.harga; keluarLayers.push({qty:ambil,harga:layer.harga});
-      layer.qty -= ambil; qSisa -= ambil; if (layer.qty<=0) runningStock.pop();
+      hppBatch += ambil * layer.harga;
+      keluarLayers.push({ qty: ambil, harga: layer.harga });
+      layer.qty -= ambil;
+      qSisa -= ambil;
+      if (layer.qty <= 0) runningStock.pop(); // layer habis, buang, lanjut ke layer sebelumnya
     }
   } else {
+    // WA / MWA: rata-rata tertimbang
     const tq = runningStock.reduce((s,x)=>s+x.qty,0);
     const tv = runningStock.reduce((s,x)=>s+x.qty*x.harga,0);
     const ha = tq ? tv/tq : 0;
-    hppBatch = ha * qtySell; keluarLayers = [{qty:qtySell,harga:ha}];
+    hppBatch = ha * qtySell;
+    keluarLayers = [{ qty: qtySell, harga: ha }];
     let sisa2 = qtySell;
-    for (let i=0;i<runningStock.length&&sisa2>0;i++) {
-      const ambil=Math.min(runningStock[i].qty,sisa2); runningStock[i].qty-=ambil; sisa2-=ambil;
+    for (let i = 0; i < runningStock.length && sisa2 > 0; i++) {
+      const ambil = Math.min(runningStock[i].qty, sisa2);
+      runningStock[i].qty -= ambil;
+      sisa2 -= ambil;
     }
-    runningStock = runningStock.filter(x=>x.qty>0);
+    runningStock = runningStock.filter(x => x.qty > 0);
   }
+
   const sl = runningStock.filter(x=>x.qty>0).map(x=>({...x}));
-  const hppPerUnit = qtySell ? hppBatch/qtySell : 0;
+  const hppPerUnit = qtySell ? hppBatch / qtySell : 0;
   const id = kartuStockIdCounter++;
-  storage.push({id, tgl:tanggal, ket:ket||'Penjualan', mQty:0, mHarga:0,
-    kQty:qtySell, kHarga:hppPerUnit, kJml:hppBatch, keluarLayers, saldoLayers:sl, jurnalDone:true});
-  // skipSync=true: sama seperti addKartuStockOnBuy, hindari overwrite data baru
+  storage.push({
+    id, tgl: tanggal, ket: ket||'Penjualan', mQty: 0, mHarga: 0,
+    kQty: qtySell, kHarga: hppPerUnit, kJml: hppBatch,
+    keluarLayers, saldoLayers: sl, jurnalDone: true
+  });
+  // skipSync=true: data sudah ditulis langsung ke kat.data, hindari overwrite
+  _ksJustWroteDirectly = true;
   saveMKS(true);
+
+  // Return hasil HPP untuk dipakai langsung di jurnal simpanPenjualan
+  return { hppBatch, keluarLayers, qtySell, metode };
 }
 
 function getHppLayersForSale(ks, qtySell) {
@@ -20229,23 +20388,65 @@ function onJualJenisChange(value) {
   if(produkRow) produkRow.style.display = isProduk ? '' : 'none';
 
   if(isProduk) {
-    // Langsung sembunyikan jumlah — sudah pasti dari produk × qty
-    _toggleJualJumlahRow(false);
+    // Mode barang: display-only, reset ke "-"
+    _setJualJumlahMode(true);
+    const _dt = document.getElementById('jual-harga-display-text');
+    if(_dt) { _dt.style.color = 'var(--muted)'; _dt.innerHTML = '—'; }
+    const _hv = document.getElementById('jual-jumlah'); if(_hv) _hv.value = '0';
   } else {
-    // Jasa/Properti/dll — tampilkan jumlah untuk input manual, reset produk
+    // Jasa/Properti/dll — reset produk, aktifkan manual input
     const idEl  = document.getElementById('jual-produk-id');
     const lblEl = document.getElementById('jual-produk-label');
     const hppEl = document.getElementById('jual-hpp');
     if(idEl)  idEl.value  = '';
     if(lblEl) { lblEl.textContent = 'Pilih produk...'; lblEl.style.color = 'var(--muted)'; }
     if(hppEl) hppEl.value = '0';
-    _toggleJualJumlahRow(true);
+    _setJualJumlahMode(false);
   }
 }
 
 function _toggleJualJumlahRow(show) {
+  // Row selalu visible. Tetap ada untuk kompatibilitas.
   const group = document.getElementById('jual-jumlah-group');
-  if(group) group.style.display = show ? '' : 'none';
+  if(group) group.style.display = '';
+}
+
+/** Aktifkan mode display-only (produk barang) atau editable (jasa/dll) */
+function _setJualJumlahMode(isDisplayOnly) {
+  const displayBox  = document.getElementById('jual-harga-display');
+  const hiddenInput = document.getElementById('jual-jumlah');
+  const label       = document.querySelector('#jual-jumlah-group label');
+  const manualInput = document.getElementById('jual-jumlah-manual');
+
+  if(isDisplayOnly) {
+    // Mode barang: tampilkan display box, sembunyikan manual input
+    if(displayBox)  displayBox.style.display  = 'flex';
+    if(manualInput) manualInput.style.display = 'none';
+    if(label) label.textContent = 'Harga Jual';
+  } else {
+    // Mode jasa/dll: sembunyikan display box, tampilkan manual input
+    if(displayBox)  displayBox.style.display  = 'none';
+    const _dt = document.getElementById('jual-harga-display-text');
+    if(_dt) { _dt.style.color='var(--muted)'; _dt.innerHTML='—'; }
+    const _hw = document.getElementById('jual-harga-warning'); if(_hw) _hw.remove();
+    if(hiddenInput) hiddenInput.value = '0';
+    // Buat manual input kalau belum ada
+    if(!manualInput) {
+      const inp = document.createElement('input');
+      inp.type = 'number'; inp.id = 'jual-jumlah-manual';
+      inp.placeholder = '0'; inp.inputMode = 'numeric';
+      inp.style.cssText = 'width:100%;';
+      inp.addEventListener('input', function() {
+        const hv = document.getElementById('jual-jumlah');
+        if(hv) hv.value = this.value;
+      });
+      const group = document.getElementById('jual-jumlah-group');
+      if(group) group.appendChild(inp);
+    } else {
+      manualInput.style.display = '';
+    }
+    if(label) label.textContent = 'Jumlah Penjualan (Rp)';
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -20296,7 +20497,7 @@ function _updateSimpelJumlahLabel() {
   const isBeli = _simpelTipe === 'beli';
   const hasProduk = isBeli && katId;
 
-  if(lbl) lbl.textContent = hasProduk ? 'Harga per Unit (Rp) *' : 'Jumlah (Rp) *';
+  if(lbl) lbl.textContent = hasProduk ? 'Harga per Unit (Rp)' : 'Jumlah (Rp)';
 
   // Update total hint
   if(hasProduk && hint) {
@@ -20859,10 +21060,36 @@ function _selectProdukJual(katId) {
   const lbl = document.getElementById('jual-produk-label');
   if(lbl) { lbl.textContent = kat.nama; lbl.style.color = 'var(--text)'; }
   const qty = parseFloat(document.getElementById('jual-produk-qty')?.value)||1;
-  if(override?.hargaJual) document.getElementById('jual-jumlah').value = override.hargaJual * qty;
+  _updateJualHargaDisplay(override, qty);
   document.getElementById('jual-hpp').value = Math.round(saldo.hppNext * qty);
   if(!document.getElementById('jual-ket').value) document.getElementById('jual-ket').value = kat.nama;
-  _toggleJualJumlahRow(false);
+}
+
+/** Update readonly display box harga jual + warning jika belum diset */
+function _updateJualHargaDisplay(override, qty) {
+  const dispText = document.getElementById('jual-harga-display-text');
+  const hiddenInput = document.getElementById('jual-jumlah');
+  // Hapus warning lama jika ada
+  const oldWarn = document.getElementById('jual-harga-warning');
+  if(oldWarn) oldWarn.remove();
+
+  if(override?.hargaJual && override.hargaJual > 0) {
+    const total = override.hargaJual * qty;
+    if(hiddenInput) hiddenInput.value = total;
+    if(dispText) {
+      dispText.style.color = 'var(--text)';
+      dispText.innerHTML = fmtRp(total);
+    }
+  } else {
+    // Harga belum diset — tampilkan warning
+    if(hiddenInput) hiddenInput.value = '0';
+    if(dispText) {
+      dispText.style.color = 'var(--muted)';
+      dispText.innerHTML = '—';
+    }
+    // Tampilkan notifikasi gaya showAlert (hijau, konsisten dengan UI lain)
+    showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Produk dipilih — harga jual belum diset di Master Produk.');
+  }
 }
 
 function onJualQtyChange() {
@@ -20873,62 +21100,10 @@ function onJualQtyChange() {
   const saldo    = getKsSaldo(found.kat);
   const override = produkList.find(p => p.ksId === katId);
   const qty      = parseFloat(document.getElementById('jual-produk-qty')?.value)||1;
-  if(override?.hargaJual) document.getElementById('jual-jumlah').value = override.hargaJual * qty;
+  _updateJualHargaDisplay(override, qty);
   document.getElementById('jual-hpp').value = Math.round(saldo.hppNext * qty);
 }
 
-// ── Patch simpanPenjualan to inject FIFO HPP lines ──
-(function(){
-  const _origSP = typeof simpanPenjualan === 'function' ? simpanPenjualan : null;
-  if(!_origSP) return;
-  window.simpanPenjualan = function() {
-    const ksId   = document.getElementById('jual-produk-id')?.value;
-    const qty    = parseFloat(document.getElementById('jual-produk-qty')?.value)||1;
-
-    if(ksId) {
-      // Inject FIFO HPP into jual-hpp field before original saves
-      const ks       = multiKartuStock[ksId];
-      const override = produkList.find(p => p.ksId === ksId);
-      if(ks) {
-        const hppLayers = getHppLayersForSale(ks, qty);
-        const totalHpp  = hppLayers.reduce((s,l) => s + l.qty * l.harga, 0);
-        // Store FIFO layers for post-save jurnal injection
-        window._pendingHppLayers = {
-          layers:  hppLayers,
-          akunHpp: override?.akunHpp || '5101',
-          akunPers:'1301',
-        };
-        document.getElementById('jual-hpp').value = totalHpp;
-      }
-    }
-
-    _origSP();
-
-    // After original save, inject HPP jurnal lines if FIFO multi-layer
-    if(window._pendingHppLayers) {
-      const { layers, akunHpp, akunPers } = window._pendingHppLayers;
-      window._pendingHppLayers = null;
-      if(layers.length > 1) {
-        // Find the last jurnal entry just saved and patch its lines
-        const last = jurnalEntries[jurnalEntries.length - 1];
-        if(last) {
-          // Remove old single HPP lines then add multi-layer
-          last.lines = last.lines.filter(l => l.akun !== akunHpp && l.akun !== akunPers);
-          const hppLines = buildHppJurnalLines(layers, akunHpp, akunPers);
-          last.lines.push(...hppLines);
-          saveData();
-        }
-      }
-    }
-
-    // Reset produk fields
-    document.getElementById('jual-produk-id').value = '';
-    const lbl = document.getElementById('jual-produk-label');
-    if(lbl) { lbl.textContent = 'Pilih produk...'; lbl.style.color = 'var(--muted)'; }
-    const qtyEl = document.getElementById('jual-produk-qty');
-    if(qtyEl) qtyEl.value = '1';
-  };
-})();
 
 // ── GEMBOK KARTU STOCK (sembunyikan dari picker transaksi) ───────
 function toggleKartuStockLock(cardId) {

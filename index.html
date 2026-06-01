@@ -362,14 +362,14 @@
         <div><div class="table-title"><i class="ti ti-bolt ti-inline"></i> Aksi Cepat</div></div>
       </div>
       <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button onclick="showPage('transaksi')" class="quick-action-btn" data-tooltip="Ctrl+N"><i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Input Transaksi</button>
-        <button onclick="openJurnalPenyesuaian()" class="quick-action-btn" data-tooltip="Scan & buat jurnal penyesuaian otomatis"><i class="ti ti-adjustments" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Jurnal Penyesuaian</button>
-        <button onclick="showPage('laba-rugi')" class="quick-action-btn" data-tooltip="Laporan Laba Rugi"><i class="ti ti-trending-up" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Laba Rugi</button>
-        <button onclick="showPage('neraca')" class="quick-action-btn" data-tooltip="Balance Sheet"><i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Neraca</button>
-        <button onclick="buatJurnalPenutup()" class="quick-action-btn" data-tooltip="Tutup Periode Akuntansi" style="border-color:rgba(245,158,11,0.3);color:var(--accent3);"><i class="ti ti-book-off" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Jurnal Penutup</button>
-        <button onclick="cekRekonsiliasi()" class="quick-action-btn" data-tooltip="Cocokkan Kas vs Bank" style="border-color:rgba(34,211,238,0.3);color:var(--accent2);"><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Rekonsiliasi Kas</button>
-        <button onclick="showPage('ai-assistant')" class="quick-action-btn" data-tooltip="AI Akuntansi Gratis" style="border-color:rgba(34,211,238,0.3);color:var(--accent2);"><i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Orias Assisten</button>
-        <button onclick="openExportModal()" class="quick-action-btn" data-tooltip="Export PDF/Excel/CSV"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Laporan</button>
+        <button onclick="showPage('transaksi')" class="quick-action-btn"><i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Input Transaksi</button>
+        <button onclick="openJurnalPenyesuaian()" class="quick-action-btn"><i class="ti ti-adjustments" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Jurnal Penyesuaian</button>
+        <button onclick="showPage('laba-rugi')" class="quick-action-btn"><i class="ti ti-trending-up" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Laba Rugi</button>
+        <button onclick="showPage('neraca')" class="quick-action-btn"><i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Neraca</button>
+        <button onclick="buatJurnalPenutup()" class="quick-action-btn" style="border-color:rgba(245,158,11,0.3);color:var(--accent3);"><i class="ti ti-book-off" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Jurnal Penutup</button>
+        <button onclick="cekRekonsiliasi()" class="quick-action-btn" style="border-color:rgba(34,211,238,0.3);color:var(--accent2);"><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Rekonsiliasi Kas</button>
+        <button onclick="showPage('ai-assistant')" class="quick-action-btn" style="border-color:rgba(34,211,238,0.3);color:var(--accent2);"><i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Orias Assisten</button>
+        <button onclick="openExportModal()" class="quick-action-btn"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Laporan</button>
       </div>
     </div>
     <div class="table-card">
@@ -475,14 +475,14 @@
             <input type="date" id="simpel-tanggal">
           </div>
           <div class="form-group">
-            <label>Jumlah (Rp) *</label>
+            <label>Jumlah (Rp)</label>
             <input type="number" id="simpel-jumlah" placeholder="0" inputmode="numeric">
           </div>
         </div>
 
         <div class="form-row full">
           <div class="form-group">
-            <label>Keterangan *</label>
+            <label>Keterangan</label>
             <input type="text" id="simpel-ket" placeholder="Contoh: Bayar listrik, Terima modal, Jual baju...">
           </div>
         </div>
@@ -564,7 +564,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Jenis Penjualan <span id="jual-akun-auto-label" style="color:var(--accent);font-size:11px;font-weight:400;"></span></label>
+            <label>Jenis Penjualan</label>
             <input type="hidden" id="jual-akun-pendapatan" value="4101">
             <button class="opt-picker-btn" type="button" id="jual-akun-pendapatan-btn" onclick="openJualAkunPicker()" data-value="4101">
               <span class="opt-picker-label" id="jual-akun-pendapatan-label">Penjualan Barang</span>
@@ -574,7 +574,7 @@
         </div>
         <div class="form-row" id="jual-produk-row">
           <div class="form-group">
-            <label><i class="ti ti-package ti-inline"></i> Produk <span style="color:var(--muted);font-weight:400;font-size:11px;">(opsional — isi otomatis harga & HPP)</span></label>
+            <label>Produk</label>
             <input type="hidden" id="jual-produk-id" value="">
             <button class="opt-picker-btn" type="button" id="jual-produk-btn" onclick="openProdukPickerJual()">
               <span class="opt-picker-label" id="jual-produk-label" style="color:var(--muted);">Pilih produk...</span>
@@ -588,8 +588,25 @@
         </div>
         <div class="form-row" id="jual-jumlah-row">
           <div class="form-group" id="jual-jumlah-group">
-            <label>Jumlah Penjualan (Rp)</label>
-            <input type="number" id="jual-jumlah" placeholder="0" inputmode="numeric" onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)">
+            <label>Harga Jual</label>
+            <div id="jual-harga-display" style="
+              background:var(--surface2,#1e1e2e);
+              border:1px solid var(--border,#2a2a3a);
+              border-radius:8px;
+              padding:8px 12px;
+              font-size:13px;
+              font-weight:400;
+              color:var(--text);
+              cursor:not-allowed;
+              user-select:none;
+              height:38px;
+              display:flex;
+              align-items:center;
+            ">
+              <span id="jual-harga-display-text" style="color:var(--muted);">—</span>
+            </div>
+            <!-- hidden input tetap ada untuk kalkulasi internal -->
+            <input type="hidden" id="jual-jumlah" value="0">
           </div>
           <div class="form-group">
             <label>
@@ -657,7 +674,7 @@
         <!-- Baris 3: Produk + Qty -->
         <div class="form-row" id="beli-produk-row">
           <div class="form-group">
-            <label><i class="ti ti-package ti-inline"></i> Produk <span style="color:var(--muted);font-weight:400;font-size:11px;">(opsional — otomatis update kartu stock)</span></label>
+            <label>Produk</label>
             <input type="hidden" id="beli-produk-id" value="">
             <button class="opt-picker-btn" type="button" id="beli-produk-btn" onclick="openBeliProdukPicker()">
               <span class="opt-picker-label" id="beli-produk-label" style="color:var(--muted);">Pilih produk...</span>
@@ -673,7 +690,7 @@
         <!-- Baris 4: Harga/Unit + Total hint -->
         <div class="form-row">
           <div class="form-group">
-            <label id="beli-jumlah-label">Harga per Unit (Rp) *</label>
+            <label id="beli-jumlah-label">Harga per Unit (Rp)</label>
             <input type="number" id="beli-jumlah" placeholder="0" inputmode="numeric"
               onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)" oninput="onBeliJumlahChange()">
             <div id="beli-total-hint" style="display:none;font-size:11px;color:var(--accent);margin-top:3px;"></div>
@@ -1350,28 +1367,27 @@
       <div id="ks-active-tab-label" style="font-size:12px;color:var(--accent);margin-bottom:8px;font-weight:600;">Metode: FIFO</div>
       <div class="ks-table-wrap" id="ks-table-scroll-wrap"><table id="ks-table">
         <thead><tr>
-          <th style="min-width:72px;white-space:nowrap;position:sticky;top:0;z-index:2">Tgl</th>
-          <th style="min-width:80px;position:sticky;top:0;z-index:2">Ket</th>
-          <th colspan="3" style="text-align:center;border-left:1px solid var(--border);position:sticky;top:0;z-index:2">MASUK</th>
-          <th colspan="3" style="text-align:center;border-left:1px solid var(--border);position:sticky;top:0;z-index:2">KELUAR</th>
-          <th colspan="3" style="text-align:center;border-left:1px solid var(--border);position:sticky;top:0;z-index:2">SALDO</th>
-          <th style="position:sticky;top:0;z-index:2">Aksi</th>
-        </tr>
-        <tr>
-          <th style="position:sticky;top:36px;z-index:2"></th><th style="position:sticky;top:36px;z-index:2"></th>
-          <th style="border-left:1px solid var(--border);min-width:56px;position:sticky;top:36px;z-index:2">Qty</th>
-          <th style="min-width:96px;position:sticky;top:36px;z-index:2">Hrg Beli</th>
-          <th style="min-width:108px;position:sticky;top:36px;z-index:2">Jumlah</th>
-          <th style="border-left:1px solid var(--border);min-width:56px;position:sticky;top:36px;z-index:2">Qty</th>
-          <th style="min-width:96px;position:sticky;top:36px;z-index:2">HPP/Unit</th>
-          <th style="min-width:108px;position:sticky;top:36px;z-index:2">Jumlah</th>
-          <th style="border-left:1px solid var(--border);min-width:56px;position:sticky;top:36px;z-index:2">Qty</th>
-          <th style="min-width:96px;position:sticky;top:36px;z-index:2">Hrg</th>
-          <th style="min-width:108px;position:sticky;top:36px;z-index:2">Jumlah</th>
-          <th style="min-width:44px;position:sticky;top:36px;z-index:2"></th>
+          <th style="min-width:72px">Tgl</th>
+          <th style="min-width:90px">Ket</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">MASUK</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">KELUAR</th>
+          <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">SALDO</th>
+          <th style="min-width:40px">AK</th>
+        </tr><tr>
+          <th></th><th></th>
+          <th style="border-left:1px solid var(--border);min-width:50px">Qty</th>
+          <th style="min-width:90px">Hrg Beli</th>
+          <th style="min-width:100px">Jumlah</th>
+          <th style="border-left:1px solid var(--border);min-width:50px">Qty</th>
+          <th style="min-width:90px">HPP/Unit</th>
+          <th style="min-width:100px">Jumlah</th>
+          <th style="border-left:1px solid var(--border);min-width:50px">Qty</th>
+          <th style="min-width:90px">Hrg</th>
+          <th style="min-width:100px">Jumlah</th>
+          <th></th>
         </tr></thead>
         <tbody id="ks-table-body">
-          <tr><td colspan="12" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Belum ada catatan. Hitung persediaan lalu klik "Input ke Kartu Stock".</td></tr>
+          <tr><td colspan="12">Belum ada catatan.</td></tr>
         </tbody>
       </table></div>
       <div id="ks-stock-summary" style="margin-top:12px;display:none;">
