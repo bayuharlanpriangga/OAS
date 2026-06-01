@@ -11047,9 +11047,12 @@ function initMultiKartuStock() {
   renderKartuStockSelector();
 }
 
-function saveMKS() {
-  // Sync data aktif ke kategori sebelum save
-  syncKategoriFromKartuStockData();
+function saveMKS(skipSync) {
+  // Sync data aktif ke kategori sebelum save — kecuali kalau skipSync=true
+  // (digunakan oleh addKartuStockOnBuy/deductKartuStockOnSale yang sudah
+  // langsung menulis ke kat.data, sehingga sync tidak perlu dan justru berbahaya
+  // karena bisa overwrite data baru dengan kartuStockData lama yang belum di-refresh)
+  if (!skipSync) syncKategoriFromKartuStockData();
   const key = 'bhp_mks_' + (window.currentCompany?.id || 'guest');
   try { localStorage.setItem(key, JSON.stringify(multiKartuStock)); } catch(e) {}
   saveKartuStockToCloud();
@@ -19824,7 +19827,9 @@ function addKartuStockOnBuy(katId, qty, hargaPerUnit, tanggal, ket) {
     kQty: 0, kHarga: 0, kJml: 0,
     saldoLayers: sl, jurnalDone: true
   });
-  saveMKS();
+  // skipSync=true: data sudah ditulis langsung ke kat.data, jangan di-overwrite
+  // oleh syncKategoriFromKartuStockData() yang membaca kartuStockData lama
+  saveMKS(true);
 }
 
 function deductKartuStockOnSale(katId, qty, tanggal, ket) {
@@ -19871,7 +19876,8 @@ function deductKartuStockOnSale(katId, qty, tanggal, ket) {
   const id = kartuStockIdCounter++;
   storage.push({id, tgl:tanggal, ket:ket||'Penjualan', mQty:0, mHarga:0,
     kQty:qtySell, kHarga:hppPerUnit, kJml:hppBatch, keluarLayers, saldoLayers:sl, jurnalDone:true});
-  saveMKS();
+  // skipSync=true: sama seperti addKartuStockOnBuy, hindari overwrite data baru
+  saveMKS(true);
 }
 
 function getHppLayersForSale(ks, qtySell) {
