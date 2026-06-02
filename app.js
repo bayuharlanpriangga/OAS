@@ -1526,10 +1526,10 @@ function openExportModal() {
   document.getElementById('exp-status').style.display = 'none';
   document.getElementById('exp-btn').disabled = false;
   document.getElementById('exp-btn').innerHTML = '<i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Sekarang';
-  // Reset format ke excel setiap kali modal dibuka agar state konsisten
-  exportFmt = 'excel';
+  // Default PDF agar tombol Preview langsung kelihatan
+  exportFmt = 'pdf';
   ['excel','pdf','csv'].forEach(f => {
-    document.getElementById('exp-opt-'+f)?.classList.toggle('exp-fmt-active', f === 'excel');
+    document.getElementById('exp-opt-'+f)?.classList.toggle('exp-fmt-active', f === 'pdf');
   });
   // Pre-fill from profil
   const _p = typeof getProfil === 'function' ? getProfil() : {};
@@ -2036,6 +2036,704 @@ window.showPage=function(id){
 // ── Log startup ───────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',()=>{
   setTimeout(()=>auditLog('info','system','Aplikasi dibuka',{ref:'STARTUP'}),2000);
+});
+
+
+// ══════════════════════════════════════════════════════════════
+// PDF PREVIEW & TEMPLATE SYSTEM
+// ══════════════════════════════════════════════════════════════
+
+// ── State ─────────────────────────────────────────────────────
+let _pvTmpl     = 'A';
+let _pvPages    = [];
+let _pvCurPage  = 0;
+let _pvPanelOpen = false;
+let _pvRecentColors = [];
+let _pvActiveCP = null; // {key}
+let _pvCpH = 210, _pvCpS = 0.7, _pvCpV = 0.9, _pvCpDrag = false;
+
+// Per-template palette slots
+const PV_PALETTES = {
+  A: [
+    {key:'primary', label:'Header / Aksen Utama', hex:'#1e3a8a'},
+    {key:'accent',  label:'Stripe / Total Row',   hex:'#3b82f6'},
+    {key:'text',    label:'Warna Teks Tabel',      hex:'#1e293b'},
+  ],
+  B: [
+    {key:'primary', label:'Header Gelap',          hex:'#111827'},
+    {key:'accent',  label:'Highlight Angka',       hex:'#10b981'},
+    {key:'bg',      label:'Background Row Alt',    hex:'#f9fafb'},
+  ],
+  C: [
+    {key:'sidebar', label:'Sidebar Strip',         hex:'#7c3aed'},
+    {key:'accent',  label:'Aksen Baris',           hex:'#8b5cf6'},
+    {key:'bg',      label:'Background Gelap',      hex:'#0f172a'},
+  ],
+};
+
+// User customized colors per template
+const _pvColors = {A:{}, B:{}, C:{}};
+
+const PV_PRESETS = [
+  '#1e3a8a','#2563eb','#3b82f6','#60a5fa',
+  '#065f46','#10b981','#34d399',
+  '#7c2d12','#dc2626','#f87171',
+  '#78350f','#f59e0b','#fcd34d',
+  '#4c1d95','#7c3aed','#a78bfa',
+  '#111827','#374151','#6b7280','#f9fafb',
+];
+
+// ── Helpers ────────────────────────────────────────────────────
+function pvGetColor(key) {
+  const slot = PV_PALETTES[_pvTmpl].find(s=>s.key===key);
+  return _pvColors[_pvTmpl][key] || slot?.hex || '#1e3a8a';
+}
+function pvHex2rgb(hex) {
+  const h=hex.replace('#','');
+  return {r:parseInt(h.slice(0,2),16),g:parseInt(h.slice(2,4),16),b:parseInt(h.slice(4,6),16)};
+}
+function pvRgb2hex(r,g,b){return '#'+[r,g,b].map(x=>Math.round(x).toString(16).padStart(2,'0')).join('');}
+function pvHsv2hex(h,s,v){
+  const i=Math.floor(h/60)%6,f=h/60-Math.floor(h/60);
+  const p=v*(1-s),q=v*(1-f*s),t=v*(1-(1-f)*s);
+  let r,g,b;
+  if(i===0){r=v;g=t;b=p;}else if(i===1){r=q;g=v;b=p;}
+  else if(i===2){r=p;g=v;b=t;}else if(i===3){r=p;g=q;b=v;}
+  else if(i===4){r=t;g=p;b=v;}else{r=v;g=p;b=q;}
+  return pvRgb2hex(r*255,g*255,b*255);
+}
+function pvHex2hsv(hex){
+  const {r,g,b}=pvHex2rgb(hex);
+  const rn=r/255,gn=g/255,bn=b/255;
+  const max=Math.max(rn,gn,bn),min=Math.min(rn,gn,bn),d=max-min;
+  let h=0;
+  if(d){if(max===rn)h=(60*((gn-bn)/d)+360)%360;
+        else if(max===gn)h=60*((bn-rn)/d)+120;
+        else h=60*((rn-gn)/d)+240;}
+  return {h,s:max?d/max:0,v:max};
+}
+function pvLuminance(hex){
+  const {r,g,b}=pvHex2rgb(hex);
+  const to=(c)=>{const s=c/255;return s<=.04045?s/12.92:Math.pow((s+.055)/1.055,2.4);};
+  return .2126*to(r)+.7152*to(g)+.0722*to(b);
+}
+function pvContrast(h1,h2){
+  const l1=pvLuminance(h1),l2=pvLuminance(h2);
+  return (Math.max(l1,l2)+.05)/(Math.min(l1,l2)+.05);
+}
+function pvLighten(hex,amt){
+  const {r,g,b}=pvHex2rgb(hex);
+  const bl=c=>Math.round(c+(255-c)*amt);
+  return pvRgb2hex(bl(r),bl(g),bl(b));
+}
+function pvRgbStr(hex){const {r,g,b}=pvHex2rgb(hex);return `${r},${g},${b}`;}
+
+// ── Open / Close ───────────────────────────────────────────────
+function openPdfPreview() {
+  // Collect export settings from modal before closing
+  const nama    = document.getElementById('exp-nama-perusahaan')?.value || '';
+  const proyek  = document.getElementById('exp-proyek')?.value || '';
+  const periode = document.getElementById('exp-periode')?.value || '';
+  closeModal('modal-export');
+  // Store for later use
+  window._pvExportInfo = {nama, proyek, periode};
+  const modal = document.getElementById('modal-pdf-preview');
+  if(modal) modal.classList.add('open');
+  _pvPanelOpen = false;
+  document.getElementById('pv-panel')?.classList.add('hidden');
+  pvRenderPalList();
+  pvRenderRecent();
+  _pvPages = [];
+  _pvCurPage = 0;
+  pvBuildPages();
+}
+
+function closePdfPreview() {
+  document.getElementById('modal-pdf-preview')?.classList.remove('open');
+  pvCloseCP();
+}
+
+function pvTogglePanel() {
+  _pvPanelOpen = !_pvPanelOpen;
+  const panel = document.getElementById('pv-panel');
+  const btn   = document.getElementById('pv-edit-btn');
+  panel?.classList.toggle('hidden', !_pvPanelOpen);
+  if(btn) {
+    btn.style.background = _pvPanelOpen ? 'rgba(34,211,238,0.12)' : '';
+    btn.style.borderColor = _pvPanelOpen ? 'var(--accent2)' : '';
+    btn.style.color = _pvPanelOpen ? 'var(--accent2)' : '';
+  }
+  if(_pvPanelOpen) pvRenderPalList();
+}
+
+// ── Template select ────────────────────────────────────────────
+function pvSelectTmpl(t) {
+  _pvTmpl = t;
+  ['A','B','C'].forEach(id=>{
+    document.getElementById('pv-tc-'+id)?.classList.toggle('active', id===t);
+  });
+  pvRenderPalList();
+}
+
+// ── Palette UI ─────────────────────────────────────────────────
+function pvRenderPalList() {
+  const slots = PV_PALETTES[_pvTmpl];
+  const el = document.getElementById('pv-pal-list');
+  if(!el) return;
+  el.innerHTML = slots.map(s=>{
+    const hex = pvGetColor(s.key);
+    return `<div class="pv-pal-row">
+      <div class="pv-pal-dot" style="background:${hex};"
+        onclick="pvOpenCP('${s.key}','${s.label}',this)"></div>
+      <div class="pv-pal-lbl">${s.label}</div>
+      <input class="pv-pal-hex" type="text" value="${hex}" maxlength="7"
+        onchange="pvOnPalHex('${s.key}',this.value)"
+        oninput="pvOnPalHex('${s.key}',this.value)">
+    </div>`;
+  }).join('');
+}
+
+function pvOnPalHex(key, val) {
+  if(/^#[0-9a-fA-F]{6}$/.test(val)) {
+    _pvColors[_pvTmpl][key] = val;
+    pvRenderPalList();
+  }
+}
+
+// ── Apply ──────────────────────────────────────────────────────
+function pvApply() {
+  pvBuildPages();
+  if(_pvPanelOpen) pvTogglePanel();
+}
+
+// ── Page builder ───────────────────────────────────────────────
+function pvBuildPages() {
+  const gen = document.getElementById('pv-generating');
+  const render = document.getElementById('pv-page-render');
+  if(gen) gen.style.display = 'flex';
+  setTimeout(()=>{
+    try {
+      const info = window._pvExportInfo || {};
+      const nama    = info.nama || (typeof getProfil==='function'?getProfil().nama:'') || 'Perusahaan';
+      const periode = info.periode || new Date().toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+      const proyek  = info.proyek || '';
+      const sec = {
+        jurnal:   document.getElementById('exp-jurnal-umum')?.checked,
+        labaRugi: document.getElementById('exp-laba-rugi')?.checked,
+        neraca:   document.getElementById('exp-neraca')?.checked,
+        saldo:    document.getElementById('exp-neraca-saldo')?.checked,
+        dashboard:document.getElementById('exp-dashboard')?.checked,
+        pajak:    document.getElementById('exp-pajak')?.checked,
+      };
+      _pvPages = pvGenPages(nama, periode, proyek, sec);
+      pvRenderPage(_pvCurPage);
+      pvBuildThumbs();
+      pvUpdateNav();
+    } catch(e) {
+      console.error('pvBuildPages:', e);
+    } finally {
+      if(gen) gen.style.display = 'none';
+    }
+  }, 60);
+}
+
+// ── Page generator ─────────────────────────────────────────────
+function pvGenPages(nama, periode, proyek, sec) {
+  const pages = [];
+  const c1 = pvGetColor('primary');
+  const c2 = pvGetColor('accent');
+  const c3 = pvGetColor('bg') || (_pvTmpl==='C'?'#0f172a':'#f9fafb');
+  const t  = _pvTmpl;
+
+  // Cover
+  pages.push(pvMakeCover(nama, periode, proyek, sec, t, c1, c2, c3));
+
+  // Dashboard KPI
+  if(sec.dashboard) {
+    const totalPend = jurnalEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a&&a.tipe==='Pendapatan'?l.kredit:0)},0),0);
+    const totalHPP  = jurnalEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a&&a.tipe==='HPP'?l.debit:0)},0),0);
+    const totalBeb  = jurnalEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a&&a.tipe==='Beban'?l.debit:0)},0),0);
+    pages.push(pvMakeDash(nama,periode,t,c1,c2,c3,{totalPend,totalHPP,totalBeb}));
+  }
+
+  // Jurnal
+  if(sec.jurnal) {
+    const entries = jurnalEntries.slice(0,35);
+    pages.push(...pvMakeJurnal(nama,periode,'JURNAL UMUM',entries,t,c1,c2,c3));
+  }
+
+  // Laba Rugi
+  if(sec.labaRugi) pages.push(pvMakeLR(nama,periode,t,c1,c2,c3));
+
+  // Neraca
+  if(sec.neraca) pages.push(pvMakeNeraca(nama,periode,t,c1,c2,c3));
+
+  // Neraca Saldo
+  if(sec.saldo) pages.push(pvMakeSaldo(nama,periode,t,c1,c2,c3));
+
+  // Pajak
+  if(sec.pajak) pages.push(pvMakePajak(nama,periode,t,c1,c2,c3));
+
+  return pages;
+}
+
+// ── Style engine ───────────────────────────────────────────────
+function pvStyles(t,c1,c2,c3) {
+  if(t==='A') return `<style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1e293b;width:794px;}
+    .pv-cover{background:${c1};color:#fff;height:1123px;display:flex;flex-direction:column;justify-content:space-between;padding:56px 52px;position:relative;}
+    .pv-hdr{background:${c1};color:#fff;padding:18px 38px 18px 46px;display:flex;align-items:center;justify-content:space-between;border-left:6px solid ${c2};}
+    .pv-hdr-title{font-size:14px;font-weight:700;}.pv-hdr-sub{font-size:9px;opacity:.65;margin-top:2px;}
+    .pv-hdr-right{font-size:9px;opacity:.55;text-align:right;}
+    .pv-body{padding:24px 38px;min-height:880px;}
+    .pv-sec{font-size:11px;font-weight:800;color:${c1};border-left:4px solid ${c2};padding-left:8px;margin-bottom:14px;letter-spacing:.04em;text-transform:uppercase;}
+    table{width:100%;border-collapse:collapse;font-size:10.5px;}
+    th{background:${c1};color:#fff;padding:6px 9px;text-align:left;font-size:9.5px;font-weight:700;letter-spacing:.04em;}
+    td{padding:5px 9px;border-bottom:1px solid #e2e8f0;color:#334155;}
+    tr:nth-child(even) td{background:${pvLighten(c2,0.93)};}
+    .tot td{background:${pvLighten(c1,0.9)};font-weight:700;color:${c1};border-top:2px solid ${c2};}
+    .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+    .kpi{background:${pvLighten(c1,0.93)};border-radius:8px;padding:14px;border-left:4px solid ${c2};}
+    .kpi-lbl{font-size:9px;color:#64748b;margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+    .kpi-val{font-size:15px;font-weight:800;color:${c1};}
+    .footer{position:absolute;bottom:14px;left:38px;right:38px;display:flex;justify-content:space-between;font-size:8px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:6px;}
+  </style>`;
+  if(t==='B') return `<style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Georgia',serif;background:#fff;color:#111827;width:794px;}
+    .pv-cover{background:#fff;color:${c1};height:1123px;display:flex;flex-direction:column;padding:80px 60px;border-top:8px solid ${c1};position:relative;}
+    .pv-hdr{background:${c1};color:#fff;padding:16px 46px;display:flex;align-items:center;justify-content:space-between;}
+    .pv-hdr-title{font-size:13px;font-weight:700;font-family:'Georgia',serif;}.pv-hdr-sub{font-size:9px;opacity:.6;margin-top:2px;}
+    .pv-hdr-right{font-size:9px;opacity:.55;text-align:right;}
+    .pv-body{padding:28px 46px;min-height:880px;}
+    .pv-sec{font-size:12px;font-weight:700;color:${c1};border-bottom:2px solid ${c2};padding-bottom:5px;margin-bottom:16px;letter-spacing:.03em;}
+    table{width:100%;border-collapse:collapse;font-size:10.5px;}
+    th{background:${c1};color:#fff;padding:7px 11px;text-align:left;font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
+    td{padding:6px 11px;border-bottom:1px solid #e5e7eb;color:#374151;}
+    tr:nth-child(even) td{background:${c3};}
+    .tot td{background:#fff;font-weight:700;color:${c1};border-top:2.5px solid ${c1};border-bottom:2.5px solid ${c1};}
+    .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px;}
+    .kpi{border:2px solid ${c1};border-radius:7px;padding:16px;text-align:center;}
+    .kpi-lbl{font-size:9px;color:#6b7280;margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;}
+    .kpi-val{font-size:14px;font-weight:700;color:${c2};}
+    .footer{position:absolute;bottom:14px;left:46px;right:46px;display:flex;justify-content:space-between;font-size:8px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:7px;}
+  </style>`;
+  // C — Prestige Dark
+  return `<style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;background:${c3};color:#e2e8f0;width:794px;}
+    .pv-cover{background:${c3};color:#e2e8f0;height:1123px;display:flex;flex-direction:column;justify-content:space-between;padding:56px 56px 56px 72px;border-left:9px solid ${c1};position:relative;}
+    .pv-hdr{background:${c3};color:#e2e8f0;padding:16px 38px 16px 52px;display:flex;align-items:center;justify-content:space-between;border-left:9px solid ${c1};border-bottom:1px solid rgba(255,255,255,0.07);}
+    .pv-hdr-title{font-size:13px;font-weight:700;color:#e2e8f0;}.pv-hdr-sub{font-size:9px;color:rgba(255,255,255,0.45);margin-top:2px;}
+    .pv-hdr-right{font-size:9px;color:rgba(255,255,255,0.35);text-align:right;}
+    .pv-body{padding:24px 38px 24px 52px;min-height:880px;background:${c3};}
+    .pv-sec{font-size:10.5px;font-weight:800;color:${c2};background:rgba(255,255,255,0.04);border-left:4px solid ${c1};padding:6px 10px;margin-bottom:12px;letter-spacing:.06em;text-transform:uppercase;border-radius:0 5px 5px 0;}
+    table{width:100%;border-collapse:collapse;font-size:10.5px;}
+    th{background:rgba(255,255,255,0.05);color:${c2};padding:6px 9px;text-align:left;font-size:9.5px;font-weight:700;letter-spacing:.05em;border-bottom:1px solid rgba(255,255,255,0.09);}
+    td{padding:5px 9px;border-bottom:1px solid rgba(255,255,255,0.04);color:#cbd5e1;}
+    tr:nth-child(even) td{background:rgba(${pvRgbStr(c1)},0.1);}
+    .tot td{background:rgba(${pvRgbStr(c1)},0.22);font-weight:700;color:#f1f5f9;border-top:1px solid ${c1};}
+    .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+    .kpi{background:rgba(255,255,255,0.04);border-radius:9px;padding:14px;border:1px solid rgba(255,255,255,0.07);border-top:3px solid ${c1};}
+    .kpi-lbl{font-size:9px;color:rgba(255,255,255,0.4);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;}
+    .kpi-val{font-size:14px;font-weight:800;color:${c2};}
+    .footer{position:absolute;bottom:14px;left:52px;right:38px;display:flex;justify-content:space-between;font-size:8px;color:rgba(255,255,255,0.25);border-top:1px solid rgba(255,255,255,0.07);padding-top:7px;}
+  </style>`;
+}
+
+function pvPageWrap(t,c1,c2,c3,nama,periode,body,pgNum) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8">${pvStyles(t,c1,c2,c3)}</head>
+  <body style="position:relative;overflow:hidden;width:794px;min-height:1123px;">
+    <div class="pv-hdr">
+      <div><div class="pv-hdr-title">${nama}</div><div class="pv-hdr-sub">Laporan Keuangan · ${periode}</div></div>
+      <div class="pv-hdr-right">Hal. ${pgNum}<br><span style="font-size:8px;">${new Date().toLocaleDateString('id-ID')}</span></div>
+    </div>
+    <div class="pv-body">${body}</div>
+    <div class="footer"><span>${nama} · ${periode}</span><span>Dicetak: ${new Date().toLocaleDateString('id-ID')}</span></div>
+  </body></html>`;
+}
+
+function pvMakeCover(nama,periode,proyek,sec,t,c1,c2,c3) {
+  const st = pvStyles(t,c1,c2,c3);
+  const isLight = t==='B';
+  const tc = isLight ? c1 : '#f1f5f9';
+  const sc = isLight ? '#6b7280' : 'rgba(255,255,255,0.5)';
+  const secList = [
+    sec.dashboard && 'Ringkasan Keuangan',
+    sec.jurnal    && 'Jurnal Umum',
+    sec.labaRugi  && 'Laporan Laba Rugi',
+    sec.neraca    && 'Neraca',
+    sec.saldo     && 'Neraca Saldo',
+    sec.pajak     && 'Laporan Pajak',
+  ].filter(Boolean);
+  return `<!DOCTYPE html><html><head><meta charset="utf-8">${st}</head>
+  <body style="overflow:hidden;width:794px;height:1123px;">
+    <div class="pv-cover">
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:.2em;color:${sc};margin-bottom:10px;text-transform:uppercase;">Laporan Keuangan</div>
+        <div style="font-size:40px;font-weight:900;color:${tc};line-height:1.15;margin-bottom:6px;max-width:500px;">${nama}</div>
+        ${proyek?`<div style="font-size:14px;color:${sc};margin-bottom:4px;">${proyek}</div>`:''}
+        <div style="font-size:13px;color:${sc};">Periode: ${periode}</div>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:700;color:${sc};text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Daftar Isi:</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;max-width:480px;">
+          ${secList.map((s,i)=>`<div style="font-size:11px;color:${tc};display:flex;gap:7px;align-items:center;">
+            <span style="width:20px;height:20px;border-radius:50%;background:${c2};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;">${i+1}</span>${s}</div>`).join('')}
+        </div>
+        <div style="margin-top:36px;font-size:9px;color:${sc};">Dicetak: ${new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+      </div>
+    </div>
+  </body></html>`;
+}
+
+function pvMakeDash(nama,periode,t,c1,c2,c3,d) {
+  const lk = d.totalPend - d.totalHPP;
+  const lb = lk - d.totalBeb;
+  const kpis=[
+    {l:'Total Pendapatan',v:rp(d.totalPend),c:c2},
+    {l:'Laba Kotor',      v:rp(lk),          c:lk>=0?c2:'#ef4444'},
+    {l:'Laba Bersih',     v:rp(lb),           c:lb>=0?c2:'#ef4444'},
+    {l:'Total HPP',       v:rp(d.totalHPP),   c:'#ef4444'},
+    {l:'Total Beban',     v:rp(d.totalBeb),   c:'#ef4444'},
+    {l:'Margin Bersih',   v:d.totalPend?((lb/d.totalPend)*100).toFixed(1)+'%':'—', c:c2},
+  ];
+  const body = `<div class="pv-sec">Ringkasan Keuangan</div>
+    <div class="kpi-grid">${kpis.map(k=>`<div class="kpi"><div class="kpi-lbl">${k.l}</div><div class="kpi-val" style="color:${k.c};">${k.v}</div></div>`).join('')}</div>
+    <div class="pv-sec" style="margin-top:6px;">Ringkasan Transaksi</div>
+    <table><thead><tr><th>Keterangan</th><th>Jumlah</th></tr></thead><tbody>
+      <tr><td>Total Jurnal</td><td>${jurnalEntries.length} entri</td></tr>
+      <tr><td>Jurnal Penjualan</td><td>${jurnalEntries.filter(j=>j.jenis==='Penjualan').length} entri</td></tr>
+      <tr><td>Jurnal Pembelian</td><td>${jurnalEntries.filter(j=>j.jenis==='Pembelian').length} entri</td></tr>
+      <tr class="tot"><td>Periode</td><td>${periode}</td></tr>
+    </tbody></table>`;
+  return pvPageWrap(t,c1,c2,c3,nama,periode,body,2);
+}
+
+function pvMakeJurnal(nama,periode,title,entries,t,c1,c2,c3) {
+  const PRP=22,pages=[];
+  const chunks=[];
+  for(let i=0;i<Math.max(entries.length,1);i+=PRP) chunks.push(entries.slice(i,i+PRP));
+  if(!chunks.length) chunks.push([]);
+  chunks.forEach((ch,pi)=>{
+    const rows=ch.map(j=>{
+      const nom=j.lines.reduce((s,l)=>s+Math.max(l.debit||0,l.kredit||0),0);
+      return `<tr><td style="font-size:9.5px;">${j.tanggal||'—'}</td><td>${j.keterangan||j.ket||'—'}</td>
+        <td style="text-align:right;">${rp(nom)}</td>
+        <td><span style="font-size:9px;background:rgba(34,211,238,0.12);color:#0891b2;padding:1px 5px;border-radius:4px;">${j.jenis||'—'}</span></td></tr>`;
+    }).join('');
+    const body=`<div class="pv-sec">${title}</div>
+      <table><thead><tr><th>Tanggal</th><th>Keterangan</th><th style="text-align:right;">Nominal</th><th>Jenis</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:18px;">Belum ada data</td></tr>'}</tbody>
+      ${ch.length?`<tfoot><tr class="tot"><td colspan="2">${ch.length} entri</td>
+        <td style="text-align:right;">${rp(ch.reduce((s,j)=>s+j.lines.reduce((ss,l)=>ss+Math.max(l.debit||0,l.kredit||0),0),0))}</td>
+        <td></td></tr></tfoot>`:''}</table>`;
+    pages.push(pvPageWrap(t,c1,c2,c3,nama,periode,body,3+pi));
+  });
+  return pages;
+}
+
+function pvSaldo(kode) {
+  let d=0,k=0;
+  jurnalEntries.forEach(j=>j.lines.forEach(l=>{if(l.akun===kode){d+=l.debit||0;k+=l.kredit||0;}}));
+  const a=akuns.find(x=>x.kode===kode);
+  return a?.normal==='D'?d-k:k-d;
+}
+
+function pvMakeLR(nama,periode,t,c1,c2,c3) {
+  const pendList=akuns.filter(a=>a.tipe==='Pendapatan');
+  const hppList =akuns.filter(a=>a.tipe==='HPP');
+  const bebList =akuns.filter(a=>a.tipe==='Beban');
+  const tP=pendList.reduce((s,a)=>s+pvSaldo(a.kode),0);
+  const tH=hppList.reduce((s,a)=>s+pvSaldo(a.kode),0);
+  const lk=tP-tH;
+  const tB=bebList.reduce((s,a)=>s+pvSaldo(a.kode),0);
+  const lb=lk-tB;
+  const mkR=(list)=>list.map(a=>{const s=pvSaldo(a.kode);return s?`<tr><td>${a.kode}</td><td>${a.nama}</td><td style="text-align:right;">${rp(s)}</td></tr>`:''}).join('');
+  const body=`<div class="pv-sec">Laporan Laba Rugi</div>
+    <table><thead><tr><th>Kode</th><th>Akun</th><th style="text-align:right;">Saldo</th></tr></thead><tbody>
+      <tr><td colspan="3" style="font-weight:700;padding-top:8px;font-size:10px;">PENDAPATAN</td></tr>${mkR(pendList)}
+      <tr class="tot"><td colspan="2">Total Pendapatan</td><td style="text-align:right;">${rp(tP)}</td></tr>
+      <tr><td colspan="3" style="font-weight:700;padding-top:8px;font-size:10px;">HPP</td></tr>${mkR(hppList)}
+      <tr class="tot"><td colspan="2">Total HPP</td><td style="text-align:right;">${rp(tH)}</td></tr>
+      <tr><td colspan="2" style="font-weight:700;">Laba Kotor</td><td style="text-align:right;font-weight:700;">${rp(lk)}</td></tr>
+      <tr><td colspan="3" style="font-weight:700;padding-top:8px;font-size:10px;">BEBAN OPERASIONAL</td></tr>${mkR(bebList)}
+      <tr class="tot"><td colspan="2">Total Beban</td><td style="text-align:right;">${rp(tB)}</td></tr>
+      <tr style="background:#dbeafe;"><td colspan="2" style="font-weight:800;font-size:11px;">LABA BERSIH</td><td style="text-align:right;font-weight:800;font-size:11px;">${rp(lb)}</td></tr>
+    </tbody></table>`;
+  return pvPageWrap(t,c1,c2,c3,nama,periode,body,'—');
+}
+
+function pvMakeNeraca(nama,periode,t,c1,c2,c3) {
+  const aList=akuns.filter(a=>a.tipe==='Aset');
+  const lList=akuns.filter(a=>a.tipe==='Liabilitas');
+  const eList=akuns.filter(a=>a.tipe==='Ekuitas');
+  const tA=aList.reduce((s,a)=>s+pvSaldo(a.kode),0);
+  const tL=lList.reduce((s,a)=>s+pvSaldo(a.kode),0);
+  const tE=eList.reduce((s,a)=>s+pvSaldo(a.kode),0);
+  const mkR=(list)=>list.map(a=>{const s=pvSaldo(a.kode);return s?`<tr><td>${a.kode}</td><td>${a.nama}</td><td style="text-align:right;">${rp(s)}</td></tr>`:''}).join('');
+  const body=`<div class="pv-sec">Neraca (Balance Sheet)</div>
+    <table><thead><tr><th>Kode</th><th>Akun</th><th style="text-align:right;">Saldo</th></tr></thead><tbody>
+      <tr><td colspan="3" style="font-weight:700;padding-top:8px;">ASET</td></tr>${mkR(aList)}
+      <tr class="tot"><td colspan="2">Total Aset</td><td style="text-align:right;">${rp(tA)}</td></tr>
+      <tr><td colspan="3" style="font-weight:700;padding-top:8px;">LIABILITAS</td></tr>${mkR(lList)}
+      <tr class="tot"><td colspan="2">Total Liabilitas</td><td style="text-align:right;">${rp(tL)}</td></tr>
+      <tr><td colspan="3" style="font-weight:700;padding-top:8px;">EKUITAS</td></tr>${mkR(eList)}
+      <tr class="tot"><td colspan="2">Total Ekuitas</td><td style="text-align:right;">${rp(tE)}</td></tr>
+      <tr style="background:#dbeafe;"><td colspan="2" style="font-weight:800;">Total Liabilitas + Ekuitas</td><td style="text-align:right;font-weight:800;">${rp(tL+tE)}</td></tr>
+    </tbody></table>`;
+  return pvPageWrap(t,c1,c2,c3,nama,periode,body,'—');
+}
+
+function pvMakeSaldo(nama,periode,t,c1,c2,c3) {
+  const rows=akuns.map(a=>{
+    let d=0,k=0;
+    jurnalEntries.forEach(j=>j.lines.forEach(l=>{if(l.akun===a.kode){d+=l.debit||0;k+=l.kredit||0;}}));
+    if(!d&&!k)return'';
+    return`<tr><td>${a.kode}</td><td>${a.nama}</td><td style="text-align:right;">${d?rp(d):'-'}</td><td style="text-align:right;">${k?rp(k):'-'}</td></tr>`;
+  }).join('');
+  const body=`<div class="pv-sec">Neraca Saldo</div>
+    <table><thead><tr><th>Kode</th><th>Nama Akun</th><th style="text-align:right;">Debit</th><th style="text-align:right;">Kredit</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="4" style="text-align:center;padding:18px;color:#9ca3af;">Belum ada data</td></tr>'}</tbody></table>`;
+  return pvPageWrap(t,c1,c2,c3,nama,periode,body,'—');
+}
+
+function pvMakePajak(nama,periode,t,c1,c2,c3) {
+  const ppnJ=jurnalEntries.filter(j=>j.jenis==='PPN');
+  let total=0;
+  const rows=ppnJ.map(j=>{
+    const krd=j.lines.find(l=>l.kredit>0&&(l.akun==='2301'||l.akun?.startsWith('23')));
+    const ppn=krd?krd.kredit:0;total+=ppn;
+    const dpp=j._ppnTarif?Math.round(ppn/(j._ppnTarif/100)):0;
+    return ppn?`<tr><td style="font-size:9.5px;">${j.tanggal}</td><td>${j.keterangan}</td><td style="text-align:right;">${rp(dpp)}</td><td style="text-align:center;">${j._ppnTarif||'—'}%</td><td style="text-align:right;">${rp(ppn)}</td></tr>`:'';
+  }).join('');
+  const body=`<div class="pv-sec">Laporan PPN</div>
+    <table><thead><tr><th>Tanggal</th><th>Keterangan</th><th style="text-align:right;">DPP</th><th style="text-align:center;">Tarif</th><th style="text-align:right;">PPN</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="5" style="text-align:center;padding:18px;color:#9ca3af;">Belum ada transaksi kena PPN</td></tr>'}
+      ${total?`<tr class="tot"><td colspan="4">Total PPN</td><td style="text-align:right;">${rp(total)}</td></tr>`:''}</tbody></table>`;
+  return pvPageWrap(t,c1,c2,c3,nama,periode,body,'—');
+}
+
+// ── Page renderer ──────────────────────────────────────────────
+function pvRenderPage(idx) {
+  if(!_pvPages.length) return;
+  _pvCurPage = Math.max(0, Math.min(idx, _pvPages.length-1));
+  const container = document.getElementById('pv-page-render');
+  if(!container) return;
+  const old = container.querySelector('iframe');
+  if(old) old.remove();
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'width:794px;min-height:1123px;border:none;display:block;';
+  iframe.sandbox = 'allow-same-origin';
+  container.appendChild(iframe);
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open(); doc.write(_pvPages[_pvCurPage]); doc.close();
+  setTimeout(()=>{
+    const h = doc.body?.scrollHeight || 1123;
+    iframe.style.height = Math.max(h,1123)+'px';
+    container.style.minHeight = iframe.style.height;
+  }, 100);
+  pvUpdateNav();
+}
+
+function pvBuildThumbs() {
+  const list = document.getElementById('pv-thumb-list');
+  if(!list) return;
+  list.innerHTML = _pvPages.map((html,i)=>`
+    <div class="pv-thumb-label">Hal. ${i+1}</div>
+    <div class="pv-thumb ${i===_pvCurPage?'active':''}" onclick="pvGoTo(${i})" id="pv-th-${i}">
+      <iframe style="width:794px;height:1123px;border:none;pointer-events:none;
+        transform:scale(${(74/794).toFixed(4)});transform-origin:top left;display:block;"
+        sandbox="allow-same-origin" srcdoc="${html.replace(/"/g,'&quot;')}"></iframe>
+    </div>`).join('');
+}
+
+function pvGoTo(i) {
+  pvRenderPage(i);
+  document.querySelectorAll('.pv-thumb').forEach((el,j)=>el.classList.toggle('active',j===i));
+}
+function pvNav(dir) { pvGoTo(_pvCurPage+dir); }
+
+function pvUpdateNav() {
+  const total=_pvPages.length;
+  const c=document.getElementById('pv-counter');
+  const s=document.getElementById('pv-page-sub');
+  const prev=document.getElementById('pv-prev');
+  const next=document.getElementById('pv-next');
+  if(c) c.textContent=`${_pvCurPage+1} / ${total}`;
+  if(s) s.textContent=`Hal. ${_pvCurPage+1} dari ${total}`;
+  if(prev) prev.disabled=_pvCurPage<=0;
+  if(next) next.disabled=_pvCurPage>=total-1;
+}
+
+// ── Export from preview ────────────────────────────────────────
+function pvExportNow() {
+  const info = window._pvExportInfo || {};
+  const p    = typeof getProfil==='function'?getProfil():{};
+  const nama = info.nama || p.nama || 'Laporan';
+  const periode = info.periode || '';
+  const proyek  = info.proyek || '';
+  closePdfPreview();
+  showOpSpinner('Membuat PDF...','Merender laporan');
+  setTimeout(()=>{
+    try { exportPDF(nama, periode, proyek); }
+    catch(e) { expStatus('❌ Error: '+e.message,'var(--red)'); }
+    finally { hideOpSpinner(); }
+  }, 200);
+}
+
+// ══════════════════════════════════════════════════════════════
+// COLOR PICKER ENGINE
+// ══════════════════════════════════════════════════════════════
+
+function pvOpenCP(key, label, dotEl) {
+  _pvActiveCP = {key};
+  const hex = pvGetColor(key);
+  const popup = document.getElementById('pv-cp-popup');
+  if(!popup) return;
+  const rect = dotEl.getBoundingClientRect();
+  popup.style.display = 'block';
+  popup.style.left = Math.min(rect.right+8, window.innerWidth-260)+'px';
+  popup.style.top  = Math.min(rect.top-10, window.innerHeight-430)+'px';
+  document.getElementById('pv-cp-title').textContent = label;
+  const hsv = pvHex2hsv(hex);
+  _pvCpH=hsv.h; _pvCpS=hsv.s; _pvCpV=hsv.v;
+  document.getElementById('pv-hue-slider').value = _pvCpH;
+  document.getElementById('pv-cp-hex').value = hex;
+  pvDrawSL(); pvUpdateSwatch(); pvUpdateContrast(hex);
+  // Presets
+  const sw = document.getElementById('pv-swatches');
+  if(sw) sw.innerHTML = PV_PRESETS.map(c=>`<div class="pv-swatch" style="background:${c};" onclick="pvPickPreset('${c}')" title="${c}"></div>`).join('');
+  // SL drag
+  const canvas = document.getElementById('pv-sl-canvas');
+  if(canvas) {
+    canvas.onmousedown = (e)=>{ _pvCpDrag=true; pvOnSL(e); };
+    canvas.onmousemove = (e)=>{ if(_pvCpDrag) pvOnSL(e); };
+    document.onmouseup = ()=>{ _pvCpDrag=false; };
+  }
+}
+
+function pvDrawSL() {
+  const canvas = document.getElementById('pv-sl-canvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d'), W=canvas.width, H=canvas.height;
+  const sg=ctx.createLinearGradient(0,0,W,0);
+  sg.addColorStop(0,'#fff'); sg.addColorStop(1,`hsl(${_pvCpH},100%,50%)`);
+  ctx.fillStyle=sg; ctx.fillRect(0,0,W,H);
+  const vg=ctx.createLinearGradient(0,0,0,H);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,1)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+  const cx=_pvCpS*W, cy=(1-_pvCpV)*H;
+  ctx.beginPath(); ctx.arc(cx,cy,6,0,Math.PI*2);
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.lineWidth=1.2; ctx.stroke();
+}
+
+function pvOnSL(e) {
+  const canvas=document.getElementById('pv-sl-canvas');
+  if(!canvas) return;
+  const r=canvas.getBoundingClientRect();
+  const sx=canvas.width/r.width, sy=canvas.height/r.height;
+  _pvCpS=Math.max(0,Math.min(1,(e.clientX-r.left)*sx/canvas.width));
+  _pvCpV=Math.max(0,Math.min(1,1-(e.clientY-r.top)*sy/canvas.height));
+  pvDrawSL();
+  const hex=pvHsv2hex(_pvCpH,_pvCpS,_pvCpV);
+  document.getElementById('pv-cp-hex').value=hex;
+  pvUpdateSwatch(); pvUpdateContrast(hex);
+}
+
+function pvOnHue(h) {
+  _pvCpH=parseFloat(h); pvDrawSL();
+  const hex=pvHsv2hex(_pvCpH,_pvCpS,_pvCpV);
+  document.getElementById('pv-cp-hex').value=hex;
+  pvUpdateSwatch(); pvUpdateContrast(hex);
+}
+
+function pvOnHexInput(val) {
+  val=val.trim(); if(!val.startsWith('#')) val='#'+val;
+  if(/^#[0-9a-fA-F]{6}$/.test(val)) {
+    const hsv=pvHex2hsv(val); _pvCpH=hsv.h; _pvCpS=hsv.s; _pvCpV=hsv.v;
+    document.getElementById('pv-hue-slider').value=_pvCpH;
+    pvDrawSL(); pvUpdateSwatch(); pvUpdateContrast(val);
+  }
+}
+
+function pvUpdateSwatch() {
+  const hex=pvHsv2hex(_pvCpH,_pvCpS,_pvCpV);
+  const sw=document.getElementById('pv-cp-swatch');
+  if(sw) sw.style.background=hex;
+}
+
+function pvUpdateContrast(hex) {
+  const ratio=pvContrast(hex,'#ffffff');
+  const needle=document.getElementById('pv-cr-needle');
+  const score=document.getElementById('pv-cr-score');
+  const badge=document.getElementById('pv-cr-badge');
+  if(!needle) return;
+  needle.style.left=Math.min(100,((ratio-1)/19)*100)+'%';
+  if(score) score.textContent=ratio.toFixed(1)+':1';
+  let lv,cl;
+  if(ratio>=7){lv='AAA';cl='#22c55e';}
+  else if(ratio>=4.5){lv='AA';cl='#22c55e';}
+  else if(ratio>=3){lv='AA Large';cl='#f59e0b';}
+  else{lv='Kurang';cl='#ef4444';}
+  if(badge){badge.textContent=lv;badge.style.background=cl+'22';badge.style.color=cl;}
+}
+
+function pvPickPreset(hex) {
+  const hsv=pvHex2hsv(hex); _pvCpH=hsv.h; _pvCpS=hsv.s; _pvCpV=hsv.v;
+  document.getElementById('pv-hue-slider').value=_pvCpH;
+  document.getElementById('pv-cp-hex').value=hex;
+  pvDrawSL(); pvUpdateSwatch(); pvUpdateContrast(hex);
+}
+
+function pvConfirmCP() {
+  if(!_pvActiveCP) return;
+  const hex=document.getElementById('pv-cp-hex').value;
+  if(!/^#[0-9a-fA-F]{6}$/.test(hex)){showAlert('Format warna tidak valid. Gunakan #rrggbb');return;}
+  _pvColors[_pvTmpl][_pvActiveCP.key] = hex;
+  // Add to recent
+  _pvRecentColors = _pvRecentColors.filter(c=>c!==hex);
+  _pvRecentColors.unshift(hex);
+  if(_pvRecentColors.length>12) _pvRecentColors.length=12;
+  pvRenderPalList();
+  pvRenderRecent();
+  pvCloseCP();
+}
+
+function pvCloseCP() {
+  const popup=document.getElementById('pv-cp-popup');
+  if(popup) popup.style.display='none';
+  _pvActiveCP=null;
+  document.onmouseup=null;
+}
+
+function pvRenderRecent() {
+  const el=document.getElementById('pv-recent');
+  if(!el) return;
+  if(!_pvRecentColors.length){el.innerHTML='<span style="font-size:10px;color:var(--muted);">Belum ada</span>';return;}
+  el.innerHTML=_pvRecentColors.map(c=>`<div class="pv-recent-dot" style="background:${c};" data-hex="${c}"
+    onclick="pvPickRecentColor('${c}')" title="${c}"></div>`).join('');
+}
+
+function pvPickRecentColor(hex) {
+  if(!_pvActiveCP){
+    // If no picker open, just set first palette slot
+    const slots=PV_PALETTES[_pvTmpl];
+    if(slots.length){_pvColors[_pvTmpl][slots[0].key]=hex;pvRenderPalList();}
+    return;
+  }
+  _pvColors[_pvTmpl][_pvActiveCP.key]=hex;
+  pvRenderPalList(); pvCloseCP();
+}
+
+// Close CP on outside click
+document.addEventListener('click',(e)=>{
+  const popup=document.getElementById('pv-cp-popup');
+  if(!popup||popup.style.display==='none') return;
+  if(!popup.contains(e.target)&&!e.target.classList.contains('pv-pal-dot')) pvCloseCP();
 });
 
 // HELPERS
@@ -9520,6 +10218,22 @@ function renderDashboard() {
     const b = a.normal==='D'?s.debit-s.kredit:s.kredit-s.debit;
     if(a.tipe==='Aset') tA += b;
   });
+  // Sync nilai buku aset tetap dari register — lebih akurat karena include penyusutan real
+  if(typeof asetTetapList !== 'undefined' && asetTetapList.length && typeof hitungPenyusutanAset === 'function') {
+    const _aktifAT = asetTetapList.filter(a => a.status === 'aktif');
+    if(_aktifAT.length) {
+      const _nilaiBukuTotal = _aktifAT.reduce((s,a) => s + hitungPenyusutanAset(a).nilaiBuku, 0);
+      // Hitung saldo akun aset tetap dari jurnal (untuk digantikan)
+      const _akunAT = akuns.filter(a => a.tipe==='Aset' &&
+        (a.kat==='Tetap' || ['tetap','peralatan','kendaraan','bangunan','mesin','komputer'].some(k=>a.nama.toLowerCase().includes(k))) &&
+        !a.nama.toLowerCase().includes('akumulasi') && !a.nama.toLowerCase().includes('penyusutan'));
+      const _saldoAkunAT = _akunAT.reduce((s,a) => {
+        const sd = saldoMapAll[a.kode]||{debit:0,kredit:0};
+        return s + (sd.debit - sd.kredit);
+      }, 0);
+      if(_nilaiBukuTotal > 0) tA = tA - _saldoAkunAT + _nilaiBukuTotal;
+    }
+  }
   // Filtered pendapatan & beban
   const filtSaldoMap = {};
   filtered.forEach(j => j.lines.forEach(l => {

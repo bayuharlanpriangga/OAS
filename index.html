@@ -5038,15 +5038,9 @@
 
 <!-- AUDIT TRAIL PAGE -->
 <div class="page" id="page-audit-trail">
-  <div class="section-header">
-    <div>
-      <div class="section-title"><i class="ti ti-shield-check" style="font-size:18px;vertical-align:-3px;margin-right:8px;color:var(--accent2);"></i>Audit Trail</div>
-      <div class="section-sub">Riwayat semua aktivitas — siapa, role apa, kapan</div>
-    </div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-ghost btn-sm" onclick="auditExportCSV()" style="gap:5px;"><i class="ti ti-download" style="font-size:12px;"></i> Export CSV</button>
-      <button class="btn btn-danger btn-sm" onclick="auditClearOld()" style="gap:5px;" title="Hapus log >90 hari"><i class="ti ti-trash" style="font-size:12px;"></i> Bersihkan</button>
-    </div>
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+    <button class="btn btn-ghost btn-sm" onclick="auditExportCSV()" style="gap:5px;"><i class="ti ti-download" style="font-size:12px;"></i> Export CSV</button>
+    <button class="btn btn-danger btn-sm" onclick="auditClearOld()" style="gap:5px;"><i class="ti ti-trash" style="font-size:12px;"></i> Bersihkan Log Lama</button>
   </div>
   <div id="audit-kpi" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;"></div>
   <!-- Legend role -->
@@ -5076,5 +5070,124 @@
   <div id="audit-load-more" style="text-align:center;padding:16px;display:none;">
     <button class="btn btn-ghost btn-sm" onclick="auditLoadMore()">Muat lebih banyak</button>
   </div>
+</div>
+
+<!-- MODAL: PDF PREVIEW & TEMPLATE -->
+<div id="modal-pdf-preview">
+  <div class="pv-topbar">
+    <div>
+      <div class="pv-topbar-title"><i class="ti ti-eye" style="font-size:14px;vertical-align:-2px;margin-right:6px;color:var(--accent2);"></i>Preview PDF Laporan</div>
+      <div class="pv-topbar-sub" id="pv-page-sub">Hal. 1 dari 1</div>
+    </div>
+    <div style="flex:1;"></div>
+    <button class="btn btn-ghost btn-sm" id="pv-edit-btn" onclick="pvTogglePanel()" style="gap:5px;">
+      <i class="ti ti-palette" style="font-size:12px;"></i> Edit Tampilan
+    </button>
+    <button class="btn btn-primary btn-sm" onclick="pvExportNow()" style="gap:5px;">
+      <i class="ti ti-file-download" style="font-size:12px;"></i> Export PDF
+    </button>
+    <button class="btn btn-ghost btn-sm" onclick="closePdfPreview()" style="gap:5px;">
+      <i class="ti ti-x" style="font-size:12px;"></i> Tutup
+    </button>
+  </div>
+
+  <div class="pv-body">
+    <!-- Thumbnails -->
+    <div class="pv-sidebar" id="pv-sidebar">
+      <div id="pv-thumb-list"></div>
+    </div>
+
+    <!-- Main preview -->
+    <div class="pv-canvas-wrap" id="pv-canvas-wrap">
+      <div class="pv-page-container" id="pv-page-render">
+        <div class="pv-generating" id="pv-generating">
+          <div class="pv-spinner"></div>
+          <div style="font-size:12px;color:var(--accent2);font-weight:600;">Merender...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings panel -->
+    <div class="pv-panel hidden" id="pv-panel">
+
+      <!-- Template -->
+      <div class="pv-panel-sec">
+        <div class="pv-panel-lbl">🎨 Pilih Template</div>
+
+        <div class="pv-tmpl-card active" id="pv-tc-A" onclick="pvSelectTmpl('A')">
+          <div class="pv-tmpl-thumb">
+            <svg width="44" height="58" viewBox="0 0 44 58"><rect width="44" height="58" fill="#1a2744"/><rect width="44" height="13" fill="#1e3a8a"/><rect x="3" y="3" width="7" height="7" rx="1" fill="#60a5fa"/><rect x="3" y="16" width="38" height="2" rx="1" fill="rgba(255,255,255,0.6)"/><rect x="3" y="22" width="38" height="5" rx="1" fill="rgba(30,58,138,0.8)"/><rect x="3" y="29" width="38" height="3" rx="1" fill="rgba(255,255,255,0.07)"/><rect x="3" y="33" width="38" height="3" rx="1" fill="rgba(30,58,138,0.3)"/><rect x="3" y="37" width="38" height="3" rx="1" fill="rgba(255,255,255,0.07)"/><rect x="3" y="41" width="38" height="3" rx="1" fill="rgba(30,58,138,0.3)"/><rect x="3" y="48" width="14" height="7" rx="2" fill="#1e3a8a"/><rect x="19" y="48" width="12" height="7" rx="2" fill="rgba(30,58,138,0.4)"/></svg>
+          </div>
+          <div><div class="pv-tmpl-name">Corporate Blue</div><div class="pv-tmpl-desc">Header solid, zebra stripe, profesional</div></div>
+        </div>
+
+        <div class="pv-tmpl-card" id="pv-tc-B" onclick="pvSelectTmpl('B')">
+          <div class="pv-tmpl-thumb">
+            <svg width="44" height="58" viewBox="0 0 44 58"><rect width="44" height="58" fill="#fafafa"/><rect width="44" height="16" fill="#111827"/><rect x="3" y="4" width="4" height="4" rx="1" fill="#10b981"/><rect x="3" y="20" width="20" height="3" rx="1" fill="#111827" opacity=".85"/><rect x="27" y="19" width="14" height="5" rx="2" fill="#111827"/><rect x="3" y="27" width="38" height="1" fill="#e5e7eb"/><rect x="3" y="30" width="38" height="3" rx="1" fill="#f9fafb"/><rect x="3" y="34" width="38" height="3" rx="1" fill="#fff"/><rect x="3" y="38" width="38" height="3" rx="1" fill="#f9fafb"/><rect x="3" y="42" width="38" height="3" rx="1" fill="#fff"/><rect x="3" y="51" width="38" height="1" fill="#e5e7eb"/></svg>
+          </div>
+          <div><div class="pv-tmpl-name">Executive White</div><div class="pv-tmpl-desc">Putih bersih, premium, investor report</div></div>
+        </div>
+
+        <div class="pv-tmpl-card" id="pv-tc-C" onclick="pvSelectTmpl('C')">
+          <div class="pv-tmpl-thumb">
+            <svg width="44" height="58" viewBox="0 0 44 58"><rect width="44" height="58" fill="#0f172a"/><rect width="7" height="58" fill="#7c3aed"/><rect x="9" y="4" width="32" height="9" rx="1" fill="rgba(124,58,237,0.2)"/><rect x="9" y="4" width="3" height="9" rx="1" fill="#7c3aed"/><rect x="9" y="17" width="32" height="2" rx="1" fill="rgba(255,255,255,0.6)"/><rect x="9" y="23" width="32" height="4" rx="1" fill="rgba(124,58,237,0.4)"/><rect x="9" y="29" width="32" height="3" rx="1" fill="rgba(255,255,255,0.04)"/><rect x="9" y="33" width="32" height="3" rx="1" fill="rgba(124,58,237,0.15)"/><rect x="9" y="37" width="32" height="3" rx="1" fill="rgba(255,255,255,0.04)"/><rect x="9" y="41" width="32" height="3" rx="1" fill="rgba(124,58,237,0.15)"/><rect x="9" y="49" width="14" height="6" rx="2" fill="#7c3aed"/><rect x="25" y="49" width="10" height="6" rx="2" fill="rgba(124,58,237,0.3)"/></svg>
+          </div>
+          <div><div class="pv-tmpl-name">Prestige Dark</div><div class="pv-tmpl-desc">Dark mode, sidebar vertikal, elegan</div></div>
+        </div>
+      </div>
+
+      <!-- Palettes -->
+      <div class="pv-panel-sec">
+        <div class="pv-panel-lbl">🎯 Palet Warna</div>
+        <div id="pv-pal-list"></div>
+      </div>
+
+      <!-- Recent colors -->
+      <div class="pv-panel-sec">
+        <div class="pv-panel-lbl">🕐 Warna Terbaru</div>
+        <div class="pv-recent-wrap" id="pv-recent"></div>
+      </div>
+
+      <!-- Apply -->
+      <div class="pv-panel-sec" style="margin-top:auto;">
+        <button class="btn btn-primary" style="width:100%;gap:6px;" onclick="pvApply()">
+          <i class="ti ti-refresh" style="font-size:12px;"></i> Terapkan
+        </button>
+        <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:6px;">Tersimpan di sesi ini</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Page nav -->
+  <div class="pv-page-nav">
+    <button id="pv-prev" onclick="pvNav(-1)">← Prev</button>
+    <span id="pv-counter" style="font-size:11px;">1 / 1</span>
+    <button id="pv-next" onclick="pvNav(1)">Next →</button>
+    <div style="flex:1;"></div>
+    <span style="font-size:10px;color:var(--muted);">Scroll mouse untuk zoom</span>
+  </div>
+</div>
+
+<!-- Color picker popup (shared) -->
+<div class="pv-cp-popup" id="pv-cp-popup" style="display:none;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <span id="pv-cp-title" style="font-size:12px;font-weight:700;color:var(--text);">Pilih Warna</span>
+    <button onclick="pvCloseCP()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">×</button>
+  </div>
+  <canvas id="pv-sl-canvas" width="220" height="148"></canvas>
+  <input type="range" id="pv-hue-slider" min="0" max="360" value="210" oninput="pvOnHue(this.value)">
+  <div class="pv-hex-row">
+    <div class="pv-cp-swatch" id="pv-cp-swatch"></div>
+    <input type="text" id="pv-cp-hex" placeholder="#1e3a8a" oninput="pvOnHexInput(this.value)" maxlength="7">
+    <button class="btn btn-primary btn-sm" onclick="pvConfirmCP()" style="white-space:nowrap;padding:5px 10px;">✓ Pakai</button>
+  </div>
+  <div class="pv-contrast-bar">
+    <div class="pv-contrast-lbl"><span>Kontras</span><span id="pv-cr-score">—</span></div>
+    <div class="pv-contrast-track"><div class="pv-contrast-needle" id="pv-cr-needle" style="left:50%;"></div></div>
+    <span class="pv-contrast-badge" id="pv-cr-badge">—</span>
+  </div>
+  <div style="font-size:10px;color:var(--muted);margin-bottom:5px;">Preset:</div>
+  <div class="pv-swatches" id="pv-swatches"></div>
 </div>
 </body></html>
