@@ -335,8 +335,7 @@ function switchTab(group, tab) {
   if(tab==='umum') initManualLines();
   if(tab==='penjualan') initJualAkunPendapatan();
   if(tab==='simpel') {
-    const tgl = document.getElementById('simpel-tanggal');
-    if(tgl && !tgl.value) tgl.value = new Date().toISOString().split('T')[0];
+    // tanggal tidak auto-fill — user wajib pilih sendiri
   }
 }
 
@@ -435,11 +434,7 @@ function selectSimplePicker(kode, nama) {
 }
 
 function initTransaksiForm() {
-  const today = new Date().toISOString().split('T')[0];
-  ['kas-tanggal','jual-tanggal','beli-tanggal','man-tanggal'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el && !el.value) el.value = today;
-  });
+  // tanggal tidak auto-fill — user wajib pilih sendiri
   populateAkunSelect('kas-akun-lawan', a => !['1101','1102'].includes(a.kode));
   populateAkunSelect('beli-akun', a => ['Beban','Aset','HPP'].includes(a.tipe));
 
@@ -486,7 +481,8 @@ function simpanKas() {
   const akunKode = document.getElementById('kas-akun-lawan').value;
   const jumlah = parseFloat(document.getElementById('kas-jumlah').value)||0;
   const ket = document.getElementById('kas-ket').value || (jenis==='masuk'?'Penerimaan Kas':'Pengeluaran Kas');
-  if(!tanggal||!jumlah) { showAlert('Lengkapi tanggal dan jumlah!'); return; }
+  if(!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
+  if(!jumlah) { showAlert('Isi jumlah transaksi terlebih dahulu!'); return; }
   if(!akunKode) { showAlert('Pilih akun lawan terlebih dahulu!'); return; }
   const lines = jenis==='masuk'
     ? [{akun:'1101',ket:'Kas masuk',debit:jumlah,kredit:0},{akun:akunKode,ket,debit:0,kredit:jumlah}]
@@ -775,16 +771,23 @@ function simpanPenjualan() {
   const _jualOpt = _jualAkunOptions?.find(o => o.value === akunPendapatanKode);
   const akunPendapatanNama = _jualOpt ? _jualOpt.label : 'Penjualan';
 
-  if(!tanggal) { showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Pilih tanggal terlebih dahulu!'); return; }
+  if(!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
   // Jika jenis penjualan barang/manufaktur, produk wajib dipilih
   const _jualKsId = document.getElementById('jual-produk-id')?.value;
   const _jualAkunPend = document.getElementById('jual-akun-pendapatan')?.value || '4101';
   const _isProdukJenis = (_jualAkunPend === '4101' || _jualAkunPend === '4105');
   if(_isProdukJenis && !_jualKsId) {
-    showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Pilih produk terlebih dahulu!');
+    showAlert('Pilih produk terlebih dahulu!');
     return;
   }
-  if(!jumlah) { showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Harga jual belum diset — atur di Master Produk terlebih dahulu.'); return; }
+  if(!jumlah) {
+    if(_isProdukJenis && _jualKsId) {
+      showAlert('Harga jual belum diset — atur di Master Produk terlebih dahulu.');
+    } else {
+      showAlert('Isi jumlah penjualan terlebih dahulu!');
+    }
+    return;
+  }
   const debAkun = metode==='tunai'?'1101':'1201';
   const debNama = metode==='tunai'?'Kas masuk':'Piutang usaha';
   addJurnal({tanggal,ket,jenis:'Penjualan',ref:inv,kontakId,lines:[
@@ -860,16 +863,16 @@ function simpanPembelian() {
   const ket          = document.getElementById('beli-ket')?.value || `Pembelian ${faktur}`;
   const kontakId     = document.getElementById('beli-kontak-id')?.value || '';
 
-  if(!tanggal) { showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Pilih tanggal terlebih dahulu!'); return; }
+  if(!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
   // Jika akun adalah persediaan, produk wajib dipilih
   const _isPersediaanAkun = ['1301','1302','1303','1304'].includes(akunKode) ||
     (akuns.find(a=>a.kode===akunKode)?.tipe === 'Persediaan') ||
     (akuns.find(a=>a.kode===akunKode)?.tipe === 'Aset Lancar');
   if(_isPersediaanAkun && !produkId) {
-    showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Pilih produk terlebih dahulu!');
+    showAlert('Pilih produk terlebih dahulu!');
     return;
   }
-  if(!hargaPerUnit) { showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Isi harga per unit terlebih dahulu!'); return; }
+  if(!hargaPerUnit) { showAlert('Isi harga per unit terlebih dahulu!'); return; }
 
   // Total = harga × qty (jika ada produk), atau langsung harga (jika tanpa produk)
   const totalBeli = produkId ? hargaPerUnit * qty : hargaPerUnit;
@@ -982,7 +985,8 @@ function simpanManual() {
     const k=parseFloat(inps[2]?.value)||0;
     if(d||k) lines.push({akun:sel.value,ket:inps[0].value,debit:d,kredit:k});
   });
-  if(!tanggal||lines.length<2){showAlert('Lengkapi data jurnal!');return;}
+  if(!tanggal){showAlert('Pilih tanggal terlebih dahulu!');return;}
+  if(lines.length<2){showAlert('Lengkapi data jurnal!');return;}
   const td=lines.reduce((s,l)=>s+l.debit,0);
   const tk=lines.reduce((s,l)=>s+l.kredit,0);
   if(Math.abs(td-tk)>0.01){showAlert('Jurnal tidak balance!');return;}
@@ -3512,7 +3516,7 @@ function saveToStorage(showToast = true) {
 }
 
 function manualSave() {
-  saveToStorage(true);
+  saveToStorage(false);
   showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Data berhasil disimpan!');
   renderStorageSlots();
 }
@@ -3723,7 +3727,7 @@ function showAutoSaveToast(msg, subtle = true) {
   const msgEl = document.getElementById('autosave-toast-msg');
   if(!toast || !msgEl) return;
   if(subtle) { toast.style.opacity = '0'; return; } // silent for auto-saves, show on manual
-  msgEl.textContent = msg;
+  msgEl.innerHTML = msg;
   toast.style.transform = 'translateY(0)';
   toast.style.opacity = '1';
   clearTimeout(toastTimer);
@@ -17436,7 +17440,7 @@ window.saveToStorage = async function(showToast = true) {
   }
   // Hanya tampilkan spinner jika belum ada spinner aktif
   const _overlay = document.getElementById('op-spinner-overlay');
-  const _spinnerAlreadyActive = _overlay && _overlay.style.display !== 'none' && _overlay.style.display !== '';
+  const _spinnerAlreadyActive = _overlay && _overlay.classList.contains('active');
   if (!_spinnerAlreadyActive) {
     showOpSpinner('Menyimpan data...', 'Mengunggah ke cloud');
   }
@@ -17479,10 +17483,15 @@ function addJurnal(entry) {
 
 const _origManualSave = manualSave;
 window.manualSave = async function() {
-  if (!currentCompany) {
+  if (!currentCompany || window.isGuestMode) {
+    // Guest/local mode: reset spinner depth dulu agar tidak stuck, lalu show & hide
+    if (typeof _opSpinnerDepth !== 'undefined') window._opSpinnerDepth = 0;
     showOpSpinner('Menyimpan...', 'Menyimpan ke penyimpanan lokal');
     _origManualSave();
-    setTimeout(hideOpSpinner, 400);
+    setTimeout(function() {
+      if (typeof _opSpinnerDepth !== 'undefined') window._opSpinnerDepth = 1; // pastikan 1 agar hideOpSpinner bisa turun ke 0
+      hideOpSpinner();
+    }, 500);
     return;
   }
   showOpSpinner('Menyimpan ke cloud...', 'Mohon tunggu sebentar');
@@ -19272,6 +19281,7 @@ function _applyCompanyLogo(compressed) {
     };
   }
 
+  // Helper: apakah mode lokal (tamu atau belum login ke bisnis cloud)
   // ── Override simpanKas ────────────────────────────────────────
   function wrapSimpanKas() {
     const orig = window.simpanKas;
@@ -19280,7 +19290,8 @@ function _applyCompanyLogo(compressed) {
       const tanggal = document.getElementById('kas-tanggal')?.value;
       const jumlah  = parseFloat(document.getElementById('kas-jumlah')?.value) || 0;
       const akunKode= document.getElementById('kas-akun-lawan')?.value;
-      if (!tanggal || !jumlah || !akunKode) { orig.apply(this, arguments); return; }
+      if (!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
+      if (!jumlah || !akunKode) { orig.apply(this, arguments); return; }
 
       if (typeof showOpSpinner === 'function') showOpSpinner('Menyimpan Jurnal Kas...', 'Mengunggah ke cloud');
       orig.apply(this, arguments);
@@ -19298,7 +19309,8 @@ function _applyCompanyLogo(compressed) {
     window.simpanPenjualan = function() {
       const tanggal = document.getElementById('jual-tanggal')?.value;
       const jumlah  = parseFloat(document.getElementById('jual-jumlah')?.value) || 0;
-      if (!tanggal || !jumlah) { orig.apply(this, arguments); return; }
+      if (!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
+      if (!jumlah) { orig.apply(this, arguments); return; }
 
       if (typeof showOpSpinner === 'function') showOpSpinner('Menyimpan Jurnal Penjualan...', 'Mengunggah ke cloud');
       orig.apply(this, arguments);
@@ -19316,7 +19328,8 @@ function _applyCompanyLogo(compressed) {
       const tanggal = document.getElementById('beli-tanggal')?.value;
       const jumlah  = parseFloat(document.getElementById('beli-jumlah')?.value) || 0;
       const akunKode= document.getElementById('beli-akun')?.value;
-      if (!tanggal || !jumlah || !akunKode) { orig.apply(this, arguments); return; }
+      if (!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
+      if (!jumlah || !akunKode) { orig.apply(this, arguments); return; }
 
       if (typeof showOpSpinner === 'function') showOpSpinner('Menyimpan Jurnal Pembelian...', 'Mengunggah ke cloud');
       orig.apply(this, arguments);
@@ -19337,7 +19350,8 @@ function _applyCompanyLogo(compressed) {
         const inps = row.querySelectorAll('input[type=number]');
         if ((parseFloat(inps[0]?.value)||0) || (parseFloat(inps[1]?.value)||0)) lines.push(1);
       });
-      if (!tanggal || lines.length < 2) { orig.apply(this, arguments); return; }
+      if (!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
+      if (lines.length < 2) { orig.apply(this, arguments); return; }
 
       if (typeof showOpSpinner === 'function') showOpSpinner('Menyimpan Jurnal Manual...', 'Memvalidasi & mengunggah');
       orig.apply(this, arguments);
@@ -20609,7 +20623,7 @@ function simpanSimpel() {
   const jumlah  = parseFloat(document.getElementById('simpel-jumlah')?.value)||0;
   const ket     = document.getElementById('simpel-ket')?.value.trim();
 
-  if(!tanggal) { showAlert('Pilih tanggal!'); return; }
+  if(!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
   if(!jumlah)  { showAlert('Isi jumlah terlebih dahulu!'); return; }
   if(!ket)     { showAlert('Isi keterangan!'); return; }
 
@@ -20915,8 +20929,7 @@ function exportRekapPajakPDF() {
 
 // ── Init Mode Cepat default date ──
 document.addEventListener('DOMContentLoaded', () => {
-  const tgl = document.getElementById('simpel-tanggal');
-  if(tgl) tgl.value = new Date().toISOString().split('T')[0];
+  // tanggal tidak auto-fill — user wajib pilih sendiri
   // Ensure simpel tab is default hidden (kas tab active in original)
   const simpelDiv = document.getElementById('trx-simpel');
   if(simpelDiv) simpelDiv.style.display = 'block'; // shown since it's the active tab now
