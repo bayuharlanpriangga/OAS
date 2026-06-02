@@ -1008,20 +1008,56 @@
 <!-- REGISTER ASET TETAP -->
 <div class="page" id="page-aset-tetap">
   <div class="section-header">
-    <div><div class="section-title">Register Aset Tetap</div><div class="section-sub">Daftar aset · Penyusutan otomatis · Nilai buku</div></div>
+    <div><div class="section-title">Register Aset Tetap</div><div class="section-sub">Daftar aset · Foto lampiran · Penyusutan otomatis · Nilai buku</div></div>
     <button class="btn btn-primary btn-sm" onclick="openModalAsetTetap()"><i class="ti ti-plus ti-btn"></i> Tambah Aset</button>
   </div>
-  <div id="at-kpi" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;"></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+  <div id="at-kpi" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;"></div>
+
+  <!-- Auto Penyusutan Toggle -->
+  <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:160px;">
+      <div style="font-size:13px;font-weight:600;color:var(--text);"><i class="ti ti-clock-bolt" style="font-size:13px;vertical-align:-2px;margin-right:5px;color:var(--accent2);"></i> Penyusutan Otomatis</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;" id="at-auto-sub">Cek tiap buka app</div>
+    </div>
+    <label style="position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0;">
+      <input type="checkbox" id="at-auto-toggle" onchange="atToggleAuto(this.checked)" style="opacity:0;width:0;height:0;">
+      <span id="at-toggle-slider" style="position:absolute;cursor:pointer;inset:0;background:rgba(255,255,255,0.1);border-radius:22px;transition:.25s;border:1px solid rgba(255,255,255,0.12);" onclick=""></span>
+    </label>
+    <button class="btn btn-ghost btn-sm" onclick="buatJurnalPenyusutanBulanan()" style="gap:5px;">
+      <i class="ti ti-adjustments" style="font-size:12px;"></i> Jalankan Sekarang
+    </button>
+  </div>
+
+  <!-- Warning banner -->
+  <div id="at-warn-banner" style="display:none;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:12.5px;color:var(--accent3);display:flex;align-items:center;gap:8px;">
+    <i class="ti ti-alert-triangle" style="font-size:17px;flex-shrink:0;"></i>
+    <div><b>Penyusutan Otomatis dinonaktifkan.</b> Klik <b>Jalankan Sekarang</b> tiap akhir bulan untuk membuat jurnal penyusutan secara manual.</div>
+  </div>
+
+  <!-- Filter + View Toggle -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
     <select id="at-filter-status" onchange="renderAsetTetap()" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;">
       <option value="all">Semua Status</option><option value="aktif">Aktif</option><option value="disposal">Disposal</option>
     </select>
     <input type="text" id="at-search" placeholder="Cari nama aset..." oninput="renderAsetTetap()" style="flex:1;min-width:180px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;">
+    <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <button class="at-view-btn active" id="at-view-btn-grid" onclick="atSetView('grid')" title="Grid" style="background:none;border:none;padding:6px 11px;cursor:pointer;color:var(--muted);font-size:13px;"><i class="ti ti-layout-grid"></i></button>
+      <button class="at-view-btn" id="at-view-btn-table" onclick="atSetView('table')" title="Tabel" style="background:none;border:none;border-left:1px solid var(--border);padding:6px 11px;cursor:pointer;color:var(--muted);font-size:13px;"><i class="ti ti-table"></i></button>
+    </div>
   </div>
-  <div class="table-card"><div class="table-scroll"><table>
-    <thead><tr><th>Nama Aset</th><th>Kategori</th><th>Tgl Perolehan</th><th style="text-align:right">Harga Perolehan</th><th style="text-align:right">Akum. Penyusutan</th><th style="text-align:right">Nilai Buku</th><th>Metode</th><th>Status</th><th style="width:100px"></th></tr></thead>
-    <tbody id="at-tbody"><tr><td colspan="9" style="text-align:center;color:var(--muted);padding:32px;">Belum ada aset. Klik Tambah Aset untuk mulai.</td></tr></tbody>
-  </table></div></div>
+
+  <!-- Grid view -->
+  <div id="at-grid-view">
+    <div id="at-card-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;margin-bottom:16px;"></div>
+  </div>
+
+  <!-- Table view -->
+  <div id="at-table-view" style="display:none;">
+    <div class="table-card"><div class="table-scroll"><table>
+      <thead><tr><th>Nama Aset</th><th>Kategori</th><th>Tgl Perolehan</th><th style="text-align:right">Harga Perolehan</th><th style="text-align:right">Akum. Penyusutan</th><th style="text-align:right">Nilai Buku</th><th>Metode</th><th>Status</th><th style="width:130px"></th></tr></thead>
+      <tbody id="at-tbody"><tr><td colspan="9" style="text-align:center;color:var(--muted);padding:32px;">Belum ada aset.</td></tr></tbody>
+    </table></div></div>
+  </div>
   <div id="at-jurnal-info" style="margin-top:12px;"></div>
 </div>
 
@@ -2660,10 +2696,18 @@
       <div id="produk-hpp-readonly" style="margin-bottom:14px;"></div>
 
       <!-- Harga jual bisa diset -->
-      <div class="form-row full">
+      <div class="form-row">
         <div class="form-group">
           <label>Harga Jual (Rp)</label>
           <input type="number" id="produk-harga-jual" placeholder="Masukkan harga jual..." inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label>PPN (%) <span style="font-weight:400;color:var(--muted);font-size:11px;">— Opsional</span></label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="number" id="produk-ppn" placeholder="cth: 11 atau 12" inputmode="decimal" min="0" max="100" step="0.1" style="flex:1;">
+            <span style="font-size:13px;color:var(--muted);white-space:nowrap;">%</span>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Kosongkan = tidak kena PPN</div>
         </div>
       </div>
 
@@ -3074,6 +3118,9 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-export')">Batal</button>
+      <button class="btn btn-ghost" id="exp-preview-btn" onclick="openPdfPreview()" style="display:none;border-color:var(--accent2);color:var(--accent2);gap:6px;">
+        <i class="ti ti-eye" style="font-size:13px;"></i> Preview PDF
+      </button>
       <button class="btn btn-primary" id="exp-btn" onclick="doExport()"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Sekarang</button>
     </div>
   </div>
@@ -4705,6 +4752,33 @@
       </div>
     </div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-aset-tetap')">Batal</button><button class="btn btn-primary" onclick="simpanAsetTetap()"><i class="ti ti-device-floppy ti-btn"></i> Simpan Aset</button></div>
+  </div>
+</div>
+
+<!-- MODAL: FOTO LAMPIRAN ASET -->
+<div class="modal-backdrop" id="modal-aset-foto" onclick="if(event.target===this)closeModal('modal-aset-foto')">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <div class="modal-title"><i class="ti ti-camera ti-btn"></i> <span id="at-foto-title">Foto Aset</span></div>
+      <button class="modal-close" onclick="closeModal('modal-aset-foto')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="at-foto-aset-id">
+      <input type="file" id="at-foto-input" accept="image/*" capture="environment" style="display:none" onchange="handleAtFotoUpload(this)">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Foto tampil sebagai thumbnail kartu aset. Maks 5MB per foto.</div>
+      <div id="at-foto-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
+        <div onclick="document.getElementById('at-foto-input').click()" style="aspect-ratio:1;border-radius:10px;border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:6px;background:var(--surface);color:var(--muted);font-size:11px;">
+          <i class="ti ti-camera-plus" style="font-size:24px;"></i><span>Tambah Foto</span>
+        </div>
+      </div>
+      <div id="at-foto-empty" style="text-align:center;padding:20px;color:var(--muted);font-size:13px;display:none;">
+        <i class="ti ti-photo-off" style="font-size:28px;display:block;margin-bottom:8px;opacity:0.4;"></i>Belum ada foto
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-aset-foto')">Tutup</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('at-foto-input').click()" style="gap:5px;"><i class="ti ti-plus" style="font-size:12px;"></i> Tambah</button>
+    </div>
   </div>
 </div>
 
