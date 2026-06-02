@@ -214,6 +214,9 @@
       <div class="nav-card ai-card" onclick="showPage('ai-assistant')" data-page="ai-assistant">
         <span class="nav-card-icon"><i class="ti ti-robot"></i></span>Orias AI
       </div>
+      <div class="nav-card" onclick="showPage('audit-trail')" data-page="audit-trail" style="color:var(--accent2);">
+        <span class="nav-card-icon"><i class="ti ti-shield-check"></i></span>Audit Trail
+      </div>
       <!-- Export — dipindah dari topbar -->
       <div class="nav-card" onclick="openExportModal();closeSidebar();" style="color:var(--accent3);border-color:rgba(245,158,11,0.2);background:rgba(245,158,11,0.05);">
         <span class="nav-card-icon"><i class="ti ti-upload"></i></span>Export
@@ -2657,18 +2660,10 @@
       <div id="produk-hpp-readonly" style="margin-bottom:14px;"></div>
 
       <!-- Harga jual bisa diset -->
-      <div class="form-row">
+      <div class="form-row full">
         <div class="form-group">
           <label>Harga Jual (Rp)</label>
           <input type="number" id="produk-harga-jual" placeholder="Masukkan harga jual..." inputmode="numeric">
-        </div>
-        <div class="form-group">
-          <label>PPN (%) <span style="font-weight:400;color:var(--muted);font-size:11px;">— Opsional</span></label>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <input type="number" id="produk-ppn" placeholder="Contoh: 11 atau 12" inputmode="decimal" min="0" max="100" step="0.1" style="flex:1;">
-            <span style="font-size:13px;color:var(--muted);white-space:nowrap;">%</span>
-          </div>
-          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Kosongkan jika tidak kena PPN</div>
         </div>
       </div>
 
@@ -4966,4 +4961,45 @@
 
 
 
+<!-- AUDIT TRAIL PAGE -->
+<div class="page" id="page-audit-trail">
+  <div class="section-header">
+    <div>
+      <div class="section-title"><i class="ti ti-shield-check" style="font-size:18px;vertical-align:-3px;margin-right:8px;color:var(--accent2);"></i>Audit Trail</div>
+      <div class="section-sub">Riwayat semua aktivitas — siapa, role apa, kapan</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="auditExportCSV()" style="gap:5px;"><i class="ti ti-download" style="font-size:12px;"></i> Export CSV</button>
+      <button class="btn btn-danger btn-sm" onclick="auditClearOld()" style="gap:5px;" title="Hapus log >90 hari"><i class="ti ti-trash" style="font-size:12px;"></i> Bersihkan</button>
+    </div>
+  </div>
+  <div id="audit-kpi" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;"></div>
+  <!-- Legend role -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+    <span style="font-size:11px;color:var(--muted);">Label role:</span>
+    <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(250,204,21,0.15);color:#facc15;border:1px solid rgba(250,204,21,0.3);">👑 Owner</span>
+    <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(34,211,238,0.12);color:var(--accent2);border:1px solid rgba(34,211,238,0.25);">🛡 Admin</span>
+    <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(148,163,184,0.12);color:#94a3b8;border:1px solid rgba(148,163,184,0.2);">👤 Member</span>
+    <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(148,163,184,0.08);color:#64748b;border:1px solid rgba(148,163,184,0.15);">🔓 Guest</span>
+    <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.25);">⚙️ Sistem</span>
+  </div>
+  <!-- Filter -->
+  <div class="at-trail-filter-bar">
+    <button class="at-trail-filter-btn active" id="audit-f-all"    onclick="auditSetFilter('all')">Semua</button>
+    <button class="at-trail-filter-btn" id="audit-f-create" onclick="auditSetFilter('create')">➕ Buat</button>
+    <button class="at-trail-filter-btn" id="audit-f-delete" onclick="auditSetFilter('delete')">🗑 Hapus</button>
+    <button class="at-trail-filter-btn" id="audit-f-edit"   onclick="auditSetFilter('edit')">✏️ Edit</button>
+    <button class="at-trail-filter-btn" id="audit-f-auto"   onclick="auditSetFilter('auto')">⚡ Otomatis</button>
+    <button class="at-trail-filter-btn" id="audit-f-export" onclick="auditSetFilter('export')">📤 Export</button>
+    <button class="at-trail-filter-btn" id="audit-f-login"  onclick="auditSetFilter('login')">🔐 Sesi</button>
+    <button class="at-trail-filter-btn" id="audit-f-reset"  onclick="auditSetFilter('reset')" style="color:var(--red);">⚠️ Reset</button>
+    <div style="flex:1;"></div>
+    <input type="text" id="audit-search" placeholder="Cari aktivitas, nama, referensi..." oninput="renderAuditTrail()"
+      style="min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:12px;">
+  </div>
+  <div id="audit-trail-list"></div>
+  <div id="audit-load-more" style="text-align:center;padding:16px;display:none;">
+    <button class="btn btn-ghost btn-sm" onclick="auditLoadMore()">Muat lebih banyak</button>
+  </div>
+</div>
 </body></html>
