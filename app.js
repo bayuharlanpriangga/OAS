@@ -897,6 +897,24 @@ function simpanPembelian() {
 
   addJurnal({ tanggal, ket, jenis:'Pembelian', ref: faktur, kontakId, lines });
 
+  // ── Auto-jurnal PPN Masukan jika produk ber-PPN di master produk ──
+  if(produkId) {
+    const _ppnProdukBeli = produkList.find(p => p.ksId === produkId);
+    if(_ppnProdukBeli?.ppn != null && _ppnProdukBeli.ppn > 0) {
+      const _ppnNominalBeli = Math.round(totalBeli * _ppnProdukBeli.ppn / 100);
+      const _akunPpnIn = akuns.find(a=>a.kode==='1502') ? '1502'
+        : akuns.find(a=>a.nama.toLowerCase().includes('ppn masukan'))?.kode || '1502';
+      const _akunKasHutang = metode === 'tunai' ? '1101' : '2101';
+      addJurnal({ tanggal, ket: `PPN Masukan ${_ppnProdukBeli.ppn}% — ${ket}`, jenis: 'PPN',
+        ref: faktur, kontakId, _ppnTarif: _ppnProdukBeli.ppn, _ksId: produkId,
+        lines: [
+          { akun: _akunPpnIn,      ket: `PPN Masukan ${_ppnProdukBeli.ppn}%`, debit: _ppnNominalBeli, kredit: 0 },
+          { akun: _akunKasHutang,  ket: 'Kas/Utang PPN Masukan',              debit: 0, kredit: _ppnNominalBeli },
+        ]
+      });
+    }
+  }
+
   // ── Auto-update kartu stock jika produk dipilih ──────────────
   if(produkId) {
     const found = _findKatById(produkId);
@@ -1508,6 +1526,11 @@ function openExportModal() {
   document.getElementById('exp-status').style.display = 'none';
   document.getElementById('exp-btn').disabled = false;
   document.getElementById('exp-btn').innerHTML = '<i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Sekarang';
+  // Reset format ke excel setiap kali modal dibuka agar state konsisten
+  exportFmt = 'excel';
+  ['excel','pdf','csv'].forEach(f => {
+    document.getElementById('exp-opt-'+f)?.classList.toggle('exp-fmt-active', f === 'excel');
+  });
   // Pre-fill from profil
   const _p = typeof getProfil === 'function' ? getProfil() : {};
   const namaEl = document.getElementById('exp-nama-perusahaan');
@@ -1646,11 +1669,11 @@ const AUDIT_COLORS = {
 };
 
 const AUDIT_ROLE_BADGE = {
-  owner:  { label:'👑 Owner',  style:'background:rgba(250,204,21,0.15);color:#facc15;border:1px solid rgba(250,204,21,0.3);' },
-  admin:  { label:'🛡 Admin',  style:'background:rgba(34,211,238,0.12);color:var(--accent2);border:1px solid rgba(34,211,238,0.25);' },
-  member: { label:'👤 Member', style:'background:rgba(148,163,184,0.12);color:#94a3b8;border:1px solid rgba(148,163,184,0.2);' },
-  guest:  { label:'🔓 Guest',  style:'background:rgba(148,163,184,0.08);color:#64748b;border:1px solid rgba(148,163,184,0.15);' },
-  system: { label:'⚙️ Sistem', style:'background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.25);' },
+  owner:  { label:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d=\"M2 20h20M5 20V10l7-6 7 6v10\"/><path d=\"M9 20v-5h6v5\"/></svg> Owner',  style:'background:rgba(250,204,21,0.15);color:#facc15;border:1px solid rgba(250,204,21,0.3);display:inline-flex;align-items:center;gap:4px;' },
+  admin:  { label:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d=\"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\"/></svg> Admin',  style:'background:rgba(34,211,238,0.12);color:var(--accent2);border:1px solid rgba(34,211,238,0.25);display:inline-flex;align-items:center;gap:4px;' },
+  member: { label:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 20c0-4 3.6-7 8-7s8 3 8 7\"/></svg> Member', style:'background:rgba(148,163,184,0.12);color:#94a3b8;border:1px solid rgba(148,163,184,0.2);display:inline-flex;align-items:center;gap:4px;' },
+  guest:  { label:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 9.9-1\"/></svg> Guest',  style:'background:rgba(148,163,184,0.08);color:#64748b;border:1px solid rgba(148,163,184,0.15);display:inline-flex;align-items:center;gap:4px;' },
+  system: { label:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"/></svg> Sistem', style:'background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.25);display:inline-flex;align-items:center;gap:4px;' },
 };
 
 // ── Determine current actor role ──────────────────────────────────────────
@@ -1777,9 +1800,9 @@ function _renderAuditKPI(logs) {
 }
 
 function _auditActionLabel(action) {
-  return {create:'➕ Buat',delete:'🗑 Hapus',edit:'✏️ Edit',
-          auto:'⚡ Otomatis',login:'🔐 Sesi',export:'📤 Export',
-          reset:'⚠️ Reset',info:'ℹ️ Info'}[action]||action;
+  return {create:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:-1px"><line x1=\"12\" y1=\"5\" x2=\"12\" y2=\"19\"/><line x1=\"5\" y1=\"12\" x2=\"19\" y2=\"12\"/></svg> Buat',delete:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><polyline points=\"3 6 5 6 21 6\"/><path d=\"M19 6l-1 14H6L5 6\"/><path d=\"M10 11v6M14 11v6\"/><path d=\"M9 6V4h6v2\"/></svg> Hapus',edit:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d=\"M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7\"/><path d=\"M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z\"/></svg> Edit',
+          auto:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/></svg> Otomatis',login:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/></svg> Sesi',export:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"17 8 12 3 7 8\"/><line x1=\"12\" y1=\"3\" x2=\"12\" y2=\"15\"/></svg> Export',
+          reset:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d=\"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z\"/><line x1=\"12\" y1=\"9\" x2=\"12\" y2=\"13\"/><line x1=\"12\" y1=\"17\" x2=\"12.01\" y2=\"17\"/></svg> Reset',info:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"16\" x2=\"12.01\" y2=\"16\"/></svg> Info'}[action]||action;
 }
 
 function _auditFmtTime(iso) {
@@ -20756,7 +20779,7 @@ function renderProduk() {
   });
 
   if(!ksList.length) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:40px;">
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:40px;">
       <i class="ti ti-package" style="font-size:28px;display:block;margin-bottom:10px;opacity:0.4;"></i>
       Belum ada kartu stock persediaan.<br>
       <span style="font-size:12px;">Tambahkan di menu <b>Persediaan → + Kartu Stock</b> terlebih dahulu.</span>
@@ -20780,7 +20803,7 @@ function renderProduk() {
   };
 
   if(!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">Tidak ada produk yang cocok</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:32px;">Tidak ada produk yang cocok</td></tr>`;
     return;
   }
 
@@ -20789,6 +20812,7 @@ function renderProduk() {
     // Harga jual: produkList bisa match by katId atau cardId
     const override   = produkList.find(p => p.ksId === ks.id || p.ksId === ks._cardId);
     const hargaJual  = override?.hargaJual || 0;
+    const ppnTarif   = (override?.ppn != null && override.ppn > 0) ? override.ppn : null;
     const akunPend   = override?.akunPend  || '4101';
     const akunHpp    = override?.akunHpp   || '5101';
     const akunPendNm = akuns.find(a=>a.kode===akunPend)?.nama || akunPend;
@@ -20802,6 +20826,21 @@ function renderProduk() {
       layerDetail = saldo.layers.map(l =>
         `<div style="font-size:10px;color:var(--muted);">${l.qty} unit @ ${fmtRp(l.harga)}</div>`
       ).join('');
+    }
+
+    // Badge PPN
+    const ppnBadge = ppnTarif != null
+      ? `<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(250,204,21,0.12);color:#facc15;border:1px solid rgba(250,204,21,0.3);white-space:nowrap;">PPN ${ppnTarif}%</span>`
+      : `<span style="font-size:9px;color:var(--muted);">Non-PKP</span>`;
+
+    // Harga jual + harga inkl. PPN jika ada
+    let hargaJualCell;
+    if(hargaJual) {
+      const hargaInkl = ppnTarif != null ? Math.round(hargaJual * (1 + ppnTarif/100)) : null;
+      hargaJualCell = `<div style="font-weight:600;">${fmtRp(hargaJual)}</div>`
+        + (hargaInkl != null ? `<div style="font-size:10px;color:var(--muted);">incl. PPN: ${fmtRp(hargaInkl)}</div>` : '');
+    } else {
+      hargaJualCell = '<span style="font-size:11px;color:var(--muted);">Belum diset</span>';
     }
 
     return `<tr>
@@ -20823,8 +20862,9 @@ function renderProduk() {
         <div style="font-size:10px;color:var(--muted);">Total: ${fmtRp(saldo.totalNilai)}</div>
       </td>
       <td style="text-align:right;font-family:var(--mono);font-size:13px;color:${hargaJual?'var(--accent)':'var(--muted)'};">
-        ${hargaJual ? fmtRp(hargaJual) : '<span style="font-size:11px;">Belum diset</span>'}
+        ${hargaJualCell}
       </td>
+      <td style="text-align:center;">${ppnBadge}</td>
       <td style="font-size:11px;color:var(--muted);">${akunPendNm}</td>
       <td>
         <button class="btn btn-ghost btn-sm" onclick="openModalEditProdukHarga('${ks.id}','${ks._cardId}')" title="Edit harga jual & akun">

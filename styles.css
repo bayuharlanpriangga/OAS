@@ -400,7 +400,7 @@ body.light-mode .nav-card.active { background: rgba(22,163,74,0.07); border-colo
 .sidebar-overlay.open { display: block; }
 
 /* Main */
-.main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; min-width: 0; overflow-x: clip; }
+.main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; height: 100vh; min-width: 0; overflow-x: clip; overflow-y: auto; }
 .topbar {
   padding: 13px 18px; background: var(--surface); border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
