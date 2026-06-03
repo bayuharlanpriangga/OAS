@@ -1562,8 +1562,13 @@ function updateExportSections() {
   const isPdf = exportFmt === 'pdf';
   document.getElementById('exp-excel-template-section').style.display = isExcel ? '' : 'none';
   document.getElementById('exp-pdf-logo-section').style.display = isPdf ? '' : 'none';
-  const pvRow = document.getElementById('exp-preview-row');
-  if(pvRow) pvRow.style.display = isPdf ? '' : 'none';
+  const pvBtn = document.getElementById('exp-preview-btn');
+  if(pvBtn) {
+    pvBtn.disabled = !isPdf;
+    pvBtn.style.cursor = isPdf ? 'pointer' : 'not-allowed';
+    pvBtn.style.borderColor = isPdf ? 'var(--accent2)' : 'rgba(34,211,238,0.2)';
+    pvBtn.style.color = isPdf ? 'var(--accent2)' : 'rgba(34,211,238,0.3)';
+  }
 }
 
 function selectExcelTemplate(tmpl) {

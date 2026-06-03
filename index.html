@@ -3176,16 +3176,15 @@
       <div id="exp-status" style="display:none;padding:10px;background:var(--surface2);border-radius:8px;font-size:12.5px;margin-top:4px;"></div>
     </div>
     <div class="modal-footer" style="flex-direction:column;gap:8px;">
-      <!-- Preview PDF row — muncul hanya saat format PDF -->
-      <div id="exp-preview-row" style="display:none;width:100%;">
-        <button class="btn btn-ghost" id="exp-preview-btn" onclick="openPdfPreview()" style="width:100%;border-color:var(--accent2);color:var(--accent2);gap:8px;justify-content:center;">
-          <i class="ti ti-eye" style="font-size:14px;"></i> Preview &amp; Edit Tampilan PDF
-        </button>
-      </div>
-      <!-- Batal + Export row — selalu tampil -->
-      <div style="display:flex;gap:8px;width:100%;justify-content:flex-end;">
-        <button class="btn btn-ghost" onclick="closeModal('modal-export')">Batal</button>
-        <button class="btn btn-primary" id="exp-btn" onclick="doExport()" style="gap:6px;"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:4px;"></i> Export Sekarang</button>
+      <!-- Preview PDF button — selalu tampil, disable saat bukan PDF -->
+      <button class="btn btn-ghost" id="exp-preview-btn" onclick="openPdfPreview()" disabled
+        style="width:100%;border-color:rgba(34,211,238,0.25);color:rgba(34,211,238,0.35);gap:8px;justify-content:center;cursor:not-allowed;transition:all 0.2s;" id="exp-preview-row">
+        <i class="ti ti-eye" style="font-size:14px;"></i> Preview &amp; Edit Tampilan PDF
+      </button>
+      <!-- Batal + Export row -->
+      <div style="display:flex;gap:8px;width:100%;">
+        <button class="btn btn-ghost" onclick="closeModal('modal-export')" style="flex:1;justify-content:center;">Batal</button>
+        <button class="btn btn-primary" id="exp-btn" onclick="doExport()" style="flex:2;gap:6px;justify-content:center;"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:4px;"></i> Export Sekarang</button>
       </div>
     </div>
   </div>
