@@ -5130,11 +5130,7 @@
       </div>
     </div>
     <div class="pv-panel hidden" id="pv-panel">
-      <!-- Header panel dengan tombol tutup — hanya tampil di mobile -->
-      <div class="pv-panel-header" id="pv-panel-header">
-        <span class="pv-panel-header-title">🎨 Edit Tampilan PDF</span>
-        <button class="pv-panel-close-btn" onclick="pvTogglePanel()" title="Tutup panel">✕</button>
-      </div>
+
       <div class="pv-panel-sec">
         <div class="pv-panel-lbl">🎨 Pilih Template</div>
         <div class="pv-tmpl-card active" id="pv-tc-A" onclick="pvSelectTmpl('A')">
@@ -5229,6 +5225,10 @@
         </button>
         <button class="btn btn-ghost" style="width:100%;gap:6px;font-size:11px;" onclick="pvResetToDefault()">
           <i class="ti ti-refresh" style="font-size:11px;"></i> Reset ke Default
+        </button>
+        <!-- Tombol Batal — hanya tampil di mobile, untuk tutup panel tanpa simpan -->
+        <button class="pv-panel-cancel-btn" onclick="pvTogglePanel()">
+          Batal
         </button>
         <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5;">
           Template tersimpan otomatis.<br>Berlaku untuk <b>semua</b> tombol Export PDF.

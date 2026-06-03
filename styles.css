@@ -2372,10 +2372,9 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 .pv-page-container { background:white;width:794px;min-height:1123px;flex-shrink:0;box-shadow:0 8px 48px rgba(0,0,0,0.6);border-radius:3px;overflow:hidden;position:relative; }
 .pv-panel { width:280px;flex-shrink:0;background:rgba(15,18,28,0.98);border-left:1px solid rgba(255,255,255,0.06);overflow-y:auto;display:flex;flex-direction:column;transition:width 0.2s; }
 .pv-panel.hidden { width:0;overflow:hidden; }
-.pv-panel-header { display:none;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(10,13,24,0.98);flex-shrink:0; }
-.pv-panel-header-title { font-size:13px;font-weight:700;color:#e2e8f0; }
-.pv-panel-close-btn { width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;flex-shrink:0; }
-.pv-panel-close-btn:hover { background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.4);color:#f87171; }
+/* pv-panel-header dihapus — navigasi pakai tombol Batal di bawah Reset */
+.pv-panel-cancel-btn { display:none;width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;text-align:center; }
+.pv-panel-cancel-btn:hover { background:rgba(255,255,255,0.09);color:#e2e8f0; }
 .pv-panel-sec { padding:14px;border-bottom:1px solid rgba(255,255,255,0.06); }
 .pv-panel-lbl { font-size:10px;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px; }
 .pv-tmpl-card { border:2px solid rgba(255,255,255,0.08);border-radius:9px;padding:10px;cursor:pointer;transition:all 0.15s;background:rgba(255,255,255,0.02);display:flex;gap:10px;align-items:center;margin-bottom:8px; }
@@ -2473,13 +2472,10 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
     overflow-y: auto;
   }
   .pv-panel.hidden { display: none !important; width: 0 !important; }
-  /* Tampilkan header panel dengan tombol tutup di mobile */
-  .pv-panel-header { display: flex !important; }
+  /* Tampilkan tombol Batal di bawah Reset, hanya di mobile */
+  .pv-panel-cancel-btn { display: block !important; }
 
-  /* Template cards: teks tidak gelap, kontras benar */
-  .pv-tmpl-name { color: var(--text) !important; }
-  .pv-tmpl-desc { color: var(--muted) !important; }
-  .pv-panel-lbl { color: var(--muted) !important; }
+  /* Template cards: teks sudah hardcode putih di base CSS, tidak perlu override */
 
   /* Topbar PDF Preview: wrap dengan benar */
   .pv-topbar {
