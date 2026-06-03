@@ -2722,49 +2722,54 @@ function pvApplyZoom() {
   const label = document.getElementById('pv-zoom-label');
   const zoomOutBtn = document.getElementById('pv-zoom-out-btn');
   const resetBtn = document.getElementById('pv-zoom-reset-btn');
+  const isMobile = window.innerWidth < 900;
 
   if (el) {
-    el.style.transform = 'scale(' + _pvZoom + ')';
-    el.style.transformOrigin = 'top center';
-    const isMobile = window.innerWidth < 900;
     if (isMobile) {
-      // Mobile: overflow hidden saat fit (no freeze), scroll 2 arah saat zoom in
+      // Mobile: pakai CSS zoom (bukan transform:scale) — benar-benar mengecilkan layout space
+      // sehingga tidak ada overflow/terpotong di sisi kanan saat fit
+      el.style.transform = 'none';
+      el.style.marginBottom = '0px';
+      el.style.zoom = _pvZoom;
+      el.style.width = '794px'; // tetap 794px, zoom yang mengecilkan
+      el.style.minWidth = '794px';
+
       const isZoomedIn = _pvZoom > _pvFitZoom + 0.01;
-      const extraBottom = isZoomedIn ? Math.ceil((_pvZoom - 1) * 1123) + 'px' : '0px';
-      el.style.marginBottom = extraBottom;
       if (wrap) {
+        // Saat fit: overflow hidden — tidak ada scroll ke area kosong, tidak freeze
+        // Saat zoom in: scroll dua arah
         wrap.style.overflowY = isZoomedIn ? 'auto' : 'hidden';
         wrap.style.overflowX = isZoomedIn ? 'auto' : 'hidden';
-        // Lebar container mengikuti zoom agar horizontal scroll benar
-        wrap.style.alignItems = isZoomedIn ? 'flex-start' : 'flex-start';
-      }
-      // Beri lebar pada page-render sesuai zoom agar bisa scroll horizontal
-      const pageRender = document.getElementById('pv-page-render');
-      if (pageRender) {
-        pageRender.style.width = isZoomedIn ? Math.ceil(794 * _pvZoom) + 'px' : '100%';
-        pageRender.style.minWidth = isZoomedIn ? Math.ceil(794 * _pvZoom) + 'px' : 'unset';
+        wrap.style.alignItems = 'flex-start';
+        wrap.style.justifyContent = 'flex-start';
+        wrap.style.paddingLeft = isZoomedIn ? '10px' : '0px';
       }
     } else {
-      // Desktop: selalu bisa scroll vertikal, margin normal
+      // Desktop: transform:scale seperti biasa
+      el.style.zoom = '';
+      el.style.transform = 'scale(' + _pvZoom + ')';
+      el.style.transformOrigin = 'top center';
       el.style.marginBottom = _pvZoom > 1.0
         ? Math.ceil((_pvZoom - 1) * 1123) + 'px'
         : '0px';
+      el.style.width = '';
+      el.style.minWidth = '';
       if (wrap) {
         wrap.style.overflowY = 'auto';
         wrap.style.overflowX = 'hidden';
+        wrap.style.alignItems = 'flex-start';
+        wrap.style.justifyContent = 'center';
+        wrap.style.paddingLeft = '';
       }
     }
   }
 
-  // Label: tampilkan persentase
+  // Label
   const pct = Math.round(_pvZoom * 100);
   if (label) label.textContent = pct + '%';
 
-  // Tombol zoom out & reset:
-  // Desktop — selalu tampil (zoom bebas, user butuh tombol kapan saja)
-  // Mobile  — hanya muncul saat zoom in melebihi fit (saat fit tidak perlu zoom out)
-  const isMobileBtn = window.innerWidth < 900;
-  const showZoomOut = isMobileBtn ? (_pvZoom > _pvFitZoom + 0.01) : true;
+  // Tombol zoom out & reset
+  const showZoomOut = isMobile ? (_pvZoom > _pvFitZoom + 0.01) : true;
   if (zoomOutBtn) zoomOutBtn.style.display = showZoomOut ? 'flex' : 'none';
   if (resetBtn) resetBtn.style.display = showZoomOut ? 'flex' : 'none';
 }

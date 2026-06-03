@@ -2368,7 +2368,7 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 .pv-thumb { background:#fff;border-radius:3px;margin-bottom:8px;cursor:pointer;border:2px solid transparent;transition:all 0.15s;overflow:hidden;aspect-ratio:210/297;width:100%; }
 .pv-thumb.active { border-color:var(--accent2); }
 .pv-thumb:hover { border-color:rgba(34,211,238,0.5); }
-.pv-canvas-wrap { flex:1;overflow:hidden;display:flex;align-items:flex-start;justify-content:center;padding:20px;background:#1a1d2e;position:relative;overscroll-behavior:contain;-webkit-overflow-scrolling:touch; }
+.pv-canvas-wrap { flex:1;overflow:hidden;display:flex;align-items:flex-start;justify-content:center;padding:20px;background:#1a1d2e;position:relative;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-sizing:border-box; }
 .pv-page-container { background:white;width:794px;min-height:1123px;flex-shrink:0;box-shadow:0 8px 48px rgba(0,0,0,0.6);border-radius:3px;overflow:hidden;position:relative; }
 .pv-panel { width:280px;flex-shrink:0;background:rgba(15,18,28,0.98);border-left:1px solid rgba(255,255,255,0.06);overflow-y:auto;display:flex;flex-direction:column;transition:width 0.2s; }
 .pv-panel.hidden { width:0;overflow:hidden; }
@@ -2452,13 +2452,20 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
     flex-shrink: 0;
   }
 
-  /* Canvas area: overflow dikontrol JS sesuai zoom level */
+  /* Canvas area: overflow dikontrol JS, width 100% untuk fit yang benar */
   .pv-canvas-wrap {
     flex: 1;
     overflow: hidden;
-    padding: 10px;
+    padding: 0;
+    width: 100%;
+    box-sizing: border-box;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+  }
+  /* Page render: lebar penuh canvas, zoom CSS yang mengecilkan */
+  #pv-page-render {
+    width: 794px;
+    min-width: 794px;
   }
 
   /* Panel Edit Tampilan: full screen overlay di mobile */
