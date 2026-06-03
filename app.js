@@ -1763,6 +1763,7 @@ const AUDIT_PAGE_SZ = 40;
 let   _auditPage       = 0;
 let   _auditFilter     = 'all';
 let   _auditRoleFilter = null; // null = semua role, string = filter spesifik role
+let   _auditBizFilter  = null; // null = semua bisnis, string = companyId spesifik
 
 const AUDIT_COLORS = {
   create:'#4ade80', delete:'#f87171', edit:'#fbbf24',
@@ -1786,12 +1787,13 @@ function _getActorRole() {
   // Owner: company creator
   if (typeof currentCompany !== 'undefined' && currentCompany
       && currentCompany.user_id === currentUser.id) return 'owner';
-  // Admin
+  // Admin (member yang diberi role admin oleh owner)
   if (typeof _currentMemberRole !== 'undefined' && _currentMemberRole === 'admin') return 'admin';
-  // Member
+  // Member biasa
   if (typeof _currentMemberRole !== 'undefined' && _currentMemberRole === 'member') return 'member';
-  // Fallback: if there's a logged-in user but no company context yet
-  if (currentUser?.id) return 'admin'; // treat as admin for solo use
+  // Fallback: user sudah login, company belum terisi (masih loading) → tandai owner sementara
+  // agar saat company sudah siap kita bisa re-evaluate; tapi jangan return 'admin' (menyesatkan)
+  if (currentUser?.id) return 'owner'; // default ke owner sampai company info siap
   return 'guest';
 }
 
@@ -1808,13 +1810,16 @@ function _getCurrentActorLabel() {
 // ── Core logger ───────────────────────────────────────────────────────────
 function auditLog(action, category, description, meta = {}) {
   try {
-    const logs  = auditGetAll();
-    const who   = _getCurrentActorLabel();
-    const role  = _getActorRole();
+    const logs      = auditGetAll();
+    const who       = _getCurrentActorLabel();
+    const role      = _getActorRole();
+    const companyId   = (typeof currentCompany !== 'undefined' && currentCompany?.id)   || null;
+    const companyName = (typeof currentCompany !== 'undefined' && currentCompany?.name) || null;
     const entry = {
       id:   'AL_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
       ts:   new Date().toISOString(),
       action, category, description, who, role,
+      companyId, companyName,
       meta,
     };
     logs.unshift(entry);
@@ -1834,13 +1839,21 @@ function renderAuditTrail() {
   const filtered = logs.filter(e => {
     if (_auditFilter !== 'all' && e.action !== _auditFilter) return false;
     if (_auditRoleFilter !== null && (e.role||'guest') !== _auditRoleFilter) return false;
+    // Filter per bisnis: jika _auditBizFilter di-set, hanya tampilkan log bisnis itu
+    if (_auditBizFilter !== null && (e.companyId||null) !== _auditBizFilter) return false;
     if (search && !e.description.toLowerCase().includes(search)
                && !e.category.toLowerCase().includes(search)
                && !(e.who||'').toLowerCase().includes(search)
-               && !(e.meta?.ref||'').toLowerCase().includes(search)) return false;
+               && !(e.meta?.ref||'').toLowerCase().includes(search)
+               && !(e.companyName||'').toLowerCase().includes(search)) return false;
     return true;
   });
-  _renderAuditKPI(logs);
+  // KPI selalu dihitung dari log bisnis aktif (atau semua jika tidak ada filter)
+  const kpiLogs = _auditBizFilter !== null
+    ? logs.filter(e => (e.companyId||null) === _auditBizFilter)
+    : logs;
+  _renderAuditKPI(kpiLogs);
+  _renderAuditBizBar(logs);
   const el = document.getElementById('audit-trail-list');
   if (!el) return;
   const slice = filtered.slice(0, (_auditPage+1)*AUDIT_PAGE_SZ);
@@ -1859,6 +1872,10 @@ function renderAuditTrail() {
     const rb      = AUDIT_ROLE_BADGE[e.role||'guest'] || AUDIT_ROLE_BADGE.guest;
     const diffHtml = e.meta?.diff ? _renderDiff(e.meta.diff) : '';
     const metaHtml = e.meta?.ref ? `<div class="at-trail-meta">${e.meta.ref}</div>` : '';
+    // Badge nama bisnis — tampilkan jika ada dan filter bukan per-bisnis tunggal
+    const bizBadge = (e.companyName && _auditBizFilter === null)
+      ? `<span style="font-size:10px;color:var(--muted);background:var(--surface2,rgba(255,255,255,0.06));border:0.5px solid var(--border);padding:1px 6px;border-radius:4px;flex-shrink:0;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${e.companyName}"><i class="ti ti-building" style="font-size:9px;vertical-align:-1px;margin-right:2px;"></i>${e.companyName}</span>`
+      : '';
     return `<div class="at-trail-row">
       <div class="at-trail-timeline">
         <div class="at-trail-dot" style="background:${color};"></div>
@@ -1868,6 +1885,7 @@ function renderAuditTrail() {
         <div class="at-trail-header">
           <span class="at-trail-action ${e.action}">${_auditActionLabel(e.action)}</span>
           <span class="at-trail-role-badge" style="${rb.style};font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px;flex-shrink:0;">${rb.label}</span>
+          ${bizBadge}
           <span class="at-trail-who"><i class="ti ti-user" style="font-size:10px;vertical-align:-1px;margin-right:3px;"></i>${e.who||'—'}</span>
           <span class="at-trail-time">${timeStr}</span>
         </div>
@@ -1878,6 +1896,41 @@ function renderAuditTrail() {
   }).join('');
   const lm = document.getElementById('audit-load-more');
   if (lm) lm.style.display = filtered.length > slice.length ? '' : 'none';
+}
+
+// Render bar filter per bisnis — auto-generate dari log yang ada
+function _renderAuditBizBar(logs) {
+  const container = document.getElementById('audit-biz-bar');
+  if (!container) return;
+  // Kumpulkan semua bisnis unik dari log
+  const bizMap = {};
+  logs.forEach(e => {
+    if (e.companyId && !bizMap[e.companyId]) {
+      bizMap[e.companyId] = { id: e.companyId, name: e.companyName || e.companyId, count: 0 };
+    }
+    if (e.companyId) bizMap[e.companyId].count++;
+  });
+  const bizList = Object.values(bizMap);
+  // Jika hanya satu bisnis atau nol, sembunyikan bar
+  if (bizList.length <= 1) { container.style.display = 'none'; return; }
+  container.style.display = 'flex';
+  const allActive = _auditBizFilter === null;
+  container.innerHTML = `
+    <span style="font-size:11px;color:var(--muted);white-space:nowrap;align-self:center;">Filter Bisnis:</span>
+    <button onclick="auditSetBizFilter(null)" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:${allActive?'var(--accent)':'var(--surface)'};color:${allActive?'#fff':'var(--text)'};cursor:pointer;white-space:nowrap;">Semua</button>
+    ${bizList.map(b => {
+      const active = _auditBizFilter === b.id;
+      return `<button onclick="auditSetBizFilter('${b.id}')" title="${b.name}" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:${active?'var(--accent)':'var(--surface)'};color:${active?'#fff':'var(--text)'};cursor:pointer;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;">
+        <i class="ti ti-building" style="font-size:10px;vertical-align:-1px;margin-right:3px;"></i>${b.name} <span style="opacity:0.6">(${b.count})</span>
+      </button>`;
+    }).join('')}
+  `;
+}
+
+function auditSetBizFilter(companyId) {
+  _auditBizFilter = companyId;
+  _auditPage = 0;
+  renderAuditTrail();
 }
 
 function _renderAuditKPI(logs) {
@@ -1973,9 +2026,10 @@ function auditLoadMore() { _auditPage++; renderAuditTrail(); }
 function auditExportCSV() {
   const logs=auditGetAll();
   if(!logs.length){showAlert('Belum ada log audit.');return;}
-  const header=['Waktu','Aksi','Kategori','Deskripsi','Oleh','Role','Referensi'];
+  const header=['Waktu','Bisnis','Aksi','Kategori','Deskripsi','Oleh','Role','Referensi'];
   const rows=logs.map(e=>[
     new Date(e.ts).toLocaleString('id-ID'),
+    e.companyName||'',
     e.action,e.category,e.description,e.who||'',e.role||'',e.meta?.ref||''
   ].map(v=>`"${String(v).replace(/"/g,'""')}"`));
   const csv=[header,...rows].map(r=>r.join(',')).join('\n');
@@ -2001,7 +2055,7 @@ function auditClearOld() {
 
 // ── Init page ─────────────────────────────────────────────────────────────
 function initAuditPage() {
-  _auditPage=0;_auditFilter='all';_auditRoleFilter=null;
+  _auditPage=0;_auditFilter='all';_auditRoleFilter=null;_auditBizFilter=null;
   document.querySelectorAll('.at-trail-filter-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('audit-f-all')?.classList.add('active');
   document.querySelectorAll('.at-role-filter-badge').forEach(b=>{b.style.opacity='1';b.style.boxShadow='';b.style.transform='';});
@@ -2010,8 +2064,20 @@ function initAuditPage() {
 }
 
 // ── Login/logout helpers ──────────────────────────────────────────────────
-function auditLogLogin(email, role) {
-  auditLog('login','system',`Login: ${email} — sesi dimulai`,{ref:email});
+function auditLogLogin(email) {
+  // Tunggu hingga currentCompany terisi (maks 5 detik) agar role & companyId akurat
+  const MAX_WAIT = 5000, INTERVAL = 200;
+  let elapsed = 0;
+  const tryLog = () => {
+    const companyReady = typeof currentCompany !== 'undefined' && currentCompany?.id;
+    if (companyReady || elapsed >= MAX_WAIT) {
+      auditLog('login','system',`Login: ${email} — sesi dimulai`,{ref:email});
+    } else {
+      elapsed += INTERVAL;
+      setTimeout(tryLog, INTERVAL);
+    }
+  };
+  setTimeout(tryLog, INTERVAL);
 }
 function auditLogLogout(email) {
   auditLog('login','system',`Logout: ${email||'pengguna'}`,{ref:email});
