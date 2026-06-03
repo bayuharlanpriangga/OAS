@@ -2677,35 +2677,42 @@ function pvGoTo(i){pvRenderPage(i);document.querySelectorAll('.pv-thumb').forEac
 let _pvZoom = 1.0;
 let _pvFitZoom = 1.0; // zoom ngepas awal berdasarkan lebar layar
 
-// Hitung zoom ngepas: lebar canvas-wrap / lebar halaman (794px) dengan padding
+// pvCalcFitZoom: hanya untuk mobile
+// Desktop tidak disentuh — zoom bebas, default 100%
 function pvCalcFitZoom() {
   const wrap = document.getElementById('pv-canvas-wrap');
   if (!wrap) return 1.0;
-  const available = wrap.clientWidth - 40; // 40px = padding kiri+kanan (20px each)
+  const available = wrap.clientWidth - 40;
   if (available <= 0) return 1.0;
-  const fit = available / 794;
-  return Math.min(1.0, Math.max(0.2, fit)); // min 20%, max 100%
+  return Math.min(1.0, Math.max(0.2, available / 794));
 }
 
-// Panggil setelah iframe rendered — canvas pasti sudah punya clientWidth yang benar
+// pvInitZoom: mobile fit zoom, desktop panggil pvApplyZoom supaya tombol langsung muncul
 function pvInitZoom() {
-  const fit = pvCalcFitZoom();
-  // Hanya update fit jika berbeda signifikan (>1%) — hindari flicker
-  if (Math.abs(fit - _pvFitZoom) > 0.01 || _pvZoom === _pvFitZoom) {
-    _pvFitZoom = fit;
-    _pvZoom = fit;
+  if (window.innerWidth >= 900) {
+    // Desktop: zoom tetap 1.0, tapi pvApplyZoom harus dipanggil
+    // supaya tombol zoom out & reset langsung tampil dari awal
+    _pvFitZoom = 1.0;
+    _pvZoom = 1.0;
     pvApplyZoom();
+    return;
   }
-}
-
-function pvZoom(delta) {
-  _pvZoom = Math.min(3.0, Math.max(_pvFitZoom, _pvZoom + delta));
+  const fit = pvCalcFitZoom();
+  _pvFitZoom = fit;
+  _pvZoom = fit;
   pvApplyZoom();
 }
 
-// Reset kembali ke fit zoom, bukan hardcode 100%
+function pvZoom(delta) {
+  const isMobile = window.innerWidth < 900;
+  const minZoom = isMobile ? _pvFitZoom : 0.25; // desktop bisa zoom out bebas, mobile min fit
+  _pvZoom = Math.min(3.0, Math.max(minZoom, _pvZoom + delta));
+  pvApplyZoom();
+}
+
+// Reset: desktop kembali ke 100%, mobile kembali ke fit
 function pvZoomReset() {
-  _pvZoom = _pvFitZoom;
+  _pvZoom = window.innerWidth >= 900 ? 1.0 : _pvFitZoom;
   pvApplyZoom();
 }
 
@@ -2719,15 +2726,33 @@ function pvApplyZoom() {
   if (el) {
     el.style.transform = 'scale(' + _pvZoom + ')';
     el.style.transformOrigin = 'top center';
-    // Beri ruang bawah saat zoom in agar halaman tidak terpotong
-    // Saat fit/zoom out: tidak ada ruang ekstra → tidak ada area hitam kosong
-    const extraBottom = _pvZoom > _pvFitZoom
-      ? Math.ceil((_pvZoom - 1) * 1123) + 'px'
-      : '0px';
-    el.style.marginBottom = extraBottom;
-    // Overflow: hanya saat zoom in ada scroll, saat fit overflow hidden → no freeze
-    if (wrap) {
-      wrap.style.overflowY = _pvZoom > _pvFitZoom ? 'auto' : 'hidden';
+    const isMobile = window.innerWidth < 900;
+    if (isMobile) {
+      // Mobile: overflow hidden saat fit (no freeze), scroll 2 arah saat zoom in
+      const isZoomedIn = _pvZoom > _pvFitZoom + 0.01;
+      const extraBottom = isZoomedIn ? Math.ceil((_pvZoom - 1) * 1123) + 'px' : '0px';
+      el.style.marginBottom = extraBottom;
+      if (wrap) {
+        wrap.style.overflowY = isZoomedIn ? 'auto' : 'hidden';
+        wrap.style.overflowX = isZoomedIn ? 'auto' : 'hidden';
+        // Lebar container mengikuti zoom agar horizontal scroll benar
+        wrap.style.alignItems = isZoomedIn ? 'flex-start' : 'flex-start';
+      }
+      // Beri lebar pada page-render sesuai zoom agar bisa scroll horizontal
+      const pageRender = document.getElementById('pv-page-render');
+      if (pageRender) {
+        pageRender.style.width = isZoomedIn ? Math.ceil(794 * _pvZoom) + 'px' : '100%';
+        pageRender.style.minWidth = isZoomedIn ? Math.ceil(794 * _pvZoom) + 'px' : 'unset';
+      }
+    } else {
+      // Desktop: selalu bisa scroll vertikal, margin normal
+      el.style.marginBottom = _pvZoom > 1.0
+        ? Math.ceil((_pvZoom - 1) * 1123) + 'px'
+        : '0px';
+      if (wrap) {
+        wrap.style.overflowY = 'auto';
+        wrap.style.overflowX = 'hidden';
+      }
     }
   }
 
@@ -2735,10 +2760,13 @@ function pvApplyZoom() {
   const pct = Math.round(_pvZoom * 100);
   if (label) label.textContent = pct + '%';
 
-  // Tombol zoom out & reset: hanya tampil saat sudah zoom in melebihi fit
-  const isZoomedIn = _pvZoom > _pvFitZoom + 0.01;
-  if (zoomOutBtn) zoomOutBtn.style.display = isZoomedIn ? 'flex' : 'none';
-  if (resetBtn) resetBtn.style.display = isZoomedIn ? 'flex' : 'none';
+  // Tombol zoom out & reset:
+  // Desktop — selalu tampil (zoom bebas, user butuh tombol kapan saja)
+  // Mobile  — hanya muncul saat zoom in melebihi fit (saat fit tidak perlu zoom out)
+  const isMobileBtn = window.innerWidth < 900;
+  const showZoomOut = isMobileBtn ? (_pvZoom > _pvFitZoom + 0.01) : true;
+  if (zoomOutBtn) zoomOutBtn.style.display = showZoomOut ? 'flex' : 'none';
+  if (resetBtn) resetBtn.style.display = showZoomOut ? 'flex' : 'none';
 }
 function pvNav(dir){pvGoTo(_pvCurPage+dir);}
 
