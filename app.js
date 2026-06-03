@@ -1651,8 +1651,6 @@ function openPdfPreview() {
   if(typeof pvRenderRecent === 'function') pvRenderRecent();
   _pvPages = []; _pvCurPage = 0;
   if(typeof pvBuildPages === 'function') pvBuildPages();
-  // Set zoom awal ngepas setelah layout selesai
-  setTimeout(pvInitZoom, 150);
 }
 
 // ── Helper: inject template aktif → exportPDF ──
@@ -2658,7 +2656,13 @@ function pvRenderPage(idx){
   c.appendChild(ifr);
   const doc=ifr.contentDocument||ifr.contentWindow.document;
   doc.open();doc.write(_pvPages[_pvCurPage]);doc.close();
-  setTimeout(()=>{const h=doc.body?.scrollHeight||1123;ifr.style.height=Math.max(h,1123)+'px';c.style.minHeight=ifr.style.height;},100);
+  setTimeout(()=>{
+    const h=doc.body?.scrollHeight||1123;
+    ifr.style.height=Math.max(h,1123)+'px';
+    c.style.minHeight=ifr.style.height;
+    // Init fit zoom setelah iframe rendered — canvas pasti sudah punya ukuran benar
+    if(idx===0) pvInitZoom();
+  },120);
   pvUpdateNav();
 }
 
@@ -2677,15 +2681,21 @@ let _pvFitZoom = 1.0; // zoom ngepas awal berdasarkan lebar layar
 function pvCalcFitZoom() {
   const wrap = document.getElementById('pv-canvas-wrap');
   if (!wrap) return 1.0;
-  const available = wrap.clientWidth - 32; // 32px = padding kiri+kanan
-  return Math.min(1.0, available / 794); // tidak melebihi 100%
+  const available = wrap.clientWidth - 40; // 40px = padding kiri+kanan (20px each)
+  if (available <= 0) return 1.0;
+  const fit = available / 794;
+  return Math.min(1.0, Math.max(0.2, fit)); // min 20%, max 100%
 }
 
-// Panggil saat buka preview — set zoom awal ngepas di layar
+// Panggil setelah iframe rendered — canvas pasti sudah punya clientWidth yang benar
 function pvInitZoom() {
-  _pvFitZoom = pvCalcFitZoom();
-  _pvZoom = _pvFitZoom;
-  pvApplyZoom();
+  const fit = pvCalcFitZoom();
+  // Hanya update fit jika berbeda signifikan (>1%) — hindari flicker
+  if (Math.abs(fit - _pvFitZoom) > 0.01 || _pvZoom === _pvFitZoom) {
+    _pvFitZoom = fit;
+    _pvZoom = fit;
+    pvApplyZoom();
+  }
 }
 
 function pvZoom(delta) {
