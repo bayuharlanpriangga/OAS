@@ -2368,22 +2368,26 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 .pv-thumb { background:#fff;border-radius:3px;margin-bottom:8px;cursor:pointer;border:2px solid transparent;transition:all 0.15s;overflow:hidden;aspect-ratio:210/297;width:100%; }
 .pv-thumb.active { border-color:var(--accent2); }
 .pv-thumb:hover { border-color:rgba(34,211,238,0.5); }
-.pv-canvas-wrap { flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:20px;background:#1a1d2e; }
+.pv-canvas-wrap { flex:1;overflow:hidden;overflow-y:auto;display:flex;align-items:flex-start;justify-content:center;padding:20px;background:#1a1d2e;position:relative;overscroll-behavior:contain;-webkit-overflow-scrolling:touch; }
 .pv-page-container { background:white;width:794px;min-height:1123px;flex-shrink:0;box-shadow:0 8px 48px rgba(0,0,0,0.6);border-radius:3px;overflow:hidden;position:relative; }
 .pv-panel { width:280px;flex-shrink:0;background:rgba(15,18,28,0.98);border-left:1px solid rgba(255,255,255,0.06);overflow-y:auto;display:flex;flex-direction:column;transition:width 0.2s; }
 .pv-panel.hidden { width:0;overflow:hidden; }
+.pv-panel-header { display:none;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(10,13,24,0.98);flex-shrink:0; }
+.pv-panel-header-title { font-size:13px;font-weight:700;color:#e2e8f0; }
+.pv-panel-close-btn { width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;flex-shrink:0; }
+.pv-panel-close-btn:hover { background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.4);color:#f87171; }
 .pv-panel-sec { padding:14px;border-bottom:1px solid rgba(255,255,255,0.06); }
-.pv-panel-lbl { font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px; }
+.pv-panel-lbl { font-size:10px;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px; }
 .pv-tmpl-card { border:2px solid rgba(255,255,255,0.08);border-radius:9px;padding:10px;cursor:pointer;transition:all 0.15s;background:rgba(255,255,255,0.02);display:flex;gap:10px;align-items:center;margin-bottom:8px; }
 .pv-tmpl-card:hover { border-color:rgba(34,211,238,0.4); }
 .pv-tmpl-card.active { border-color:var(--accent2);background:rgba(34,211,238,0.06); }
 .pv-tmpl-thumb { width:44px;height:58px;border-radius:3px;flex-shrink:0;overflow:hidden; }
-.pv-tmpl-name { font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px; }
-.pv-tmpl-desc { font-size:10px;color:var(--muted);line-height:1.4; }
+.pv-tmpl-name { font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:2px; }
+.pv-tmpl-desc { font-size:10px;color:rgba(255,255,255,0.45);line-height:1.4; }
 .pv-pal-row { display:flex;gap:8px;align-items:center;margin-bottom:9px; }
 .pv-pal-dot { width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,0.15);cursor:pointer;flex-shrink:0;transition:transform 0.12s; }
 .pv-pal-dot:hover { transform:scale(1.15); }
-.pv-pal-lbl { font-size:11px;color:var(--text);flex:1; }
+.pv-pal-lbl { font-size:11px;color:#e2e8f0;flex:1; }
 .pv-pal-hex { font-family:var(--mono);font-size:10px;color:var(--accent2);background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:3px 6px;width:72px; }
 .pv-cp-popup { position:fixed;z-index:10002;background:rgba(18,22,36,0.99);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px;box-shadow:0 16px 60px rgba(0,0,0,0.8);width:248px; }
 #pv-sl-canvas { border-radius:7px;cursor:crosshair;display:block;width:100%;height:148px; }
@@ -2449,11 +2453,15 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
     flex-shrink: 0;
   }
 
-  /* Canvas area: full width */
+  /* Canvas area: full width, scroll vertikal dibatasi — tidak freeze */
   .pv-canvas-wrap {
     flex: 1;
-    overflow: auto;
+    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     padding: 10px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   /* Panel Edit Tampilan: full screen overlay di mobile */
@@ -2465,6 +2473,8 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
     overflow-y: auto;
   }
   .pv-panel.hidden { display: none !important; width: 0 !important; }
+  /* Tampilkan header panel dengan tombol tutup di mobile */
+  .pv-panel-header { display: flex !important; }
 
   /* Template cards: teks tidak gelap, kontras benar */
   .pv-tmpl-name { color: var(--text) !important; }

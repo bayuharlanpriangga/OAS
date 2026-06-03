@@ -5130,6 +5130,11 @@
       </div>
     </div>
     <div class="pv-panel hidden" id="pv-panel">
+      <!-- Header panel dengan tombol tutup — hanya tampil di mobile -->
+      <div class="pv-panel-header" id="pv-panel-header">
+        <span class="pv-panel-header-title">🎨 Edit Tampilan PDF</span>
+        <button class="pv-panel-close-btn" onclick="pvTogglePanel()" title="Tutup panel">✕</button>
+      </div>
       <div class="pv-panel-sec">
         <div class="pv-panel-lbl">🎨 Pilih Template</div>
         <div class="pv-tmpl-card active" id="pv-tc-A" onclick="pvSelectTmpl('A')">
