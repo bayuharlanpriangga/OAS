@@ -46,6 +46,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/tabler-icons.min.css">
 
 
 
@@ -1029,7 +1030,7 @@
   </div>
 
   <!-- Warning banner -->
-  <div id="at-warn-banner" style="display:none;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:12.5px;color:var(--accent3);display:flex;align-items:center;gap:8px;">
+  <div id="at-warn-banner" style="display:none;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:12.5px;color:var(--accent3);align-items:center;gap:8px;">
     <i class="ti ti-alert-triangle" style="font-size:17px;flex-shrink:0;"></i>
     <div><b>Penyusutan Otomatis dinonaktifkan.</b> Klik <b>Jalankan Sekarang</b> tiap akhir bulan untuk membuat jurnal penyusutan secara manual.</div>
   </div>
@@ -2640,6 +2641,48 @@
   </div>
 </div>
 
+
+
+<!-- AUDIT TRAIL PAGE -->
+<!-- AUDIT TRAIL PAGE -->
+<div class="page" id="page-audit-trail" style="display:none;">
+  <div class="audit-trail-fixed-top">
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+    <button class="btn btn-ghost btn-sm" onclick="auditExportCSV()" style="gap:5px;"><i class="ti ti-download" style="font-size:12px;"></i> Export CSV</button>
+    <button class="btn btn-danger btn-sm" onclick="auditClearOld()" style="gap:5px;"><i class="ti ti-trash" style="font-size:12px;"></i> Bersihkan Log Lama</button>
+  </div>
+  <div id="audit-kpi" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;"></div>
+  <!-- Legend role — clickable filter badges -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+    <span style="font-size:11px;color:var(--muted);">Label role:</span>
+    <button id="audit-role-owner"  onclick="auditToggleRoleFilter('owner')"  class="at-role-filter-badge" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(250,204,21,0.15);color:#facc15;border:1px solid rgba(250,204,21,0.3);display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s;" title="Klik untuk filter role Owner"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M2 20h20M5 20V10l7-6 7 6v10"/><path d="M9 20v-5h6v5"/></svg> Owner</button>
+    <button id="audit-role-admin"  onclick="auditToggleRoleFilter('admin')"  class="at-role-filter-badge" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(34,211,238,0.12);color:var(--accent2);border:1px solid rgba(34,211,238,0.25);display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s;" title="Klik untuk filter role Admin"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Admin</button>
+    <button id="audit-role-member" onclick="auditToggleRoleFilter('member')" class="at-role-filter-badge" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(148,163,184,0.12);color:#94a3b8;border:1px solid rgba(148,163,184,0.2);display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s;" title="Klik untuk filter role Member"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg> Member</button>
+    <button id="audit-role-guest"  onclick="auditToggleRoleFilter('guest')"  class="at-role-filter-badge" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(148,163,184,0.08);color:#64748b;border:1px solid rgba(148,163,184,0.15);display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s;" title="Klik untuk filter role Guest"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg> Guest</button>
+    <button id="audit-role-system" onclick="auditToggleRoleFilter('system')" class="at-role-filter-badge" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.25);display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s;" title="Klik untuk filter role Sistem"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Sistem</button>
+  </div>
+  <!-- Filter -->
+  <div class="at-trail-filter-bar">
+    <button class="at-trail-filter-btn active" id="audit-f-all"    onclick="auditSetFilter('all')">Semua</button>
+    <button class="at-trail-filter-btn" id="audit-f-create" onclick="auditSetFilter('create')" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:-1px;flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Buat</button>
+    <button class="at-trail-filter-btn" id="audit-f-delete" onclick="auditSetFilter('delete')" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg> Hapus</button>
+    <button class="at-trail-filter-btn" id="audit-f-edit"   onclick="auditSetFilter('edit')" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+    <button class="at-trail-filter-btn" id="audit-f-auto"   onclick="auditSetFilter('auto')" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Otomatis</button>
+    <button class="at-trail-filter-btn" id="audit-f-export" onclick="auditSetFilter('export')" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Export</button>
+    <button class="at-trail-filter-btn" id="audit-f-login"  onclick="auditSetFilter('login')" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Sesi</button>
+    <button class="at-trail-filter-btn" id="audit-f-reset"  onclick="auditSetFilter('reset')" style="color:var(--red);display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Reset</button>
+    <div style="flex:1;"></div>
+    <input type="text" id="audit-search" placeholder="Cari aktivitas, nama, referensi..." oninput="renderAuditTrail()"
+      style="min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:12px;">
+  </div>
+  </div><!-- end .audit-trail-fixed-top -->
+  <div id="audit-scroll-area">
+  <div id="audit-trail-list"></div>
+  <div id="audit-load-more" style="text-align:center;padding:16px;display:none;">
+    <button class="btn btn-ghost btn-sm" onclick="auditLoadMore()">Muat lebih banyak</button>
+  </div>
+  </div><!-- end #audit-scroll-area -->
+</div>
 </div><!-- end content -->
 </main>
 
@@ -3035,6 +3078,21 @@
 
       <!-- PDF LOGO UPLOAD (hanya tampil kalau pilih PDF) -->
       <div id="exp-pdf-logo-section" style="margin-bottom:16px;display:none;">
+        <!-- Template aktif badge -->
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px;gap:10px;">
+          <div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;">🎨 Template PDF Aktif</div>
+            <div id="exp-pdf-theme-badge" style="font-size:12px;"></div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button class="btn btn-ghost btn-sm" onclick="openPdfPreview()" style="font-size:11px;border-color:var(--accent2);color:var(--accent2);gap:4px;">
+              <i class="ti ti-palette" style="font-size:11px;"></i> Ubah
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="pvResetToDefault()" style="font-size:11px;gap:4px;" title="Reset ke default">
+              <i class="ti ti-refresh" style="font-size:11px;"></i> Reset
+            </button>
+          </div>
+        </div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">🖼️ Logo Perusahaan (opsional):</div>
         <div style="display:flex;align-items:flex-start;gap:16px;">
           <div id="exp-logo-preview-wrap" style="flex-shrink:0;">
@@ -3473,7 +3531,7 @@
         <div id="profil-view-jenis" style="font-size:12px;color:var(--muted);margin-top:3px;"></div>
       </div>
       <div style="display:grid;gap:10px;">
-        <div id="profil-view-row-pemilik" style="display:none;background:var(--surface2);border-radius:10px;padding:11px 14px;display:flex;gap:10px;align-items:center;">
+        <div id="profil-view-row-pemilik" style="display:none;background:var(--surface2);border-radius:10px;padding:11px 14px;gap:10px;align-items:center;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--muted)"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <div><div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0.04em;">PEMILIK</div><div id="profil-view-pemilik" style="font-size:13px;font-weight:500;color:var(--text);"></div></div>
         </div>
@@ -5031,149 +5089,148 @@
     </div>
   </div>
 </div>
-
-
-
-
-
-<!-- AUDIT TRAIL PAGE -->
-<div class="page" id="page-audit-trail">
-  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-    <button class="btn btn-ghost btn-sm" onclick="auditExportCSV()" style="gap:5px;"><i class="ti ti-download" style="font-size:12px;"></i> Export CSV</button>
-    <button class="btn btn-danger btn-sm" onclick="auditClearOld()" style="gap:5px;"><i class="ti ti-trash" style="font-size:12px;"></i> Bersihkan Log Lama</button>
-  </div>
-  <div id="audit-kpi" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;"></div>
-  <!-- Legend role -->
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
-    <span style="font-size:11px;color:var(--muted);">Label role:</span>
-    <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(250,204,21,0.15);color:#facc15;border:1px solid rgba(250,204,21,0.3);display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M2 20h20M5 20V10l7-6 7 6v10"/><path d="M9 20v-5h6v5"/></svg> Owner</span>
-    <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(34,211,238,0.12);color:var(--accent2);border:1px solid rgba(34,211,238,0.25);display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Admin</span>
-    <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(148,163,184,0.12);color:#94a3b8;border:1px solid rgba(148,163,184,0.2);display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg> Member</span>
-    <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(148,163,184,0.08);color:#64748b;border:1px solid rgba(148,163,184,0.15);display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg> Guest</span>
-    <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.25);display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Sistem</span>
-  </div>
-  <!-- Filter -->
-  <div class="at-trail-filter-bar">
-    <button class="at-trail-filter-btn active" id="audit-f-all"    onclick="auditSetFilter('all')">Semua</button>
-    <button class="at-trail-filter-btn" id="audit-f-create" onclick="auditSetFilter('create')" style="display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:-1px;flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Buat</button>
-    <button class="at-trail-filter-btn" id="audit-f-delete" onclick="auditSetFilter('delete')" style="display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg> Hapus</button>
-    <button class="at-trail-filter-btn" id="audit-f-edit"   onclick="auditSetFilter('edit')" style="display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
-    <button class="at-trail-filter-btn" id="audit-f-auto"   onclick="auditSetFilter('auto')" style="display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Otomatis</button>
-    <button class="at-trail-filter-btn" id="audit-f-export" onclick="auditSetFilter('export')" style="display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Export</button>
-    <button class="at-trail-filter-btn" id="audit-f-login"  onclick="auditSetFilter('login')" style="display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Sesi</button>
-    <button class="at-trail-filter-btn" id="audit-f-reset"  onclick="auditSetFilter('reset')" style="color:var(--red);display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Reset</button>
-    <div style="flex:1;"></div>
-    <input type="text" id="audit-search" placeholder="Cari aktivitas, nama, referensi..." oninput="renderAuditTrail()"
-      style="min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:12px;">
-  </div>
-  <div id="audit-trail-list"></div>
-  <div id="audit-load-more" style="text-align:center;padding:16px;display:none;">
-    <button class="btn btn-ghost btn-sm" onclick="auditLoadMore()">Muat lebih banyak</button>
-  </div>
-</div>
-
 <!-- MODAL: PDF PREVIEW & TEMPLATE -->
 <div id="modal-pdf-preview">
   <div class="pv-topbar">
     <div>
-      <div class="pv-topbar-title"><i class="ti ti-eye" style="font-size:14px;vertical-align:-2px;margin-right:6px;color:var(--accent2);"></i>Preview PDF Laporan</div>
+      <div class="pv-topbar-title"><i class="ti ti-eye" style="font-size:14px;vertical-align:-2px;margin-right:6px;color:var(--accent2);"></i>Preview PDF</div>
       <div class="pv-topbar-sub" id="pv-page-sub">Hal. 1 dari 1</div>
     </div>
     <div style="flex:1;"></div>
-    <button class="btn btn-ghost btn-sm" id="pv-edit-btn" onclick="pvTogglePanel()" style="gap:5px;">
+    <button class="btn btn-ghost btn-sm" id="pv-edit-btn" onclick="pvTogglePanel()" style="gap:5px;font-size:12px;">
       <i class="ti ti-palette" style="font-size:12px;"></i> Edit Tampilan
     </button>
-    <button class="btn btn-primary btn-sm" onclick="pvExportNow()" style="gap:5px;">
+    <button class="btn btn-primary btn-sm" onclick="pvExportNow()" style="gap:5px;font-size:12px;">
       <i class="ti ti-file-download" style="font-size:12px;"></i> Export PDF
     </button>
-    <button class="btn btn-ghost btn-sm" onclick="closePdfPreview()" style="gap:5px;">
+    <button class="btn btn-ghost btn-sm" onclick="closePdfPreview()" style="gap:5px;font-size:12px;">
       <i class="ti ti-x" style="font-size:12px;"></i> Tutup
     </button>
   </div>
-
   <div class="pv-body">
-    <!-- Thumbnails -->
-    <div class="pv-sidebar" id="pv-sidebar">
-      <div id="pv-thumb-list"></div>
-    </div>
-
-    <!-- Main preview -->
+    <div class="pv-sidebar"><div id="pv-thumb-list"></div></div>
     <div class="pv-canvas-wrap" id="pv-canvas-wrap">
       <div class="pv-page-container" id="pv-page-render">
         <div class="pv-generating" id="pv-generating">
           <div class="pv-spinner"></div>
-          <div style="font-size:12px;color:var(--accent2);font-weight:600;">Merender...</div>
+          <div style="font-size:12px;color:var(--accent2);font-weight:600;">Merender halaman...</div>
         </div>
       </div>
     </div>
-
-    <!-- Settings panel -->
     <div class="pv-panel hidden" id="pv-panel">
-
-      <!-- Template -->
       <div class="pv-panel-sec">
         <div class="pv-panel-lbl">🎨 Pilih Template</div>
-
         <div class="pv-tmpl-card active" id="pv-tc-A" onclick="pvSelectTmpl('A')">
-          <div class="pv-tmpl-thumb">
-            <svg width="44" height="58" viewBox="0 0 44 58"><rect width="44" height="58" fill="#1a2744"/><rect width="44" height="13" fill="#1e3a8a"/><rect x="3" y="3" width="7" height="7" rx="1" fill="#60a5fa"/><rect x="3" y="16" width="38" height="2" rx="1" fill="rgba(255,255,255,0.6)"/><rect x="3" y="22" width="38" height="5" rx="1" fill="rgba(30,58,138,0.8)"/><rect x="3" y="29" width="38" height="3" rx="1" fill="rgba(255,255,255,0.07)"/><rect x="3" y="33" width="38" height="3" rx="1" fill="rgba(30,58,138,0.3)"/><rect x="3" y="37" width="38" height="3" rx="1" fill="rgba(255,255,255,0.07)"/><rect x="3" y="41" width="38" height="3" rx="1" fill="rgba(30,58,138,0.3)"/><rect x="3" y="48" width="14" height="7" rx="2" fill="#1e3a8a"/><rect x="19" y="48" width="12" height="7" rx="2" fill="rgba(30,58,138,0.4)"/></svg>
-          </div>
-          <div><div class="pv-tmpl-name">Corporate Blue</div><div class="pv-tmpl-desc">Header solid, zebra stripe, profesional</div></div>
+          <div class="pv-tmpl-thumb"><svg width="44" height="58" viewBox="0 0 44 58">
+            <!-- Template A: Corporate — header bar solid atas, footer bar bawah, zebra stripe -->
+            <rect width="44" height="58" fill="#f8fafc"/>
+            <rect width="44" height="11" fill="#1e3a8a"/>
+            <rect x="3" y="3" width="22" height="2.5" rx="1" fill="rgba(255,255,255,0.8)"/>
+            <rect x="3" y="7" width="12" height="1.5" rx="1" fill="rgba(255,255,255,0.45)"/>
+            <rect x="3" y="14" width="38" height="3.5" rx="0" fill="#3b82f6" opacity=".25"/>
+            <rect x="3" y="19" width="38" height="2.5" rx="0" fill="rgba(30,58,138,0.08)"/>
+            <rect x="3" y="23" width="38" height="2.5" rx="0" fill="#fff"/>
+            <rect x="3" y="27" width="38" height="2.5" rx="0" fill="rgba(30,58,138,0.08)"/>
+            <rect x="3" y="31" width="38" height="2.5" rx="0" fill="#fff"/>
+            <rect x="3" y="35" width="38" height="2.5" rx="0" fill="rgba(30,58,138,0.08)"/>
+            <rect x="3" y="41" width="16" height="6" rx="1.5" fill="rgba(30,58,138,0.12)"/>
+            <rect x="25" y="41" width="16" height="6" rx="1.5" fill="rgba(59,130,246,0.15)"/>
+            <rect width="44" height="6" y="52" fill="#1e3a8a"/>
+          </svg></div>
+          <div><div class="pv-tmpl-name">Corporate</div><div class="pv-tmpl-desc">Header bar solid, zebra tabel, footer warna</div></div>
         </div>
-
         <div class="pv-tmpl-card" id="pv-tc-B" onclick="pvSelectTmpl('B')">
-          <div class="pv-tmpl-thumb">
-            <svg width="44" height="58" viewBox="0 0 44 58"><rect width="44" height="58" fill="#fafafa"/><rect width="44" height="16" fill="#111827"/><rect x="3" y="4" width="4" height="4" rx="1" fill="#10b981"/><rect x="3" y="20" width="20" height="3" rx="1" fill="#111827" opacity=".85"/><rect x="27" y="19" width="14" height="5" rx="2" fill="#111827"/><rect x="3" y="27" width="38" height="1" fill="#e5e7eb"/><rect x="3" y="30" width="38" height="3" rx="1" fill="#f9fafb"/><rect x="3" y="34" width="38" height="3" rx="1" fill="#fff"/><rect x="3" y="38" width="38" height="3" rx="1" fill="#f9fafb"/><rect x="3" y="42" width="38" height="3" rx="1" fill="#fff"/><rect x="3" y="51" width="38" height="1" fill="#e5e7eb"/></svg>
-          </div>
-          <div><div class="pv-tmpl-name">Executive White</div><div class="pv-tmpl-desc">Putih bersih, premium, investor report</div></div>
+          <div class="pv-tmpl-thumb"><svg width="44" height="58" viewBox="0 0 44 58">
+            <!-- Template B: Klasik Minimal — garis kiri tebal, no header bar, tabel clean -->
+            <rect width="44" height="58" fill="#ffffff"/>
+            <rect x="0" y="0" width="5" height="58" fill="#111827"/>
+            <rect x="0" y="0" width="44" height="3" fill="#10b981"/>
+            <rect x="8" y="9" width="28" height="4.5" rx="0.5" fill="#111827" opacity=".85"/>
+            <rect x="8" y="15" width="15" height="1.5" rx="1" fill="#9ca3af"/>
+            <rect x="8" y="22" width="33" height="1.5" rx="0" fill="#111827" opacity=".3"/>
+            <rect x="8" y="26" width="33" height="2.5" rx="0" fill="rgba(0,0,0,0.03)"/>
+            <rect x="8" y="30" width="33" height="2.5" rx="0" fill="#fff"/>
+            <rect x="8" y="34" width="33" height="2.5" rx="0" fill="rgba(0,0,0,0.03)"/>
+            <rect x="8" y="38" width="33" height="2.5" rx="0" fill="#fff"/>
+            <rect x="8" y="43" width="12" height="5" rx="1" fill="rgba(17,24,39,0.07)"/>
+            <rect x="22" y="43" width="12" height="5" rx="1" fill="rgba(16,185,129,0.12)"/>
+            <rect x="8" y="54" width="28" height="1" rx="0" fill="#e5e7eb"/>
+          </svg></div>
+          <div><div class="pv-tmpl-name">Klasik Minimal</div><div class="pv-tmpl-desc">Garis kiri, tabel clean, footer tipis</div></div>
         </div>
-
         <div class="pv-tmpl-card" id="pv-tc-C" onclick="pvSelectTmpl('C')">
-          <div class="pv-tmpl-thumb">
-            <svg width="44" height="58" viewBox="0 0 44 58"><rect width="44" height="58" fill="#0f172a"/><rect width="7" height="58" fill="#7c3aed"/><rect x="9" y="4" width="32" height="9" rx="1" fill="rgba(124,58,237,0.2)"/><rect x="9" y="4" width="3" height="9" rx="1" fill="#7c3aed"/><rect x="9" y="17" width="32" height="2" rx="1" fill="rgba(255,255,255,0.6)"/><rect x="9" y="23" width="32" height="4" rx="1" fill="rgba(124,58,237,0.4)"/><rect x="9" y="29" width="32" height="3" rx="1" fill="rgba(255,255,255,0.04)"/><rect x="9" y="33" width="32" height="3" rx="1" fill="rgba(124,58,237,0.15)"/><rect x="9" y="37" width="32" height="3" rx="1" fill="rgba(255,255,255,0.04)"/><rect x="9" y="41" width="32" height="3" rx="1" fill="rgba(124,58,237,0.15)"/><rect x="9" y="49" width="14" height="6" rx="2" fill="#7c3aed"/><rect x="25" y="49" width="10" height="6" rx="2" fill="rgba(124,58,237,0.3)"/></svg>
-          </div>
-          <div><div class="pv-tmpl-name">Prestige Dark</div><div class="pv-tmpl-desc">Dark mode, sidebar vertikal, elegan</div></div>
+          <div class="pv-tmpl-thumb"><svg width="44" height="58" viewBox="0 0 44 58">
+            <!-- Template C: Modern Dark — sidebar vertikal kiri, bg gelap, tabel borderless -->
+            <rect width="44" height="58" fill="#0f172a"/>
+            <rect width="8" height="58" fill="#7c3aed"/>
+            <rect x="10" y="5" width="31" height="1.5" rx="1" fill="rgba(255,255,255,0.55)"/>
+            <rect x="10" y="8" width="18" height="1" rx="1" fill="rgba(255,255,255,0.25)"/>
+            <rect x="10" y="13" width="31" height="1" rx="0" fill="rgba(255,255,255,0.12)"/>
+            <rect x="10" y="17" width="31" height="3" rx="1" fill="rgba(124,58,237,0.18)"/>
+            <rect x="10" y="22" width="31" height="2.5" rx="0" fill="rgba(255,255,255,0.03)"/>
+            <rect x="10" y="26" width="31" height="2.5" rx="0" fill="rgba(124,58,237,0.09)"/>
+            <rect x="10" y="30" width="31" height="2.5" rx="0" fill="rgba(255,255,255,0.03)"/>
+            <rect x="10" y="34" width="31" height="2.5" rx="0" fill="rgba(124,58,237,0.09)"/>
+            <rect x="10" y="40" width="9" height="7" rx="1.5" fill="rgba(124,58,237,0.25)"/>
+            <rect x="21" y="40" width="9" height="7" rx="1.5" fill="rgba(167,139,250,0.2)"/>
+            <rect x="10" y="52" width="31" height="1" rx="0" fill="rgba(255,255,255,0.07)"/>
+          </svg></div>
+          <div><div class="pv-tmpl-name">Modern Dark</div><div class="pv-tmpl-desc">Sidebar strip, bg gelap, tabel ringan</div></div>
+        </div>
+        <div class="pv-tmpl-card" id="pv-tc-D" onclick="pvSelectTmpl('D')">
+          <div class="pv-tmpl-thumb"><svg width="44" height="58" viewBox="0 0 44 58">
+            <!-- Template D: OAS Dark — bg gelap, strip hijau kiri, header gelap, aksen cyan -->
+            <rect width="44" height="58" fill="#1c2030"/>
+            <rect x="0" y="0" width="4" height="58" fill="#4ade80"/>
+            <rect x="0" y="0" width="44" height="10" fill="rgba(0,0,0,0.4)"/>
+            <rect x="6" y="3" width="16" height="1.5" rx="1" fill="rgba(226,232,240,0.7)"/>
+            <rect x="6" y="6.5" width="10" height="1" rx="1" fill="rgba(255,255,255,0.25)"/>
+            <rect x="6" y="14" width="35" height="2" rx="0" fill="rgba(34,211,238,0.3)"/>
+            <rect x="6" y="18" width="35" height="2.5" rx="0" fill="rgba(255,255,255,0.03)"/>
+            <rect x="6" y="22" width="35" height="2.5" rx="0" fill="rgba(74,222,128,0.06)"/>
+            <rect x="6" y="26" width="35" height="2.5" rx="0" fill="rgba(255,255,255,0.03)"/>
+            <rect x="6" y="30" width="35" height="2.5" rx="0" fill="rgba(74,222,128,0.06)"/>
+            <rect x="6" y="36" width="10" height="7" rx="1.5" fill="rgba(74,222,128,0.12)" stroke="rgba(74,222,128,0.25)" stroke-width="0.5"/>
+            <rect x="18" y="36" width="10" height="7" rx="1.5" fill="rgba(34,211,238,0.1)" stroke="rgba(34,211,238,0.2)" stroke-width="0.5"/>
+            <rect x="0" y="52" width="44" height="6" fill="rgba(0,0,0,0.4)"/>
+            <rect x="6" y="54" width="1" height="2" rx="0.5" fill="#4ade80"/>
+          </svg></div>
+          <div><div class="pv-tmpl-name">OAS Dark</div><div class="pv-tmpl-desc">Tema gelap native OAS, aksen hijau-cyan</div></div>
         </div>
       </div>
-
-      <!-- Palettes -->
       <div class="pv-panel-sec">
         <div class="pv-panel-lbl">🎯 Palet Warna</div>
         <div id="pv-pal-list"></div>
       </div>
-
-      <!-- Recent colors -->
       <div class="pv-panel-sec">
         <div class="pv-panel-lbl">🕐 Warna Terbaru</div>
         <div class="pv-recent-wrap" id="pv-recent"></div>
       </div>
-
-      <!-- Apply -->
-      <div class="pv-panel-sec" style="margin-top:auto;">
-        <button class="btn btn-primary" style="width:100%;gap:6px;" onclick="pvApply()">
-          <i class="ti ti-refresh" style="font-size:12px;"></i> Terapkan
+      <div class="pv-panel-sec">
+        <button class="btn btn-primary" style="width:100%;gap:6px;margin-bottom:8px;" onclick="pvApply()">
+          <i class="ti ti-device-floppy" style="font-size:12px;"></i> Simpan &amp; Terapkan
         </button>
-        <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:6px;">Tersimpan di sesi ini</div>
+        <button class="btn btn-ghost" style="width:100%;gap:6px;font-size:11px;" onclick="pvResetToDefault()">
+          <i class="ti ti-refresh" style="font-size:11px;"></i> Reset ke Default
+        </button>
+        <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5;">
+          Template tersimpan otomatis.<br>Berlaku untuk <b>semua</b> tombol Export PDF.
+        </div>
       </div>
-
     </div>
   </div>
-
-  <!-- Page nav -->
   <div class="pv-page-nav">
     <button id="pv-prev" onclick="pvNav(-1)">← Prev</button>
     <span id="pv-counter" style="font-size:11px;">1 / 1</span>
     <button id="pv-next" onclick="pvNav(1)">Next →</button>
-    <div style="flex:1;"></div>
-    <span style="font-size:10px;color:var(--muted);">Scroll mouse untuk zoom</span>
   </div>
 </div>
 
-<!-- Color picker popup (shared) -->
+<!-- Color picker popup -->
 <div class="pv-cp-popup" id="pv-cp-popup" style="display:none;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
     <span id="pv-cp-title" style="font-size:12px;font-weight:700;color:var(--text);">Pilih Warna</span>
-    <button onclick="pvCloseCP()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">×</button>
+    <button onclick="pvCloseCP()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;">×</button>
   </div>
   <canvas id="pv-sl-canvas" width="220" height="148"></canvas>
   <input type="range" id="pv-hue-slider" min="0" max="360" value="210" oninput="pvOnHue(this.value)">
