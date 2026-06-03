@@ -2681,8 +2681,10 @@ let _pvFitZoom = 1.0; // zoom ngepas awal berdasarkan lebar layar
 // Desktop tidak disentuh — zoom bebas, default 100%
 function pvCalcFitZoom() {
   const wrap = document.getElementById('pv-canvas-wrap');
-  if (!wrap) return 1.0;
-  const available = wrap.clientWidth - 40;
+  // Gunakan clientWidth jika sudah ada ukurannya, fallback ke window.innerWidth
+  // (clientWidth bisa 0 saat modal baru dibuka sebelum browser melayout)
+  const wrapW = (wrap && wrap.clientWidth > 10) ? wrap.clientWidth : window.innerWidth;
+  const available = wrapW - 16; // 8px padding kiri-kanan
   if (available <= 0) return 1.0;
   return Math.min(1.0, Math.max(0.2, available / 794));
 }
@@ -2697,10 +2699,24 @@ function pvInitZoom() {
     pvApplyZoom();
     return;
   }
+  // Mobile: hitung fit zoom segera (bisa pakai window.innerWidth)
   const fit = pvCalcFitZoom();
   _pvFitZoom = fit;
   _pvZoom = fit;
   pvApplyZoom();
+  // Recalculate setelah browser selesai layout (clientWidth akurat)
+  // Diperlukan karena modal baru dibuka dan clientWidth mungkin belum final
+  setTimeout(() => {
+    const fit2 = pvCalcFitZoom();
+    if (Math.abs(fit2 - _pvFitZoom) > 0.01) {
+      _pvFitZoom = fit2;
+      if (_pvZoom >= fit - 0.01) {
+        // Kalau masih di posisi fit (belum di-zoom user), ikuti fit baru
+        _pvZoom = fit2;
+      }
+      pvApplyZoom();
+    }
+  }, 200);
 }
 
 function pvZoom(delta) {
@@ -2726,23 +2742,37 @@ function pvApplyZoom() {
 
   if (el) {
     if (isMobile) {
-      // Mobile: pakai CSS zoom (bukan transform:scale) — benar-benar mengecilkan layout space
-      // sehingga tidak ada overflow/terpotong di sisi kanan saat fit
-      el.style.transform = 'none';
-      el.style.marginBottom = '0px';
-      el.style.zoom = _pvZoom;
-      el.style.width = '794px'; // tetap 794px, zoom yang mengecilkan
+      // Mobile: pakai transform:scale dengan transform-origin top left
+      // lalu set tinggi wrapper secara eksplisit agar tidak ada overflow/clipping
+      // CSS zoom tidak reliable di semua browser dan tidak mengubah clientWidth
+      el.style.zoom = '';
+      el.style.transform = 'scale(' + _pvZoom + ')';
+      el.style.transformOrigin = 'top left';
+      el.style.width = '794px';
       el.style.minWidth = '794px';
+
+      // Hitung ukuran visual setelah scale agar wrapper tahu tinggi/lebar konten
+      const scaledW = Math.ceil(794 * _pvZoom);
+      const scaledH = Math.ceil(1123 * _pvZoom);
+      // Beri margin bottom sebesar selisih (karena transform tidak mempengaruhi flow)
+      el.style.marginBottom = (scaledH - 1123) + 'px';
 
       const isZoomedIn = _pvZoom > _pvFitZoom + 0.01;
       if (wrap) {
-        // Saat fit: overflow hidden — tidak ada scroll ke area kosong, tidak freeze
-        // Saat zoom in: scroll dua arah
-        wrap.style.overflowY = isZoomedIn ? 'auto' : 'hidden';
+        wrap.style.overflowY = 'auto';
         wrap.style.overflowX = isZoomedIn ? 'auto' : 'hidden';
         wrap.style.alignItems = 'flex-start';
-        wrap.style.justifyContent = 'flex-start';
-        wrap.style.paddingLeft = isZoomedIn ? '10px' : '0px';
+        // Tengahkan halaman secara horizontal saat fit (scaledW <= wrap.clientWidth)
+        if (!isZoomedIn) {
+          // Padding kiri agar page terlihat di tengah
+          const wrapW = wrap.clientWidth || window.innerWidth;
+          const leftPad = Math.max(0, Math.floor((wrapW - scaledW) / 2));
+          wrap.style.paddingLeft = leftPad + 'px';
+          wrap.style.justifyContent = 'flex-start';
+        } else {
+          wrap.style.paddingLeft = '10px';
+          wrap.style.justifyContent = 'flex-start';
+        }
       }
     } else {
       // Desktop: transform:scale seperti biasa

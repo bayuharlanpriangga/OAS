@@ -2423,7 +2423,7 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
   -webkit-overflow-scrolling: touch;
 }
 .pv-page-container {
-  transform-origin: top center;
+  transform-origin: top left;
   transition: transform 0.15s ease;
 }
 
@@ -2455,17 +2455,19 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
   /* Canvas area: overflow dikontrol JS, width 100% untuk fit yang benar */
   .pv-canvas-wrap {
     flex: 1;
-    overflow: hidden;
+    overflow-x: hidden; /* JS akan ubah ke auto saat zoom in */
+    overflow-y: auto;
     padding: 0;
     width: 100%;
     box-sizing: border-box;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
   }
-  /* Page render: lebar penuh canvas, zoom CSS yang mengecilkan */
+  /* Page render: transform-origin top left agar page tidak lari ke kiri saat di-scale */
   #pv-page-render {
     width: 794px;
     min-width: 794px;
+    transform-origin: top left !important;
   }
 
   /* Panel Edit Tampilan: full screen overlay di mobile */
