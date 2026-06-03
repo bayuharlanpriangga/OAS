@@ -2855,9 +2855,10 @@ function pvExportNow(){
   var combinedBody = _pvPages.map(function(pageHtml, i) {
     var bodyMatch = pageHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
     var bodyContent = bodyMatch ? bodyMatch[1] : pageHtml;
-    var isLast = i === _pvPages.length - 1;
-    var pb = isLast ? '' : '<div style="page-break-after:always;"></div>';
-    return '<div class="pdf-page">' + bodyContent + '</div>' + pb;
+    // CATATAN: page-break-after sudah dihandle via CSS .pdf-page di @media print.
+    // Jangan tambahkan <div style="page-break-after:always"> lagi karena akan
+    // menghasilkan halaman kosong di antara setiap halaman (double page break).
+    return '<div class="pdf-page">' + bodyContent + '</div>';
   }).join('\n');
 
   // FIX: print-color-adjust: exact memastikan semua background (cover biru, header bar, footer)

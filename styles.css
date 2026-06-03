@@ -2536,15 +2536,20 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
   }
 }
 
-/* FIX 3b: Zoom controls untuk canvas preview */
+/* FIX 3b: Zoom controls untuk canvas preview
+   Pakai position:fixed agar tidak ikut scroll saat zoom-in di mobile */
 .pv-zoom-controls {
-  position: absolute;
-  bottom: 56px;
+  position: fixed;
+  bottom: 72px;
   right: 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  z-index: 10;
+  z-index: 10001;
+}
+/* Saat modal pdf preview tidak aktif, sembunyikan controls */
+#modal-pdf-preview:not(.open) .pv-zoom-controls {
+  display: none;
 }
 .pv-zoom-btn {
   width: 32px;
