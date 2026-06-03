@@ -5115,12 +5115,12 @@
   <div class="pv-body">
     <div class="pv-sidebar"><div id="pv-thumb-list"></div></div>
     <div class="pv-canvas-wrap" id="pv-canvas-wrap" style="position:relative;">
-      <!-- Zoom Controls -->
+      <!-- Zoom Controls: zoom out & reset hanya muncul saat sudah zoom in -->
       <div class="pv-zoom-controls">
-        <button class="pv-zoom-btn" onclick="pvZoom(0.25)" title="Zoom In">+</button>
-        <div class="pv-zoom-level" id="pv-zoom-label">100%</div>
-        <button class="pv-zoom-btn" onclick="pvZoom(-0.25)" title="Zoom Out">−</button>
-        <button class="pv-zoom-btn" onclick="pvZoomReset()" title="Reset Zoom" style="font-size:11px;">⊡</button>
+        <button class="pv-zoom-btn" onclick="pvZoom(0.25)" title="Perbesar">+</button>
+        <div class="pv-zoom-level" id="pv-zoom-label">Fit</div>
+        <button class="pv-zoom-btn" id="pv-zoom-out-btn" onclick="pvZoom(-0.25)" title="Perkecil" style="display:none;">−</button>
+        <button class="pv-zoom-btn" id="pv-zoom-reset-btn" onclick="pvZoomReset()" title="Kembali ke ukuran ngepas" style="display:none;font-size:10px;">Fit</button>
       </div>
       <div class="pv-page-container" id="pv-page-render">
         <div class="pv-generating" id="pv-generating">

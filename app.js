@@ -1651,6 +1651,8 @@ function openPdfPreview() {
   if(typeof pvRenderRecent === 'function') pvRenderRecent();
   _pvPages = []; _pvCurPage = 0;
   if(typeof pvBuildPages === 'function') pvBuildPages();
+  // Set zoom awal ngepas setelah layout selesai
+  setTimeout(pvInitZoom, 150);
 }
 
 // ── Helper: inject template aktif → exportPDF ──
@@ -2669,23 +2671,78 @@ function pvGoTo(i){pvRenderPage(i);document.querySelectorAll('.pv-thumb').forEac
 
 // ── Zoom controls untuk canvas preview ──
 let _pvZoom = 1.0;
+let _pvFitZoom = 1.0; // zoom ngepas awal berdasarkan lebar layar
+
+// Hitung zoom ngepas: lebar canvas-wrap / lebar halaman (794px) dengan padding
+function pvCalcFitZoom() {
+  const wrap = document.getElementById('pv-canvas-wrap');
+  if (!wrap) return 1.0;
+  const available = wrap.clientWidth - 32; // 32px = padding kiri+kanan
+  return Math.min(1.0, available / 794); // tidak melebihi 100%
+}
+
+// Panggil saat buka preview — set zoom awal ngepas di layar
+function pvInitZoom() {
+  _pvFitZoom = pvCalcFitZoom();
+  _pvZoom = _pvFitZoom;
+  pvApplyZoom();
+}
+
 function pvZoom(delta) {
-  _pvZoom = Math.min(2.0, Math.max(0.25, _pvZoom + delta));
+  _pvZoom = Math.min(3.0, Math.max(_pvFitZoom, _pvZoom + delta));
   pvApplyZoom();
 }
+
+// Reset kembali ke fit zoom, bukan hardcode 100%
 function pvZoomReset() {
-  _pvZoom = 1.0;
+  _pvZoom = _pvFitZoom;
   pvApplyZoom();
 }
+
 function pvApplyZoom() {
   const el = document.getElementById('pv-page-render');
+  const wrap = document.getElementById('pv-canvas-wrap');
   const label = document.getElementById('pv-zoom-label');
-  if (el) el.style.transform = 'scale(' + _pvZoom + ')';
-  if (el) el.style.transformOrigin = 'top center';
-  if (el) el.style.marginBottom = _pvZoom > 1 ? ((_pvZoom - 1) * 1123 * 0.5) + 'px' : '0';
-  if (label) label.textContent = Math.round(_pvZoom * 100) + '%';
+  const zoomOutBtn = document.getElementById('pv-zoom-out-btn');
+  const resetBtn = document.getElementById('pv-zoom-reset-btn');
+
+  if (el) {
+    el.style.transform = 'scale(' + _pvZoom + ')';
+    el.style.transformOrigin = 'top center';
+    // Beri ruang bawah saat zoom in agar halaman tidak terpotong
+    // Saat fit/zoom out: tidak ada ruang ekstra → tidak ada area hitam kosong
+    const extraBottom = _pvZoom > _pvFitZoom
+      ? Math.ceil((_pvZoom - 1) * 1123) + 'px'
+      : '0px';
+    el.style.marginBottom = extraBottom;
+    // Overflow: hanya saat zoom in ada scroll, saat fit overflow hidden → no freeze
+    if (wrap) {
+      wrap.style.overflowY = _pvZoom > _pvFitZoom ? 'auto' : 'hidden';
+    }
+  }
+
+  // Label: tampilkan persentase
+  const pct = Math.round(_pvZoom * 100);
+  if (label) label.textContent = pct + '%';
+
+  // Tombol zoom out & reset: hanya tampil saat sudah zoom in melebihi fit
+  const isZoomedIn = _pvZoom > _pvFitZoom + 0.01;
+  if (zoomOutBtn) zoomOutBtn.style.display = isZoomedIn ? 'flex' : 'none';
+  if (resetBtn) resetBtn.style.display = isZoomedIn ? 'flex' : 'none';
 }
 function pvNav(dir){pvGoTo(_pvCurPage+dir);}
+
+// Re-hitung fit zoom saat window di-resize (orientasi berubah, dll)
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', function() {
+    if (document.getElementById('modal-pdf-preview')?.classList.contains('open')) {
+      _pvFitZoom = pvCalcFitZoom();
+      // Kalau zoom saat ini lebih kecil dari fit baru, naikan ke fit
+      if (_pvZoom < _pvFitZoom) { _pvZoom = _pvFitZoom; }
+      pvApplyZoom();
+    }
+  });
+}
 function pvUpdateNav(){
   const total=_pvPages.length;
   const c=document.getElementById('pv-counter'),s=document.getElementById('pv-page-sub');
