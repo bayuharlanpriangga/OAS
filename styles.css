@@ -2409,3 +2409,153 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 .pv-page-nav { display:flex;align-items:center;gap:8px;padding:7px 14px;background:rgba(15,18,28,0.95);border-top:1px solid rgba(255,255,255,0.06);font-size:12px;color:var(--muted);flex-shrink:0; }
 .pv-page-nav button { background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px; }
 .pv-page-nav button:disabled { opacity:0.3;cursor:not-allowed; }
+
+/* ══════════════════════════════════════════════════════════
+   MOBILE FIXES — PDF Preview & Export Modal
+   ══════════════════════════════════════════════════════════ */
+
+/* FIX 2: Zoom in/out canvas preview tanpa geser seluruh halaman */
+.pv-canvas-wrap {
+  touch-action: pinch-zoom;
+  -webkit-overflow-scrolling: touch;
+}
+.pv-page-container {
+  transform-origin: top center;
+  transition: transform 0.15s ease;
+}
+
+/* FIX 3a: Template panel mobile — tidak kepotong, scroll horizontal */
+@media (max-width: 768px) {
+  /* PDF Preview layout: stack vertikal di mobile */
+  .pv-body { flex-direction: column; overflow: hidden; }
+
+  /* Sidebar thumbnail: horizontal scroll di atas */
+  .pv-sidebar {
+    width: 100% !important;
+    height: 80px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 6px 8px;
+    gap: 8px;
+  }
+  .pv-thumb-label { display: none; }
+  .pv-thumb {
+    width: 50px !important;
+    height: 66px !important;
+    flex-shrink: 0;
+  }
+
+  /* Canvas area: full width */
+  .pv-canvas-wrap {
+    flex: 1;
+    overflow: auto;
+    padding: 10px;
+  }
+
+  /* Panel Edit Tampilan: full screen overlay di mobile */
+  .pv-panel {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    z-index: 10001;
+    overflow-y: auto;
+  }
+  .pv-panel.hidden { display: none !important; width: 0 !important; }
+
+  /* Template cards: teks tidak gelap, kontras benar */
+  .pv-tmpl-name { color: var(--text) !important; }
+  .pv-tmpl-desc { color: var(--muted) !important; }
+  .pv-panel-lbl { color: var(--muted) !important; }
+
+  /* Topbar PDF Preview: wrap dengan benar */
+  .pv-topbar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+  .pv-topbar > div:first-child { flex: 1; min-width: 0; }
+}
+
+/* FIX 4: Color picker popup — tombol "Pakai" tidak terpotong di mobile */
+.pv-cp-popup {
+  max-width: calc(100vw - 24px) !important;
+  box-sizing: border-box;
+}
+.pv-hex-row {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.pv-hex-row input {
+  min-width: 0;
+  flex: 1;
+}
+.pv-hex-row .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 5px 10px !important;
+  font-size: 11px !important;
+}
+
+@media (max-width: 480px) {
+  /* Color picker: full width di mobile kecil */
+  .pv-cp-popup {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 12px !important;
+    top: auto !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+
+  /* Export modal footer: stack vertikal */
+  .modal-footer {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* FIX 3b: Zoom controls untuk canvas preview */
+.pv-zoom-controls {
+  position: absolute;
+  bottom: 56px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 10;
+}
+.pv-zoom-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(20,24,36,0.92);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.pv-zoom-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+.pv-zoom-level {
+  background: rgba(20,24,36,0.92);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
+  padding: 3px 2px;
+  font-family: var(--mono);
+}

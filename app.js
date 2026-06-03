@@ -1562,8 +1562,8 @@ function updateExportSections() {
   const isPdf = exportFmt === 'pdf';
   document.getElementById('exp-excel-template-section').style.display = isExcel ? '' : 'none';
   document.getElementById('exp-pdf-logo-section').style.display = isPdf ? '' : 'none';
-  const pvBtn = document.getElementById('exp-preview-btn');
-  if(pvBtn) pvBtn.style.display = isPdf ? '' : 'none';
+  const pvRow = document.getElementById('exp-preview-row');
+  if(pvRow) pvRow.style.display = isPdf ? '' : 'none';
 }
 
 function selectExcelTemplate(tmpl) {
@@ -2661,6 +2661,25 @@ function pvBuildThumbs(){
 }
 
 function pvGoTo(i){pvRenderPage(i);document.querySelectorAll('.pv-thumb').forEach((el,j)=>el.classList.toggle('active',j===i));}
+
+// ── Zoom controls untuk canvas preview ──
+let _pvZoom = 1.0;
+function pvZoom(delta) {
+  _pvZoom = Math.min(2.0, Math.max(0.25, _pvZoom + delta));
+  pvApplyZoom();
+}
+function pvZoomReset() {
+  _pvZoom = 1.0;
+  pvApplyZoom();
+}
+function pvApplyZoom() {
+  const el = document.getElementById('pv-page-render');
+  const label = document.getElementById('pv-zoom-label');
+  if (el) el.style.transform = 'scale(' + _pvZoom + ')';
+  if (el) el.style.transformOrigin = 'top center';
+  if (el) el.style.marginBottom = _pvZoom > 1 ? ((_pvZoom - 1) * 1123 * 0.5) + 'px' : '0';
+  if (label) label.textContent = Math.round(_pvZoom * 100) + '%';
+}
 function pvNav(dir){pvGoTo(_pvCurPage+dir);}
 function pvUpdateNav(){
   const total=_pvPages.length;

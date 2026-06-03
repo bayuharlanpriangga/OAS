@@ -3175,12 +3175,18 @@
 
       <div id="exp-status" style="display:none;padding:10px;background:var(--surface2);border-radius:8px;font-size:12.5px;margin-top:4px;"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-export')">Batal</button>
-      <button class="btn btn-ghost" id="exp-preview-btn" onclick="openPdfPreview()" style="display:none;border-color:var(--accent2);color:var(--accent2);gap:6px;">
-        <i class="ti ti-eye" style="font-size:13px;"></i> Preview PDF
-      </button>
-      <button class="btn btn-primary" id="exp-btn" onclick="doExport()"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Sekarang</button>
+    <div class="modal-footer" style="flex-direction:column;gap:8px;">
+      <!-- Preview PDF row — muncul hanya saat format PDF -->
+      <div id="exp-preview-row" style="display:none;width:100%;">
+        <button class="btn btn-ghost" id="exp-preview-btn" onclick="openPdfPreview()" style="width:100%;border-color:var(--accent2);color:var(--accent2);gap:8px;justify-content:center;">
+          <i class="ti ti-eye" style="font-size:14px;"></i> Preview &amp; Edit Tampilan PDF
+        </button>
+      </div>
+      <!-- Batal + Export row — selalu tampil -->
+      <div style="display:flex;gap:8px;width:100%;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="closeModal('modal-export')">Batal</button>
+        <button class="btn btn-primary" id="exp-btn" onclick="doExport()" style="gap:6px;"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:4px;"></i> Export Sekarang</button>
+      </div>
     </div>
   </div>
 </div>
@@ -5109,7 +5115,14 @@
   </div>
   <div class="pv-body">
     <div class="pv-sidebar"><div id="pv-thumb-list"></div></div>
-    <div class="pv-canvas-wrap" id="pv-canvas-wrap">
+    <div class="pv-canvas-wrap" id="pv-canvas-wrap" style="position:relative;">
+      <!-- Zoom Controls -->
+      <div class="pv-zoom-controls">
+        <button class="pv-zoom-btn" onclick="pvZoom(0.25)" title="Zoom In">+</button>
+        <div class="pv-zoom-level" id="pv-zoom-label">100%</div>
+        <button class="pv-zoom-btn" onclick="pvZoom(-0.25)" title="Zoom Out">−</button>
+        <button class="pv-zoom-btn" onclick="pvZoomReset()" title="Reset Zoom" style="font-size:11px;">⊡</button>
+      </div>
       <div class="pv-page-container" id="pv-page-render">
         <div class="pv-generating" id="pv-generating">
           <div class="pv-spinner"></div>
