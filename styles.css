@@ -2338,15 +2338,14 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 .at-trail-filter-btn { font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;transition:all 0.12s; }
 .at-trail-filter-btn:hover { border-color:var(--accent2);color:var(--text); }
 .at-trail-filter-btn.active { background:var(--accent2);color:#000;border-color:var(--accent2); }
-/* Desktop pill tabs visible, mobile opt-picker buttons hidden */
-.at-f-desktop { display:inline-flex; }
+/* Desktop pill tabs visible; mobile opt-picker buttons hidden by default */
+.at-f-desktop { display:inline-flex !important; }
 .at-f-mobile  { display:none !important; }
 @media (max-width:640px) {
   .at-f-desktop { display:none !important; }
   .at-f-mobile  { display:inline-flex !important; }
   #audit-search { min-width:0 !important; width:100%; }
-  .at-trail-filter-bar { flex-wrap:wrap; }
-  #audit-biz-bar { display:none !important; } /* on mobile, biz filter is in opt-picker */
+  #audit-biz-bar { display:none !important; }
 }
 .at-trail-empty { text-align:center;padding:48px 20px;color:var(--muted); }
 .at-trail-empty i { font-size:36px;display:block;margin-bottom:12px;opacity:0.3; }

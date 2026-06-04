@@ -1899,9 +1899,9 @@ function renderAuditTrail() {
 }
 
 // Render bar filter per bisnis — auto-generate dari log yang ada
-// Render bar filter per bisnis (desktop pill tabs) + toggle mobile biz button
 function _renderAuditBizBar(logs) {
   const container = document.getElementById('audit-biz-bar');
+  if (!container) return;
   // Kumpulkan semua bisnis unik dari log
   const bizMap = {};
   logs.forEach(e => {
@@ -1911,11 +1911,7 @@ function _renderAuditBizBar(logs) {
     if (e.companyId) bizMap[e.companyId].count++;
   });
   const bizList = Object.values(bizMap);
-  // Mobile: tampilkan/sembunyikan tombol bisnis picker
-  const mobBizBtn = document.getElementById('audit-mob-biz-btn');
-  if (mobBizBtn) mobBizBtn.style.display = bizList.length > 1 ? '' : 'none';
-  if (!container) return;
-  // Jika hanya satu bisnis atau nol, sembunyikan desktop bar
+  // Jika hanya satu bisnis atau nol, sembunyikan bar
   if (bizList.length <= 1) { container.style.display = 'none'; return; }
   container.style.display = 'flex';
   const allActive = _auditBizFilter === null;
@@ -1935,71 +1931,6 @@ function auditSetBizFilter(companyId) {
   _auditBizFilter = companyId;
   _auditPage = 0;
   renderAuditTrail();
-}
-
-// ── Audit Filter Pickers — pakai openOptPicker() yang sudah ada ───────────
-const _AUDIT_AKT_OPTS = [
-  { value:'all',    label:'Semua Aktivitas', sub:'Tampilkan semua jenis aksi' },
-  { value:'create', label:'Buat',     sub:'Tambah jurnal, akun, produk, dll' },
-  { value:'delete', label:'Hapus',    sub:'Penghapusan data apapun' },
-  { value:'edit',   label:'Edit',     sub:'Perubahan & pembaruan data' },
-  { value:'auto',   label:'Otomatis', sub:'Penyusutan, jurnal otomatis' },
-  { value:'export', label:'Export',   sub:'Export laporan & CSV' },
-  { value:'login',  label:'Sesi',     sub:'Login & logout pengguna' },
-  { value:'reset',  label:'Reset',    sub:'Reset data — berbahaya' },
-];
-
-function auditOpenBizPicker() {
-  const logs = auditGetAll();
-  const bizMap = {};
-  logs.forEach(e => {
-    if (e.companyId && !bizMap[e.companyId]) {
-      bizMap[e.companyId] = { id: e.companyId, name: e.companyName || e.companyId, count: 0 };
-    }
-    if (e.companyId) bizMap[e.companyId].count++;
-  });
-  const bizList = Object.values(bizMap);
-  if (!bizList.length) { showAlert('Belum ada log dari beberapa bisnis.'); return; }
-  const opts = [
-    { value: '__all__', label: 'Semua Bisnis', sub: 'Tampilkan semua bisnis di log' },
-    ...bizList.map(b => ({
-      value: b.id,
-      label: b.name,
-      sub: `${b.count} log`,
-    }))
-  ];
-  const btn = document.getElementById('audit-mob-biz-btn');
-  openOptPicker({
-    title: 'Filter Bisnis',
-    options: opts,
-    currentValue: _auditBizFilter === null ? '__all__' : _auditBizFilter,
-    btnEl: btn,
-    onSelect: (val, label) => {
-      const realVal = val === '__all__' ? null : val;
-      _auditBizFilter = realVal;
-      _auditPage = 0;
-      const lbl = document.getElementById('audit-mob-biz-label');
-      if (lbl) lbl.textContent = realVal === null ? 'Filter Bisnis' : label;
-      if (btn) btn.dataset.value = val;
-      renderAuditTrail();
-    }
-  });
-}
-
-function auditOpenAktPicker() {
-  const btn = document.getElementById('audit-mob-akt-btn');
-  openOptPicker({
-    title: 'Filter Aktivitas',
-    options: _AUDIT_AKT_OPTS,
-    currentValue: _auditFilter,
-    btnEl: btn,
-    onSelect: (val, label) => {
-      auditSetFilter(val);
-      const lbl = document.getElementById('audit-mob-akt-label');
-      if (lbl) lbl.textContent = val === 'all' ? 'Semua Aktivitas' : label;
-      if (btn) btn.dataset.value = val;
-    }
-  });
 }
 
 function _renderAuditKPI(logs) {
@@ -2129,9 +2060,6 @@ function initAuditPage() {
   document.getElementById('audit-f-all')?.classList.add('active');
   document.querySelectorAll('.at-role-filter-badge').forEach(b=>{b.style.opacity='1';b.style.boxShadow='';b.style.transform='';});
   const s=document.getElementById('audit-search');if(s)s.value='';
-  // Reset mobile picker button labels
-  const lbl=document.getElementById('audit-mob-akt-label');if(lbl)lbl.textContent='Semua Aktivitas';
-  const bizLbl=document.getElementById('audit-mob-biz-label');if(bizLbl)bizLbl.textContent='Filter Bisnis';
   renderAuditTrail();
 }
 
@@ -2296,225 +2224,18 @@ window.atCheckAndRunAutoPenyusutan=function(force=false){
   }
 };
 
-// ── showPage hook — init audit page + patch hapus btn + log kalkulator ───
+// ── showPage hook — init audit page + patch hapus btn ────────────────────
 const _origShowPageAudit=window.showPage;
 window.showPage=function(id){
   _origShowPageAudit?.(id);
   if(id==='audit-trail') setTimeout(()=>{initAuditPage();_patchHapusJurnalBtn();},80);
   if(id==='jurnal-umum') setTimeout(_patchHapusJurnalBtn,200);
-  const _KALK_MAP={
-    'kalk-penyusutan':'Buka Kalkulator Penyusutan',
-    'kalk-persediaan':'Buka Kalkulator Persediaan',
-    'kalk-bunga'     :'Buka Kalkulator Bunga',
-    'kalk-rasio'     :'Buka Kalkulator Rasio Keuangan',
-    'kalk-bep'       :'Buka Kalkulator BEP & Margin',
-    'kalk-ppn'       :'Buka Kalkulator PPN & PPh',
-  };
-  if(_KALK_MAP[id]) auditLog('info','kalkulator',_KALK_MAP[id],{ref:id});
 };
 
 // ── Log startup ───────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',()=>{
   setTimeout(()=>auditLog('info','system','Aplikasi dibuka',{ref:'STARTUP'}),2000);
 });
-(function() {
-  function _patchHapusJurnalConfirm() {
-    const btn = document.getElementById('hapus-jurnal-confirm-btn');
-    if (!btn || btn._auditV2) return;
-    btn._auditV2 = true;
-    btn.addEventListener('click', function() {
-      try {
-        const idx = parseInt(document.getElementById('hapus-jurnal-idx')?.value ?? -1);
-        const entry = idx >= 0 ? jurnalEntries[idx] : null;
-        if (entry) {
-          const total = (entry.lines||[]).reduce((s,l)=>s+(l.debit||0),0);
-          auditLog('delete','jurnal',
-            `Hapus jurnal ${entry.jenis||'Manual'}: ${entry.ket||entry.keterangan||'—'} — ${fmtRp(total)}`,
-            {ref: entry.no||entry.id});
-        }
-      } catch(e) {}
-    }, true);
-  }
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(_patchHapusJurnalConfirm, 600);
-    const modal = document.getElementById('modal-hapus-jurnal');
-    if (modal && window.MutationObserver) {
-      new MutationObserver(() => setTimeout(_patchHapusJurnalConfirm, 50))
-        .observe(modal, { attributes: true, attributeFilter: ['class'] });
-    }
-  });
-})();
-
-// ── 12. Kalkulator Persediaan ─────────────────────────────────────────────
-const _origHitungPersediaan2 = window.hitungPersediaan;
-window.hitungPersediaan = function() {
-  const metode = document.getElementById('inv-metode')?.value || 'fifo';
-  const mLabel = {fifo:'FIFO',lifo:'LIFO',wa:'Weighted Average',mwa:'Moving WA'};
-  let jMasuk=0, jKeluar=0;
-  document.querySelectorAll('#inv-input-body tr').forEach(tr => {
-    const jenis = tr.querySelector('input[type=hidden]')?.value;
-    const qty   = parseFloat(tr.querySelectorAll('input:not([type=hidden])')[1]?.value)||0;
-    if (jenis === 'masuk') jMasuk += qty; else if (jenis === 'keluar') jKeluar += qty;
-  });
-  _origHitungPersediaan2?.();
-  if (jMasuk||jKeluar) auditLog('info','kalkulator',
-    `Hitung Persediaan ${mLabel[metode]||metode}: masuk ${jMasuk}, keluar ${jKeluar}`,{ref:'KALK-PERSEDIAAN'});
-};
-
-// ── 13. Kartu Stock — hapus entri baris ──────────────────────────────────
-const _origAttachKSEvents2 = window._attachKartuStockEvents;
-window._attachKartuStockEvents = function(tbody) {
-  _origAttachKSEvents2?.(tbody);
-  tbody?.querySelectorAll('.ks-hapus-btn').forEach(btn => {
-    if (btn._auditKS) return;
-    btn._auditKS = true;
-    btn.addEventListener('click', function() {
-      try {
-        const idx   = parseInt(this.getAttribute('data-idx'));
-        const entry = !isNaN(idx) ? kartuStockData?.[kartuStockTab]?.[idx] : null;
-        const card  = multiKartuStock?.[activeKartuStockId];
-        const kat   = card?.kategori?.[activeKategoriId];
-        if (entry) {
-          const tipe = entry.mQty > 0 ? 'masuk' : 'keluar';
-          const qty  = entry.mQty > 0 ? entry.mQty : entry.kQty;
-          const jml  = entry.mQty > 0 ? (entry.mQty*(entry.mHarga||0)) : (entry.kJml||0);
-          auditLog('delete','persediaan',
-            `Hapus entry stock ${tipe}: ${entry.tgl||'—'} | Qty ${qty} | ${entry.ket||'—'} | ${fmtRp(jml)}`,
-            {ref:`${kat?.nama||card?.nama||'—'} (${(kartuStockTab||'').toUpperCase()})`});
-        }
-      } catch(e){}
-    }, true);
-  });
-};
-
-// ── 14. Kartu Stock — hapus semua catatan ────────────────────────────────
-const _origClearKartuStock2 = window.clearKartuStock;
-window.clearKartuStock = function() {
-  const card  = multiKartuStock?.[activeKartuStockId];
-  const kat   = card?.kategori?.[activeKategoriId];
-  const count = (kartuStockData?.[kartuStockTab]||[]).length;
-  _origClearKartuStock2?.();
-  if (count>0) auditLog('delete','persediaan',
-    `Hapus semua catatan ${(kartuStockTab||'').toUpperCase()}: ${count} baris di "${kat?.nama||card?.nama||'—'}"`,
-    {ref:`CLEAR-KS`});
-};
-
-// ── 15. Kartu Stock — hapus seluruh kartu ────────────────────────────────
-const _origDoHapusCard2 = window._doHapusCard;
-window._doHapusCard = function(cardId) {
-  const card = multiKartuStock?.[cardId];
-  const nKat = Object.keys(card?.kategori||{}).length;
-  _origDoHapusCard2?.(cardId);
-  auditLog('delete','persediaan',`Hapus kartu stock "${card?.nama||cardId}" (${nKat} kategori)`,{ref:cardId});
-};
-
-// ── 16. Kartu Stock — tambah entry baru (saveMKS) ────────────────────────
-let _ksCount = {};
-const _origSaveMKS2 = window.saveMKS;
-window.saveMKS = function(skipSync) {
-  if (!skipSync) {
-    try {
-      const metode = kartuStockTab;
-      const key    = `${activeKartuStockId}_${activeKategoriId}_${metode}`;
-      const prev   = _ksCount[key]||0;
-      const curr   = (kartuStockData?.[metode]||[]).length;
-      if (curr > prev) {
-        const entry = (kartuStockData?.[metode]||[]).slice(-1)[0];
-        const card  = multiKartuStock?.[activeKartuStockId];
-        const kat   = card?.kategori?.[activeKategoriId];
-        if (entry) {
-          const tipe = entry.mQty > 0 ? 'masuk' : 'keluar';
-          const qty  = entry.mQty > 0 ? entry.mQty : entry.kQty;
-          const jml  = entry.mQty > 0 ? (entry.mQty*(entry.mHarga||0)) : (entry.kJml||0);
-          auditLog('create','persediaan',
-            `Entry stock ${tipe}: ${entry.tgl||'—'} | Qty ${qty} | ${entry.ket||'—'} | ${fmtRp(jml)}`,
-            {ref:`${kat?.nama||card?.nama||'—'} (${(metode||'').toUpperCase()})`});
-        }
-      }
-      _ksCount[key] = curr;
-    } catch(e){}
-  }
-  _origSaveMKS2?.(skipSync);
-};
-
-// ── 17. Kalkulator Penyusutan ─────────────────────────────────────────────
-const _origHitungPenyusutan2 = window.hitungPenyusutan;
-window.hitungPenyusutan = function() {
-  const nama   = document.getElementById('dep-nama')?.value  || '—';
-  const harga  = document.getElementById('dep-harga')?.value || 0;
-  const metode = document.getElementById('dep-metode')?.value|| '—';
-  _origHitungPenyusutan2?.();
-  auditLog('info','kalkulator',
-    `Hitung Penyusutan: ${nama} | ${fmtRp(parseFloat(harga)||0)} | ${metode}`,{ref:'KALK-PENYUSUTAN'});
-};
-
-// ── 18. Kalkulator Bunga ──────────────────────────────────────────────────
-const _origHitungBunga2 = window.hitungBunga;
-window.hitungBunga = function() {
-  const pokok = document.getElementById('bunga-pokok')?.value||0;
-  const rate  = document.getElementById('bunga-rate')?.value ||0;
-  const tipe  = document.getElementById('bunga-tipe')?.value ||'—';
-  _origHitungBunga2?.();
-  auditLog('info','kalkulator',`Hitung Bunga ${tipe}: pokok ${fmtRp(parseFloat(pokok)||0)}, rate ${rate}%`,{ref:'KALK-BUNGA'});
-};
-
-// ── 19. Kalkulator Rasio ──────────────────────────────────────────────────
-const _origHitungRasio2 = window.hitungRasio;
-window.hitungRasio = function() {
-  _origHitungRasio2?.();
-  auditLog('info','kalkulator','Hitung Rasio Keuangan',{ref:'KALK-RASIO'});
-};
-
-// ── 20. Kalkulator BEP ───────────────────────────────────────────────────
-const _origHitungBEP2 = window.hitungBEP;
-window.hitungBEP = function() {
-  const fc  = document.getElementById('bep-fc')?.value ||0;
-  const ppu = document.getElementById('bep-ppu')?.value||document.getElementById('bep-price')?.value||0;
-  const vc  = document.getElementById('bep-vc')?.value ||0;
-  _origHitungBEP2?.();
-  auditLog('info','kalkulator',
-    `Hitung BEP: FC ${fmtRp(parseFloat(fc)||0)}, Harga ${fmtRp(parseFloat(ppu)||0)}, VC ${fmtRp(parseFloat(vc)||0)}`,
-    {ref:'KALK-BEP'});
-};
-
-// ── 21. Kalkulator PPN & PPh ─────────────────────────────────────────────
-const _origHitungPPN2 = window.hitungPPN;
-window.hitungPPN = function() {
-  const dasar = document.getElementById('ppn-dasar')?.value||document.getElementById('ppn-base')?.value||0;
-  const tipe  = document.getElementById('ppn-tipe')?.value||'PPN';
-  _origHitungPPN2?.();
-  auditLog('info','kalkulator',`Hitung ${tipe}: dasar ${fmtRp(parseFloat(dasar)||0)}`,{ref:'KALK-PPN'});
-};
-
-// ── 22. Jurnal Berulang — simpan & hapus ─────────────────────────────────
-const _origSimpanJurnalBerulang2 = window.simpanJurnalBerulang;
-window.simpanJurnalBerulang = function() {
-  const nama = document.getElementById('jb-nama')?.value||'—';
-  const frq  = document.getElementById('jb-frekuensi')?.value||'—';
-  _origSimpanJurnalBerulang2?.();
-  auditLog('create','jurnal',`Buat Jurnal Berulang: ${nama} (${frq})`,{ref:nama});
-};
-const _origHapusJurnalBerulang2 = window.hapusJurnalBerulang;
-window.hapusJurnalBerulang = function(id) {
-  const jb = typeof jurnalBerulangList!=='undefined' ? jurnalBerulangList?.find(j=>j.id===id) : null;
-  _origHapusJurnalBerulang2?.(id);
-  auditLog('delete','jurnal',`Hapus Jurnal Berulang: ${jb?.nama||id}`,{ref:id});
-};
-
-// ── 23. Saldo Awal — simpan ───────────────────────────────────────────────
-const _origSimpanSaldoAwal2 = window.simpanSaldoAwal;
-window.simpanSaldoAwal = function() {
-  _origSimpanSaldoAwal2?.();
-  auditLog('edit','akun','Simpan / update Saldo Awal',{ref:'SALDO-AWAL'});
-};
-
-// ── 24. Reset Semua Data ──────────────────────────────────────────────────
-const _origDoResetAll2 = window.doResetAll;
-window.doResetAll = function() {
-  const cn = (typeof currentCompany!=='undefined'&&currentCompany?.name)||'—';
-  auditLog('reset','system',`⚠️ RESET SEMUA DATA bisnis "${cn}" dieksekusi`,{ref:'RESET-ALL'});
-  _origDoResetAll2?.();
-};
 
 
 // ══════════════════════════════════════════════════════════════
@@ -23186,3 +22907,671 @@ function _updateLockHeaderBtn() {
   btn.style.border = isLocked ? '1px solid rgba(239,68,68,0.4)' : '1px solid var(--border)';
   btn.style.color = isLocked ? 'var(--red)' : 'var(--muted)';
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// OAS AUDIT TRAIL — HOOKS MENYELURUH
+// Semua aktivitas penting di seluruh fitur dilog ke auditLog()
+// Di-inject setelah semua fungsi sudah terdefinisi
+// ══════════════════════════════════════════════════════════════════════════
+(function _installAuditHooks() {
+  'use strict';
+
+  // Helper: wrap fungsi dengan audit, toleran terhadap fungsi yang belum ada
+  function _wrap(fnName, before, after) {
+    const orig = window[fnName];
+    window[fnName] = function() {
+      try { if (before) before.apply(this, arguments); } catch(e) {}
+      const ret = orig ? orig.apply(this, arguments) : undefined;
+      try { if (after) after.apply(this, arguments); } catch(e) {}
+      return ret;
+    };
+    // Preserve async nature
+    if (orig && orig.constructor && orig.constructor.name === 'AsyncFunction') {
+      window[fnName] = async function() {
+        try { if (before) before.apply(this, arguments); } catch(e) {}
+        const ret = orig ? await orig.apply(this, arguments) : undefined;
+        try { if (after) after.apply(this, arguments); } catch(e) {}
+        return ret;
+      };
+    }
+  }
+
+  function _al(action, cat, desc, ref) {
+    if (typeof auditLog === 'function') auditLog(action, cat, desc, { ref: ref || '' });
+  }
+  function _rp(n) { return typeof fmtRp === 'function' ? fmtRp(n) : 'Rp ' + (n||0).toLocaleString('id-ID'); }
+  function _v(id) { return document.getElementById(id)?.value || ''; }
+
+  // ── JURNAL ───────────────────────────────────────────────────────────────
+
+  // 1. HAPUS JURNAL — wrap konfirmasiHapusJurnal langsung (bukan button patch)
+  //    Masalah sebelumnya: onclick di-set ulang setiap buka modal, listener tidak jalan
+  _wrap('konfirmasiHapusJurnal', function(idx) {
+    // Simpan data entry SEBELUM modal terbuka (idx masih valid)
+    try {
+      const j = jurnalEntries[idx];
+      if (j) window._auditPendingHapusJurnal = { idx, no: j.no, ket: j.ket, jenis: j.jenis, total: (j.lines||[]).reduce((s,l)=>s+(l.debit||0),0) };
+    } catch(e) {}
+  }, null);
+
+  // Patch tombol konfirmasi SETELAH konfirmasiHapusJurnal dipanggil
+  const _origKonfirmasiHapusJurnal = window.konfirmasiHapusJurnal;
+  window.konfirmasiHapusJurnal = function(idx) {
+    _origKonfirmasiHapusJurnal?.apply(this, arguments);
+    // Setelah modal terbuka, patch onclick-nya
+    setTimeout(function() {
+      const btn = document.getElementById('hapus-jurnal-confirm-btn');
+      if (!btn) return;
+      const origOnclick = btn.onclick;
+      btn.onclick = async function() {
+        const pending = window._auditPendingHapusJurnal;
+        if (pending) {
+          _al('delete', 'jurnal',
+            `Hapus jurnal ${pending.jenis||'Manual'}: "${pending.ket||'—'}" — ${_rp(pending.total)}`,
+            pending.no || String(pending.idx));
+          window._auditPendingHapusJurnal = null;
+        }
+        if (origOnclick) return await origOnclick.call(this);
+      };
+    }, 30);
+  };
+
+  // 2. Simpan Manual
+  _wrap('simpanManual', null, function() {
+    try {
+      const ket = _v('manual-ket') || _v('jm-ket') || _v('ket-manual') || '—';
+      const total = (typeof updateBalance === 'function') ? 0 : 0;
+      // Ambil total dari balance display
+      const balEl = document.getElementById('manual-balance') || document.getElementById('balance-display');
+      const t = parseFloat(balEl?.textContent?.replace(/[^0-9]/g,'')) || 0;
+      _al('create', 'jurnal', `Simpan Jurnal Manual: "${ket}"`, ket);
+    } catch(e) {}
+  });
+
+  // 3. Simpan Kas
+  _wrap('simpanKas', null, function() {
+    try {
+      const ket = _v('kas-ket') || _v('ket-kas') || '—';
+      const jml = parseFloat(_v('kas-jumlah')) || 0;
+      const tipe = _v('kas-tipe') || '—';
+      _al('create', 'jurnal', `Kas ${tipe}: "${ket}" — ${_rp(jml)}`, ket);
+    } catch(e) {}
+  });
+
+  // 4. Simpan Penjualan
+  _wrap('simpanPenjualan', null, function() {
+    try {
+      const inv = _v('jual-inv') || '—';
+      const jml = parseFloat(_v('jual-jumlah')) || 0;
+      _al('create', 'jurnal', `Penjualan${inv !== '—' ? ' ' + inv : ''} — ${_rp(jml)}`, inv);
+    } catch(e) {}
+  });
+
+  // 5. Simpan Pembelian
+  _wrap('simpanPembelian', null, function() {
+    try {
+      const po = _v('beli-po') || '—';
+      const jml = parseFloat(_v('beli-jumlah')) || 0;
+      _al('create', 'jurnal', `Pembelian${po !== '—' ? ' ' + po : ''} — ${_rp(jml)}`, po);
+    } catch(e) {}
+  });
+
+  // 6. Simpan Akun (Chart of Accounts)
+  _wrap('simpanAkun', null, function() {
+    try {
+      const kode = _v('akun-kode');
+      const nama = _v('akun-nama');
+      const tipe = _v('akun-tipe');
+      const editId = _v('akun-edit-id');
+      _al(editId ? 'edit' : 'create', 'akun',
+        `${editId ? 'Edit' : 'Tambah'} akun: ${kode} — ${nama} (${tipe})`, kode);
+    } catch(e) {}
+  });
+
+  // 7. Hapus Akun
+  _wrap('hapusAkun', function(kode) {
+    try {
+      const a = (typeof akuns !== 'undefined') ? akuns.find(x => x.kode === kode) : null;
+      _al('delete', 'akun', `Hapus akun: ${kode} — ${a?.nama || ''}`, kode);
+    } catch(e) {}
+  }, null);
+
+  // 8. Simpan Aset Tetap
+  _wrap('simpanAsetTetap', null, function() {
+    try {
+      const nama = _v('at-nama');
+      const harga = parseFloat(_v('at-harga')) || 0;
+      const editId = _v('at-edit-id');
+      _al(editId ? 'edit' : 'create', 'aset',
+        `${editId ? 'Edit' : 'Tambah'} aset: ${nama} — ${_rp(harga)}`, editId || nama);
+    } catch(e) {}
+  });
+
+  // 9. Hapus Aset
+  _wrap('hapusAset', function(id) {
+    try {
+      const a = (typeof asetTetapList !== 'undefined') ? asetTetapList.find(x => x.id === id) : null;
+      _al('delete', 'aset', `Hapus aset: ${a?.nama || id}`, id);
+    } catch(e) {}
+  }, null);
+
+  // 10. Disposal Aset
+  _wrap('disposalAset', function(id) {
+    try {
+      const a = (typeof asetTetapList !== 'undefined') ? asetTetapList.find(x => x.id === id) : null;
+      _al('edit', 'aset', `Disposal aset: ${a?.nama || id}`, id);
+    } catch(e) {}
+  }, null);
+
+  // 11. Simpan Kontak
+  _wrap('simpanKontak', null, function() {
+    try {
+      const nama = _v('kontak-nama');
+      const editId = _v('kontak-edit-id');
+      _al(editId ? 'edit' : 'create', 'kontak',
+        `${editId ? 'Edit' : 'Tambah'} kontak: ${nama}`, editId || nama);
+    } catch(e) {}
+  });
+
+  // 12. Hapus Kontak
+  _wrap('hapusKontak', function(id) {
+    try {
+      const k = (typeof kontakList !== 'undefined') ? kontakList.find(x => x.id === id) : null;
+      _al('delete', 'kontak', `Hapus kontak: ${k?.nama || id}`, id);
+    } catch(e) {}
+  }, null);
+
+  // 13. Simpan Invoice
+  _wrap('simpanInvoice', null, function(status) {
+    try {
+      const no = _v('inv-no');
+      _al('create', 'invoice', `${status === 'lunas' ? 'Invoice Lunas' : 'Buat invoice'}: ${no || '—'}`, no);
+    } catch(e) {}
+  });
+
+  // 14. Konfirmasi Lunas Invoice
+  _wrap('konfirmasiLunasInvoice', null, function() {
+    try {
+      _al('edit', 'invoice', 'Invoice ditandai Lunas', 'LUNAS');
+    } catch(e) {}
+  });
+
+  // 15. Hapus Invoice
+  _wrap('hapusInvoice', function(id) {
+    try {
+      const inv = (typeof invoiceList !== 'undefined') ? invoiceList.find(x => x.id === id) : null;
+      _al('delete', 'invoice', `Hapus invoice ${inv?.no || id} — ${_rp(inv?.total || 0)}`, inv?.no || id);
+    } catch(e) {}
+  }, null);
+
+  // 16. Simpan Produk
+  _wrap('simpanProduk', null, function() {
+    try {
+      const ksId = _v('produk-edit-id');
+      const hj = parseFloat(_v('produk-harga-jual')) || 0;
+      const ppn = _v('produk-ppn');
+      _al('edit', 'produk', `Update produk: harga jual ${_rp(hj)}${ppn ? ', PPN ' + ppn + '%' : ''}`, ksId);
+    } catch(e) {}
+  });
+
+  // 17. Hapus Produk
+  _wrap('hapusProduk', function(id) {
+    try {
+      _al('delete', 'produk', `Hapus produk id: ${id}`, id);
+    } catch(e) {}
+  }, null);
+
+  // 18. Simpan Jurnal Berulang
+  _wrap('simpanJurnalBerulang', null, function() {
+    try {
+      const nama = _v('jb-nama');
+      const frq = _v('jb-frekuensi');
+      _al('create', 'jurnal', `Buat Jurnal Berulang: ${nama} (${frq})`, nama);
+    } catch(e) {}
+  });
+
+  // 19. Hapus Jurnal Berulang
+  _wrap('hapusJurnalBerulang', function(id) {
+    try {
+      const jb = (typeof jurnalBerulangList !== 'undefined') ? jurnalBerulangList?.find(j => j.id === id) : null;
+      _al('delete', 'jurnal', `Hapus Jurnal Berulang: ${jb?.nama || id}`, id);
+    } catch(e) {}
+  }, null);
+
+  // 20. Buat Jurnal Penutup
+  _wrap('buatJurnalPenutup', null, function() {
+    _al('auto', 'jurnal', 'Buat Jurnal Penutup (Closing Entries)', 'JURNAL-PENUTUP');
+  });
+
+  // 21. Jurnal Penyesuaian
+  _wrap('openJurnalPenyesuaian', null, function() {
+    _al('info', 'jurnal', 'Buka modul Jurnal Penyesuaian', 'PENYESUAIAN');
+  });
+  _wrap('deteksiPenyesuaianOtomatis', null, function() {
+    _al('auto', 'jurnal', 'Deteksi otomatis Jurnal Penyesuaian', 'AUTO-PENYESUAIAN');
+  });
+
+  // 22. Buat Jurnal PPh 21 & PPh 23
+  _wrap('buatJurnalPPh21', null, function() {
+    _al('create', 'pajak', 'Buat Jurnal PPh 21', 'PPH21');
+  });
+  _wrap('buatJurnalPPh23', null, function() {
+    _al('create', 'pajak', 'Buat Jurnal PPh 23', 'PPH23');
+  });
+
+  // 23. Proses Rekonsiliasi
+  _wrap('prosesRekonsiliasi', null, function() {
+    _al('create', 'rekonsiliasi', 'Proses rekonsiliasi bank', 'REKON');
+  });
+  _wrap('importRekonSebagaiJurnal', null, function() {
+    _al('create', 'jurnal', 'Import rekonsiliasi sebagai jurnal', 'REKON-IMPORT');
+  });
+
+  // 24. Simpan Kurs Manual
+  _wrap('simpanKursManual', null, function() {
+    try {
+      const mata = _v('kurs-mata') || _v('kurs-uang') || '—';
+      const rate = parseFloat(_v('kurs-rate') || _v('kurs-nilai') || '0') || 0;
+      _al('edit', 'system', `Update kurs ${mata}: ${rate.toLocaleString('id-ID')}`, mata);
+    } catch(e) {}
+  });
+
+  // 25. Simpan Profil Perusahaan
+  _wrap('saveProfil', null, function() {
+    try {
+      const nama = _v('profil-nama') || _v('profil-perusahaan') || '—';
+      _al('edit', 'system', `Simpan profil perusahaan: ${nama}`, 'PROFIL');
+    } catch(e) {}
+  });
+
+  // 26. Simpan Saldo Awal
+  _wrap('simpanSaldoAwal', null, function() {
+    _al('edit', 'akun', 'Simpan / update Saldo Awal', 'SALDO-AWAL');
+  });
+
+  // 27. Simpan Alert/Notifikasi
+  _wrap('simpanAlertBaru', null, function() {
+    try {
+      const nama = _v('notif-nama') || _v('alert-nama') || '—';
+      _al('create', 'system', `Tambah notifikasi/alert: ${nama}`, nama);
+    } catch(e) {}
+  });
+
+  // 28. Hapus Alert
+  _wrap('hapusAlert', function(id) {
+    _al('delete', 'system', `Hapus notifikasi id: ${id}`, id);
+  }, null);
+
+  // 29. Simpan Anggaran
+  _wrap('simpanAnggaran', null, function() {
+    try {
+      const period = _v('anggaran-period') || _v('ang-period') || '—';
+      _al('edit', 'anggaran', `Simpan anggaran periode ${period}`, period);
+    } catch(e) {}
+  });
+
+  // 30. Hapus Anggaran
+  _wrap('hapusAnggaran', function(id) {
+    try {
+      const a = (typeof anggaranList !== 'undefined') ? anggaranList?.find(x => x.id === id) : null;
+      _al('delete', 'anggaran', `Hapus anggaran: ${a?.nama || a?.period || id}`, id);
+    } catch(e) {}
+  }, null);
+
+  // 31. Export Backup JSON
+  _wrap('exportBackupJSON', null, function() {
+    _al('export', 'system', 'Export backup data JSON', 'BACKUP-JSON');
+  });
+
+  // 32. Import Backup JSON
+  _wrap('importBackupJSON', null, function() {
+    _al('create', 'system', 'Import data dari backup JSON', 'IMPORT-JSON');
+  });
+
+  // 33. Manual Save
+  _wrap('manualSave', null, function() {
+    _al('edit', 'system', 'Simpan manual (manual save)', 'MANUAL-SAVE');
+  });
+
+  // 34. Simpan Jurnal dari AI
+  _wrap('saveJurnalFromAI', null, function(parsed) {
+    try {
+      const lines = parsed?.lines || parsed?.entries || [];
+      const ket = parsed?.keterangan || parsed?.ket || parsed?.description || '—';
+      const total = lines.reduce ? lines.reduce((s, l) => s + (l.debit || 0), 0) : 0;
+      _al('create', 'jurnal', `Simpan Jurnal dari AI: "${ket}" — ${_rp(total)}`, 'AI-JURNAL');
+    } catch(e) {}
+  });
+
+  // 35. AI Chat — sendAI (kirim pesan ke Orias AI)
+  _wrap('sendAI', function() {
+    try {
+      const msg = (document.getElementById('ai-input')?.value || '').trim().slice(0, 120);
+      if (msg) _al('info', 'ai', `Orias AI: "${msg}"`, 'AI-CHAT');
+    } catch(e) {}
+  }, null);
+
+  // 36. Clear AI Chat
+  _wrap('clearAIChat', null, function() {
+    _al('edit', 'ai', 'Reset riwayat chat Orias AI', 'AI-CLEAR');
+  });
+
+  // 37. Tutorial — mulai
+  _wrap('startTutorialById', function(id) {
+    try {
+      const label = id === 'semua' ? 'Semua Tutorial' : (id || 'Tutorial');
+      _al('info', 'tutorial', `Mulai tutorial: ${label}`, id);
+    } catch(e) {}
+  }, null);
+
+  // 38. Tutorial — selesai/keluar
+  _wrap('exitTutorial', null, function() {
+    _al('info', 'tutorial', 'Keluar dari tutorial', 'TUT-EXIT');
+  });
+
+  // 39. doExport (laporan PDF/Excel/CSV)
+  _wrap('doExport', null, function() {
+    try {
+      const fmt = (typeof exportFmt !== 'undefined' ? exportFmt : _v('exp-fmt') || '—').toUpperCase();
+      const nama = _v('exp-nama-perusahaan') || '—';
+      _al('export', 'system', `Export laporan ${fmt} — ${nama}`, fmt);
+    } catch(e) {}
+  });
+
+  // 40. Reset Semua Data
+  const _origDoResetAll = window.doResetAll;
+  window.doResetAll = async function() {
+    try {
+      const cn = (typeof currentCompany !== 'undefined' && currentCompany?.name) || '—';
+      _al('reset', 'system', `⚠️ RESET SEMUA DATA bisnis "${cn}" dieksekusi`, 'RESET-ALL');
+    } catch(e) {}
+    return _origDoResetAll ? await _origDoResetAll.apply(this, arguments) : undefined;
+  };
+
+  // 41. Kartu Stock — hapus entri baris (delegated event di tbody)
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.ks-hapus-btn');
+    if (!btn) return;
+    try {
+      const idx = parseInt(btn.getAttribute('data-idx'));
+      if (isNaN(idx)) return;
+      const entry = (typeof kartuStockData !== 'undefined' && typeof kartuStockTab !== 'undefined')
+        ? kartuStockData?.[kartuStockTab]?.[idx] : null;
+      const card = (typeof multiKartuStock !== 'undefined' && typeof activeKartuStockId !== 'undefined')
+        ? multiKartuStock?.[activeKartuStockId] : null;
+      const kat = (card && typeof activeKategoriId !== 'undefined')
+        ? card?.kategori?.[activeKategoriId] : null;
+      if (entry) {
+        const tipe = entry.mQty > 0 ? 'masuk' : 'keluar';
+        const qty = entry.mQty > 0 ? entry.mQty : entry.kQty;
+        const jml = entry.mQty > 0 ? (entry.mQty * (entry.mHarga || 0)) : (entry.kJml || 0);
+        _al('delete', 'persediaan',
+          `Hapus entry stock ${tipe}: ${entry.tgl || '—'} | Qty ${qty} | ${entry.ket || '—'} | ${_rp(jml)}`,
+          `${kat?.nama || card?.nama || '—'} (${(typeof kartuStockTab !== 'undefined' ? kartuStockTab : '').toUpperCase()})`);
+      }
+    } catch(ex) {}
+  }, true); // capture phase — jalan sebelum confirm dialog
+
+  // 42. Kartu Stock — hapus semua catatan
+  _wrap('clearKartuStock', function() {
+    try {
+      const card = (typeof multiKartuStock !== 'undefined' && typeof activeKartuStockId !== 'undefined')
+        ? multiKartuStock?.[activeKartuStockId] : null;
+      const kat = (card && typeof activeKategoriId !== 'undefined')
+        ? card?.kategori?.[activeKategoriId] : null;
+      const tab = typeof kartuStockTab !== 'undefined' ? kartuStockTab : '—';
+      const count = (typeof kartuStockData !== 'undefined') ? (kartuStockData?.[tab] || []).length : 0;
+      window._auditKsTabBefore = { tab, count, cardName: kat?.nama || card?.nama || '—' };
+    } catch(e) {}
+  }, function() {
+    try {
+      const b = window._auditKsTabBefore;
+      if (b && b.count > 0) _al('delete', 'persediaan',
+        `Hapus semua catatan ${b.tab.toUpperCase()}: ${b.count} baris di "${b.cardName}"`, 'CLEAR-KS');
+    } catch(e) {}
+  });
+
+  // 43. Kartu Stock — hapus seluruh kartu
+  _wrap('_doHapusCard', function(cardId) {
+    try {
+      const card = (typeof multiKartuStock !== 'undefined') ? multiKartuStock?.[cardId] : null;
+      const nKat = Object.keys(card?.kategori || {}).length;
+      window._auditKsCardToDelete = { nama: card?.nama || cardId, nKat };
+    } catch(e) {}
+  }, function(cardId) {
+    try {
+      const d = window._auditKsCardToDelete;
+      if (d) _al('delete', 'persediaan', `Hapus kartu stock "${d.nama}" (${d.nKat} kategori)`, cardId);
+    } catch(e) {}
+  });
+
+  // 44. Kartu Stock — tambah entry baru via saveMKS
+  let _ksCountMap = {};
+  const _origSaveMKS = window.saveMKS;
+  window.saveMKS = function(skipSync) {
+    if (!skipSync) {
+      try {
+        const tab = typeof kartuStockTab !== 'undefined' ? kartuStockTab : null;
+        const key = `${typeof activeKartuStockId !== 'undefined' ? activeKartuStockId : ''}__${typeof activeKategoriId !== 'undefined' ? activeKategoriId : ''}__${tab}`;
+        const curr = (typeof kartuStockData !== 'undefined' && tab) ? (kartuStockData?.[tab] || []).length : 0;
+        const prev = _ksCountMap[key] || 0;
+        if (curr > prev && tab) {
+          const entry = (kartuStockData?.[tab] || []).slice(-1)[0];
+          const card = (typeof multiKartuStock !== 'undefined' && typeof activeKartuStockId !== 'undefined')
+            ? multiKartuStock?.[activeKartuStockId] : null;
+          const kat = (card && typeof activeKategoriId !== 'undefined') ? card?.kategori?.[activeKategoriId] : null;
+          if (entry) {
+            const tipe = entry.mQty > 0 ? 'masuk' : 'keluar';
+            const qty = entry.mQty > 0 ? entry.mQty : entry.kQty;
+            const jml = entry.mQty > 0 ? (entry.mQty * (entry.mHarga || 0)) : (entry.kJml || 0);
+            _al('create', 'persediaan',
+              `Entry stock ${tipe}: ${entry.tgl || '—'} | Qty ${qty} | ${entry.ket || '—'} | ${_rp(jml)}`,
+              `${kat?.nama || card?.nama || '—'} (${tab.toUpperCase()})`);
+          }
+        }
+        _ksCountMap[key] = curr;
+      } catch(e) {}
+    }
+    return _origSaveMKS ? _origSaveMKS.apply(this, arguments) : undefined;
+  };
+
+  // 45. Kalkulator Penyusutan
+  _wrap('hitungPenyusutan', null, function() {
+    try {
+      const nama = _v('dep-nama') || _v('at-kalk-nama') || '—';
+      const harga = parseFloat(_v('dep-harga') || _v('at-kalk-harga') || '0') || 0;
+      const metode = _v('dep-metode') || _v('at-kalk-metode') || '—';
+      _al('info', 'kalkulator', `Hitung Penyusutan: ${nama} | ${_rp(harga)} | ${metode}`, 'KALK-PENYUSUTAN');
+    } catch(e) {}
+  });
+
+  // 46. Kalkulator Persediaan
+  _wrap('hitungPersediaan', null, function() {
+    try {
+      const metode = _v('inv-metode') || '—';
+      const lbl = { fifo: 'FIFO', lifo: 'LIFO', wa: 'Weighted Average', mwa: 'Moving WA' };
+      _al('info', 'kalkulator', `Hitung Persediaan ${lbl[metode] || metode}`, 'KALK-PERSEDIAAN');
+    } catch(e) {}
+  });
+
+  // 47. Kalkulator Bunga
+  _wrap('hitungBunga', null, function() {
+    try {
+      const pokok = parseFloat(_v('bunga-pokok')) || 0;
+      const rate = _v('bunga-rate') || '0';
+      const tipe = _v('bunga-tipe') || '—';
+      _al('info', 'kalkulator', `Hitung Bunga ${tipe}: pokok ${_rp(pokok)}, rate ${rate}%`, 'KALK-BUNGA');
+    } catch(e) {}
+  });
+
+  // 48. Kalkulator Rasio
+  _wrap('hitungRasio', null, function() {
+    _al('info', 'kalkulator', 'Hitung Rasio Keuangan', 'KALK-RASIO');
+  });
+
+  // 49. Kalkulator BEP
+  _wrap('hitungBEP', null, function() {
+    try {
+      const fc = parseFloat(_v('bep-fc')) || 0;
+      _al('info', 'kalkulator', `Hitung BEP: FC ${_rp(fc)}`, 'KALK-BEP');
+    } catch(e) {}
+  });
+
+  // 50. Kalkulator PPN & PPh
+  _wrap('hitungPPN', null, function() {
+    try {
+      const dasar = parseFloat(_v('ppn-dasar') || _v('ppn-base') || '0') || 0;
+      const tipe = _v('ppn-tipe') || 'PPN';
+      _al('info', 'kalkulator', `Hitung ${tipe}: dasar ${_rp(dasar)}`, 'KALK-PPN');
+    } catch(e) {}
+  });
+
+  // 51. showPage — log semua navigasi halaman
+  const _origShowPage = window.showPage;
+  window.showPage = function(id) {
+    const ret = _origShowPage ? _origShowPage.apply(this, arguments) : undefined;
+    try {
+      const PAGE_LABELS = {
+        'dashboard': null, // terlalu sering, skip
+        'transaksi': 'Buka halaman Transaksi',
+        'jurnal-umum': 'Buka Jurnal Umum',
+        'jurnal-kas': 'Buka Jurnal Kas',
+        'jurnal-penjualan': 'Buka Jurnal Penjualan',
+        'jurnal-pembelian': 'Buka Jurnal Pembelian',
+        'buku-besar': 'Buka Buku Besar',
+        'neraca-saldo': 'Buka Neraca Saldo',
+        'laba-rugi': 'Buka Laporan Laba Rugi',
+        'neraca': 'Buka Neraca',
+        'arus-kas': 'Buka Laporan Arus Kas',
+        'perubahan-ekuitas': 'Buka Laporan Perubahan Ekuitas',
+        'analitik': 'Buka Analitik',
+        'produk': 'Buka Master Produk',
+        'akun': 'Buka Chart of Accounts',
+        'aset-tetap': 'Buka Aset Tetap',
+        'kontak': 'Buka Kontak',
+        'kalk-penyusutan': 'Buka Kalkulator Penyusutan',
+        'kalk-persediaan': 'Buka Kalkulator Persediaan',
+        'kalk-bunga': 'Buka Kalkulator Bunga',
+        'kalk-rasio': 'Buka Kalkulator Rasio',
+        'kalk-bep': 'Buka Kalkulator BEP & Margin',
+        'kalk-ppn': 'Buka Kalkulator PPN & PPh',
+        'jurnal-berulang': 'Buka Jurnal Berulang',
+        'invoice': 'Buka Invoice',
+        'rekonsiliasi': 'Buka Rekonsiliasi',
+        'kurs': 'Buka Kurs Mata Uang',
+        'notifikasi': 'Buka Notifikasi',
+        'anggaran': 'Buka Anggaran',
+        'pajak': 'Buka Pajak Auto',
+        'tutorial': 'Buka Tutorial',
+        'ai-assistant': 'Buka Orias AI Assistant',
+        'audit-trail': null, // jangan log buka audit trail sendiri
+      };
+      const label = PAGE_LABELS[id];
+      if (label) _al('info', 'navigasi', label, id);
+    } catch(e) {}
+    return ret;
+  };
+
+  // 52. Theme toggle
+  const _origToggleTheme = window.toggleTheme;
+  window.toggleTheme = function() {
+    const ret = _origToggleTheme ? _origToggleTheme.apply(this, arguments) : undefined;
+    try {
+      const theme = document.documentElement.classList.contains('light') ? 'light' : 'dark';
+      _al('edit', 'system', `Ganti tema: ${theme}`, 'TEMA');
+    } catch(e) {}
+    return ret;
+  };
+
+  // 53. Hapus Kategori KS
+  _wrap('hapusKategori', function(cardId, katId) {
+    try {
+      const card = (typeof multiKartuStock !== 'undefined') ? multiKartuStock?.[cardId] : null;
+      const kat = card?.kategori?.[katId];
+      window._auditKatToDelete = kat?.nama || katId;
+    } catch(e) {}
+  }, function(cardId, katId) {
+    try {
+      const nm = window._auditKatToDelete || katId;
+      _al('delete', 'persediaan', `Hapus kategori KS: "${nm}"`, katId);
+    } catch(e) {}
+  });
+
+  // 54. Hapus KS (ksId)
+  _wrap('hapusKS', function(ksId) {
+    try {
+      const card = (typeof multiKartuStock !== 'undefined') ? multiKartuStock?.[ksId] : null;
+      window._auditKsToDelete = card?.nama || ksId;
+    } catch(e) {}
+  }, function(ksId) {
+    try {
+      _al('delete', 'persediaan', `Hapus KS: "${window._auditKsToDelete || ksId}"`, ksId);
+    } catch(e) {}
+  });
+
+  console.log('[OAS Audit] Hooks installed — ' + new Date().toLocaleTimeString('id-ID'));
+})();
+
+// ── Audit Filter Mobile Pickers — pakai openOptPicker() ─────────────────
+const _AUDIT_AKT_OPTS = [
+  { value:'all',    label:'Semua Aktivitas', sub:'Tampilkan semua jenis aksi' },
+  { value:'create', label:'Buat',     sub:'Tambah jurnal, akun, produk, dll' },
+  { value:'delete', label:'Hapus',    sub:'Penghapusan data apapun' },
+  { value:'edit',   label:'Edit',     sub:'Perubahan & pembaruan data' },
+  { value:'auto',   label:'Otomatis', sub:'Penyusutan, jurnal otomatis' },
+  { value:'export', label:'Export',   sub:'Export laporan & CSV' },
+  { value:'login',  label:'Sesi',     sub:'Login & logout pengguna' },
+  { value:'info',   label:'Navigasi', sub:'Buka halaman, kalkulator, AI, tutorial' },
+  { value:'reset',  label:'Reset',    sub:'Reset data — berbahaya' },
+];
+
+function auditOpenBizPicker() {
+  const logs = auditGetAll();
+  const bizMap = {};
+  logs.forEach(e => {
+    if (e.companyId && !bizMap[e.companyId]) bizMap[e.companyId] = { id:e.companyId, name:e.companyName||e.companyId, count:0 };
+    if (e.companyId) bizMap[e.companyId].count++;
+  });
+  const bizList = Object.values(bizMap);
+  if (!bizList.length) { showAlert('Belum ada log dari beberapa bisnis.'); return; }
+  const opts = [
+    { value:'__all__', label:'Semua Bisnis', sub:'Tampilkan semua bisnis di log' },
+    ...bizList.map(b => ({ value:b.id, label:b.name, sub:`${b.count} log` }))
+  ];
+  const btn = document.getElementById('audit-mob-biz-btn');
+  openOptPicker({
+    title:'Filter Bisnis', options:opts,
+    currentValue: _auditBizFilter === null ? '__all__' : _auditBizFilter,
+    btnEl: btn,
+    onSelect: (val, label) => {
+      const realVal = val === '__all__' ? null : val;
+      _auditBizFilter = realVal; _auditPage = 0;
+      const lbl = document.getElementById('audit-mob-biz-label');
+      if (lbl) lbl.textContent = realVal === null ? 'Filter Bisnis' : label;
+      renderAuditTrail();
+    }
+  });
+}
+
+function auditOpenAktPicker() {
+  const btn = document.getElementById('audit-mob-akt-btn');
+  openOptPicker({
+    title:'Filter Aktivitas', options:_AUDIT_AKT_OPTS,
+    currentValue: _auditFilter, btnEl: btn,
+    onSelect: (val, label) => {
+      auditSetFilter(val);
+      const lbl = document.getElementById('audit-mob-akt-label');
+      if (lbl) lbl.textContent = val === 'all' ? 'Semua Aktivitas' : label;
+    }
+  });
+}
+
+// Update _renderAuditBizBar to also control mobile biz button visibility
+const _origRenderBizBar = window._renderAuditBizBar;
+window._renderAuditBizBar = function(logs) {
+  _origRenderBizBar?.call(this, logs);
+  // Hitung bisnis unik untuk tampilkan/sembunyikan tombol mobile
+  const bizIds = new Set(logs.filter(e=>e.companyId).map(e=>e.companyId));
+  const mobBizBtn = document.getElementById('audit-mob-biz-btn');
+  if (mobBizBtn) mobBizBtn.style.display = bizIds.size > 1 ? '' : 'none';
+};
