@@ -1899,9 +1899,9 @@ function renderAuditTrail() {
 }
 
 // Render bar filter per bisnis — auto-generate dari log yang ada
+// Render bar filter per bisnis (desktop pill tabs) + toggle mobile biz button
 function _renderAuditBizBar(logs) {
   const container = document.getElementById('audit-biz-bar');
-  if (!container) return;
   // Kumpulkan semua bisnis unik dari log
   const bizMap = {};
   logs.forEach(e => {
@@ -1911,7 +1911,11 @@ function _renderAuditBizBar(logs) {
     if (e.companyId) bizMap[e.companyId].count++;
   });
   const bizList = Object.values(bizMap);
-  // Jika hanya satu bisnis atau nol, sembunyikan bar
+  // Mobile: tampilkan/sembunyikan tombol bisnis picker
+  const mobBizBtn = document.getElementById('audit-mob-biz-btn');
+  if (mobBizBtn) mobBizBtn.style.display = bizList.length > 1 ? '' : 'none';
+  if (!container) return;
+  // Jika hanya satu bisnis atau nol, sembunyikan desktop bar
   if (bizList.length <= 1) { container.style.display = 'none'; return; }
   container.style.display = 'flex';
   const allActive = _auditBizFilter === null;
@@ -1931,6 +1935,71 @@ function auditSetBizFilter(companyId) {
   _auditBizFilter = companyId;
   _auditPage = 0;
   renderAuditTrail();
+}
+
+// ── Audit Filter Pickers — pakai openOptPicker() yang sudah ada ───────────
+const _AUDIT_AKT_OPTS = [
+  { value:'all',    label:'Semua Aktivitas', sub:'Tampilkan semua jenis aksi' },
+  { value:'create', label:'Buat',     sub:'Tambah jurnal, akun, produk, dll' },
+  { value:'delete', label:'Hapus',    sub:'Penghapusan data apapun' },
+  { value:'edit',   label:'Edit',     sub:'Perubahan & pembaruan data' },
+  { value:'auto',   label:'Otomatis', sub:'Penyusutan, jurnal otomatis' },
+  { value:'export', label:'Export',   sub:'Export laporan & CSV' },
+  { value:'login',  label:'Sesi',     sub:'Login & logout pengguna' },
+  { value:'reset',  label:'Reset',    sub:'Reset data — berbahaya' },
+];
+
+function auditOpenBizPicker() {
+  const logs = auditGetAll();
+  const bizMap = {};
+  logs.forEach(e => {
+    if (e.companyId && !bizMap[e.companyId]) {
+      bizMap[e.companyId] = { id: e.companyId, name: e.companyName || e.companyId, count: 0 };
+    }
+    if (e.companyId) bizMap[e.companyId].count++;
+  });
+  const bizList = Object.values(bizMap);
+  if (!bizList.length) { showAlert('Belum ada log dari beberapa bisnis.'); return; }
+  const opts = [
+    { value: '__all__', label: 'Semua Bisnis', sub: 'Tampilkan semua bisnis di log' },
+    ...bizList.map(b => ({
+      value: b.id,
+      label: b.name,
+      sub: `${b.count} log`,
+    }))
+  ];
+  const btn = document.getElementById('audit-mob-biz-btn');
+  openOptPicker({
+    title: 'Filter Bisnis',
+    options: opts,
+    currentValue: _auditBizFilter === null ? '__all__' : _auditBizFilter,
+    btnEl: btn,
+    onSelect: (val, label) => {
+      const realVal = val === '__all__' ? null : val;
+      _auditBizFilter = realVal;
+      _auditPage = 0;
+      const lbl = document.getElementById('audit-mob-biz-label');
+      if (lbl) lbl.textContent = realVal === null ? 'Filter Bisnis' : label;
+      if (btn) btn.dataset.value = val;
+      renderAuditTrail();
+    }
+  });
+}
+
+function auditOpenAktPicker() {
+  const btn = document.getElementById('audit-mob-akt-btn');
+  openOptPicker({
+    title: 'Filter Aktivitas',
+    options: _AUDIT_AKT_OPTS,
+    currentValue: _auditFilter,
+    btnEl: btn,
+    onSelect: (val, label) => {
+      auditSetFilter(val);
+      const lbl = document.getElementById('audit-mob-akt-label');
+      if (lbl) lbl.textContent = val === 'all' ? 'Semua Aktivitas' : label;
+      if (btn) btn.dataset.value = val;
+    }
+  });
 }
 
 function _renderAuditKPI(logs) {
@@ -2060,6 +2129,9 @@ function initAuditPage() {
   document.getElementById('audit-f-all')?.classList.add('active');
   document.querySelectorAll('.at-role-filter-badge').forEach(b=>{b.style.opacity='1';b.style.boxShadow='';b.style.transform='';});
   const s=document.getElementById('audit-search');if(s)s.value='';
+  // Reset mobile picker button labels
+  const lbl=document.getElementById('audit-mob-akt-label');if(lbl)lbl.textContent='Semua Aktivitas';
+  const bizLbl=document.getElementById('audit-mob-biz-label');if(bizLbl)bizLbl.textContent='Filter Bisnis';
   renderAuditTrail();
 }
 
@@ -2224,18 +2296,225 @@ window.atCheckAndRunAutoPenyusutan=function(force=false){
   }
 };
 
-// ── showPage hook — init audit page + patch hapus btn ────────────────────
+// ── showPage hook — init audit page + patch hapus btn + log kalkulator ───
 const _origShowPageAudit=window.showPage;
 window.showPage=function(id){
   _origShowPageAudit?.(id);
   if(id==='audit-trail') setTimeout(()=>{initAuditPage();_patchHapusJurnalBtn();},80);
   if(id==='jurnal-umum') setTimeout(_patchHapusJurnalBtn,200);
+  const _KALK_MAP={
+    'kalk-penyusutan':'Buka Kalkulator Penyusutan',
+    'kalk-persediaan':'Buka Kalkulator Persediaan',
+    'kalk-bunga'     :'Buka Kalkulator Bunga',
+    'kalk-rasio'     :'Buka Kalkulator Rasio Keuangan',
+    'kalk-bep'       :'Buka Kalkulator BEP & Margin',
+    'kalk-ppn'       :'Buka Kalkulator PPN & PPh',
+  };
+  if(_KALK_MAP[id]) auditLog('info','kalkulator',_KALK_MAP[id],{ref:id});
 };
 
 // ── Log startup ───────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',()=>{
   setTimeout(()=>auditLog('info','system','Aplikasi dibuka',{ref:'STARTUP'}),2000);
 });
+(function() {
+  function _patchHapusJurnalConfirm() {
+    const btn = document.getElementById('hapus-jurnal-confirm-btn');
+    if (!btn || btn._auditV2) return;
+    btn._auditV2 = true;
+    btn.addEventListener('click', function() {
+      try {
+        const idx = parseInt(document.getElementById('hapus-jurnal-idx')?.value ?? -1);
+        const entry = idx >= 0 ? jurnalEntries[idx] : null;
+        if (entry) {
+          const total = (entry.lines||[]).reduce((s,l)=>s+(l.debit||0),0);
+          auditLog('delete','jurnal',
+            `Hapus jurnal ${entry.jenis||'Manual'}: ${entry.ket||entry.keterangan||'—'} — ${fmtRp(total)}`,
+            {ref: entry.no||entry.id});
+        }
+      } catch(e) {}
+    }, true);
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(_patchHapusJurnalConfirm, 600);
+    const modal = document.getElementById('modal-hapus-jurnal');
+    if (modal && window.MutationObserver) {
+      new MutationObserver(() => setTimeout(_patchHapusJurnalConfirm, 50))
+        .observe(modal, { attributes: true, attributeFilter: ['class'] });
+    }
+  });
+})();
+
+// ── 12. Kalkulator Persediaan ─────────────────────────────────────────────
+const _origHitungPersediaan2 = window.hitungPersediaan;
+window.hitungPersediaan = function() {
+  const metode = document.getElementById('inv-metode')?.value || 'fifo';
+  const mLabel = {fifo:'FIFO',lifo:'LIFO',wa:'Weighted Average',mwa:'Moving WA'};
+  let jMasuk=0, jKeluar=0;
+  document.querySelectorAll('#inv-input-body tr').forEach(tr => {
+    const jenis = tr.querySelector('input[type=hidden]')?.value;
+    const qty   = parseFloat(tr.querySelectorAll('input:not([type=hidden])')[1]?.value)||0;
+    if (jenis === 'masuk') jMasuk += qty; else if (jenis === 'keluar') jKeluar += qty;
+  });
+  _origHitungPersediaan2?.();
+  if (jMasuk||jKeluar) auditLog('info','kalkulator',
+    `Hitung Persediaan ${mLabel[metode]||metode}: masuk ${jMasuk}, keluar ${jKeluar}`,{ref:'KALK-PERSEDIAAN'});
+};
+
+// ── 13. Kartu Stock — hapus entri baris ──────────────────────────────────
+const _origAttachKSEvents2 = window._attachKartuStockEvents;
+window._attachKartuStockEvents = function(tbody) {
+  _origAttachKSEvents2?.(tbody);
+  tbody?.querySelectorAll('.ks-hapus-btn').forEach(btn => {
+    if (btn._auditKS) return;
+    btn._auditKS = true;
+    btn.addEventListener('click', function() {
+      try {
+        const idx   = parseInt(this.getAttribute('data-idx'));
+        const entry = !isNaN(idx) ? kartuStockData?.[kartuStockTab]?.[idx] : null;
+        const card  = multiKartuStock?.[activeKartuStockId];
+        const kat   = card?.kategori?.[activeKategoriId];
+        if (entry) {
+          const tipe = entry.mQty > 0 ? 'masuk' : 'keluar';
+          const qty  = entry.mQty > 0 ? entry.mQty : entry.kQty;
+          const jml  = entry.mQty > 0 ? (entry.mQty*(entry.mHarga||0)) : (entry.kJml||0);
+          auditLog('delete','persediaan',
+            `Hapus entry stock ${tipe}: ${entry.tgl||'—'} | Qty ${qty} | ${entry.ket||'—'} | ${fmtRp(jml)}`,
+            {ref:`${kat?.nama||card?.nama||'—'} (${(kartuStockTab||'').toUpperCase()})`});
+        }
+      } catch(e){}
+    }, true);
+  });
+};
+
+// ── 14. Kartu Stock — hapus semua catatan ────────────────────────────────
+const _origClearKartuStock2 = window.clearKartuStock;
+window.clearKartuStock = function() {
+  const card  = multiKartuStock?.[activeKartuStockId];
+  const kat   = card?.kategori?.[activeKategoriId];
+  const count = (kartuStockData?.[kartuStockTab]||[]).length;
+  _origClearKartuStock2?.();
+  if (count>0) auditLog('delete','persediaan',
+    `Hapus semua catatan ${(kartuStockTab||'').toUpperCase()}: ${count} baris di "${kat?.nama||card?.nama||'—'}"`,
+    {ref:`CLEAR-KS`});
+};
+
+// ── 15. Kartu Stock — hapus seluruh kartu ────────────────────────────────
+const _origDoHapusCard2 = window._doHapusCard;
+window._doHapusCard = function(cardId) {
+  const card = multiKartuStock?.[cardId];
+  const nKat = Object.keys(card?.kategori||{}).length;
+  _origDoHapusCard2?.(cardId);
+  auditLog('delete','persediaan',`Hapus kartu stock "${card?.nama||cardId}" (${nKat} kategori)`,{ref:cardId});
+};
+
+// ── 16. Kartu Stock — tambah entry baru (saveMKS) ────────────────────────
+let _ksCount = {};
+const _origSaveMKS2 = window.saveMKS;
+window.saveMKS = function(skipSync) {
+  if (!skipSync) {
+    try {
+      const metode = kartuStockTab;
+      const key    = `${activeKartuStockId}_${activeKategoriId}_${metode}`;
+      const prev   = _ksCount[key]||0;
+      const curr   = (kartuStockData?.[metode]||[]).length;
+      if (curr > prev) {
+        const entry = (kartuStockData?.[metode]||[]).slice(-1)[0];
+        const card  = multiKartuStock?.[activeKartuStockId];
+        const kat   = card?.kategori?.[activeKategoriId];
+        if (entry) {
+          const tipe = entry.mQty > 0 ? 'masuk' : 'keluar';
+          const qty  = entry.mQty > 0 ? entry.mQty : entry.kQty;
+          const jml  = entry.mQty > 0 ? (entry.mQty*(entry.mHarga||0)) : (entry.kJml||0);
+          auditLog('create','persediaan',
+            `Entry stock ${tipe}: ${entry.tgl||'—'} | Qty ${qty} | ${entry.ket||'—'} | ${fmtRp(jml)}`,
+            {ref:`${kat?.nama||card?.nama||'—'} (${(metode||'').toUpperCase()})`});
+        }
+      }
+      _ksCount[key] = curr;
+    } catch(e){}
+  }
+  _origSaveMKS2?.(skipSync);
+};
+
+// ── 17. Kalkulator Penyusutan ─────────────────────────────────────────────
+const _origHitungPenyusutan2 = window.hitungPenyusutan;
+window.hitungPenyusutan = function() {
+  const nama   = document.getElementById('dep-nama')?.value  || '—';
+  const harga  = document.getElementById('dep-harga')?.value || 0;
+  const metode = document.getElementById('dep-metode')?.value|| '—';
+  _origHitungPenyusutan2?.();
+  auditLog('info','kalkulator',
+    `Hitung Penyusutan: ${nama} | ${fmtRp(parseFloat(harga)||0)} | ${metode}`,{ref:'KALK-PENYUSUTAN'});
+};
+
+// ── 18. Kalkulator Bunga ──────────────────────────────────────────────────
+const _origHitungBunga2 = window.hitungBunga;
+window.hitungBunga = function() {
+  const pokok = document.getElementById('bunga-pokok')?.value||0;
+  const rate  = document.getElementById('bunga-rate')?.value ||0;
+  const tipe  = document.getElementById('bunga-tipe')?.value ||'—';
+  _origHitungBunga2?.();
+  auditLog('info','kalkulator',`Hitung Bunga ${tipe}: pokok ${fmtRp(parseFloat(pokok)||0)}, rate ${rate}%`,{ref:'KALK-BUNGA'});
+};
+
+// ── 19. Kalkulator Rasio ──────────────────────────────────────────────────
+const _origHitungRasio2 = window.hitungRasio;
+window.hitungRasio = function() {
+  _origHitungRasio2?.();
+  auditLog('info','kalkulator','Hitung Rasio Keuangan',{ref:'KALK-RASIO'});
+};
+
+// ── 20. Kalkulator BEP ───────────────────────────────────────────────────
+const _origHitungBEP2 = window.hitungBEP;
+window.hitungBEP = function() {
+  const fc  = document.getElementById('bep-fc')?.value ||0;
+  const ppu = document.getElementById('bep-ppu')?.value||document.getElementById('bep-price')?.value||0;
+  const vc  = document.getElementById('bep-vc')?.value ||0;
+  _origHitungBEP2?.();
+  auditLog('info','kalkulator',
+    `Hitung BEP: FC ${fmtRp(parseFloat(fc)||0)}, Harga ${fmtRp(parseFloat(ppu)||0)}, VC ${fmtRp(parseFloat(vc)||0)}`,
+    {ref:'KALK-BEP'});
+};
+
+// ── 21. Kalkulator PPN & PPh ─────────────────────────────────────────────
+const _origHitungPPN2 = window.hitungPPN;
+window.hitungPPN = function() {
+  const dasar = document.getElementById('ppn-dasar')?.value||document.getElementById('ppn-base')?.value||0;
+  const tipe  = document.getElementById('ppn-tipe')?.value||'PPN';
+  _origHitungPPN2?.();
+  auditLog('info','kalkulator',`Hitung ${tipe}: dasar ${fmtRp(parseFloat(dasar)||0)}`,{ref:'KALK-PPN'});
+};
+
+// ── 22. Jurnal Berulang — simpan & hapus ─────────────────────────────────
+const _origSimpanJurnalBerulang2 = window.simpanJurnalBerulang;
+window.simpanJurnalBerulang = function() {
+  const nama = document.getElementById('jb-nama')?.value||'—';
+  const frq  = document.getElementById('jb-frekuensi')?.value||'—';
+  _origSimpanJurnalBerulang2?.();
+  auditLog('create','jurnal',`Buat Jurnal Berulang: ${nama} (${frq})`,{ref:nama});
+};
+const _origHapusJurnalBerulang2 = window.hapusJurnalBerulang;
+window.hapusJurnalBerulang = function(id) {
+  const jb = typeof jurnalBerulangList!=='undefined' ? jurnalBerulangList?.find(j=>j.id===id) : null;
+  _origHapusJurnalBerulang2?.(id);
+  auditLog('delete','jurnal',`Hapus Jurnal Berulang: ${jb?.nama||id}`,{ref:id});
+};
+
+// ── 23. Saldo Awal — simpan ───────────────────────────────────────────────
+const _origSimpanSaldoAwal2 = window.simpanSaldoAwal;
+window.simpanSaldoAwal = function() {
+  _origSimpanSaldoAwal2?.();
+  auditLog('edit','akun','Simpan / update Saldo Awal',{ref:'SALDO-AWAL'});
+};
+
+// ── 24. Reset Semua Data ──────────────────────────────────────────────────
+const _origDoResetAll2 = window.doResetAll;
+window.doResetAll = function() {
+  const cn = (typeof currentCompany!=='undefined'&&currentCompany?.name)||'—';
+  auditLog('reset','system',`⚠️ RESET SEMUA DATA bisnis "${cn}" dieksekusi`,{ref:'RESET-ALL'});
+  _origDoResetAll2?.();
+};
 
 
 // ══════════════════════════════════════════════════════════════
