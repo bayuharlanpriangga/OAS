@@ -1900,31 +1900,8 @@ function renderAuditTrail() {
 
 // Render bar filter per bisnis — auto-generate dari log yang ada
 function _renderAuditBizBar(logs) {
-  const container = document.getElementById('audit-biz-bar');
-  if (!container) return;
-  // Kumpulkan semua bisnis unik dari log
-  const bizMap = {};
-  logs.forEach(e => {
-    if (e.companyId && !bizMap[e.companyId]) {
-      bizMap[e.companyId] = { id: e.companyId, name: e.companyName || e.companyId, count: 0 };
-    }
-    if (e.companyId) bizMap[e.companyId].count++;
-  });
-  const bizList = Object.values(bizMap);
-  // Jika hanya satu bisnis atau nol, sembunyikan bar
-  if (bizList.length <= 1) { container.style.display = 'none'; return; }
-  container.style.display = 'flex';
-  const allActive = _auditBizFilter === null;
-  container.innerHTML = `
-    <span style="font-size:11px;color:var(--muted);white-space:nowrap;align-self:center;">Filter Bisnis:</span>
-    <button onclick="auditSetBizFilter(null)" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:${allActive?'var(--accent)':'var(--surface)'};color:${allActive?'#fff':'var(--text)'};cursor:pointer;white-space:nowrap;">Semua</button>
-    ${bizList.map(b => {
-      const active = _auditBizFilter === b.id;
-      return `<button onclick="auditSetBizFilter('${b.id}')" title="${b.name}" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:${active?'var(--accent)':'var(--surface)'};color:${active?'#fff':'var(--text)'};cursor:pointer;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;">
-        <i class="ti ti-building" style="font-size:10px;vertical-align:-1px;margin-right:3px;"></i>${b.name} <span style="opacity:0.6">(${b.count})</span>
-      </button>`;
-    }).join('')}
-  `;
+  // Pill tab bisnis digantikan oleh tombol opt-picker audit-biz-btn
+  // Fungsi ini dikosongkan — logika show/hide ditangani oleh override di akhir file
 }
 
 function auditSetBizFilter(companyId) {
