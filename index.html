@@ -2652,8 +2652,8 @@
     <button class="btn btn-danger btn-sm" onclick="auditClearOld()" style="gap:5px;"><i class="ti ti-trash" style="font-size:12px;"></i> Bersihkan Log Lama</button>
   </div>
   <div id="audit-kpi" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;"></div>
-  <!-- Filter per bisnis — hanya tampil jika ada lebih dari 1 bisnis di log -->
-  <div id="audit-biz-bar" style="display:none;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:8px 10px;background:var(--surface);border:0.5px solid var(--border);border-radius:10px;"></div>
+  <!-- Filter per bisnis — hidden, dirender dari JS (desktop & mobile sama) -->
+  <div id="audit-biz-bar" style="display:none;"></div>
   <!-- Legend role — clickable filter badges -->
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
     <span style="font-size:11px;color:var(--muted);">Label role:</span>
@@ -2663,28 +2663,28 @@
     <button id="audit-role-guest"  onclick="auditToggleRoleFilter('guest')"  class="at-role-filter-badge" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(148,163,184,0.08);color:#64748b;border:1px solid rgba(148,163,184,0.15);display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s;" title="Klik untuk filter role Guest"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg> Guest</button>
     <button id="audit-role-system" onclick="auditToggleRoleFilter('system')" class="at-role-filter-badge" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.25);display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s;" title="Klik untuk filter role Sistem"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Sistem</button>
   </div>
-  <!-- Filter — Desktop: tab pills; Mobile: opt-picker buttons -->
-  <div class="at-trail-filter-bar">
-    <button class="at-trail-filter-btn active at-f-desktop" id="audit-f-all"    onclick="auditSetFilter('all')">Semua</button>
-    <button class="at-trail-filter-btn at-f-desktop" id="audit-f-create" onclick="auditSetFilter('create')" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:-1px;flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Buat</button>
-    <button class="at-trail-filter-btn at-f-desktop" id="audit-f-delete" onclick="auditSetFilter('delete')" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg> Hapus</button>
-    <button class="at-trail-filter-btn at-f-desktop" id="audit-f-edit"   onclick="auditSetFilter('edit')" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
-    <button class="at-trail-filter-btn at-f-desktop" id="audit-f-auto"   onclick="auditSetFilter('auto')" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Otomatis</button>
-    <button class="at-trail-filter-btn at-f-desktop" id="audit-f-export" onclick="auditSetFilter('export')" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Export</button>
-    <button class="at-trail-filter-btn at-f-desktop" id="audit-f-login"  onclick="auditSetFilter('login')" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Sesi</button>
-    <button class="at-trail-filter-btn at-f-desktop" id="audit-f-reset"  onclick="auditSetFilter('reset')" style="color:var(--red);display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Reset</button>
-    <!-- MOBILE: opt-picker buttons -->
-    <button id="audit-mob-biz-btn" class="opt-picker-btn at-f-mobile" onclick="auditOpenBizPicker()" style="display:none;font-size:12px;padding:6px 12px;">
-      <span class="opt-picker-label" id="audit-mob-biz-label">Filter Bisnis</span>
+  <!-- Filter bar — 3 opt-picker sejajar (desktop & mobile sama) -->
+  <div class="audit-filter-row">
+    <!-- Filter Bisnis — hidden sampai ada >1 bisnis -->
+    <button id="audit-biz-btn" class="opt-picker-btn audit-filter-pick" onclick="auditOpenBizPicker()" style="display:none;">
+      <span class="opt-picker-label" id="audit-biz-label">Semua Bisnis</span>
       <span class="opt-picker-arrow">▾</span>
     </button>
-    <button id="audit-mob-akt-btn" class="opt-picker-btn at-f-mobile" onclick="auditOpenAktPicker()" style="display:none;font-size:12px;padding:6px 12px;">
-      <span class="opt-picker-label" id="audit-mob-akt-label">Semua Aktivitas</span>
+    <!-- Filter Kategori -->
+    <button id="audit-kat-btn" class="opt-picker-btn audit-filter-pick" onclick="auditOpenKatPicker()">
+      <span class="opt-picker-label" id="audit-kat-label">Semua Kategori</span>
       <span class="opt-picker-arrow">▾</span>
     </button>
-    <div style="flex:1;"></div>
+    <!-- Filter Aktivitas -->
+    <button id="audit-akt-btn" class="opt-picker-btn audit-filter-pick" onclick="auditOpenAktPicker()">
+      <span class="opt-picker-label" id="audit-akt-label">Semua Aktivitas</span>
+      <span class="opt-picker-arrow">▾</span>
+    </button>
+  </div>
+  <!-- Search bar -->
+  <div style="margin-bottom:4px;">
     <input type="text" id="audit-search" placeholder="Cari aktivitas, nama, referensi..." oninput="renderAuditTrail()"
-      style="min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:12px;">
+      style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;">
   </div>
   </div><!-- end .audit-trail-fixed-top -->
   <div id="audit-scroll-area">

@@ -22936,8 +22936,8 @@ function _updateLockHeaderBtn() {
     }
   }
 
-  function _al(action, cat, desc, ref) {
-    if (typeof auditLog === 'function') auditLog(action, cat, desc, { ref: ref || '' });
+  function _al(action, cat, desc, ref, extraMeta) {
+    if (typeof auditLog === 'function') auditLog(action, cat, desc, { ref: ref || '', ...(extraMeta||{}) });
   }
   function _rp(n) { return typeof fmtRp === 'function' ? fmtRp(n) : 'Rp ' + (n||0).toLocaleString('id-ID'); }
   function _v(id) { return document.getElementById(id)?.value || ''; }
@@ -22968,7 +22968,8 @@ function _updateLockHeaderBtn() {
         if (pending) {
           _al('delete', 'jurnal',
             `Hapus jurnal ${pending.jenis||'Manual'}: "${pending.ket||'—'}" — ${_rp(pending.total)}`,
-            pending.no || String(pending.idx));
+            pending.no || String(pending.idx),
+            {jenis: pending.jenis || 'Manual'});
           window._auditPendingHapusJurnal = null;
         }
         if (origOnclick) return await origOnclick.call(this);
@@ -22976,43 +22977,39 @@ function _updateLockHeaderBtn() {
     }, 30);
   };
 
-  // 2. Simpan Manual
+  // 2. Simpan Manual — jenis: Manual
   _wrap('simpanManual', null, function() {
     try {
       const ket = _v('manual-ket') || _v('jm-ket') || _v('ket-manual') || '—';
-      const total = (typeof updateBalance === 'function') ? 0 : 0;
-      // Ambil total dari balance display
-      const balEl = document.getElementById('manual-balance') || document.getElementById('balance-display');
-      const t = parseFloat(balEl?.textContent?.replace(/[^0-9]/g,'')) || 0;
-      _al('create', 'jurnal', `Simpan Jurnal Manual: "${ket}"`, ket);
+      _al('create', 'jurnal', `Simpan Jurnal Manual: "${ket}"`, ket, {jenis:'Manual'});
     } catch(e) {}
   });
 
-  // 3. Simpan Kas
+  // 3. Simpan Kas — jenis: Kas
   _wrap('simpanKas', null, function() {
     try {
       const ket = _v('kas-ket') || _v('ket-kas') || '—';
       const jml = parseFloat(_v('kas-jumlah')) || 0;
       const tipe = _v('kas-tipe') || '—';
-      _al('create', 'jurnal', `Kas ${tipe}: "${ket}" — ${_rp(jml)}`, ket);
+      _al('create', 'jurnal', `Kas ${tipe}: "${ket}" — ${_rp(jml)}`, ket, {jenis:'Kas'});
     } catch(e) {}
   });
 
-  // 4. Simpan Penjualan
+  // 4. Simpan Penjualan — jenis: Penjualan
   _wrap('simpanPenjualan', null, function() {
     try {
       const inv = _v('jual-inv') || '—';
       const jml = parseFloat(_v('jual-jumlah')) || 0;
-      _al('create', 'jurnal', `Penjualan${inv !== '—' ? ' ' + inv : ''} — ${_rp(jml)}`, inv);
+      _al('create', 'jurnal', `Penjualan${inv !== '—' ? ' ' + inv : ''} — ${_rp(jml)}`, inv, {jenis:'Penjualan'});
     } catch(e) {}
   });
 
-  // 5. Simpan Pembelian
+  // 5. Simpan Pembelian — jenis: Pembelian
   _wrap('simpanPembelian', null, function() {
     try {
       const po = _v('beli-po') || '—';
       const jml = parseFloat(_v('beli-jumlah')) || 0;
-      _al('create', 'jurnal', `Pembelian${po !== '—' ? ' ' + po : ''} — ${_rp(jml)}`, po);
+      _al('create', 'jurnal', `Pembelian${po !== '—' ? ' ' + po : ''} — ${_rp(jml)}`, po, {jenis:'Pembelian'});
     } catch(e) {}
   });
 
@@ -23138,17 +23135,22 @@ function _updateLockHeaderBtn() {
     } catch(e) {}
   }, null);
 
-  // 20. Buat Jurnal Penutup
+  // 20. Buat Jurnal Penutup — dari Dashboard aksi cepat, category 'system' agar hanya muncul di semua kategori
   _wrap('buatJurnalPenutup', null, function() {
-    _al('auto', 'jurnal', 'Buat Jurnal Penutup (Closing Entries)', 'JURNAL-PENUTUP');
+    _al('auto', 'system', 'Buat Jurnal Penutup (Closing Entries)', 'JURNAL-PENUTUP');
+  });
+
+  // 20b. Cek Rekonsiliasi Kas — dari Dashboard aksi cepat, category 'system'
+  _wrap('cekRekonsiliasi', null, function() {
+    _al('info', 'system', 'Rekonsiliasi Kas — cek dari Dashboard', 'REKON-KAS');
   });
 
   // 21. Jurnal Penyesuaian
   _wrap('openJurnalPenyesuaian', null, function() {
-    _al('info', 'jurnal', 'Buka modul Jurnal Penyesuaian', 'PENYESUAIAN');
+    _al('info', 'jurnal', 'Buka modul Jurnal Penyesuaian', 'PENYESUAIAN', {jenis:'Penyesuaian'});
   });
   _wrap('deteksiPenyesuaianOtomatis', null, function() {
-    _al('auto', 'jurnal', 'Deteksi otomatis Jurnal Penyesuaian', 'AUTO-PENYESUAIAN');
+    _al('auto', 'jurnal', 'Deteksi otomatis Jurnal Penyesuaian', 'AUTO-PENYESUAIAN', {jenis:'Penyesuaian'});
   });
 
   // 22. Buat Jurnal PPh 21 & PPh 23
@@ -23509,69 +23511,382 @@ function _updateLockHeaderBtn() {
     } catch(e) {}
   });
 
+  // ── HOOKS LAPORAN — category: 'laporan', ref: page id ──────────────────
+
+  // Buku Besar — hook saat filter akun berubah
+  const _origRenderBB = window.renderBukuBesar;
+  window.renderBukuBesar = function() {
+    try {
+      const kode = document.getElementById('bb-akun-filter-val')?.value || '';
+      const nama = kode
+        ? (typeof akuns !== 'undefined' ? akuns.find(a => a.kode === kode)?.nama || kode : kode)
+        : 'Semua Akun';
+      _al('info', 'laporan', `Filter Buku Besar: ${nama}`, 'buku-besar');
+    } catch(e) {}
+    return _origRenderBB?.apply(this, arguments);
+  };
+
+  // Laporan dengan filter periode (Laba Rugi, Neraca Saldo, Neraca)
+  const _origRenderReportPeriod = window.renderReportWithPeriod;
+  window.renderReportWithPeriod = function(pageId, periodVal) {
+    try {
+      const periodLabel = {
+        'all':'Semua Periode','this-month':'Bulan Ini','last-month':'Bulan Lalu',
+        'this-quarter':'Kuartal Ini','this-year':'Tahun Ini'
+      }[periodVal] || periodVal;
+      const pageLabel = {
+        'laba-rugi':'Laba Rugi','neraca-saldo':'Neraca Saldo','neraca':'Neraca'
+      }[pageId] || pageId;
+      _al('info', 'laporan', `Filter ${pageLabel}: ${periodLabel}`, pageId);
+    } catch(e) {}
+    return _origRenderReportPeriod?.apply(this, arguments);
+  };
+
+  // Arus Kas
+  const _origRenderAK = window.renderArusKas;
+  window.renderArusKas = function() {
+    try {
+      const period = document.getElementById('ak-period')?.value
+        || document.getElementById('pe-period')?.value || 'all';
+      _al('info', 'laporan', `Lihat Arus Kas`, 'arus-kas');
+    } catch(e) {}
+    return _origRenderAK?.apply(this, arguments);
+  };
+
+  // Perubahan Ekuitas
+  const _origRenderPE = window.renderPerubahanEkuitas;
+  window.renderPerubahanEkuitas = function() {
+    try {
+      _al('info', 'laporan', 'Lihat Perubahan Ekuitas', 'perubahan-ekuitas');
+    } catch(e) {}
+    return _origRenderPE?.apply(this, arguments);
+  };
+
+  // Analitik
+  const _origRenderAnalitik = window.renderAnalitik;
+  window.renderAnalitik = function() {
+    try {
+      _al('info', 'laporan', 'Lihat Analitik', 'analitik');
+    } catch(e) {}
+    return _origRenderAnalitik?.apply(this, arguments);
+  };
+
+  // Neraca — hook renderNeraca
+  const _origRenderNeraca = window.renderNeraca;
+  window.renderNeraca = function() {
+    try {
+      _al('info', 'laporan', 'Lihat Neraca', 'neraca');
+    } catch(e) {}
+    return _origRenderNeraca?.apply(this, arguments);
+  };
+
   console.log('[OAS Audit] Hooks installed — ' + new Date().toLocaleTimeString('id-ID'));
 })();
 
-// ── Audit Filter Mobile Pickers — pakai openOptPicker() ─────────────────
-const _AUDIT_AKT_OPTS = [
-  { value:'all',    label:'Semua Aktivitas', sub:'Tampilkan semua jenis aksi' },
-  { value:'create', label:'Buat',     sub:'Tambah jurnal, akun, produk, dll' },
-  { value:'delete', label:'Hapus',    sub:'Penghapusan data apapun' },
-  { value:'edit',   label:'Edit',     sub:'Perubahan & pembaruan data' },
-  { value:'auto',   label:'Otomatis', sub:'Penyusutan, jurnal otomatis' },
-  { value:'export', label:'Export',   sub:'Export laporan & CSV' },
-  { value:'login',  label:'Sesi',     sub:'Login & logout pengguna' },
-  { value:'info',   label:'Navigasi', sub:'Buka halaman, kalkulator, AI, tutorial' },
-  { value:'reset',  label:'Reset',    sub:'Reset data — berbahaya' },
+// ══════════════════════════════════════════════════════════════════════
+// AUDIT FILTER — Kategori & Aktivitas pickers pakai openOptPicker()
+// ══════════════════════════════════════════════════════════════════════
+
+// State filter kategori (halaman/fitur dari sidebar)
+let _auditCatFilter = '__all__'; // '__all__' = semua kategori
+
+// ── Definisi opsi kategori — mirror sidebar dengan icon Tabler ─────────────
+const _AUDIT_KAT_OPTS = [
+  { value:'__all__',        label:'Semua Kategori',    sub:'Tampilkan semua halaman & fitur',       icon:'<i class="ti ti-layout-grid" style="font-size:16px;"></i>' },
+  // Utama
+  { value:'transaksi',      label:'Transaksi',         sub:'Input transaksi cepat',                 icon:'<i class="ti ti-circle-plus" style="font-size:16px;"></i>' },
+  // Jurnal — per jenis masing-masing
+  { value:'jurnal-umum',    label:'Jurnal Umum',       sub:'Entry manual & jurnal penyesuaian',     icon:'<i class="ti ti-book" style="font-size:16px;"></i>' },
+  { value:'jurnal-kas',     label:'Jurnal Kas',        sub:'Transaksi kas masuk & keluar',          icon:'<i class="ti ti-cash" style="font-size:16px;"></i>' },
+  { value:'jurnal-jual',    label:'Jurnal Penjualan',  sub:'Transaksi penjualan',                   icon:'<i class="ti ti-receipt" style="font-size:16px;"></i>' },
+  { value:'jurnal-beli',    label:'Jurnal Pembelian',  sub:'Transaksi pembelian',                   icon:'<i class="ti ti-shopping-cart" style="font-size:16px;"></i>' },
+  // Laporan — masing-masing halaman laporan
+  { value:'buku-besar',     label:'Buku Besar',        sub:'Filter akun & rekap saldo',             icon:'<i class="ti ti-books" style="font-size:16px;"></i>' },
+  { value:'neraca-saldo',   label:'Neraca Saldo',      sub:'Filter periode trial balance',          icon:'<i class="ti ti-scale" style="font-size:16px;"></i>' },
+  { value:'laba-rugi',      label:'Laba Rugi',         sub:'Filter periode income statement',       icon:'<i class="ti ti-trending-up" style="font-size:16px;"></i>' },
+  { value:'neraca',         label:'Neraca',            sub:'Filter periode balance sheet',          icon:'<i class="ti ti-building-bank" style="font-size:16px;"></i>' },
+  { value:'arus-kas',       label:'Arus Kas',          sub:'Filter periode cash flow',              icon:'<i class="ti ti-arrows-exchange" style="font-size:16px;"></i>' },
+  { value:'ekuitas',        label:'Perubahan Ekuitas', sub:'Filter periode equity statement',       icon:'<i class="ti ti-chart-area" style="font-size:16px;"></i>' },
+  { value:'analitik',       label:'Analitik',          sub:'Dashboard analitik bisnis',             icon:'<i class="ti ti-chart-bar" style="font-size:16px;"></i>' },
+  // Master
+  { value:'akun',           label:'Chart of Accounts', sub:'Tambah/edit/hapus akun',               icon:'<i class="ti ti-list" style="font-size:16px;"></i>' },
+  { value:'produk',         label:'Master Produk',     sub:'Data produk & harga',                   icon:'<i class="ti ti-package" style="font-size:16px;"></i>' },
+  { value:'aset',           label:'Aset Tetap',        sub:'Aset tetap & penyusutan',               icon:'<i class="ti ti-building-factory" style="font-size:16px;"></i>' },
+  { value:'kontak',         label:'Kontak',            sub:'Pelanggan & supplier',                  icon:'<i class="ti ti-users" style="font-size:16px;"></i>' },
+  // Persediaan
+  { value:'persediaan',     label:'Persediaan',        sub:'Kartu stock & catatan persediaan',      icon:'<i class="ti ti-package" style="font-size:16px;"></i>' },
+  // Kalkulator
+  { value:'kalkulator',     label:'Kalkulator',        sub:'Penyusutan, bunga, BEP, PPN, dll',      icon:'<i class="ti ti-calculator" style="font-size:16px;"></i>' },
+  // Fitur Baru
+  { value:'invoice',        label:'Invoice',           sub:'Buat & kelola invoice',                 icon:'<i class="ti ti-file-invoice" style="font-size:16px;"></i>' },
+  { value:'rekonsiliasi',   label:'Rekonsiliasi',      sub:'Rekonsiliasi bank',                     icon:'<i class="ti ti-git-compare" style="font-size:16px;"></i>' },
+  { value:'anggaran',       label:'Anggaran',          sub:'Target & anggaran bisnis',              icon:'<i class="ti ti-target" style="font-size:16px;"></i>' },
+  { value:'pajak',          label:'Pajak Auto',        sub:'PPh 21, PPh 23, PPN otomatis',          icon:'<i class="ti ti-receipt-tax" style="font-size:16px;"></i>' },
+  // Lainnya
+  { value:'ai',             label:'Orias AI',          sub:'Chat & aksi dari AI assistant',         icon:'<i class="ti ti-robot" style="font-size:16px;"></i>' },
+  { value:'tutorial',       label:'Tutorial',          sub:'Penggunaan fitur tutorial',             icon:'<i class="ti ti-school" style="font-size:16px;"></i>' },
+  { value:'system',         label:'Sistem',            sub:'Profil, kurs, backup, tema, reset',     icon:'<i class="ti ti-settings" style="font-size:16px;"></i>' },
 ];
 
+// Mapping: filter value → {category, jenisMatch?, refMatch?}
+// jenisMatch: filter berdasarkan meta.jenis (untuk jurnal per jenis)
+// refMatch: filter berdasarkan meta.ref atau description mengandung string
+// catMatch: filter berdasarkan e.category
+// ── Mapping kategori → fungsi filter entry ────────────────────────────────
+// Setiap kategori mendefinisikan fn(entry) → boolean
+// Sehingga setiap log (navigasi, jurnal, laporan, dll) yang relevan tetap muncul
+const _AUDIT_KAT_FN = {
+  '__all__': null,
+
+  // Transaksi — semua jurnal dari input transaksi cepat (jenis apapun) + navigasi ke halaman transaksi
+  'transaksi': e =>
+    (e.category === 'jurnal') ||
+    (e.category === 'navigasi' && e.meta?.ref === 'transaksi'),
+
+  // Jurnal per jenis — jurnal dengan jenis cocok + navigasi ke halaman jurnal tersebut
+  'jurnal-umum': e =>
+    (e.category === 'jurnal' && ['manual','penyesuaian'].includes((e.meta?.jenis||'').toLowerCase())) ||
+    (e.category === 'navigasi' && e.meta?.ref === 'jurnal-umum'),
+
+  'jurnal-kas': e =>
+    (e.category === 'jurnal' && (e.meta?.jenis||'').toLowerCase() === 'kas') ||
+    (e.category === 'navigasi' && e.meta?.ref === 'jurnal-kas'),
+
+  'jurnal-jual': e =>
+    (e.category === 'jurnal' && (e.meta?.jenis||'').toLowerCase() === 'penjualan') ||
+    (e.category === 'navigasi' && e.meta?.ref === 'jurnal-penjualan'),
+
+  'jurnal-beli': e =>
+    (e.category === 'jurnal' && (e.meta?.jenis||'').toLowerCase() === 'pembelian') ||
+    (e.category === 'navigasi' && e.meta?.ref === 'jurnal-pembelian'),
+
+  // Laporan — aktivitas filter/view di halaman laporan + navigasi ke halaman tersebut
+  'buku-besar': e =>
+    (e.category === 'laporan' && (e.meta?.ref||'').toLowerCase().includes('buku-besar')) ||
+    (e.category === 'navigasi' && e.meta?.ref === 'buku-besar'),
+
+  'neraca-saldo': e =>
+    (e.category === 'laporan' && (e.meta?.ref||'').toLowerCase().includes('neraca-saldo')) ||
+    (e.category === 'navigasi' && e.meta?.ref === 'neraca-saldo'),
+
+  'laba-rugi': e =>
+    (e.category === 'laporan' && (e.meta?.ref||'').toLowerCase().includes('laba-rugi')) ||
+    (e.category === 'navigasi' && e.meta?.ref === 'laba-rugi'),
+
+  'neraca': e =>
+    (e.category === 'laporan' && (e.meta?.ref||'').toLowerCase() === 'neraca') ||
+    (e.category === 'navigasi' && e.meta?.ref === 'neraca'),
+
+  'arus-kas': e =>
+    (e.category === 'laporan' && (e.meta?.ref||'').toLowerCase().includes('arus-kas')) ||
+    (e.category === 'navigasi' && e.meta?.ref === 'arus-kas'),
+
+  'ekuitas': e =>
+    (e.category === 'laporan' && (e.meta?.ref||'').toLowerCase().includes('ekuitas')) ||
+    (e.category === 'navigasi' && e.meta?.ref === 'perubahan-ekuitas'),
+
+  'analitik': e =>
+    (e.category === 'laporan' && (e.meta?.ref||'').toLowerCase().includes('analitik')) ||
+    (e.category === 'navigasi' && e.meta?.ref === 'analitik'),
+
+  // Master — aktivitas CRUD + navigasi ke halaman
+  'akun': e =>
+    e.category === 'akun' ||
+    (e.category === 'navigasi' && e.meta?.ref === 'akun'),
+
+  'produk': e =>
+    e.category === 'produk' ||
+    (e.category === 'navigasi' && e.meta?.ref === 'produk'),
+
+  'aset': e =>
+    e.category === 'aset' ||
+    (e.category === 'navigasi' && e.meta?.ref === 'aset-tetap'),
+
+  'kontak': e =>
+    e.category === 'kontak' ||
+    (e.category === 'navigasi' && e.meta?.ref === 'kontak'),
+
+  // Persediaan
+  'persediaan': e =>
+    e.category === 'persediaan' ||
+    (e.category === 'navigasi' && e.meta?.ref === 'kalk-persediaan'),
+
+  // Kalkulator — semua kalkulator + navigasi ke kalkulator
+  'kalkulator': e =>
+    e.category === 'kalkulator' ||
+    (e.category === 'navigasi' && (e.meta?.ref||'').startsWith('kalk-')),
+
+  // Fitur baru
+  'invoice': e =>
+    e.category === 'invoice' ||
+    (e.category === 'navigasi' && e.meta?.ref === 'invoice'),
+
+  'rekonsiliasi': e =>
+    e.category === 'rekonsiliasi' ||
+    (e.category === 'navigasi' && e.meta?.ref === 'rekonsiliasi'),
+
+  'anggaran': e =>
+    e.category === 'anggaran' ||
+    (e.category === 'navigasi' && e.meta?.ref === 'anggaran'),
+
+  'pajak': e =>
+    e.category === 'pajak' ||
+    (e.category === 'navigasi' && e.meta?.ref === 'pajak'),
+
+  // Lainnya
+  'ai': e =>
+    e.category === 'ai' ||
+    (e.category === 'navigasi' && e.meta?.ref === 'ai-assistant'),
+
+  'tutorial': e =>
+    e.category === 'tutorial' ||
+    (e.category === 'navigasi' && e.meta?.ref === 'tutorial'),
+
+  'system': e =>
+    e.category === 'system',
+  // Jurnal Penutup & Rekonsiliasi Kas tidak punya filter kategori sendiri
+  // — hanya muncul saat filter '__all__' (semua kategori)
+};
+
+// ── Filter kategori pada renderAuditTrail ─────────────────────────────────
+const _origRenderAuditTrailBase = window.renderAuditTrail;
+window.renderAuditTrail = function() {
+  if (_auditCatFilter === '__all__') {
+    return _origRenderAuditTrailBase?.apply(this, arguments);
+  }
+  const filterFn = _AUDIT_KAT_FN[_auditCatFilter];
+  if (!filterFn) return _origRenderAuditTrailBase?.apply(this, arguments);
+
+  const origGetAll = window.auditGetAll;
+  window.auditGetAll = function() {
+    const all = origGetAll ? origGetAll() : [];
+    return all.filter(e => { try { return filterFn(e); } catch(_) { return false; } });
+  };
+  _origRenderAuditTrailBase?.apply(this, arguments);
+  window.auditGetAll = origGetAll;
+};
+
+// ── Opsi aktivitas dengan icon ─────────────────────────────────────────────
+const _AUDIT_AKT_OPTS = [
+  { value:'all',    label:'Semua Aktivitas', sub:'Tampilkan semua jenis aksi',             icon:'<i class="ti ti-list" style="font-size:16px;"></i>' },
+  { value:'create', label:'Buat',            sub:'Tambah jurnal, akun, produk, dll',       icon:'<i class="ti ti-circle-plus" style="font-size:16px;"></i>' },
+  { value:'delete', label:'Hapus',           sub:'Penghapusan data apapun',                icon:'<i class="ti ti-trash" style="font-size:16px;"></i>' },
+  { value:'edit',   label:'Edit',            sub:'Perubahan & pembaruan data',             icon:'<i class="ti ti-pencil" style="font-size:16px;"></i>' },
+  { value:'auto',   label:'Otomatis',        sub:'Penyusutan, jurnal otomatis',            icon:'<i class="ti ti-bolt" style="font-size:16px;"></i>' },
+  { value:'export', label:'Export',          sub:'Export laporan & CSV',                  icon:'<i class="ti ti-upload" style="font-size:16px;"></i>' },
+  { value:'login',  label:'Sesi',            sub:'Login & logout pengguna',               icon:'<i class="ti ti-lock" style="font-size:16px;"></i>' },
+  { value:'info',   label:'Info & Filter',   sub:'Filter laporan, buka halaman, AI, dll', icon:'<i class="ti ti-info-circle" style="font-size:16px;"></i>' },
+  { value:'reset',  label:'Reset',           sub:'Reset data — berbahaya',                icon:'<i class="ti ti-alert-triangle" style="font-size:16px;color:var(--red);"></i>' },
+];
+
+// ── Picker: Filter Kategori ────────────────────────────────────────────────
+function auditOpenKatPicker() {
+  const btn = document.getElementById('audit-kat-btn');
+  openOptPicker({
+    title: 'Filter Kategori',
+    options: _AUDIT_KAT_OPTS,
+    currentValue: _auditCatFilter,
+    btnEl: btn,
+    onSelect: (val, label) => {
+      _auditCatFilter = val;
+      _auditPage = 0;
+      const lbl = document.getElementById('audit-kat-label');
+      if (lbl) lbl.textContent = val === '__all__' ? 'Semua Kategori' : label;
+      // Update active state visual
+      const katBtn = document.getElementById('audit-kat-btn');
+      if (katBtn) katBtn.classList.toggle('open', val !== '__all__');
+      renderAuditTrail();
+    }
+  });
+}
+
+// ── Picker: Filter Aktivitas ───────────────────────────────────────────────
+function auditOpenAktPicker() {
+  const btn = document.getElementById('audit-akt-btn');
+  openOptPicker({
+    title: 'Filter Aktivitas',
+    options: _AUDIT_AKT_OPTS,
+    currentValue: _auditFilter,
+    btnEl: btn,
+    onSelect: (val, label) => {
+      auditSetFilter(val);
+      const lbl = document.getElementById('audit-akt-label');
+      if (lbl) lbl.textContent = val === 'all' ? 'Semua Aktivitas' : label;
+      const aktBtn = document.getElementById('audit-akt-btn');
+      if (aktBtn) aktBtn.classList.toggle('open', val !== 'all');
+    }
+  });
+}
+
+// ── Picker: Filter Bisnis (dari biz bar) ──────────────────────────────────
 function auditOpenBizPicker() {
-  const logs = auditGetAll();
+  // Selalu ambil dari log asli (bypass cat filter)
+  const origGetAll = window.auditGetAll;
+  // Temporarily restore original to get unfiltered logs
+  const rawLogs = typeof auditGetAll === 'function'
+    ? JSON.parse(localStorage.getItem('bhp_audit_trail') || '[]')
+    : [];
   const bizMap = {};
-  logs.forEach(e => {
+  rawLogs.forEach(e => {
     if (e.companyId && !bizMap[e.companyId]) bizMap[e.companyId] = { id:e.companyId, name:e.companyName||e.companyId, count:0 };
     if (e.companyId) bizMap[e.companyId].count++;
   });
   const bizList = Object.values(bizMap);
   if (!bizList.length) { showAlert('Belum ada log dari beberapa bisnis.'); return; }
   const opts = [
-    { value:'__all__', label:'Semua Bisnis', sub:'Tampilkan semua bisnis di log' },
-    ...bizList.map(b => ({ value:b.id, label:b.name, sub:`${b.count} log` }))
+    { value:'__all__', label:'Semua Bisnis', sub:'Tampilkan semua bisnis di log', icon:'<i class="ti ti-world" style="font-size:16px;"></i>' },
+    ...bizList.map(b => ({ value:b.id, label:b.name, sub:`${b.count} log`, icon:'<i class="ti ti-building" style="font-size:16px;"></i>' }))
   ];
-  const btn = document.getElementById('audit-mob-biz-btn');
+  const btn = document.getElementById('audit-biz-btn');
   openOptPicker({
-    title:'Filter Bisnis', options:opts,
+    title: 'Filter Bisnis',
+    options: opts,
     currentValue: _auditBizFilter === null ? '__all__' : _auditBizFilter,
     btnEl: btn,
     onSelect: (val, label) => {
       const realVal = val === '__all__' ? null : val;
       _auditBizFilter = realVal; _auditPage = 0;
-      const lbl = document.getElementById('audit-mob-biz-label');
-      if (lbl) lbl.textContent = realVal === null ? 'Filter Bisnis' : label;
+      const lbl = document.getElementById('audit-biz-label');
+      if (lbl) lbl.textContent = realVal === null ? 'Semua Bisnis' : label;
+      const bizBtn = document.getElementById('audit-biz-btn');
+      if (bizBtn) bizBtn.classList.toggle('open', realVal !== null);
       renderAuditTrail();
     }
   });
 }
 
-function auditOpenAktPicker() {
-  const btn = document.getElementById('audit-mob-akt-btn');
-  openOptPicker({
-    title:'Filter Aktivitas', options:_AUDIT_AKT_OPTS,
-    currentValue: _auditFilter, btnEl: btn,
-    onSelect: (val, label) => {
-      auditSetFilter(val);
-      const lbl = document.getElementById('audit-mob-akt-label');
-      if (lbl) lbl.textContent = val === 'all' ? 'Semua Aktivitas' : label;
-    }
-  });
-}
-
-// Update _renderAuditBizBar to also control mobile biz button visibility
-const _origRenderBizBar = window._renderAuditBizBar;
-window._renderAuditBizBar = function(logs) {
-  _origRenderBizBar?.call(this, logs);
-  // Hitung bisnis unik untuk tampilkan/sembunyikan tombol mobile
-  const bizIds = new Set(logs.filter(e=>e.companyId).map(e=>e.companyId));
-  const mobBizBtn = document.getElementById('audit-mob-biz-btn');
-  if (mobBizBtn) mobBizBtn.style.display = bizIds.size > 1 ? '' : 'none';
+// ── Reset semua filter saat initAuditPage ─────────────────────────────────
+const _origInitAuditPageKat = window.initAuditPage;
+window.initAuditPage = function() {
+  _auditCatFilter = '__all__';
+  // Reset Kategori
+  const katLbl = document.getElementById('audit-kat-label');
+  if (katLbl) katLbl.textContent = 'Semua Kategori';
+  const katBtn = document.getElementById('audit-kat-btn');
+  if (katBtn) katBtn.classList.remove('open');
+  // Reset Aktivitas
+  const aktLbl = document.getElementById('audit-akt-label');
+  if (aktLbl) aktLbl.textContent = 'Semua Aktivitas';
+  const aktBtn = document.getElementById('audit-akt-btn');
+  if (aktBtn) aktBtn.classList.remove('open');
+  // Reset Bisnis
+  const bizLbl = document.getElementById('audit-biz-label');
+  if (bizLbl) bizLbl.textContent = 'Semua Bisnis';
+  const bizBtn = document.getElementById('audit-biz-btn');
+  if (bizBtn) bizBtn.classList.remove('open');
+  _origInitAuditPageKat?.apply(this, arguments);
 };
+
+// ── Show/hide tombol Filter Bisnis berdasarkan jumlah bisnis di log ────────
+const _origRenderBizBar2 = window._renderAuditBizBar;
+window._renderAuditBizBar = function(logs) {
+  // Panggil original (yang render pill tab desktop) — kini tidak perlu render apa-apa
+  _origRenderBizBar2?.call(this, logs);
+  // Hitung dari raw logs (bukan filtered)
+  const rawLogs = JSON.parse(localStorage.getItem('bhp_audit_trail') || '[]');
+  const bizIds = new Set(rawLogs.filter(e => e.companyId).map(e => e.companyId));
+  const bizBtn = document.getElementById('audit-biz-btn');
+  if (bizBtn) bizBtn.style.display = bizIds.size > 1 ? '' : 'none';
+};
+
+
