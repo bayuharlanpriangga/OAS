@@ -4643,7 +4643,7 @@
     </div>
     <div class="modal-body">
       <div style="background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--accent2);margin-bottom:16px;line-height:1.6;">
-        💡 Semua entri <b>MASUK</b> dari metode asal akan disalin ke metode tujuan, <b>diurutkan berdasarkan tanggal</b> (terlama di atas). Digabungkan dengan entri yang sudah ada di metode tujuan. Entri KELUAR dari sumber <b>tidak</b> dikonversi — akan dihitung ulang oleh metode tujuan.
+        💡 Semua entri <b>MASUK</b> dari metode asal akan disalin ke metode tujuan, <b>diurutkan berdasarkan tanggal</b> (terlama di atas). Entri KELUAR dari sumber <b>tidak</b> dikonversi — akan dihitung ulang oleh metode tujuan. Data sumber <b>tidak berubah</b> kecuali jika opsi "Hapus Data Lama" dipilih.
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -4681,18 +4681,29 @@
         <span style="font-size:24px;" id="ks-conv-preview-ke"><i class="ti ti-clipboard-list ti-inline"></i></span>
       </div>
       <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;"><i class="ti ti-settings ti-inline"></i> Opsi Konversi:</div>
-      <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);cursor:pointer;margin-bottom:8px;">
-        <input type="checkbox" id="ks-conv-merge" checked style="margin-top:2px;flex-shrink:0;">
+      <!-- RADIO GROUP: pilih salah satu -->
+      <label id="ks-opt-label-gabung" onclick="selectKsConvOpt('gabung')" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:8px;border:2px solid var(--accent);cursor:pointer;margin-bottom:6px;transition:border-color 0.15s;">
+        <div id="ks-opt-radio-gabung" style="margin-top:2px;flex-shrink:0;width:16px;height:16px;border-radius:50%;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;"><div style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></div></div>
         <div>
           <div style="font-size:13px;font-weight:600;">Gabungkan dengan data yang sudah ada</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Entri baru dari sumber digabung dengan entri yang sudah ada di tujuan, lalu diurutkan ulang berdasarkan tanggal</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Entri baru dari sumber ditambahkan ke tujuan, diurutkan ulang berdasarkan tanggal.</div>
         </div>
       </label>
-      <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);cursor:pointer;margin-bottom:8px;">
-        <input type="radio" name="ks-conv-mode" id="ks-conv-mode-replace" style="margin-top:2px;flex-shrink:0;">
+      <label id="ks-opt-label-timpa" onclick="selectKsConvOpt('timpa')" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);cursor:pointer;margin-bottom:8px;transition:border-color 0.15s;">
+        <div id="ks-opt-radio-timpa" style="margin-top:2px;flex-shrink:0;width:16px;height:16px;border-radius:50%;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center;"></div>
         <div>
           <div style="font-size:13px;font-weight:600;">Timpa (replace) data tujuan</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Hapus semua entri di metode tujuan, ganti dengan yang dikonversi dari sumber</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Hapus semua entri di metode tujuan, ganti dengan yang dikonversi dari sumber.</div>
+        </div>
+      </label>
+      <!-- DIVIDER -->
+      <div style="border-top:1px solid var(--border);margin-bottom:8px;"></div>
+      <!-- CHECKBOX INDEPENDEN: bisa dikombinasikan dengan opsi manapun di atas -->
+      <label id="ks-opt-label-hapus" onclick="toggleKsHapusLama()" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);cursor:pointer;margin-bottom:8px;transition:border-color 0.15s;">
+        <div id="ks-opt-check-hapus" style="margin-top:2px;flex-shrink:0;width:16px;height:16px;border-radius:3px;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center;background:transparent;transition:all 0.15s;"></div>
+        <div>
+          <div style="font-size:13px;font-weight:600;">Hapus Data Lama setelah konversi <span style="color:var(--accent3);font-size:11px;">(⚠ Tidak dapat dibatalkan)</span></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Setelah konversi selesai, semua entri di metode <b>sumber</b> akan dihapus. Bisa dikombinasikan dengan Gabungkan maupun Timpa.</div>
         </div>
       </label>
       <div id="ks-conv-preview-rows" style="margin-top:12px;max-height:180px;overflow-y:auto;background:var(--surface2);border-radius:8px;border:1px solid var(--border);padding:10px;font-size:11px;color:var(--muted);display:none;"></div>

@@ -12928,7 +12928,7 @@ function renderKartuStockSelector() {
       <button onclick="openModalTambahKategori('${activeKartuStockId}')" class="btn btn-sm" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:var(--accent2);font-size:11px;white-space:nowrap;">+ Kategori</button>
       <button onclick="openModalKelolaKategoriCard('${activeKartuStockId}')" class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:11px;"><i class="ti ti-settings ti-inline"></i> Kelola</button>
       <button onclick="openKonversiKartuStock()" class="btn btn-sm" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.3);color:var(--accent2);font-size:12px;white-space:nowrap;">↔ Konversi Metode</button>
-      <button id="ks-clear-btn" class="btn btn-danger btn-sm" style="font-size:12px;white-space:nowrap;"><i class="ti ti-trash ti-btn"></i> Hapus Semua Catatan</button>
+      <button onclick="clearKartuStock()" class="btn btn-danger btn-sm" style="font-size:12px;white-space:nowrap;"><i class="ti ti-trash ti-btn"></i> Hapus Semua Catatan</button>
       <button id="ks-lock-header-btn" onclick="toggleKartuStockLock('${activeKartuStockId}')" title="${multiKartuStock[activeKartuStockId]?.lockedFromTrx ? 'Dikunci dari transaksi — klik untuk buka' : 'Klik untuk kunci dari picker transaksi'}" style="padding:5px 8px;${multiKartuStock[activeKartuStockId]?.lockedFromTrx ? 'background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:var(--red);' : 'background:var(--surface2);border:1px solid var(--border);color:var(--muted);'}" class="btn btn-sm">${multiKartuStock[activeKartuStockId]?.lockedFromTrx ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>'}</button>
     </div>
   `;
@@ -12986,6 +12986,7 @@ function _renderExtraKsCards() {
             <span class="opt-picker-label" id="ks-extra-metode-label-${card.id}">${metodeLabel[cardMetode]||cardMetode}</span>
             <span class="opt-picker-arrow">▾</span>
           </button>
+          <input type="hidden" id="ks-extra-metode-val-${card.id}" value="${cardMetode}">
         </div>
       </div>
       <div style="padding:12px 16px;">
@@ -13130,7 +13131,16 @@ function openKsExtraKatPicker(cardId) {
     title: 'Pilih Kategori — ' + card.nama,
     options: kats.map(kat => { const s=getKsSaldoKat(kat); return {value:kat.id, label:kat.nama, sub:`Stok: ${s.totalQty} · HPP: ${fmtRp(s.hppNext)}`}; }),
     currentValue: activeKategoriId,
-    onSelect: (katId) => { switchActiveKS(cardId, katId); }
+    onSelect: (katId) => {
+      // Track kategori aktif per extra card untuk clearExtraCard
+      if (!window._ksExtraKatId) window._ksExtraKatId = {};
+      window._ksExtraKatId[cardId] = katId;
+      // Update label kategori di extra card
+      const selLbl = document.getElementById('ks-extra-sel-label-' + cardId);
+      const selKat = card.kategori?.[katId];
+      if (selLbl && selKat) selLbl.textContent = selKat.nama;
+      switchActiveKS(cardId, katId);
+    }
   });
 }
 
@@ -13193,22 +13203,28 @@ function _doHapusKategori(cardId, katId) {
 
 function clearExtraCard(cardId) {
   const card = multiKartuStock[cardId]; if(!card) return;
-  const hasAny = Object.values(card.kategori||{}).some(kat =>
-    Object.values(kat.data||{}).some(arr => arr && arr.length > 0)
-  );
-  if (!hasAny) {
-    showAlert('<i class="ti ti-info-circle" style="color:var(--accent2);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tidak ada catatan yang terdeteksi di kartu stock ini.');
+  // Baca metode yang sedang aktif di extra card ini
+  const hiddenVal = document.getElementById('ks-extra-metode-val-' + cardId);
+  const activeMetode = hiddenVal?.value || 'fifo';
+  // Baca kategori aktif extra card (ambil dari ks-extra-sel-label atau kategori pertama)
+  // Kategori aktif extra card ditrack via _ksExtraKatId
+  const extraKatId = window._ksExtraKatId?.[cardId];
+  const katList = Object.values(card.kategori || {});
+  const activeKat = (extraKatId && card.kategori?.[extraKatId]) ? card.kategori[extraKatId] : katList[0];
+
+  if (!activeKat || !(activeKat.data?.[activeMetode]?.length > 0)) {
+    showAlert('<i class="ti ti-info-circle" style="color:var(--accent2);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tidak ada catatan metode ' + activeMetode.toUpperCase() + ' di kategori ini.');
     return;
   }
+  const metodeLabel = {fifo:'FIFO',lifo:'LIFO',wa:'Weighted Average',mwa:'Moving Average'};
   _ksConfirm(
-    'Hapus semua catatan di kartu stock "' + card.nama + '"?',
+    'Hapus semua catatan metode ' + (metodeLabel[activeMetode]||activeMetode.toUpperCase()) + ' di "' + (activeKat.nama||card.nama) + '"?',
     '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
     () => {
-      Object.values(card.kategori||{}).forEach(kat => { kat.data = _ksDefaultData(); });
+      if (activeKat.data) activeKat.data[activeMetode] = [];
       saveMKS();
-      renderKartuStockSelector();
-      renderKartuStock();
-      showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Semua catatan di "' + card.nama + '" berhasil dihapus.');
+      _renderExtraKsCards();
+      showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Catatan metode ' + (metodeLabel[activeMetode]||activeMetode.toUpperCase()) + ' di "' + (activeKat.nama||card.nama) + '" berhasil dihapus.');
     }
   );
 }
@@ -13318,6 +13334,9 @@ function openKsExtraMetodePicker(cardId) {
     onSelect: (val, label) => {
       const lbl = document.getElementById('ks-extra-metode-label-' + cardId);
       if(lbl) lbl.textContent = label;
+      // Simpan metode aktif ke hidden input
+      const hiddenVal = document.getElementById('ks-extra-metode-val-' + cardId);
+      if(hiddenVal) hiddenVal.value = val;
       // Switch ke card ini dan render tabelnya
       switchActiveKS(cardId);
       const tabMap = {fifo:'FIFO',lifo:'LIFO',wa:'Weighted Average (Rata-rata Tertimbang)',mwa:'Moving Average (Rata-rata Bergerak)'};
@@ -13562,6 +13581,8 @@ function _doSelectKartuForInput(katId, onSelectKat) {
 
 let _ksConvDari = 'fifo';
 let _ksConvKe   = 'wa';
+let _ksConvOpt  = 'gabung'; // 'gabung' | 'timpa'
+let _ksHapusLama = false;          // checkbox independen: hapus data sumber setelah konversi
 const _ksLabel  = { fifo:'FIFO', lifo:'LIFO', wa:'Weighted Avg', mwa:'Moving WA' };
 const _ksIcon   = { fifo:'🔼', lifo:'🔽', wa:'<i class="ti ti-scale ti-inline"></i>', mwa:'<i class="ti ti-chart-bar ti-inline"></i>' };
 
@@ -13577,6 +13598,11 @@ function openKonversiKartuStock() {
   document.querySelectorAll('.ks-conv-ke').forEach(b => {
     b.classList.toggle('active', b.dataset.val === _ksConvKe);
   });
+  // Reset opsi ke default
+  _ksConvOpt = 'gabung';
+  _ksHapusLama = false;
+  selectKsConvOpt('gabung');
+  _updateKsHapusLamaUI();
   updateKsConvPreview();
   document.getElementById('ks-conv-preview-rows').style.display = 'none';
   openModal('modal-konversi-ks');
@@ -13611,6 +13637,49 @@ function selectKsConvKe(val, el) {
   }
   updateKsConvPreview();
   document.getElementById('ks-conv-preview-rows').style.display = 'none';
+}
+
+function selectKsConvOpt(val) {
+  // val: 'gabung' | 'timpa' — radio group, pilih salah satu
+  _ksConvOpt = val;
+  const opts = ['gabung', 'timpa'];
+  opts.forEach(o => {
+    const lbl   = document.getElementById('ks-opt-label-' + o);
+    const radio = document.getElementById('ks-opt-radio-' + o);
+    if (!lbl || !radio) return;
+    if (o === val) {
+      lbl.style.border   = '2px solid var(--accent)';
+      radio.style.border = '2px solid var(--accent)';
+      radio.innerHTML    = '<div style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></div>';
+    } else {
+      lbl.style.border   = '1px solid var(--border)';
+      radio.style.border = '2px solid var(--muted)';
+      radio.innerHTML    = '';
+    }
+  });
+}
+
+function toggleKsHapusLama() {
+  // Checkbox independen — bisa aktif bersamaan dengan gabung atau timpa
+  _ksHapusLama = !_ksHapusLama;
+  _updateKsHapusLamaUI();
+}
+
+function _updateKsHapusLamaUI() {
+  const lbl   = document.getElementById('ks-opt-label-hapus');
+  const check = document.getElementById('ks-opt-check-hapus');
+  if (!lbl || !check) return;
+  if (_ksHapusLama) {
+    lbl.style.border   = '2px solid var(--accent3)';
+    check.style.border = '2px solid var(--accent3)';
+    check.style.background = 'var(--accent3)';
+    check.innerHTML    = '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,6 5,9 10,3"/></svg>';
+  } else {
+    lbl.style.border   = '1px solid var(--border)';
+    check.style.border = '2px solid var(--muted)';
+    check.style.background = 'transparent';
+    check.innerHTML    = '';
+  }
 }
 
 function updateKsConvPreview() {
@@ -13707,9 +13776,8 @@ function previewKonversiKS() {
     showAlert(`<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tidak ada entri masuk di kartu stock ${_ksLabel[_ksConvDari]}`);
     return;
   }
-  const merge  = document.getElementById('ks-conv-merge')?.checked !== false &&
-                 !document.getElementById('ks-conv-mode-replace')?.checked;
-  const merged = merge ? _buildMergedMasuk(srcEntries, _ksConvKe) : srcEntries.sort((a,b)=>new Date(a.tgl)-new Date(b.tgl));
+  const merge  = _ksConvOpt === 'gabung'; // radio: gabung atau timpa
+  const merged = merge ? _buildMergedMasuk(srcEntries, _ksConvKe) : srcEntries.slice().sort((a,b)=>new Date(a.tgl)-new Date(b.tgl));
 
   const el = document.getElementById('ks-conv-preview-rows');
   el.style.display = 'block';
@@ -13737,8 +13805,9 @@ function eksekusiKonversiKS() {
     return;
   }
 
-  const replace = document.getElementById('ks-conv-mode-replace')?.checked;
-  const merge   = !replace;
+  const merge        = _ksConvOpt === 'gabung'; // radio group
+  const replace      = _ksConvOpt === 'timpa';  // radio group
+  const deleteSource = _ksHapusLama;             // checkbox independen
 
   showOpSpinner(`Mengkonversi ${_ksLabel[_ksConvDari]} → ${_ksLabel[_ksConvKe]}...`, 'Mengurutkan & menghitung ulang');
 
@@ -13748,13 +13817,19 @@ function eksekusiKonversiKS() {
       if (merge) {
         mergedMasuk = _buildMergedMasuk(srcEntries, _ksConvKe);
       } else {
-        // Replace: hanya dari sumber, sort tanggal
-        mergedMasuk = [...srcEntries].sort((a,b) => new Date(a.tgl)-new Date(b.tgl));
+        // Timpa/Hapus: hanya dari sumber, sort tanggal
+        mergedMasuk = srcEntries.slice().sort((a,b) => new Date(a.tgl)-new Date(b.tgl));
       }
 
       // Rebuild kartu tujuan dari entri yang sudah diurutkan
       const newData = _rekalkulasiKartuStock(mergedMasuk, _ksConvKe);
       kartuStockData[_ksConvKe] = newData;
+
+      // Hapus data sumber jika opsi 'hapus'
+      if (deleteSource) {
+        kartuStockData[_ksConvDari] = [];
+      }
+      // Catatan: jika gabung atau timpa, data sumber TIDAK diubah sama sekali
 
       // Switch ke tab tujuan
       closeModal('modal-konversi-ks');
@@ -13765,10 +13840,10 @@ function eksekusiKonversiKS() {
       saveKartuStockToCloud();
       hideOpSpinner();
 
-      const info = merge
-        ? `${srcEntries.length} entri dari ${_ksLabel[_ksConvDari]} digabung`
-        : `${srcEntries.length} entri dari ${_ksLabel[_ksConvDari]} dipindahkan`;
-      showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Konversi berhasil! ${info} → ${_ksLabel[_ksConvKe]}. Total: ${newData.length} entri, diurutkan berdasarkan tanggal.`);
+      const modeStr  = merge ? 'digabung ke' : 'timpa ke';
+      const hapusStr = deleteSource ? ' · <b>Data sumber dihapus</b>' : '';
+      const infoOpt  = `${srcEntries.length} entri ${_ksLabel[_ksConvDari]} ${modeStr} ${_ksLabel[_ksConvKe]}${hapusStr}`;
+      showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Konversi berhasil! ${infoOpt} → ${_ksLabel[_ksConvKe]}. Total: ${newData.length} entri, diurutkan berdasarkan tanggal.`);
 
       // Scroll ke kartu stock
       setTimeout(() => {
@@ -13790,11 +13865,26 @@ function switchKartuStockTab(tab, el) {
     b.style.border = '1px solid var(--border)';
     b.style.color = 'var(--muted)';
   });
-  el.style.background = 'rgba(74,222,128,0.1)';
-  el.style.border = '1px solid var(--accent)';
-  el.style.color = 'var(--accent)';
+  if (el && el.style) {
+    el.style.background = 'rgba(74,222,128,0.1)';
+    el.style.border = '1px solid var(--accent)';
+    el.style.color = 'var(--accent)';
+  }
   const lbl = {fifo:'FIFO',lifo:'LIFO',wa:'Weighted Average',mwa:'Moving Weighted Avg'};
-  document.getElementById('ks-active-tab-label').textContent = 'Metode: ' + (lbl[tab]||tab);
+  const lblFull = {
+    fifo:'FIFO (First In First Out)',
+    lifo:'LIFO (Last In First Out)',
+    wa:'Weighted Average (Rata-rata Tertimbang)',
+    mwa:'Moving Average (Rata-rata Bergerak)'
+  };
+  // Sync label di header tabel bawah
+  const activeTabLbl = document.getElementById('ks-active-tab-label');
+  if (activeTabLbl) activeTabLbl.textContent = 'Metode: ' + (lbl[tab]||tab);
+  // Sync label di picker kanan atas (ks-metode-picker-label) — element statis di index.html
+  const pickerLbl = document.getElementById('ks-metode-picker-label');
+  if (pickerLbl) pickerLbl.textContent = lblFull[tab] || (lbl[tab]||tab);
+  const pickerCur = document.getElementById('ks-metode-current');
+  if (pickerCur) pickerCur.value = tab;
   renderKartuStock();
 }
 
@@ -16937,8 +17027,7 @@ function startTutorial() { showPage('tutorial'); }
   ['py-tgl'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
 
   // === Kartu Stock button wiring ===
-  var clearBtn = document.getElementById('ks-clear-btn');
-  if(clearBtn) clearBtn.addEventListener('click', clearKartuStock);
+  // clearKartuStock dipasang langsung via onclick di renderKartuStock (tombol di-render dinamis)
 
   var jurnalClose = document.getElementById('ks-jurnal-popup-close');
   if(jurnalClose) jurnalClose.addEventListener('click', function(){ document.getElementById('ks-jurnal-popup').style.display='none'; });
@@ -21608,7 +21697,7 @@ function getKsSaldo(ks, _depth) {
   // 1. Kategori: { data:{fifo,lifo,wa,mwa} }
   // 2. Card lama (legacy): { data:{fifo,lifo,wa,mwa} }
   // 3. Card baru: { kategori:{} } → aggregate semua kategori
-  const _empty = { metode:'fifo', totalQty:0, totalNilai:0, hppRata:0, hppNext:0, layers:[] };
+  const _empty = { metode:'fifo', totalQty:0, totalNilai:0, hppRata:0, hppNext:0, layers:[], allMetodeWithSaldo:[] };
   if (!ks) return _empty;
   if (ks.kategori && !ks.data) {
     // Card baru — aggregate semua kategori TANPA rekursi (inline loop)
@@ -21616,8 +21705,17 @@ function getKsSaldo(ks, _depth) {
     Object.values(ks.kategori).forEach(kat => {
       if (!kat || !kat.data || typeof kat.data !== 'object') return;
       const metodeArr = ['fifo','lifo','wa','mwa'];
-      let bestM = 'fifo', bestLen = 0;
-      metodeArr.forEach(m => { const l=(kat.data[m]||[]).length; if(l>bestLen){bestLen=l;bestM=m;} });
+      // Pilih metode yang punya saldo aktif (qty>0), fallback ke terpanjang
+      let bestM = 'fifo', bestLen = 0, bestQty = 0;
+      metodeArr.forEach(m => {
+        const rows = kat.data[m] || [];
+        if (!rows.length) return;
+        const last = rows[rows.length-1];
+        const saldoQty = (last.saldoLayers||[]).filter(l=>l.qty>0).reduce((s,l)=>s+l.qty,0);
+        if (saldoQty > bestQty || (saldoQty === bestQty && rows.length > bestLen)) {
+          bestQty = saldoQty; bestLen = rows.length; bestM = m;
+        }
+      });
       const rows = kat.data[bestM] || [];
       if (!rows.length) return;
       const last = rows[rows.length-1];
@@ -21626,20 +21724,47 @@ function getKsSaldo(ks, _depth) {
       tNilai += layers.reduce((s,l)=>s+l.qty*l.harga,0);
     });
     const hppRata = tQty > 0 ? tNilai / tQty : 0;
-    return { metode:'fifo', totalQty:tQty, totalNilai:tNilai, hppRata, hppNext:hppRata, layers:[] };
+    return { metode:'fifo', totalQty:tQty, totalNilai:tNilai, hppRata, hppNext:hppRata, layers:[], allMetodeWithSaldo:[] };
   }
 
   const data = ks.data || {};
   const metodeArr = ['fifo','lifo','wa','mwa'];
-  let metode = 'fifo';
-  let maxLen  = 0;
+
+  // Kumpulkan semua metode yang punya saldo aktif (qty > 0)
+  const allMetodeWithSaldo = [];
   metodeArr.forEach(m => {
-    const len = (data[m]||[]).length;
-    if(len > maxLen) { maxLen = len; metode = m; }
+    const rows = data[m] || [];
+    if (!rows.length) return;
+    const last = rows[rows.length-1];
+    const layers = (last.saldoLayers||[]).filter(l=>l.qty>0);
+    const qty = layers.reduce((s,l)=>s+l.qty,0);
+    if (qty > 0) allMetodeWithSaldo.push(m);
   });
 
+  // Pilih metode utama: yang punya saldo aktif terbesar. Jika tidak ada, pakai yang entri terpanjang.
+  let metode = 'fifo';
+  let maxQty = 0, maxLen = 0;
+  metodeArr.forEach(m => {
+    const rows = data[m] || [];
+    if (!rows.length) return;
+    const last = rows[rows.length-1];
+    const layers = (last.saldoLayers||[]).filter(l=>l.qty>0);
+    const qty = layers.reduce((s,l)=>s+l.qty,0);
+    if (qty > maxQty || (qty === maxQty && rows.length > maxLen)) {
+      maxQty = qty; maxLen = rows.length; metode = m;
+    }
+  });
+  // Fallback: jika semua saldo 0, pakai metode entri terpanjang
+  if (maxQty === 0) {
+    maxLen = 0;
+    metodeArr.forEach(m => {
+      const len = (data[m]||[]).length;
+      if (len > maxLen) { maxLen = len; metode = m; }
+    });
+  }
+
   const rows = (data[metode]||[]);
-  if(!rows.length) return { metode, totalQty:0, totalNilai:0, hppRata:0, hppNext:0, layers:[] };
+  if(!rows.length) return { metode, totalQty:0, totalNilai:0, hppRata:0, hppNext:0, layers:[], allMetodeWithSaldo };
 
   const lastRow = rows[rows.length - 1];
   const layers  = (lastRow.saldoLayers || []).filter(l => l.qty > 0);
@@ -21651,7 +21776,7 @@ function getKsSaldo(ks, _depth) {
   if(metode === 'fifo' && layers.length > 0) hppNext = layers[0].harga;
   else if(metode === 'lifo' && layers.length > 0) hppNext = layers[layers.length - 1].harga;
 
-  return { metode, totalQty, totalNilai, hppRata, hppNext, layers };
+  return { metode, totalQty, totalNilai, hppRata, hppNext, layers, allMetodeWithSaldo };
 }
 
 /**
@@ -21909,7 +22034,21 @@ function renderProduk() {
     const akunPendNm = akuns.find(a=>a.kode===akunPend)?.nama || akunPend;
 
     const stokColor  = saldo.totalQty <= 0 ? 'var(--red)' : saldo.totalQty <= 5 ? 'var(--accent3)' : 'var(--accent)';
-    const badge      = metodeBadge[saldo.metode] || '';
+
+    // Badge metode: tampilkan semua metode yang punya saldo aktif (multi-konversi tanpa hapus)
+    const activeMethods = saldo.allMetodeWithSaldo && saldo.allMetodeWithSaldo.length > 0
+      ? saldo.allMetodeWithSaldo
+      : [saldo.metode];
+    const badgeHtml = activeMethods.map(m => {
+      const bs = metodeBadge[m] || '';
+      const lbl = metodeLabel[m] || m;
+      return `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;${bs};white-space:nowrap;">${lbl}</span>`;
+    }).join('<span style="color:var(--muted);font-size:9px;margin:0 2px;">+</span>');
+
+    // Peringatan multi-metode
+    const multiMetodeWarn = activeMethods.length > 1
+      ? `<div style="font-size:9px;color:var(--accent3);margin-top:3px;"><i class="ti ti-alert-triangle" style="font-size:9px;vertical-align:-1px;"></i> ${activeMethods.length} metode aktif</div>`
+      : '';
 
     // Layer detail (hanya FIFO)
     let layerDetail = '';
@@ -21942,7 +22081,7 @@ function renderProduk() {
       </td>
       <td style="font-size:12px;color:var(--muted);">${ks.satuan||'unit'}</td>
       <td>
-        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;${badge}">${metodeLabel[saldo.metode]||saldo.metode}</span>
+        ${badgeHtml}${multiMetodeWarn}
       </td>
       <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${stokColor};">
         ${saldo.totalQty.toLocaleString('id-ID')} <span style="font-size:10px;font-weight:400;color:var(--muted);">${ks.satuan||'unit'}</span>
