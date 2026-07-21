@@ -678,7 +678,7 @@
         <!-- Baris 3: Produk + Qty -->
         <div class="form-row" id="beli-produk-row">
           <div class="form-group">
-            <label>Produk</label>
+            <label id="beli-produk-label-text">Produk</label>
             <input type="hidden" id="beli-produk-id" value="">
             <button class="opt-picker-btn" type="button" id="beli-produk-btn" onclick="openBeliProdukPicker()">
               <span class="opt-picker-label" id="beli-produk-label" style="color:var(--muted);">Pilih produk...</span>
@@ -691,9 +691,23 @@
           </div>
         </div>
 
+        <!-- Baris 3b: Bahan Baku (khusus produksi Barang Jadi) -->
+        <div class="form-row full" id="beli-bahanbaku-wrap" style="display:none;">
+          <div class="form-group">
+            <label>
+              Bahan Baku yang Digunakan
+            </label>
+            <div id="beli-bahanbaku-list"></div>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="addBeliBahanBakuRow()" style="margin-top:4px;">
+              <i class="ti ti-plus ti-btn"></i> Tambah Bahan Baku
+            </button>
+            <div id="beli-bahanbaku-total-hint" style="display:none;font-size:11.5px;color:var(--accent);margin-top:8px;padding:8px 10px;background:rgba(74,222,128,0.06);border-radius:6px;"></div>
+          </div>
+        </div>
+
         <!-- Baris 4: Harga/Unit + Total hint -->
         <div class="form-row">
-          <div class="form-group">
+          <div class="form-group" id="beli-harga-group">
             <label id="beli-jumlah-label">Harga per Unit (Rp)</label>
             <input type="number" id="beli-jumlah" placeholder="0" inputmode="numeric"
               onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)" oninput="onBeliJumlahChange()">
@@ -2783,6 +2797,17 @@
             <span class="opt-picker-label">Pilih Akun...</span>
             <span class="opt-picker-arrow">▾</span>
           </button>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Akun Persediaan (dikredit saat barang keluar)</label>
+          <input type="hidden" id="produk-akun-pers" value="1301">
+          <button class="opt-picker-btn" type="button" id="produk-akun-pers-btn" onclick="openSimplePicker('produk-akun-pers','produk-akun-pers-btn','persediaan')">
+            <span class="opt-picker-label">Pilih Akun...</span>
+            <span class="opt-picker-arrow">▾</span>
+          </button>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Pilih akun persediaan aset yang sesuai — mis. <b>1304 Persediaan Barang Jadi</b> untuk produk hasil produksi, bukan selalu 1301.</div>
         </div>
       </div>
       <div style="font-size:11px;color:var(--muted);background:rgba(34,211,238,0.06);border:1px solid rgba(34,211,238,0.15);border-radius:8px;padding:9px 12px;">

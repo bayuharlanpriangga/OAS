@@ -91,12 +91,14 @@ let akuns = [
   {kode:'4102',nama:'Penjualan Jasa',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
   {kode:'4105',nama:'Penjualan Produk Manufaktur',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
   {kode:'4106',nama:'Pendapatan Properti / Sewa',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
+  {kode:'4107',nama:'Penjualan Bahan Baku',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
   {kode:'4103',nama:'Retur & Potongan Penjualan',tipe:'Pendapatan',kat:'Kontra',normal:'D'},
   {kode:'4104',nama:'Diskon Penjualan',tipe:'Pendapatan',kat:'Kontra',normal:'D'},
   {kode:'4201',nama:'Pendapatan Komisi',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
   {kode:'4202',nama:'Pendapatan Sewa',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
   {kode:'4203',nama:'Pendapatan Bunga',tipe:'Pendapatan',kat:'Non-Operasional',normal:'K'},
   {kode:'4204',nama:'Pendapatan Dividen',tipe:'Pendapatan',kat:'Non-Operasional',normal:'K'},
+  {kode:'4205',nama:'Pendapatan Non-Operasional Lainnya',tipe:'Pendapatan',kat:'Non-Operasional',normal:'K'},
   {kode:'4301',nama:'Keuntungan Penjualan Aset',tipe:'Pendapatan',kat:'Non-Operasional',normal:'K'},
   // ═══════ HPP ═══════
   {kode:'5101',nama:'HPP - Harga Pokok Penjualan',tipe:'HPP',kat:'HPP',normal:'D'},
@@ -180,12 +182,8 @@ function seedData() {
   ]});
 }
 
-function addJurnal(entry) {
-  entry.no = 'JRN-' + String(jurnalCounter++).padStart(3,'0');
-  jurnalEntries.push(entry);
-  // Mark data as changed for auto-save (check fn exists to avoid init-time errors)
-  if(typeof markDirty === 'function') markDirty();
-}
+// addJurnal() versi lengkap ada di bawah (~baris 19546) — sudah termasuk
+// sync ke Supabase + audit log. Duplikat lama di sini dihapus.
 
 // FORMAT
 function fmtRp(n) {
@@ -369,7 +367,19 @@ let _simplePickerFilter = null;
 const PICKER_FILTERS = {
   'kas':  a => !['1101','1102','1103','1104'].includes(a.kode),
   'beli': a => ['Beban','Aset','HPP'].includes(a.tipe),
+  'persediaan': a => a.tipe === 'Aset' && (a.nama.toLowerCase().includes('persediaan') || a.kode.startsWith('13')),
 };
+
+// Tebak akun persediaan default berdasarkan nama produk/kartu — hanya dipakai
+// sebagai saran awal saat field akunPers belum pernah diset user. User tetap
+// bisa mengganti manual lewat picker "Akun Persediaan" di Master Produk.
+function guessAkunPersediaanDefault(namaGabungan) {
+  const n = (namaGabungan || '').toLowerCase();
+  if (n.includes('barang jadi') || n.includes('finished')) return '1304';
+  if (n.includes('dalam proses') || n.includes('wip')) return '1303';
+  if (n.includes('bahan baku') || n.includes('raw material')) return '1302';
+  return '1301';
+}
 
 function openSimplePicker(hiddenInputId, btnId, mode) {
   _simplePickerHiddenId = hiddenInputId;
@@ -512,7 +522,7 @@ function getAkunPendapatanDefault() {
   const tipe = currentCompany?.type || currentCompany?.tipe || '';
   if (tipe === 'jasa') return { kode: '4102', nama: 'Penjualan Jasa' };
   if (tipe === 'dagang') return { kode: '4101', nama: 'Penjualan Barang' };
-  if (tipe === 'properti') return { kode: '4103', nama: 'Pendapatan Sewa' };
+  if (tipe === 'properti') return { kode: '4106', nama: 'Pendapatan Properti / Sewa' };
   if (tipe === 'manufaktur') return { kode: '4101', nama: 'Penjualan Barang' };
   return null; // umum = user pilih sendiri
 }
@@ -526,9 +536,11 @@ const _jualAkunOptions = [
     icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>` },
   { value: '4106', label: 'Properti',         sub: 'Akun 4106 · Pendapatan Properti / Sewa',
     icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` },
-  { value: '4103', label: 'Pendapatan Sewa',  sub: 'Akun 4103 · Pendapatan Lain-lain',
+  { value: '4107', label: 'Bahan Baku',        sub: 'Akun 4107 · Penjualan Bahan Baku',
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>` },
+  { value: '4202', label: 'Pendapatan Sewa',  sub: 'Akun 4202 · Pendapatan Sewa',
     icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` },
-  { value: '4104', label: 'Pendapatan Lainnya', sub: 'Akun 4104 · Non-Operasional',
+  { value: '4205', label: 'Pendapatan Lainnya', sub: 'Akun 4205 · Pendapatan Non-Operasional Lainnya',
     icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>` },
 ];
 
@@ -594,6 +606,26 @@ function previewJual() {
 
 // ═══ TRANSAKSI PEMBELIAN — FUNGSI PENDUKUNG ═══════════════════════
 
+// ── Mode Produksi Barang Jadi: daftar bahan baku multi-pilih ──
+let _beliBahanBakuRows = []; // [{rowId, katId, katLabel, qty}]
+let _beliBahanBakuRowSeq = 1;
+
+/** Toggle antara mode pembelian normal vs mode produksi Barang Jadi (multi bahan baku) */
+function _toggleBeliBarangJadiMode(isBarangJadi) {
+  const bbWrap       = document.getElementById('beli-bahanbaku-wrap');
+  const hargaGroup   = document.getElementById('beli-harga-group');
+  const produkLblTxt = document.getElementById('beli-produk-label-text');
+  if(bbWrap)     bbWrap.style.display     = isBarangJadi ? '' : 'none';
+  if(hargaGroup) hargaGroup.style.display = isBarangJadi ? 'none' : '';
+  if(produkLblTxt) produkLblTxt.textContent = isBarangJadi ? 'Produk Barang Jadi (Hasil Produksi)' : 'Produk';
+  if(isBarangJadi) {
+    if(!_beliBahanBakuRows.length) addBeliBahanBakuRow();
+    else renderBeliBahanBakuList();
+  } else {
+    _beliBahanBakuRows = [];
+  }
+}
+
 /** Picker jenis pembelian (akun target) */
 function openBeliAkunPicker() {
   openOptPicker({
@@ -627,8 +659,131 @@ function openBeliAkunPicker() {
         const jLabel = document.getElementById('beli-jumlah-label');
         if(jLabel) jLabel.textContent = 'Harga per Unit (Rp)';
       }
+      // Jenis Pembelian = Barang Jadi (1304) → mode produksi multi bahan baku
+      _toggleBeliBarangJadiMode(val === '1304');
     }
   });
+}
+
+/** Tambah baris bahan baku baru (mode produksi Barang Jadi) */
+function addBeliBahanBakuRow() {
+  _beliBahanBakuRows.push({ rowId: 'bb'+(_beliBahanBakuRowSeq++), katId:'', katLabel:'', qty:1 });
+  renderBeliBahanBakuList();
+}
+
+/** Hapus baris bahan baku */
+function removeBeliBahanBakuRow(rowId) {
+  _beliBahanBakuRows = _beliBahanBakuRows.filter(r => r.rowId !== rowId);
+  if(!_beliBahanBakuRows.length) addBeliBahanBakuRow();
+  else renderBeliBahanBakuList();
+}
+
+/** Picker 2-level bahan baku untuk satu baris produksi */
+function openBeliBahanBakuPicker(rowId) {
+  const allCards = Object.values(multiKartuStock || {});
+  if(!allCards.length) { showAlert('Belum ada kartu stock. Tambahkan di menu Persediaan.'); return; }
+  const row = _beliBahanBakuRows.find(r => r.rowId === rowId);
+  if(!row) return;
+
+  const _pickLevel2 = (card) => {
+    const kats = Object.values(card.kategori || {});
+    if(!kats.length) { showAlert('Kartu stock ini belum punya barang.'); return; }
+    openOptPicker({
+      title: 'Pilih Bahan Baku — ' + card.nama,
+      options: kats.map(kat => {
+        const saldo = getKsSaldo(kat);
+        const metodeLabel = {fifo:'FIFO',lifo:'LIFO',wa:'WA',mwa:'MWA'};
+        return { value: kat.id, label: kat.nama,
+          sub: `${metodeLabel[saldo.metode]||'FIFO'} · Stok: ${saldo.totalQty} ${card.satuan||'unit'} · HPP: ${fmtRp(saldo.hppNext)}/unit` };
+      }),
+      currentValue: row.katId,
+      onSelect: (katId, label) => {
+        row.katId = katId; row.katLabel = label;
+        renderBeliBahanBakuList();
+      }
+    });
+  };
+
+  if(allCards.length === 1) { _pickLevel2(allCards[0]); return; }
+
+  openOptPicker({
+    title: 'Pilih Kartu Stock',
+    options: allCards.map(card => {
+      const s = getCardSaldo(card);
+      return { value: card.id, label: card.nama,
+        sub: `${Object.keys(card.kategori||{}).length} barang · Stok: ${s.totalQty} ${card.satuan||'unit'}` };
+    }),
+    currentValue: '',
+    onSelect: (cardId) => {
+      const card = multiKartuStock[cardId]; if(!card) return;
+      _pickLevel2(card);
+    }
+  });
+}
+
+/** Update qty pada satu baris bahan baku */
+function onBeliBahanBakuQtyChange(rowId, val) {
+  const row = _beliBahanBakuRows.find(r => r.rowId === rowId);
+  if(row) row.qty = parseFloat(val)||0;
+  _updateBeliBahanBakuTotal();
+}
+
+/** Render daftar baris bahan baku ke DOM */
+function renderBeliBahanBakuList() {
+  const list = document.getElementById('beli-bahanbaku-list');
+  if(!list) return;
+  if(!_beliBahanBakuRows.length) {
+    list.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:8px 0;">Belum ada bahan baku dipilih.</div>`;
+  } else {
+    list.innerHTML = _beliBahanBakuRows.map(row => {
+      const found   = row.katId ? _findKatById(row.katId) : null;
+      const saldo   = found ? getKsSaldo(found.kat) : null;
+      const subInfo = saldo ? `Stok: ${saldo.totalQty} · HPP: ${fmtRp(saldo.hppNext)}/unit` : '';
+      return `<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;">
+        <div style="flex:1;">
+          <button class="opt-picker-btn" type="button" onclick="openBeliBahanBakuPicker('${row.rowId}')">
+            <span class="opt-picker-label" style="color:${row.katId?'var(--text)':'var(--muted)'};">${row.katLabel || 'Pilih bahan baku...'}</span>
+            <span class="opt-picker-arrow">▾</span>
+          </button>
+          ${subInfo ? `<div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${subInfo}</div>` : ''}
+        </div>
+        <div style="width:90px;">
+          <input type="number" placeholder="Qty" value="${row.qty||''}" min="0" inputmode="numeric"
+            onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)"
+            oninput="onBeliBahanBakuQtyChange('${row.rowId}', this.value)" style="width:100%;">
+        </div>
+        <button type="button" onclick="removeBeliBahanBakuRow('${row.rowId}')"
+          style="background:none;border:none;cursor:pointer;padding:8px 4px;margin-top:2px;">
+          <i class="ti ti-trash" style="font-size:15px;color:var(--red);"></i>
+        </button>
+      </div>`;
+    }).join('');
+  }
+  _updateBeliBahanBakuTotal();
+}
+
+/** Hitung total HPP dari seluruh bahan baku yang dipakai + update hint */
+function _updateBeliBahanBakuTotal() {
+  const hint    = document.getElementById('beli-bahanbaku-total-hint');
+  const qtyJadi = parseFloat(document.getElementById('beli-produk-qty')?.value)||1;
+  let total = 0, allValid = _beliBahanBakuRows.length > 0;
+  _beliBahanBakuRows.forEach(row => {
+    if(!row.katId || !row.qty) { allValid = false; return; }
+    const found = _findKatById(row.katId);
+    if(!found) { allValid = false; return; }
+    const saldo = getKsSaldo(found.kat);
+    total += (row.qty||0) * (saldo.hppNext||0);
+  });
+  if(hint) {
+    if(total > 0) {
+      hint.style.display = '';
+      const perUnit = qtyJadi > 0 ? total/qtyJadi : total;
+      hint.innerHTML = `Total HPP Bahan Baku: <b>${fmtRp(total)}</b> &nbsp;→&nbsp; HPP per unit Barang Jadi: <b>${fmtRp(perUnit)}</b>`;
+    } else {
+      hint.style.display = 'none';
+    }
+  }
+  return { total, allValid };
 }
 
 /** Picker produk 2-level untuk pembelian (semua kartu stock, tidak filter lock) */
@@ -706,7 +861,7 @@ function _updateBeliTotalHint() {
   }
 }
 
-function onBeliQtyChange()    { _updateBeliTotalHint(); }
+function onBeliQtyChange()    { _updateBeliTotalHint(); _updateBeliBahanBakuTotal(); }
 function onBeliJumlahChange() { _updateBeliTotalHint(); }
 
 /** Build jurnal lines untuk pembelian */
@@ -721,14 +876,57 @@ function _getBeliJurnalLines(akunKode, totalBeli, metode, ket) {
 }
 
 function previewBeli() {
-  const hargaPerUnit = parseFloat(document.getElementById('beli-jumlah')?.value)||0;
   const qty          = parseFloat(document.getElementById('beli-produk-qty')?.value)||1;
   const produkId     = document.getElementById('beli-produk-id')?.value;
   const akunKode     = document.getElementById('beli-akun')?.value || '1301';
-  const metode       = document.getElementById('beli-metode')?.value || 'tunai';
   const ket          = document.getElementById('beli-ket')?.value || 'Pembelian';
   const prev         = document.getElementById('beli-preview');
 
+  // ── MODE PRODUKSI: Barang Jadi dari penjumlahan HPP multi bahan baku ──
+  if(akunKode === '1304' && _beliBahanBakuRows.length) {
+    const { total, allValid } = _updateBeliBahanBakuTotal();
+    if(!allValid || !total) { if(prev) prev.style.display='none'; showAlert('Lengkapi semua bahan baku (pilih barang & isi qty) terlebih dahulu!'); return; }
+    if(!produkId) { if(prev) prev.style.display='none'; showAlert('Pilih produk Barang Jadi yang diproduksi terlebih dahulu!'); return; }
+    const perUnit = qty > 0 ? total/qty : total;
+    const found   = _findKatById(produkId);
+    const lines   = [
+      { akun: '1304', ket, debit: total, kredit: 0 },
+      { akun: '1302', ket: 'Pemakaian bahan baku produksi', debit: 0, kredit: total },
+    ];
+    if(prev) {
+      prev.style.display = 'block';
+      const bbInfo = _beliBahanBakuRows.map(row => {
+        const f = row.katId ? _findKatById(row.katId) : null;
+        const s = f ? getKsSaldo(f.kat) : null;
+        return `<div style="display:flex;justify-content:space-between;">
+          <span>${row.katLabel||'-'} × ${row.qty}</span><span>${fmtRp((row.qty||0)*(s?.hppNext||0))}</span>
+        </div>`;
+      }).join('');
+      prev.innerHTML = `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:12.5px;">
+        <div style="font-weight:600;margin-bottom:8px;color:var(--accent2);">Preview Jurnal — Produksi Barang Jadi</div>
+        <div style="font-size:11px;color:var(--accent2);margin-bottom:8px;padding:6px 8px;background:rgba(34,211,238,0.06);border-radius:6px;">
+          <i class="ti ti-package" style="font-size:12px;vertical-align:-2px;margin-right:4px;"></i>
+          <b>${found ? found.kat.nama : 'Produk'}</b> · ${qty} unit @ ${fmtRp(perUnit)} = <b>${fmtRp(total)}</b>
+          <div style="color:var(--muted);margin-top:4px;">Bahan baku dipakai:</div>
+          ${bbInfo}
+        </div>
+        ${lines.map(l => {
+          const a = akuns.find(x=>x.kode===l.akun);
+          return `<div style="display:flex;gap:8px;margin-bottom:4px;font-family:var(--mono);">
+            <span style="color:var(--muted);min-width:50px;">${l.akun}</span>
+            <span style="flex:1;">${a?.nama||l.akun}</span>
+            ${l.debit  ? `<span style="color:var(--accent);min-width:80px;text-align:right;">Dr ${fmtRp(l.debit)}</span>`  : '<span style="min-width:80px;"></span>'}
+            ${l.kredit ? `<span style="color:var(--red);min-width:80px;text-align:right;">Kr ${fmtRp(l.kredit)}</span>` : '<span style="min-width:80px;"></span>'}
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+    return;
+  }
+
+  // ── MODE NORMAL ──
+  const metode       = document.getElementById('beli-metode')?.value || 'tunai';
+  const hargaPerUnit = parseFloat(document.getElementById('beli-jumlah')?.value)||0;
   if(!hargaPerUnit) { if(prev) prev.style.display='none'; showAlert('Isi harga per unit terlebih dahulu!'); return; }
 
   const totalBeli = produkId ? hargaPerUnit * qty : hargaPerUnit;
@@ -783,7 +981,7 @@ function simpanPenjualan() {
   // Jika jenis penjualan barang/manufaktur, produk wajib dipilih
   const _jualKsId = document.getElementById('jual-produk-id')?.value;
   const _jualAkunPend = document.getElementById('jual-akun-pendapatan')?.value || '4101';
-  const _isProdukJenis = (_jualAkunPend === '4101' || _jualAkunPend === '4105');
+  const _isProdukJenis = (_jualAkunPend === '4101' || _jualAkunPend === '4105' || _jualAkunPend === '4107');
   if(_isProdukJenis && !_jualKsId) {
     showAlert('Pilih produk terlebih dahulu!');
     return;
@@ -816,7 +1014,8 @@ function simpanPenjualan() {
     if(hppReal > 0) {
       const overrideProduk = produkList.find(p => p.ksId === _ksIdJual);
       const akunHpp  = overrideProduk?.akunHpp  || '5101';
-      const akunPers = overrideProduk?.akunPers  || '1301';
+      const akunPers = overrideProduk?.akunPers
+        || guessAkunPersediaanDefault(`${_foundJual?.kat?.nama||''} ${_foundJual?.card?.nama||''}`);
       addJurnal({ tanggal, ket: 'HPP ' + ket, jenis: 'Penjualan', ref: inv, kontakId, lines: [
         { akun: akunHpp,  ket: 'HPP', debit: hppReal, kredit: 0 },
         { akun: akunPers, ket: 'Persediaan keluar', debit: 0, kredit: hppReal },
@@ -886,6 +1085,77 @@ function simpanPembelian() {
   const kontakId     = document.getElementById('beli-kontak-id')?.value || '';
 
   if(!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
+
+  // ── MODE PRODUKSI: Barang Jadi dari penjumlahan HPP multi bahan baku ──
+  if(akunKode === '1304' && _beliBahanBakuRows.length) {
+    if(!produkId) { showAlert('Pilih produk Barang Jadi yang diproduksi terlebih dahulu!'); return; }
+    const invalidRow = _beliBahanBakuRows.find(r => !r.katId || !r.qty || r.qty<=0);
+    if(invalidRow) { showAlert('Lengkapi semua baris bahan baku (pilih barang & isi qty)!'); return; }
+    // Cek stok cukup untuk setiap bahan baku sebelum diproses
+    // (qty digabung per katId dulu, karena bahan baku yang sama bisa muncul di beberapa baris)
+    const _kebutuhanPerKat = {};
+    for(const row of _beliBahanBakuRows) {
+      _kebutuhanPerKat[row.katId] = (_kebutuhanPerKat[row.katId] || 0) + row.qty;
+    }
+    for(const katId in _kebutuhanPerKat) {
+      const totalQtyDibutuhkan = _kebutuhanPerKat[katId];
+      const found = _findKatById(katId);
+      const saldo = found ? getKsSaldo(found.kat) : null;
+      if(!saldo || saldo.totalQty < totalQtyDibutuhkan) {
+        const rowLabel = _beliBahanBakuRows.find(r => r.katId === katId)?.katLabel || katId;
+        showAlert(`Stok "${rowLabel}" tidak cukup! Dibutuhkan: ${totalQtyDibutuhkan}, Tersedia: ${saldo?saldo.totalQty:0}`);
+        return;
+      }
+    }
+
+    // Kurangi stok tiap bahan baku (sesuai metode FIFO/LIFO/WA/MWA masing-masing) & jumlahkan HPP-nya
+    let totalHpp = 0;
+    _beliBahanBakuRows.forEach(row => {
+      const result = deductKartuStockOnSale(row.katId, row.qty, tanggal, `Pemakaian bahan baku — ${ket}`);
+      totalHpp += result.hppBatch || 0;
+    });
+    const hargaPerUnitJadi = qty > 0 ? totalHpp / qty : totalHpp;
+
+    // Jurnal transfer biaya: Debit Persediaan Barang Jadi, Kredit Persediaan Bahan Baku
+    addJurnal({ tanggal, ket, jenis:'Produksi', ref: faktur, kontakId, lines: [
+      { akun: '1304', ket, debit: totalHpp, kredit: 0 },
+      { akun: '1302', ket: 'Pemakaian bahan baku produksi', debit: 0, kredit: totalHpp },
+    ]});
+
+    // Tambahkan Barang Jadi ke kartu stock dengan HPP = penjumlahan HPP bahan baku
+    const foundJadi = _findKatById(produkId);
+    if(foundJadi) {
+      activeKartuStockId = foundJadi.card.id;
+      activeKategoriId = produkId;
+      addKartuStockOnBuy(produkId, qty, hargaPerUnitJadi, tanggal, ket);
+      kartuStockTab = getKsSaldo(foundJadi.kat).metode || 'fifo';
+      syncKartuStockDataFromKategori();
+      if(typeof renderKartuStock === 'function') { try { renderKartuStock(); } catch(e) {} }
+      if(typeof renderKartuStockSelector === 'function') { try { renderKartuStockSelector(); } catch(e) {} }
+      _ksJustWroteDirectly = false;
+    }
+
+    if(kontakId) updateKontakTotalTrx(kontakId, totalHpp, 'pembelian');
+
+    // ── Reset form ──
+    _beliBahanBakuRows = [];
+    ['beli-faktur','beli-ket'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+    const _beliQtyReset = document.getElementById('beli-produk-qty'); if(_beliQtyReset) _beliQtyReset.value = '1';
+    document.getElementById('beli-kontak-id').value = '';
+    const _beliKontakBtnReset = document.getElementById('beli-kontak-btn');
+    if(_beliKontakBtnReset) { _beliKontakBtnReset.classList.remove('has-value'); _beliKontakBtnReset.textContent = 'Pilih kontak...'; }
+    const _beliProdukIdReset  = document.getElementById('beli-produk-id');
+    const _beliProdukLblReset = document.getElementById('beli-produk-label');
+    if(_beliProdukIdReset)  _beliProdukIdReset.value = '';
+    if(_beliProdukLblReset) { _beliProdukLblReset.textContent = 'Pilih produk...'; _beliProdukLblReset.style.color = 'var(--muted)'; }
+    renderBeliBahanBakuList();
+    const _prevBeliReset = document.getElementById('beli-preview'); if(_prevBeliReset) _prevBeliReset.style.display='none';
+
+    renderDashboard();
+    showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Produksi Barang Jadi berhasil disimpan & kartu stock diperbarui!');
+    return;
+  }
+
   // Jika akun adalah persediaan, produk wajib dipilih
   const _isPersediaanAkun = ['1301','1302','1303','1304'].includes(akunKode) ||
     (akuns.find(a=>a.kode===akunKode)?.tipe === 'Persediaan') ||
@@ -1584,26 +1854,9 @@ function selectExcelTemplate(tmpl) {
   }
 }
 
-function handleLogoUpload(input) {
-  const file = input.files[0];
-  if(!file) return;
-  if(file.size > 2 * 1024 * 1024) { showAlert('❌ File logo terlalu besar (maks 2MB)'); return; }
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    exportLogoDataUrl = e.target.result;
-    const img = document.getElementById('exp-logo-img');
-    const placeholder = document.getElementById('exp-logo-placeholder');
-    const removeBtn = document.getElementById('exp-logo-remove-btn');
-    img.src = exportLogoDataUrl;
-    img.style.display = 'block';
-    placeholder.style.display = 'none';
-    removeBtn.style.display = 'block';
-    document.getElementById('exp-logo-preview-box').style.borderStyle = 'solid';
-    document.getElementById('exp-logo-preview-box').style.borderColor = 'var(--accent)';
-  };
-  reader.readAsDataURL(file);
-  input.value = '';
-}
+// handleLogoUpload() versi lengkap ada di bawah (~baris 8406) — sudah pakai
+// crop modal + menangani upload dari modal export maupun modal profil.
+// Duplikat lama di sini dihapus.
 
 function removeLogo() {
   exportLogoDataUrl = null;
@@ -5305,7 +5558,7 @@ const TEMPLATES = {
             '2101','2201','2202','2301','2302','2401','2501','2502','2701','2702',
             '2801',
             '3101','3102','3201',
-            '4102','4201','4202','4203',
+            '4102','4201','4202','4203','4205',
             '6101','6102','6103','6104','6105','6106',
             '6201','6202','6203','6204','6205','6206',
             '6301','6303','6305',
@@ -5321,7 +5574,7 @@ const TEMPLATES = {
             '2101','2102','2201','2202','2301','2302','2303','2401','2402','2501','2502','2701','2702',
             '2801','2802',
             '3101','3102','3201',
-            '4101','4102','4103','4104','4201','4203',
+            '4101','4102','4103','4104','4201','4203','4205',
             '5101','5102','5103','5104',
             '6101','6102','6103','6104','6105',
             '6201','6202','6203','6204','6205','6206','6207',
@@ -5339,7 +5592,7 @@ const TEMPLATES = {
             '2101','2102','2201','2202','2301','2302','2303','2304','2401','2501','2502','2701','2702',
             '2801','2802',
             '3101','3102','3201',
-            '4101','4102','4103','4104','4203',
+            '4101','4102','4103','4104','4105','4106','4107','4203','4205',
             '5101','5102','5201','5202','5203',
             '6101','6102','6103','6104','6105',
             '6201','6202','6203','6204','6205','6206','6207',
@@ -5463,12 +5716,16 @@ function getDefaultAkuns() {
     {kode:'3202',nama:'Laba Tahun Berjalan',tipe:'Ekuitas',kat:'Laba',normal:'K'},
     {kode:'4101',nama:'Penjualan Barang',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
     {kode:'4102',nama:'Penjualan Jasa',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
+    {kode:'4105',nama:'Penjualan Produk Manufaktur',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
+    {kode:'4106',nama:'Pendapatan Properti / Sewa',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
+    {kode:'4107',nama:'Penjualan Bahan Baku',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
     {kode:'4103',nama:'Retur & Potongan Penjualan',tipe:'Pendapatan',kat:'Kontra',normal:'D'},
     {kode:'4104',nama:'Diskon Penjualan',tipe:'Pendapatan',kat:'Kontra',normal:'D'},
     {kode:'4201',nama:'Pendapatan Komisi',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
     {kode:'4202',nama:'Pendapatan Sewa',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
     {kode:'4203',nama:'Pendapatan Bunga',tipe:'Pendapatan',kat:'Non-Operasional',normal:'K'},
     {kode:'4204',nama:'Pendapatan Dividen',tipe:'Pendapatan',kat:'Non-Operasional',normal:'K'},
+    {kode:'4205',nama:'Pendapatan Non-Operasional Lainnya',tipe:'Pendapatan',kat:'Non-Operasional',normal:'K'},
     {kode:'4301',nama:'Keuntungan Penjualan Aset',tipe:'Pendapatan',kat:'Non-Operasional',normal:'K'},
     {kode:'5101',nama:'HPP - Harga Pokok Penjualan',tipe:'HPP',kat:'HPP',normal:'D'},
     {kode:'5102',nama:'Pembelian Barang Dagangan',tipe:'HPP',kat:'HPP',normal:'D'},
@@ -11749,36 +12006,8 @@ function addAttachment() {
   document.getElementById('attach-file-input').click();
 }
 
-function handleAttachFile(input) {
-  const idx = parseInt(document.getElementById('attach-jurnal-idx').value);
-  const j = jurnalEntries[idx];
-  if(!j || !input.files.length) return;
-  
-  const file = input.files[0];
-  if(file.size > 5 * 1024 * 1024) { showAlert('❌ File terlalu besar (max 5MB)'); return; }
-  
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const allAttach = getAttachments();
-    if(!allAttach[j.no]) allAttach[j.no] = [];
-    allAttach[j.no].push({
-      name: file.name,
-      type: file.type,
-      size: (file.size/1024).toFixed(1) + ' KB',
-      date: new Date().toLocaleDateString('id-ID'),
-      data: e.target.result
-    });
-    localStorage.setItem(ATTACHMENTS_KEY, JSON.stringify(allAttach));
-    
-    // Update jurnal entry
-    j.attachments = allAttach[j.no];
-    renderAttachList(j.no);
-    renderJurnalUmum();
-    showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Lampiran berhasil ditambahkan!');
-  };
-  reader.readAsDataURL(file);
-  input.value = '';
-}
+// handleAttachFile() versi lengkap ada di bawah (~baris 19607) — sudah termasuk
+// sync ke Supabase. Duplikat lama di sini dihapus.
 
 function viewAttachment(jurnalNo, idx) {
   const allAttach = getAttachments();
@@ -19078,10 +19307,10 @@ async function loadDataFromSupabase() {
   hideOpSpinner();
 }
 
-function getDefaultAkuns() {
-  // Return the existing akuns array (defined earlier in the file)
-  return typeof akuns !== 'undefined' && akuns.length > 0 ? [...akuns] : [];
-}
+// getDefaultAkuns() dipakai dari versi lengkap di baris ~5673 (103 akun hardcoded).
+// Versi kedua yang tadinya ada di sini DIHAPUS — sebelumnya diam-diam override jadi
+// `return [...akuns]`, yang membuat applyTemplate("Lengkap") dan seed akun untuk
+// company baru gagal mengembalikan COA lengkap yang benar.
 
 // SAVE JURNAL
 async function saveJurnalToSupabase(entry) {
@@ -22031,7 +22260,9 @@ function renderProduk() {
     const ppnTarif   = (override?.ppn != null && override.ppn > 0) ? override.ppn : null;
     const akunPend   = override?.akunPend  || '4101';
     const akunHpp    = override?.akunHpp   || '5101';
+    const akunPers   = override?.akunPers  || guessAkunPersediaanDefault(`${ks.nama||''} ${ks._cardNama||''}`);
     const akunPendNm = akuns.find(a=>a.kode===akunPend)?.nama || akunPend;
+    const akunPersNm = akuns.find(a=>a.kode===akunPers)?.nama || akunPers;
 
     const stokColor  = saldo.totalQty <= 0 ? 'var(--red)' : saldo.totalQty <= 5 ? 'var(--accent3)' : 'var(--accent)';
 
@@ -22095,7 +22326,10 @@ function renderProduk() {
         ${hargaJualCell}
       </td>
       <td style="text-align:center;">${ppnBadge}</td>
-      <td style="font-size:11px;color:var(--muted);">${akunPendNm}</td>
+      <td style="font-size:11px;color:var(--muted);">
+        ${akunPendNm}
+        <div style="font-size:10px;color:var(--muted);opacity:.8;margin-top:2px;">Persediaan: ${akunPersNm}</div>
+      </td>
       <td>
         <button class="btn btn-ghost btn-sm" onclick="openModalEditProdukHarga('${ks.id}','${ks._cardId}')" title="Edit harga jual & akun">
           <i class="ti ti-pencil" style="font-size:12px;"></i> Edit
@@ -22127,12 +22361,17 @@ function openModalEditProdukHarga(katId, cardId) {
   // Akun buttons
   const akunPend = override?.akunPend || '4101';
   const akunHpp  = override?.akunHpp  || '5101';
+  const akunPers = override?.akunPers || guessAkunPersediaanDefault(`${ks.nama||''} ${card?.nama||''}`);
   document.getElementById('produk-akun-pend').value = akunPend;
   document.getElementById('produk-akun-hpp').value  = akunHpp;
+  const persEl = document.getElementById('produk-akun-pers');
+  if(persEl) persEl.value = akunPers;
   const pendBtn = document.getElementById('produk-akun-pend-btn');
   const hppBtn  = document.getElementById('produk-akun-hpp-btn');
+  const persBtn = document.getElementById('produk-akun-pers-btn');
   if(pendBtn) pendBtn.textContent = akuns.find(a=>a.kode===akunPend)?.nama || 'Pilih Akun...';
   if(hppBtn)  hppBtn.textContent  = akuns.find(a=>a.kode===akunHpp)?.nama  || 'Pilih Akun...';
+  if(persBtn) persBtn.textContent = akuns.find(a=>a.kode===akunPers)?.nama || 'Pilih Akun...';
 
   // Update read-only HPP info
   const hppInfo = document.getElementById('produk-hpp-readonly');
@@ -22155,6 +22394,7 @@ function simpanProduk() {
   const hargaJual= parseFloat(document.getElementById('produk-harga-jual').value)||0;
   const akunPend = document.getElementById('produk-akun-pend').value||'4101';
   const akunHpp  = document.getElementById('produk-akun-hpp').value||'5101';
+  const akunPers = document.getElementById('produk-akun-pers')?.value||'1301';
   const _ppnRaw  = document.getElementById('produk-ppn')?.value;
   const ppn      = (_ppnRaw !== '' && _ppnRaw != null) ? parseFloat(_ppnRaw) : null;
   let ks = null;
@@ -22168,7 +22408,7 @@ function simpanProduk() {
   setTimeout(() => {
     try {
       const idx = produkList.findIndex(p => p.ksId === ksId);
-      const data = { ksId, hargaJual, akunPend, akunHpp, ppn };
+      const data = { ksId, hargaJual, akunPend, akunHpp, akunPers, ppn };
       if(idx >= 0) produkList[idx] = { ...produkList[idx], ...data };
       else produkList.push(data);
       saveToStorage(false);
@@ -22276,7 +22516,7 @@ function onSimpelQtyChange() {
 
 // ── Handle jenis penjualan: sembunyikan produk saat bukan penjualan barang ──
 function onJualJenisChange(value) {
-  const isProduk = (value === '4101' || value === '4105'); // Barang & Manufaktur pakai produk picker
+  const isProduk = (value === '4101' || value === '4105' || value === '4107'); // Barang, Manufaktur & Bahan Baku pakai produk picker
   const produkRow = document.getElementById('jual-produk-row');
   if(produkRow) produkRow.style.display = isProduk ? '' : 'none';
 
@@ -22420,7 +22660,7 @@ function openSimpelJenisPenjualanPicker() {
       const lbl = document.getElementById('simpel-jenis-penjualan-label');
       if(lbl) lbl.textContent = label; // tanpa icon di label luar
       // Tampilkan/sembunyikan produk picker sesuai jenis
-      const isProduk = (val === '4101' || val === '4105');
+      const isProduk = (val === '4101' || val === '4105' || val === '4107');
       const wrap = document.getElementById('simpel-produk-wrap');
       if(wrap) wrap.style.display = isProduk ? 'grid' : 'none';
     }
