@@ -20,7 +20,7 @@
 (function(){
   // Baca tema sebelum apapun dirender — ikuti sistem jika belum ada preferensi tersimpan
   try {
-    var saved = localStorage.getItem('bhp_theme');
+    var saved = localStorage.getItem('oas_theme');
     if(saved) {
       window.__initialTheme = saved;
     } else {
@@ -72,6 +72,7 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="db-adapter.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/tabler-icons.min.css">
 
@@ -80,7 +81,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="main.css">
 </head>
 <body>
 
@@ -3280,21 +3281,21 @@
         <div style="background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:14px;text-align:center;">
           <div style="font-size:24px;margin-bottom:6px;"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div>
           <div style="font-size:13px;font-weight:700;margin-bottom:4px;">Export Backup</div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Simpan semua data ke file .bhp</div>
-          <button onclick="exportBackupJSON()" class="btn btn-primary btn-sm" style="width:100%">Download .bhp</button>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Simpan semua data ke file .oas</div>
+          <button onclick="exportBackupJSON()" class="btn btn-primary btn-sm" style="width:100%">Download .oas</button>
         </div>
         <div style="background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.2);border-radius:10px;padding:14px;text-align:center;">
           <div style="font-size:24px;margin-bottom:6px;"><i class="ti ti-download ti-inline"></i></div>
           <div style="font-size:13px;font-weight:700;margin-bottom:4px;">Import Backup</div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Muat data dari file .bhp</div>
-          <button onclick="document.getElementById('import-file-input').click()" class="btn btn-ghost btn-sm" style="width:100%;border-color:rgba(34,211,238,0.3);color:var(--accent2);">Pilih File .bhp</button>
-          <input type="file" id="import-file-input" accept=".bhp,.json" style="display:none" onchange="importBackupJSON(this)">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Muat data dari file .oas</div>
+          <button onclick="document.getElementById('import-file-input').click()" class="btn btn-ghost btn-sm" style="width:100%;border-color:rgba(34,211,238,0.3);color:var(--accent2);">Pilih File .oas</button>
+          <input type="file" id="import-file-input" accept=".oas,.json" style="display:none" onchange="importBackupJSON(this)">
         </div>
       </div>
 
       <!-- Info -->
       <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:10px 12px;font-size:11.5px;color:var(--muted);line-height:1.7;">
-        💡 <b style="color:var(--accent3)">Tips:</b> Data di slot tersimpan di browser ini. Untuk backup ke device lain atau sebagai keamanan, selalu <b>Download .bhp</b> secara berkala. File .bhp bisa di-upload kembali di browser manapun.
+        💡 <b style="color:var(--accent3)">Tips:</b> Data di slot tersimpan di browser ini. Untuk backup ke device lain atau sebagai keamanan, selalu <b>Download .oas</b> secara berkala. File .oas bisa di-upload kembali di browser manapun.
       </div>
     </div>
     <div class="modal-footer">
@@ -3582,14 +3583,14 @@
       <div class="form-row">
         <div class="form-group"><label>Tahun Buku</label>
           <input type="hidden" id="prof-tahun-buku" value="jan">
-          <button type="button" id="prof-tahun-buku-btn" class="bhp-picker-trigger" onclick="openTahunBukuPicker()">
+          <button type="button" id="prof-tahun-buku-btn" class="oas-picker-trigger" onclick="openTahunBukuPicker()">
             <span id="prof-tahun-buku-label"><i class="ti ti-calendar" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Januari - Desember</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
         </div>
         <div class="form-group"><label>Mata Uang</label>
           <input type="hidden" id="prof-mata-uang" value="IDR">
-          <button type="button" id="prof-mata-uang-btn" class="bhp-picker-trigger" onclick="openMataUangPicker()">
+          <button type="button" id="prof-mata-uang-btn" class="oas-picker-trigger" onclick="openMataUangPicker()">
             <span id="prof-mata-uang-label"><i class="ti ti-currency" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> IDR — Rupiah</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
@@ -3921,7 +3922,7 @@
 (function(){
   var el = document.getElementById('app-loading');
   if(!el) return;
-  var isLight = (window.__initialTheme || localStorage.getItem('bhp_theme') || 'dark') === 'light';
+  var isLight = (window.__initialTheme || localStorage.getItem('oas_theme') || 'dark') === 'light';
   el.style.background = isLight ? '#f8fafc' : '#0d0f14';
   // Also pre-set text colors so there's no flash
   el.style.color = isLight ? '#0f172a' : '#e2e8f0';
@@ -4336,7 +4337,7 @@
 
 <!-- INV METODE SHEET -->
 <div id="inv-metode-sheet-backdrop" onclick="if(event.target===this)closeInvMetodeSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:99998;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);width:calc(100% - 40px);max-width:400px;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06);animation:bhpPickerIn 0.22s cubic-bezier(0.34,1.3,0.64,1);overflow:hidden;">
+  <div style="background:var(--surface);width:calc(100% - 40px);max-width:400px;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06);animation:oasPickerIn 0.22s cubic-bezier(0.34,1.3,0.64,1);overflow:hidden;">
     <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
       <div>
         <div style="font-size:16px;font-weight:700;color:var(--text);"><i class="ti ti-settings ti-inline"></i> Pilih Metode Persediaan</div>
@@ -4353,8 +4354,8 @@
 <!-- SHARED BHP SELECT POPUP -->
 
 <!-- TAHUN BUKU PICKER MODAL -->
-<div id="bhp-tahun-buku-backdrop" onclick="if(event.target===this)closeTahunBukuPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);width:calc(100% - 40px);max-width:360px;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06);animation:bhpPickerIn 0.22s cubic-bezier(0.34,1.3,0.64,1);overflow:hidden;">
+<div id="oas-tahun-buku-backdrop" onclick="if(event.target===this)closeTahunBukuPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);width:calc(100% - 40px);max-width:360px;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06);animation:oasPickerIn 0.22s cubic-bezier(0.34,1.3,0.64,1);overflow:hidden;">
     <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
       <div>
         <div style="font-size:16px;font-weight:700;color:var(--text);"><i class="ti ti-calendar" style="font-size:16px;vertical-align:-2px;margin-right:6px;"></i> Pilih Tahun Buku</div>
@@ -4362,13 +4363,13 @@
       </div>
       <button onclick="closeTahunBukuPicker()" style="background:var(--surface2);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);">✕</button>
     </div>
-    <div style="padding:12px 16px 20px;display:flex;flex-direction:column;gap:8px;" id="bhp-tahun-buku-options"></div>
+    <div style="padding:12px 16px 20px;display:flex;flex-direction:column;gap:8px;" id="oas-tahun-buku-options"></div>
   </div>
 </div>
 
 <!-- MATA UANG PICKER MODAL -->
-<div id="bhp-mata-uang-backdrop" onclick="if(event.target===this)closeMataUangPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);width:calc(100% - 40px);max-width:360px;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06);animation:bhpPickerIn 0.22s cubic-bezier(0.34,1.3,0.64,1);overflow:hidden;">
+<div id="oas-mata-uang-backdrop" onclick="if(event.target===this)closeMataUangPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);width:calc(100% - 40px);max-width:360px;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06);animation:oasPickerIn 0.22s cubic-bezier(0.34,1.3,0.64,1);overflow:hidden;">
     <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
       <div>
         <div style="font-size:16px;font-weight:700;color:var(--text);"><i class="ti ti-currency" style="font-size:16px;vertical-align:-2px;margin-right:6px;"></i> Pilih Mata Uang</div>
@@ -4376,7 +4377,7 @@
       </div>
       <button onclick="closeMataUangPicker()" style="background:var(--surface2);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);">✕</button>
     </div>
-    <div style="padding:12px 16px 20px;display:flex;flex-direction:column;gap:8px;" id="bhp-mata-uang-options"></div>
+    <div style="padding:12px 16px 20px;display:flex;flex-direction:column;gap:8px;" id="oas-mata-uang-options"></div>
   </div>
 </div>
 
@@ -4420,10 +4421,27 @@
     </div>
   </div>
 </div>
-
-
-
-  <script src="app.js"></script>
+  <script src="js/01-state.js"></script>
+  <script src="js/02-utils.js"></script>
+  <script src="js/03-widgets.js"></script>
+  <script src="js/04-navigasi-tema.js"></script>
+  <script src="js/05-akun.js"></script>
+  <script src="js/06-transaksi.js"></script>
+  <script src="js/07-jurnal-laporan.js"></script>
+  <script src="js/08-kartu-stock.js"></script>
+  <script src="js/09-produk.js"></script>
+  <script src="js/10-aset-tetap.js"></script>
+  <script src="js/11-kontak-invoice.js"></script>
+  <script src="js/12-kalkulator.js"></script>
+  <script src="js/13-analitik-dashboard.js"></script>
+  <script src="js/14-export.js"></script>
+  <script src="js/15-storage.js"></script>
+  <script src="js/16-auth-company.js"></script>
+  <script src="js/17-settings-profil.js"></script>
+  <script src="js/18-audit-permission.js"></script>
+  <script src="js/19-fitur-tambahan.js"></script>
+  <script src="js/20-ai-chat.js"></script>
+  <script src="js/99-init.js"></script>
 </body>
 </html>
 

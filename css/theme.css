@@ -1,0 +1,120 @@
+:root {
+  --bg: #0d0f14;
+  --surface: #141720;
+  --surface2: #1c2030;
+  --border: #252a3a;
+  --accent: #4ade80;
+  --accent2: #22d3ee;
+  --accent3: #f59e0b;
+  --red: #f87171;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+
+/* LIGHT MODE */
+body.light-mode {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface2: #f1f5f9;
+  --border: #e2e8f0;
+  --accent: #16a34a;
+  --accent2: #0891b2;
+  --accent3: #d97706;
+  --red: #dc2626;
+  --text: #0f172a;
+  --muted: #64748b;
+}
+body.light-mode .sidebar { box-shadow: 2px 0 12px rgba(0,0,0,0.08); }
+body.light-mode .topbar { box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+body.light-mode .table-card { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+body.light-mode .stat-card { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+body.light-mode .modal { box-shadow: 0 24px 64px rgba(0,0,0,0.15); }
+body.light-mode input, body.light-mode select, body.light-mode textarea { color: var(--text) !important; }
+body.light-mode .debit { color: #16a34a; }
+body.light-mode .kredit { color: #dc2626; }
+body.light-mode code { background: #f1f5f9; color: #0891b2; }
+body.light-mode #tut-tooltip { border-color: var(--accent2); }
+body.light-mode .tut-card { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+body.light-mode .ai-bubble { border-color: var(--border); }
+body.light-mode .ai-msg-user .ai-bubble { background: rgba(22,163,74,0.08); }
+
+/* PPh 21 TOGGLE BUTTONS */
+.p21-toggle-btn {
+  flex: 1; min-width: 180px; display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; background: var(--surface2); border: 2px solid var(--border);
+  border-radius: 12px; cursor: pointer; text-align: left; font-family: var(--sans);
+  color: var(--text); transition: all 0.2s; font-size: 13px;
+}
+.p21-toggle-btn:hover { border-color: var(--accent2); color: var(--muted); background: rgba(34,211,238,0.05); }
+.p21-toggle-btn.active {
+  border-color: var(--accent2); color: var(--text);
+  background: rgba(34,211,238,0.08);
+  box-shadow: 0 0 0 1px rgba(34,211,238,0.2) inset;
+}
+.p21-toggle-btn b { font-size: 13.5px; display: block; }
+.p21-kat-btn {
+  padding: 8px 18px; border-radius: 20px; border: 2px solid var(--border);
+  background: var(--surface2); cursor: pointer; font-size: 13px; font-weight: 600;
+  color: var(--text); font-family: var(--sans); transition: all 0.2s;
+}
+.p21-kat-btn:hover { border-color: var(--accent); color: var(--muted); }
+.p21-kat-btn.active {
+  background: rgba(74,222,128,0.1); border-color: var(--accent);
+  color: var(--accent);
+}
+body.light-mode .p21-toggle-btn { background: #f8fafc; }
+body.light-mode .p21-toggle-btn.active { background: rgba(8,145,178,0.07); }
+body.light-mode .p21-kat-btn { background: #f8fafc; }
+body.light-mode .p21-kat-btn.active { background: rgba(22,163,74,0.08); }
+
+/* Theme toggle switch */
+.theme-toggle {
+  position: relative; width: 44px; height: 24px; flex-shrink: 0;
+  cursor: pointer; border: none; background: none; padding: 0;
+}
+.theme-toggle-track {
+  width: 44px; height: 24px; border-radius: 12px;
+  background: var(--border); transition: background 0.3s;
+  display: flex; align-items: center; padding: 0 3px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.theme-toggle-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--muted); transition: all 0.3s;
+  display: flex; align-items: center; justify-content: center;
+  color: white; flex-shrink: 0;
+}
+body.light-mode .theme-toggle-track { background: var(--accent2); }
+body.light-mode .theme-toggle-thumb { transform: translateX(20px); background: white; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html {
+  overflow: hidden;
+  height: 100%;
+  background: var(--bg);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+*, *::before, *::after { -webkit-tap-highlight-color: transparent; }
+body {
+  background: var(--bg); color: var(--text); font-family: var(--sans); height: 100%; display: flex; overflow: hidden;
+  overscroll-behavior: none;
+  /* App-like: tidak bisa diseleksi/disalin & tanpa menu callout, seperti aplikasi native */
+  -webkit-user-select: none; -moz-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+  /* Cat area aman (notch/status bar/gesture bar) dengan warna tema saat mode fullscreen/standalone */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+/* Elemen yang MEMANG perlu bisa dipilih/disalin/diinteraksi normal */
+input, textarea, select, [contenteditable="true"], .selectable, code, pre {
+  -webkit-user-select: text; -moz-user-select: text; user-select: text;
+  -webkit-touch-callout: default;
+}
+button, .btn, .nav-card, a, [onclick] {
+  touch-action: manipulation;
+}
+button:focus-visible, .btn:focus-visible, a:focus-visible, [onclick]:focus-visible, .nav-card:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 1px;
+}
