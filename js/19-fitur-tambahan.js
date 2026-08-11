@@ -1753,3 +1753,7 @@ function showOrgMembersSQL() {
     + '\u003c\/body\u003e\u003c\/html\u003e');
   w.document.close();
 }
+
+// Auto-cek notifikasi saat load — DIPINDAH dari 13-analitik-dashboard.js
+// (harus dipanggil SETELAH function cekNotifikasi() di atas selesai didefinisikan)
+setTimeout(cekNotifikasi, 2000);

@@ -468,11 +468,5 @@ function getDefaultAkuns() {
   ];
 }
 
-// BACK BUTTON NAVIGATION
-let pageHistory = ['dashboard'];
-let isNavigating = false;
-
-// Detect if running inside iframe (Claude preview / srcdoc)
-const inIframe = (() => {
-  try { return window.self !== window.top; } catch(e) { return true; }
-})();
+// BACK BUTTON NAVIGATION — DIPINDAH ke 04-navigasi-tema.js (dipakai di sana,
+// dan 04 load SEBELUM file ini, jadi deklarasinya harus ada di 04, bukan di sini)

@@ -1,0 +1,96 @@
+
+/* MOBILE RESPONSIVE — must be LAST to override */
+@media (max-width: 768px) {
+  body { display: block; }
+  .sidebar { transform: translateX(-100%); width: 270px; }
+  .sidebar.open { transform: translateX(0); }
+  .logo-close { display: block; }
+  .main { margin-left: 0 !important; }
+  .hamburger { display: block; }
+  .topbar { padding: 11px 12px; }
+  .content { padding: 10px; overflow-x: clip; }
+  #current-date { display: none; }
+
+  /* Stats: 2x2 grid */
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin-bottom: 14px;
+  }
+  .stat-card { padding: 14px 12px; }
+  .stat-value { font-size: 18px !important; word-break: break-all; }
+  .stat-label { font-size: 10px !important; }
+  .stat-sub { font-size: 11px; }
+
+  /* Stack dashboard 2-col */
+  .grid-2 { grid-template-columns: 1fr !important; gap: 10px; }
+
+  /* Tables — no min-width, use responsive columns instead */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-card table { font-size: 12px; width: 100%; }
+  th, td { padding: 7px 8px; }
+
+  /* Dash quick tables (no min-width needed) */
+  #dash-recent table, #dash-saldo table { min-width: unset; font-size: 12px; }
+
+  /* Form */
+  .form-row { grid-template-columns: 1fr !important; gap: 10px; }
+  .jurnal-lines-head, .jurnal-line-row { grid-template-columns: 1.8fr 1.2fr 1fr 1fr 24px; font-size: 11px; }
+
+  /* Filter */
+  .filter-bar { flex-wrap: wrap; }
+  .filter-bar input, .filter-bar select { width: 100%; min-width: unset; }
+
+  /* Modal tetap di tengah di mobile — hanya akun-picker yang bottom sheet */
+  .modal-backdrop { align-items: center; padding: 16px; }
+  .modal { max-width: 100%; border-radius: 16px; }
+
+  /* Section */
+  .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+
+  /* Topbar title size */
+  .topbar-titles h1 { font-size: 15px; }
+  .topbar-titles p { font-size: 11px; }
+
+  /* COA table mobile — no min-width, hide extra cols */
+  #coa-table { width: 100%; }
+  #coa-table td:nth-child(1), #coa-table th:nth-child(1) { font-size: 10px; padding: 6px 6px; }
+  #coa-table td:nth-child(2) { font-size: 12px; word-break: break-word; white-space: normal; }
+  #coa-table td:nth-child(4), #coa-table th:nth-child(4) { display: none; }
+  #coa-table td:nth-child(5), #coa-table th:nth-child(5) { display: none; }
+  #coa-table td:nth-child(6), #coa-table th:nth-child(6) { display: none; }
+  #coa-table td:nth-child(7), #coa-table th:nth-child(7) { width: 32px; }
+  .storage-slot { flex-wrap: wrap; }
+  .storage-slot .slot-actions { width: 100%; justify-content: flex-end; }
+
+  /* Neraca Saldo mobile — horizontal scroll */
+  #page-neraca-saldo .table-card table { min-width: 360px; width: max-content; font-size: 12px; }
+  #page-neraca-saldo .table-card table th:nth-child(4),
+  #page-neraca-saldo .table-card table td:nth-child(4) { font-size: 11px; white-space: nowrap; }
+  #page-neraca-saldo .table-card table th:nth-child(5),
+  #page-neraca-saldo .table-card table td:nth-child(5) { font-size: 11px; white-space: nowrap; }
+
+  /* Buku Besar mobile — no min-width, hide No.Jurnal col */
+  #buku-besar-content table { width: 100%; font-size: 12px; }
+  #buku-besar-content th, #buku-besar-content td { padding: 6px 7px; }
+  #buku-besar-content td:nth-child(2) { display: none; }
+  #buku-besar-content th:nth-child(2) { display: none; }
+  #buku-besar-content td:nth-child(3) { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #buku-besar-content td:nth-child(4), #buku-besar-content th:nth-child(4),
+  #buku-besar-content td:nth-child(5), #buku-besar-content th:nth-child(5),
+  #buku-besar-content td:nth-child(6), #buku-besar-content th:nth-child(6) { font-size: 11px; white-space: nowrap; }
+
+  /* Neraca mobile — single column, no overflow */
+  #neraca-content .grid-2 { grid-template-columns: 1fr !important; }
+  #neraca-content table { width: 100%; font-size: 12px; }
+  #neraca-content td { padding: 6px 8px; white-space: nowrap; }
+  
+  /* Jurnal Umum mobile — horizontal scroll within table-scroll wrapper */
+  #page-jurnal-umum .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #page-jurnal-umum table { min-width: 480px; width: max-content; }
+
+  /* Tutorial window mobile */
+  /* Tutorial tooltip floating window */
+  #tut-body-wrap { max-height: 55vh; overflow-y: auto; }
+  #tut-minimized { bottom: 16px !important; right: 16px !important; }
+}

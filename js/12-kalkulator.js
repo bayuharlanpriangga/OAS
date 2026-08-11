@@ -1237,10 +1237,12 @@ function switchPajakTab(id, el) {
   setTimeout(upgradePajakPickers, 100);
 }
 
-document.getElementById('ppn-tarif').addEventListener('change', function() {
+// Guard: elemen ini ada di DOM (bukan masalah split file) — null-check jaga-jaga
+// kalau suatu saat script tag balik lagi ke <head> tanpa defer.
+document.getElementById('ppn-tarif')?.addEventListener('change', function() {
   document.getElementById('ppn-custom-row').style.display = this.value==='custom'?'grid':'none';
 });
-document.getElementById('p23-jenis').addEventListener('change', function() {
+document.getElementById('p23-jenis')?.addEventListener('change', function() {
   document.getElementById('p23-custom-row').style.display = this.value==='custom'?'grid':'none';
 });
 
@@ -2234,3 +2236,26 @@ function hitungBadan() {
     + resRow(kurangBayar>0?'PPh Kurang Bayar (Ps. 29)':'PPh Lebih Bayar', rp(kurangBayar||lebihBayar))
     + `<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:6px;font-size:12px;color:var(--muted);">${catatan}</div>`;
 }
+
+// INIT KALKULATOR — DIPINDAH dari 04-navigasi-tema.js (harus dipanggil SETELAH
+// resetInv() di atas ada, dan setelah konfirmasiInputJurnalKartu di
+// 08-kartu-stock.js sudah dimuat — file ini load ke-12, setelah file 08 & 04)
+(function initKalk(){
+  const today = new Date().toISOString().split('T')[0];
+  // seed persediaan
+  resetInv();
+  // set default dates
+  ['py-tgl'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
+
+  // === Kartu Stock button wiring ===
+  // clearKartuStock dipasang langsung via onclick di renderKartuStock (tombol di-render dinamis)
+
+  var jurnalClose = document.getElementById('ks-jurnal-popup-close');
+  if(jurnalClose) jurnalClose.addEventListener('click', function(){ document.getElementById('ks-jurnal-popup').style.display='none'; });
+
+  var jurnalBatal = document.getElementById('ks-jurnal-popup-batal');
+  if(jurnalBatal) jurnalBatal.addEventListener('click', function(){ document.getElementById('ks-jurnal-popup').style.display='none'; });
+
+  var jurnalOk = document.getElementById('ks-jurnal-popup-ok');
+  if(jurnalOk) jurnalOk.addEventListener('click', konfirmasiInputJurnalKartu);
+})();

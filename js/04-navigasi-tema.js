@@ -9,6 +9,17 @@ function closeSidebar(){
   document.getElementById('sidebar-overlay').classList.remove('open');
 }
 
+// BACK BUTTON NAVIGATION — DIPINDAH dari 05-akun.js (harus ada SEBELUM dipakai
+// di file ini; 04 load duluan sebelum 05, jadi kalau deklarasinya masih di 05
+// bakal ReferenceError: inIframe/pageHistory/isNavigating is not defined)
+let pageHistory = ['dashboard'];
+let isNavigating = false;
+
+// Detect if running inside iframe (Claude preview / srcdoc)
+const inIframe = (() => {
+  try { return window.self !== window.top; } catch(e) { return true; }
+})();
+
 // NAVIGATION
 const pageTitles = {
   'rekonsiliasi-bank': ['Rekonsiliasi Bank','Upload & cocokkan mutasi bank'],
@@ -252,7 +263,13 @@ function applyTheme(mode) {
   }
   localStorage.setItem(THEME_KEY, mode);
   syncPwaThemeChrome(mode);
-  setTimeout(renderChart, 50);
+  // renderChart() baru didefinisikan di 13-analitik-dashboard.js (load ke-13,
+  // setelah file ini). applyTheme() ini juga dipanggil ulang tiap user toggle
+  // tema (bukan cuma sekali saat load), jadi TIDAK bisa dipindah kayak fix
+  // lain — dikasih guard typeof biar gak ReferenceError pas initTheme() jalan
+  // duluan sebelum file 13 ke-load; setelah semua file ke-load, guard ini
+  // otomatis lolos dan renderChart() tetap jalan normal tiap ganti tema.
+  if (typeof renderChart === 'function') setTimeout(renderChart, 50);
 }
 
 // Selaraskan meta theme-color, color-scheme, dan manifest dinamis dengan tema aktif.
@@ -637,26 +654,12 @@ function showTutComplete() {
 // legacy compat
 function startTutorial() { showPage('tutorial'); }
 
-// INIT KALKULATOR
-(function initKalk(){
-  const today = new Date().toISOString().split('T')[0];
-  // seed persediaan
-  resetInv();
-  // set default dates
-  ['py-tgl'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
-
-  // === Kartu Stock button wiring ===
-  // clearKartuStock dipasang langsung via onclick di renderKartuStock (tombol di-render dinamis)
-
-  var jurnalClose = document.getElementById('ks-jurnal-popup-close');
-  if(jurnalClose) jurnalClose.addEventListener('click', function(){ document.getElementById('ks-jurnal-popup').style.display='none'; });
-
-  var jurnalBatal = document.getElementById('ks-jurnal-popup-batal');
-  if(jurnalBatal) jurnalBatal.addEventListener('click', function(){ document.getElementById('ks-jurnal-popup').style.display='none'; });
-
-  var jurnalOk = document.getElementById('ks-jurnal-popup-ok');
-  if(jurnalOk) jurnalOk.addEventListener('click', konfirmasiInputJurnalKartu);
-})();
+// INIT KALKULATOR — DIPINDAH ke akhir 12-kalkulator.js. IIFE ini manggil
+// resetInv() (baru didefinisikan di 12-kalkulator.js, load ke-12, JAUH
+// setelah file ini yang load ke-4) dan konfirmasiInputJurnalKartu (di
+// 08-kartu-stock.js, load ke-8, juga setelah file ini). Dulu manggilnya di
+// sini = ReferenceError: resetInv is not defined, dan itu bikin SISA file
+// ini (CUSTOM OPTION PICKER ENGINE dkk di bawah) ikut kepotong gak jalan.
 
 // CUSTOM OPTION PICKER ENGINE
 // Replaces <select> with a beautiful bottom-sheet/dialog picker
@@ -694,3 +697,8 @@ function openOptPicker(config) {
   document.getElementById('opt-picker-backdrop').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
+
+// initTheme() DIPINDAH dari 03-widgets.js — supaya dipanggil SETELAH function
+// initTheme() ini selesai didefinisikan (bukan sebelum, kayak yang bikin
+// ReferenceError: initTheme is not defined pas 03-widgets.js masih jalan duluan)
+initTheme();

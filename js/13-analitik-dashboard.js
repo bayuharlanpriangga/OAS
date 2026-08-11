@@ -970,8 +970,9 @@ function buatJurnalPPh23() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// Auto-cek notifikasi saat load
-setTimeout(cekNotifikasi, 2000);
+// Auto-cek notifikasi saat load — DIPINDAH ke 19-fitur-tambahan.js karena
+// function cekNotifikasi() baru didefinisikan di file itu (load ke-19,
+// SETELAH file ini yang load ke-13) → dulu ReferenceError: cekNotifikasi is not defined
 // Init Multi Kartu Stock (guest mode — login mode dihandle di loadKartuStockFromData)
 document.addEventListener('DOMContentLoaded', function() {
   setTimeout(function() {
@@ -1914,3 +1915,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const simpelDiv = document.getElementById('trx-simpel');
   if(simpelDiv) simpelDiv.style.display = 'block'; // shown since it's the active tab now
 });
+
+// addPeriodFilterToReports() — DIPINDAH dari 03-widgets.js (harus dipanggil
+// SETELAH function-nya di atas selesai didefinisikan)
+setTimeout(addPeriodFilterToReports, 500);

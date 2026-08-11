@@ -491,14 +491,28 @@ function showSuccessMorph(msg){
 }
 
 // INIT
-document.getElementById('current-date').textContent = new Date().toLocaleDateString('id-ID',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+{
+  const _elCurDate = document.getElementById('current-date');
+  if (_elCurDate) _elCurDate.textContent = new Date().toLocaleDateString('id-ID',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+}
 // initStorage & auth are handled by the Supabase init block (DOMContentLoaded)
 // which overrides initStorage() to be a no-op until auth completes.
 // Here we only run UI-agnostic setup:
-initTheme();
+// initTheme() DIPINDAH ke 04-navigasi-tema.js — function-nya baru ada di file itu
+// (load ke-4, SETELAH file ini). Manggil di sini = ReferenceError: initTheme is not
+// defined, dan itu bikin SISA file ini (termasuk deklarasi _pwaPrompt/_pwaInstalled
+// di bawah) ikut kepotong gak jalan → bug "_pwaInstalled before initialization".
 setTimeout(setupNumberInputs, 500);
-setTimeout(updateAIKeyStatus, 200);
-setTimeout(addPeriodFilterToReports, 500);
+// updateAIKeyStatus() DIPINDAH ke akhir 20-ai-chat.js — function-nya baru
+// didefinisikan di file itu (load ke-20, JAUH setelah file ini yang load ke-3).
+// Manggil di sini = ReferenceError: updateAIKeyStatus is not defined, dan itu
+// bikin SISA file ini (termasuk deklarasi _pwaPrompt/_pwaInstalled di bawah)
+// ikut kepotong gak jalan. TAMBAHKAN baris ini secara manual ke akhir file
+// js/20-ai-chat.js: setTimeout(updateAIKeyStatus, 200);
+// addPeriodFilterToReports() DIPINDAH ke akhir 13-analitik-dashboard.js —
+// function-nya baru didefinisikan di file itu (load ke-13, JAUH setelah file
+// ini yang load ke-3). Manggil di sini = ReferenceError, dan bikin SISA file
+// ini (termasuk _pwaPrompt/_pwaInstalled di bawah) ikut kepotong gak jalan.
 // Show API key hint on first AI visit
 let aiPageVisited = localStorage.getItem('oas_ai_visited');
 
