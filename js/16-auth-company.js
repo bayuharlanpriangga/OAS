@@ -143,7 +143,9 @@ function enterGuestMode() {
   _origInitStorage();
   loadProfilToSidebar();
   renderDashboard();
-  checkShowOnboarding();
+  // Onboarding TIDAK dipaksa di Mode Tamu — biar user bisa explore dulu.
+  // Modal "nama bisnis + template akun" baru muncul setelah user login
+  // dan berhasil membuat bisnis pertamanya (lihat createCompany()).
   // Init aset tetap auto penyusutan
   setTimeout(()=>{ if(typeof atInitOnLoad==='function') atInitOnLoad(); }, 1500);
 
@@ -1230,6 +1232,12 @@ async function createCompany() {
     }
 
     await selectCompany(data);
+    // Trigger onboarding (nama bisnis sudah ada dari form ini, tapi step
+    // pemilihan template akun & layar "siap pakai" tetap relevan untuk
+    // bisnis yang baru dibuat) — hanya jalan sekali per akun via flag
+    // 'oas_onboarded', dan hanya untuk company baru, bukan tiap kali
+    // pindah/pilih company yang sudah ada.
+    checkShowOnboarding();
   } catch(e) {
     btn.disabled = false; btnText.textContent = 'Buat Bisnis';
     console.error('createCompany exception:', e);
