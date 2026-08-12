@@ -932,11 +932,11 @@ function renderCompanyList(companies) {
     return;
   }
   const icons = {
-    umum: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
-    dagang: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18"/><path d="M16 10a4 4 0 01-8 0"/></svg>`,
-    jasa: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>`,
-    manufaktur: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V8l7-5 7 5v12"/><path d="M9 20v-5h6v5"/></svg>`,
-    properti: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M9 21V7l6-4v18M3 7l6-4"/><rect x="13" y="10" width="4" height="4"/></svg>`
+    umum: `<i class="ti ti-building-skyscraper" style="font-size:22px;"></i>`,
+    dagang: `<i class="ti ti-shopping-cart" style="font-size:22px;"></i>`,
+    jasa: `<i class="ti ti-briefcase" style="font-size:22px;"></i>`,
+    manufaktur: `<i class="ti ti-industry" style="font-size:22px;"></i>`,
+    properti: `<i class="ti ti-home" style="font-size:22px;"></i>`
   };
   list.innerHTML = companies.map((c, i) => `
     <div class="cp-company-card" data-company-id="${c.id}" style="animation-delay:${i*60}ms;">
@@ -1036,11 +1036,11 @@ let _cpActionTarget = null;
 function showCompanyActionSheet(company) {
   _cpActionTarget = company;
   const icons = {
-    umum: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
-    dagang: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18"/><path d="M16 10a4 4 0 01-8 0"/></svg>`,
-    jasa: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>`,
-    manufaktur: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V8l7-5 7 5v12"/><path d="M9 20v-5h6v5"/></svg>`,
-    properti: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M9 21V7l6-4v18M3 7l6-4"/><rect x="13" y="10" width="4" height="4"/></svg>`
+    umum: `<i class="ti ti-building-skyscraper" style="font-size:18px;"></i>`,
+    dagang: `<i class="ti ti-shopping-cart" style="font-size:18px;"></i>`,
+    jasa: `<i class="ti ti-briefcase" style="font-size:18px;"></i>`,
+    manufaktur: `<i class="ti ti-industry" style="font-size:18px;"></i>`,
+    properti: `<i class="ti ti-home" style="font-size:18px;"></i>`
   };
   const bizIconEl = document.getElementById('cp-action-biz-icon');
   if(bizIconEl) { bizIconEl.innerHTML = icons[company.type] || icons.umum; bizIconEl.style.display='flex'; bizIconEl.style.alignItems='center'; bizIconEl.style.justifyContent='center'; }

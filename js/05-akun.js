@@ -309,52 +309,6 @@ function openExportModal() {
   _pvUpdateExportModalBadge();
 }
 
-function openTemplateModal() {
-  selectedTemplate = null;
-  // Reset card borders
-  ['jasa','dagang','manufaktur','lengkap'].forEach(t => {
-    const el = document.getElementById('tmpl-'+t);
-    if(el) el.style.border = '2px solid var(--border)';
-  });
-  document.getElementById('template-selected-info').style.display = 'none';
-  document.getElementById('tmpl-apply-btn').disabled = true;
-  document.getElementById('modal-template').classList.add('open');
-}
-
-function selectTemplate(id) {
-  selectedTemplate = id;
-  ['jasa','dagang','manufaktur','lengkap'].forEach(t => {
-    const el = document.getElementById('tmpl-'+t);
-    if(el) el.style.border = t===id ? '2px solid var(--accent)' : '2px solid var(--border)';
-  });
-  const tmpl = TEMPLATES[id];
-  const count = tmpl.codes ? tmpl.codes.length : akuns.length;
-  document.getElementById('template-selected-info').style.display = 'block';
-  document.getElementById('tmpl-sel-title').innerHTML = '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ' + tmpl.label + ' dipilih';
-  document.getElementById('tmpl-sel-desc').textContent = tmpl.desc + ` (${count} akun)`;
-  document.getElementById('tmpl-apply-btn').disabled = false;
-}
-
-function applyTemplate() {
-  if(!selectedTemplate) return;
-  const tmpl = TEMPLATES[selectedTemplate];
-  // Get full akun list (use the default comprehensive list)
-  const allAkuns = getDefaultAkuns();
-  
-  if(tmpl.codes === null) {
-    // Use all
-    akuns = [...allAkuns];
-  } else {
-    // Filter to only template codes
-    akuns = allAkuns.filter(a => tmpl.codes.includes(a.kode));
-  }
-  akuns.sort((a,b) => a.kode.localeCompare(b.kode));
-  closeModal('modal-template');
-  renderAkun();
-  markDirty();
-  showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Template "${tmpl.label}" diterapkan — ${akuns.length} akun aktif!`);
-}
-
 function getDefaultAkuns() {
   // Return the full comprehensive akun list
   return [

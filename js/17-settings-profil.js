@@ -186,7 +186,7 @@ function openModal(id) { document.getElementById(id)?.classList.add('open'); }
 
 // ONBOARDING
 let obStep = 1;
-let obType = 'lengkap';
+let obType = 'umum';
 
 function checkShowOnboarding() {
   const p = getProfil();
@@ -211,17 +211,16 @@ function obNext() {
     document.getElementById('ob-dot-2').style.background = 'var(--accent)';
   } else if(obStep === 2) {
     obStep = 3;
-    // Apply template directly (no dependency on the removed COA template modal DOM)
-    if(typeof TEMPLATES !== 'undefined' && TEMPLATES[obType]) {
-      const tmpl = TEMPLATES[obType];
-      const allAkuns = getDefaultAkuns();
-      akuns = tmpl.codes === null ? [...allAkuns] : allAkuns.filter(a => tmpl.codes.includes(a.kode));
-      akuns.sort((a,b) => a.kode.localeCompare(b.kode));
-      markDirty();
-    }
+    // Jenis bisnis hanya dipakai sebagai kategori/label bisnis — TIDAK memfilter
+    // Chart of Akun. Semua akun tetap ditampilkan lengkap (lihat catatan di
+    // createCompany/selectCompany: akuns selalu diisi dari getDefaultAkuns()
+    // tanpa filter berdasarkan jenis usaha).
     const p = getProfil();
+    p.jenis = obType;
+    localStorage.setItem(PROFIL_KEY, JSON.stringify(p));
+    if (currentCompany) currentCompany.type = obType;
     document.getElementById('ob-ready-title').textContent = `Siap, ${p.nama}! 🎉`;
-    document.getElementById('ob-ready-desc').textContent = `Template akun untuk bisnis ${obType} sudah diterapkan. Kamu bisa mulai input transaksi sekarang.`;
+    document.getElementById('ob-ready-desc').textContent = `Semua akun sudah siap dipakai. Kamu bisa mulai input transaksi sekarang.`;
     document.getElementById('onboard-step-2').style.display = 'none';
     document.getElementById('onboard-step-3').style.display = 'block';
     document.getElementById('ob-next-btn').textContent = '🚀 Mulai Sekarang!';
