@@ -3653,28 +3653,33 @@
         <div style="text-align:center;padding:8px 0 16px;">
           <div style="margin-bottom:12px;display:flex;justify-content:center;color:var(--accent2);"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V8l7-5 7 5v12"/><path d="M9 20v-5h6v5"/></svg></div>
           <div style="font-size:16px;font-weight:700;margin-bottom:6px;">Jenis bisnis kamu?</div>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Ini menentukan template akun yang akan digunakan</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Semua akun tetap tersedia — ini cuma buat kategori bisnismu</div>
         </div>
         <div style="grid-template-columns:1fr 1fr;" class="kalk-grid">
-          <div class="ob-type-card" onclick="selectObType('jasa',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
-            <div style="font-size:28px;margin-bottom:8px;"><i class="ti ti-adjustments" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div>
+          <div class="ob-type-card ob-type-selected" data-val="umum" onclick="selectObType('umum',this)" style="background:var(--surface2);border:2px solid var(--accent);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
+            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent2);"><i class="ti ti-building-skyscraper" style="font-size:28px;"></i></div>
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Umum</div>
+            <div style="font-size:11px;color:var(--muted);">Belum tahu / lainnya</div>
+          </div>
+          <div class="ob-type-card" data-val="dagang" onclick="selectObType('dagang',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
+            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent2);"><i class="ti ti-shopping-cart" style="font-size:28px;"></i></div>
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Dagang / Toko</div>
+            <div style="font-size:11px;color:var(--muted);">Toko, reseller, distributor</div>
+          </div>
+          <div class="ob-type-card" data-val="jasa" onclick="selectObType('jasa',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
+            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent2);"><i class="ti ti-briefcase" style="font-size:28px;"></i></div>
             <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Jasa</div>
             <div style="font-size:11px;color:var(--muted);">Konsultan, klinik, salon, agensi</div>
           </div>
-          <div class="ob-type-card" onclick="selectObType('dagang',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
-            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent2);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
-            <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Dagang</div>
-            <div style="font-size:11px;color:var(--muted);">Toko, reseller, distributor</div>
-          </div>
-          <div class="ob-type-card" onclick="selectObType('manufaktur',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
-            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent2);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V8l7-5 7 5v12"/><path d="M9 20v-5h6v5"/></svg></div>
+          <div class="ob-type-card" data-val="manufaktur" onclick="selectObType('manufaktur',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
+            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent2);"><i class="ti ti-industry" style="font-size:28px;"></i></div>
             <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Manufaktur</div>
             <div style="font-size:11px;color:var(--muted);">Pabrik, produksi, UMKM</div>
           </div>
-          <div class="ob-type-card" onclick="selectObType('lengkap',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
-            <div style="margin-bottom:8px;display:flex;justify-content:center;color:#f59e0b;"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-            <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Semua Akun</div>
-            <div style="font-size:11px;color:var(--muted);">103 akun lengkap</div>
+          <div class="ob-type-card" data-val="properti" onclick="selectObType('properti',this)" style="grid-column:1 / -1;background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
+            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent2);"><i class="ti ti-home" style="font-size:28px;"></i></div>
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Properti</div>
+            <div style="font-size:11px;color:var(--muted);">Kos, kontrakan, rental</div>
           </div>
         </div>
       </div>
@@ -3844,7 +3849,7 @@
               <span class="cp-type-radio"></span>
             </label>
             <label class="cp-type-card" data-val="jasa" onclick="selectBizType(this)">
-              <span class="cp-type-icon"><i class="ti ti-adjustments" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></span>
+              <span class="cp-type-icon"><i class="ti ti-briefcase" style="font-size:20px;"></i></span>
               <span class="cp-type-label">Jasa</span>
               <span class="cp-type-radio"></span>
             </label>
