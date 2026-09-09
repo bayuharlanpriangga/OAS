@@ -5287,4 +5287,13 @@
   <div style="font-size:10px;color:var(--muted);margin-bottom:5px;">Preset:</div>
   <div class="pv-swatches" id="pv-swatches"></div>
 </div>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.warn('SW register gagal:', err));
+  });
+}
+</script>
 </body></html>
