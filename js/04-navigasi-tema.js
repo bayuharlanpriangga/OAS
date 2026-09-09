@@ -272,9 +272,17 @@ function applyTheme(mode) {
   if (typeof renderChart === 'function') setTimeout(renderChart, 50);
 }
 
-// Selaraskan meta theme-color, color-scheme, dan manifest dinamis dengan tema aktif.
-// Dipanggil setiap kali tema berubah (bukan cuma saat load awal) agar status bar /
-// splash screen PWA konsisten dengan tema yang dipilih user.
+// Selaraskan meta theme-color & color-scheme dengan tema aktif.
+// Dipanggil setiap kali tema berubah (bukan cuma saat load awal) agar status bar
+// PWA konsisten dengan tema yang dipilih user.
+// CATATAN: JANGAN swap <link rel="manifest"> ke blob URL di sini. Untuk PWA yang
+// sudah ter-install jadi WebAPK, Android butuh href manifest tetap konsisten
+// (manifest.json asli) untuk validasi & update check di background — kalau
+// di-swap ke blob: URL tiap toggle, WebAPK bisa gagal validasi dan fallback ke
+// warna status bar default (biasanya light), meski meta tag di halaman sudah benar.
+// theme_color/background_color statis di manifest.json sudah cukup untuk splash
+// screen saat install; nav bar device sendiri memang di luar jangkauan web PWA
+// (butuh native/TWA kalau mau full-sync).
 function syncPwaThemeChrome(mode) {
   try {
     const isLight = mode === 'light';
@@ -283,24 +291,6 @@ function syncPwaThemeChrome(mode) {
     if (metaTC) metaTC.setAttribute('content', bg);
     const metaCS = document.getElementById('meta-color-scheme');
     if (metaCS) metaCS.setAttribute('content', isLight ? 'light' : 'dark');
-
-    fetch('manifest.json', { cache: 'no-store' }).then(r => r.json()).then(m => {
-      m.background_color = bg;
-      m.theme_color = bg;
-      const baseDir = location.origin + location.pathname.replace(/[^\/]*$/, '');
-      const abs = p => { try { return new URL(p, baseDir).href; } catch(e) { return p; } };
-      if (m.start_url) m.start_url = abs(m.start_url);
-      if (m.scope) m.scope = abs(m.scope);
-      if (Array.isArray(m.icons)) m.icons.forEach(ic => { if (ic.src) ic.src = abs(ic.src); });
-      if (Array.isArray(m.screenshots)) m.screenshots.forEach(sc => { if (sc.src) sc.src = abs(sc.src); });
-      if (Array.isArray(m.shortcuts)) m.shortcuts.forEach(sc => {
-        if (sc.url) sc.url = abs(sc.url);
-        if (Array.isArray(sc.icons)) sc.icons.forEach(ic => { if (ic.src) ic.src = abs(ic.src); });
-      });
-      const blobUrl = URL.createObjectURL(new Blob([JSON.stringify(m)], { type: 'application/json' }));
-      const link = document.getElementById('manifest-link');
-      if (link) link.setAttribute('href', blobUrl);
-    }).catch(() => {});
   } catch(e) {}
 }
 

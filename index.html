@@ -42,33 +42,15 @@
     'input[type="month"]::-webkit-calendar-picker-indicator{cursor:pointer;filter:invert(0.8);opacity:0.7;}';
   document.head.appendChild(agStyle);
 
-  // Selaraskan meta theme-color & color-scheme dengan tema tersimpan (status bar / kontrol native ikut tema)
+  // Selaraskan meta theme-color & color-scheme dengan tema tersimpan (status bar ikut tema)
   var metaTC = document.getElementById('meta-theme-color');
   if (metaTC) metaTC.setAttribute('content', bg);
   var metaCS = document.getElementById('meta-color-scheme');
   if (metaCS) metaCS.setAttribute('content', isLight ? 'light' : 'dark');
-
-  // Bangun manifest dinamis: background_color & theme_color mengikuti tema tersimpan,
-  // supaya splash screen native (saat app dibuka dari home screen) ikut tema, bukan selalu gelap.
-  try {
-    fetch('manifest.json', { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(m){
-      m.background_color = bg;
-      m.theme_color = bg;
-      var baseDir = location.origin + location.pathname.replace(/[^\/]*$/, '');
-      function abs(p){ try { return new URL(p, baseDir).href; } catch(e){ return p; } }
-      if (m.start_url) m.start_url = abs(m.start_url);
-      if (m.scope) m.scope = abs(m.scope);
-      if (Array.isArray(m.icons)) m.icons.forEach(function(ic){ if (ic.src) ic.src = abs(ic.src); });
-      if (Array.isArray(m.screenshots)) m.screenshots.forEach(function(sc){ if (sc.src) sc.src = abs(sc.src); });
-      if (Array.isArray(m.shortcuts)) m.shortcuts.forEach(function(sc){
-        if (sc.url) sc.url = abs(sc.url);
-        if (Array.isArray(sc.icons)) sc.icons.forEach(function(ic){ if (ic.src) ic.src = abs(ic.src); });
-      });
-      var blobUrl = URL.createObjectURL(new Blob([JSON.stringify(m)], { type: 'application/json' }));
-      var link = document.getElementById('manifest-link');
-      if (link) link.setAttribute('href', blobUrl);
-    }).catch(function(){});
-  } catch(e){}
+  // CATATAN: sengaja TIDAK swap <link rel="manifest"> ke blob URL di sini.
+  // Untuk PWA yang sudah ter-install jadi WebAPK, itu bikin Android gagal
+  // validasi manifest & fallback ke warna status bar default. theme_color/
+  // background_color statis di manifest.json sudah cukup untuk splash screen.
 })();
 </script>
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
