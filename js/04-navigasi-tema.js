@@ -521,9 +521,9 @@ function renderTutStep() {
   // Next button
   const nextBtn = document.getElementById('tut-btn-next');
   if(tutStep === total - 1) {
-    nextBtn.textContent = window._tutSeqIds ? 'Bagian Berikutnya →' : '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Selesai';
+    nextBtn.innerHTML = window._tutSeqIds ? 'Bagian Berikutnya →' : '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Selesai';
   } else {
-    nextBtn.textContent = 'Lanjut →';
+    nextBtn.innerHTML = 'Lanjut →';
   }
 
   // Clear old highlight

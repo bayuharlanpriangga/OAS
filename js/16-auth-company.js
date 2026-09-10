@@ -859,7 +859,7 @@ async function afterLogin() {
   } catch(e) {
     console.error('[afterLogin] ERROR:', e.message, e);
     if (chip) chip.style.pointerEvents = '';
-    if (chipName) chipName.textContent = '<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Gagal memuat';
+    if (chipName) chipName.innerHTML = '<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Gagal memuat';
     if (chipSub) chipSub.textContent = e.message || 'Cek console';
     showAlert('❌ Gagal memuat data bisnis: ' + e.message);
     enterGuestMode();

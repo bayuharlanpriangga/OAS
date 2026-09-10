@@ -402,7 +402,7 @@ function startCooldownDisplay(seconds, autoRetry = false) {
       
       if(autoRetry) {
         // Show "ready" indicator briefly
-        btn.textContent = '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Siap';
+        btn.innerHTML = '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Siap';
         btn.style.background = 'var(--accent)';
         btn.style.color = '#000';
         setTimeout(() => {
