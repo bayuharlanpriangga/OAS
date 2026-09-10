@@ -166,7 +166,7 @@ function hapusAkun(kode) {
       { label: 'Tipe', value: a.tipe, color: 'var(--accent2)' },
     ],
     warning: '<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Aksi ini tidak bisa dibatalkan.',
-    btnLabel: '[Hapus] Ya, Hapus Akun',
+    btnLabel: '<i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Ya, Hapus Akun',
     btnGradient: 'linear-gradient(135deg,#f87171,#dc2626)',
   }).then(ok => {
     if(!ok) return;

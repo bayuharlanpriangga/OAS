@@ -2952,7 +2952,7 @@ async function executeAIActions(actions) {
           hitungBEP();
           const cm = (action.harga||0)-(action.bv||0);
           const bep = cm>0 ? Math.ceil((action.bt||0)/cm) : 0;
-          results.push(`[BEP] Kalkulator BEP diisi: Harga Rp ${(action.harga||0).toLocaleString('id-ID')}, BV Rp ${(action.bv||0).toLocaleString('id-ID')}, BT Rp ${(action.bt||0).toLocaleString('id-ID')} → BEP = <b>${bep.toLocaleString('id-ID')} unit</b>`);
+          results.push(`<i class="ti ti-target" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Kalkulator BEP diisi: Harga Rp ${(action.harga||0).toLocaleString('id-ID')}, BV Rp ${(action.bv||0).toLocaleString('id-ID')}, BT Rp ${(action.bt||0).toLocaleString('id-ID')} → BEP = <b>${bep.toLocaleString('id-ID')} unit</b>`);
           break;
         }
 
@@ -2969,7 +2969,7 @@ async function executeAIActions(actions) {
           if(action.jenis) setSelectVal('an-jenis', action.jenis);
           if(action.dp) setVal('an-dp', action.dp);
           hitungAnuitas();
-          results.push(`[Bunga] Kalkulator anuitas diisi: Pokok Rp ${(action.pokok||0).toLocaleString('id-ID')}, ${action.rate}%/tahun, ${action.tenor} bulan`);
+          results.push(`<i class="ti ti-chart-candle" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Kalkulator anuitas diisi: Pokok Rp ${(action.pokok||0).toLocaleString('id-ID')}, ${action.rate}%/tahun, ${action.tenor} bulan`);
           break;
         }
 
@@ -2984,7 +2984,7 @@ async function executeAIActions(actions) {
           if(action.mode) setSelectVal('ppn-mode', action.mode);
           hitungPPN();
           const ppn = (action.nilai||0) * (parseFloat(action.tarif)||12)/100;
-          results.push(`[Invoice] Kalkulator PPN diisi: DPP Rp ${(action.nilai||0).toLocaleString('id-ID')} → PPN = <b>Rp ${Math.round(ppn).toLocaleString('id-ID')}</b>`);
+          results.push(`<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Kalkulator PPN diisi: DPP Rp ${(action.nilai||0).toLocaleString('id-ID')} → PPN = <b>Rp ${Math.round(ppn).toLocaleString('id-ID')}</b>`);
           break;
         }
 

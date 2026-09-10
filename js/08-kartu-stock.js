@@ -127,7 +127,7 @@ function deteksiPenyesuaianOtomatis() {
         id: 'adj_peny_' + aset,
         tipe: 'penyusutan',
         level: 'warning',
-        judul: `[Penyusutan] Penyusutan ${nama} Belum Dicatat`,
+        judul: `<i class="ti ti-trending-down" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Penyusutan ${nama} Belum Dicatat`,
         deskripsi: `Aset <b>${aset} — ${nama}</b> senilai <b>${rp(nilaiAset)}</b>. Umur ${umur} tahun → penyusutan garis lurus <b>${rp(penyBulan)}/bulan</b>. Bulan ${periodeAktif} belum ada.`,
         alasan: 'Penyusutan dicatat tiap bulan agar nilai aset di neraca akurat (accrual basis).',
         nilaiSuggested: penyBulan,
@@ -1276,7 +1276,7 @@ function openModalKelolaKS() {
       <button onclick="switchActiveKS('${ks.id}');closeModal('mks-kelola-modal')" class="btn btn-ghost btn-sm" ${isActive?'disabled':''}>
         ${isActive?'Aktif':'Buka'}
       </button>
-      <button onclick="openModalEditKS('${ks.id}');closeModal('mks-kelola-modal')" class="btn btn-ghost btn-sm">[Edit]</button>
+      <button onclick="openModalEditKS('${ks.id}');closeModal('mks-kelola-modal')" class="btn btn-ghost btn-sm"><i class="ti ti-pencil" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i></button>
       ${list.length>1 ? `<button onclick="hapusKS('${ks.id}')" class="btn btn-danger btn-sm" ${isActive?'disabled':''}><i class="ti ti-trash" style="font-size:14px;"></i></button>` : ''}
     </div>`;
   }).join('');

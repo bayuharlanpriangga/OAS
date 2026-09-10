@@ -109,7 +109,7 @@ function renderJurnalBerulang() {
         <td>${statusBadge}</td>
         <td style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="btn btn-ghost btn-sm" onclick="jalankanJurnalBerulang('${j.id}')"><i class="ti ti-player-play" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i></button>
-          <button class="btn btn-ghost btn-sm" onclick="openModalJurnalBerulang('${j.id}')">[Edit]</button>
+          <button class="btn btn-ghost btn-sm" onclick="openModalJurnalBerulang('${j.id}')"><i class="ti ti-pencil" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i></button>
           <button class="btn btn-ghost btn-sm" onclick="toggleAktifJB('${j.id}')">${j.aktif?'<i class="ti ti-player-pause" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>':'<i class="ti ti-player-play" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>'}</button>
           <button class="btn btn-danger btn-sm" onclick="hapusJurnalBerulang('${j.id}')"><i class="ti ti-trash" style="font-size:14px;"></i></button>
         </td>
@@ -1267,12 +1267,12 @@ function konfirmasiHapusJurnal(idx) {
     if (entry && entry._id && typeof deleteJurnalFromSupabase === 'function') {
       try {
         await deleteJurnalFromSupabase(entry);
-        showAlert('[Hapus] Jurnal berhasil dihapus & tersinkron ke cloud');
+        showAlert('<i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Jurnal berhasil dihapus & tersinkron ke cloud');
       } catch(e) {
-        showAlert('[Hapus] Jurnal dihapus (lokal), tapi gagal sinkron cloud — coba simpan ulang');
+        showAlert('<i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Jurnal dihapus (lokal), tapi gagal sinkron cloud — coba simpan ulang');
       }
     } else {
-      showAlert('[Hapus] Jurnal berhasil dihapus');
+      showAlert('<i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Jurnal berhasil dihapus');
     }
   };
   document.getElementById('modal-hapus-jurnal').classList.add('open');

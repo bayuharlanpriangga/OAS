@@ -2114,19 +2114,19 @@
     <!-- Suggestion chips -->
     <!-- Chips toggle header -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;">
-      <span style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">💡 Contoh Pertanyaan</span>
+      <span style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;"><i class="ti ti-bulb" style="font-size:12px;vertical-align:-1px;margin-right:4px;"></i>Contoh Pertanyaan</span>
       <button id="ai-chips-toggle" onclick="toggleAIChips()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--muted);cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:4px;transition:all 0.15s;">
         <span id="ai-chips-toggle-icon">▲</span> <span id="ai-chips-toggle-label">Sembunyikan</span>
       </button>
     </div>
     <div id="ai-chips" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;flex-shrink:0;">
       <button class="chip" onclick="useChip(this)"><i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Beli barang dagangan Rp 5jt tunai</button>
-      <button class="chip" onclick="useChip(this)">💰 Hitung penyusutan mesin Rp 100jt umur 5 tahun</button>
-      <button class="chip" onclick="useChip(this)">[Invoice] Jual barang Rp 15jt kredit, HPP Rp 9jt</button>
+      <button class="chip" onclick="useChip(this)"><i class="ti ti-trending-down" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Hitung penyusutan mesin Rp 100jt umur 5 tahun</button>
+      <button class="chip" onclick="useChip(this)"><i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Jual barang Rp 15jt kredit, HPP Rp 9jt</button>
       <button class="chip" onclick="useChip(this)"><i class="ti ti-chart-bar ti-inline"></i> Analisis rasio keuangan saya</button>
-      <button class="chip" onclick="useChip(this)">[Kalkulator] Hitung PPh 21 gaji Rp 12jt TK/0</button>
-      <button class="chip" onclick="useChip(this)">📖 Bagaimana cara input jurnal manual?</button>
-      <button class="chip" onclick="useChip(this)">[BEP] BEP harga jual 50rb, biaya variabel 30rb, biaya tetap 20jt</button>
+      <button class="chip" onclick="useChip(this)"><i class="ti ti-calculator" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Hitung PPh 21 gaji Rp 12jt TK/0</button>
+      <button class="chip" onclick="useChip(this)"><i class="ti ti-info-circle" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Bagaimana cara input jurnal manual?</button>
+      <button class="chip" onclick="useChip(this)"><i class="ti ti-target" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> BEP harga jual 50rb, biaya variabel 30rb, biaya tetap 20jt</button>
       <button class="chip" onclick="useChip(this)"><i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Cara mencatat pembayaran utang usaha</button>
     </div>
 
@@ -2138,14 +2138,14 @@
           <div style="font-weight:600;color:var(--accent2);margin-bottom:6px;">Orias Assisten siap membantu!</div>
           <div>Saya bisa membantu Anda:</div>
           <ul style="margin:8px 0 0 16px;line-height:1.8;">
-            <li>[Jurnal] <b>Catat transaksi</b> — cukup ceritakan, saya buatkan jurnal otomatis</li>
-            <li>[Kalkulator] <b>Hitung kalkulasi</b> — penyusutan, BEP, PPh, rasio, bunga</li>
+            <li><i class="ti ti-book" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Catat transaksi</b> — cukup ceritakan, saya buatkan jurnal otomatis</li>
+            <li><i class="ti ti-calculator" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Hitung kalkulasi</b> — penyusutan, BEP, PPh, rasio, bunga</li>
             <li><i class="ti ti-chart-bar ti-inline"></i> <b>Analisis laporan</b> — saya baca data keuangan Anda & berikan insight</li>
-            <li>📖 <b>Bimbingan penggunaan</b> — tanya cara pakai fitur apapun</li>
-            <li>[Tutorial] <b>Edukasi akuntansi</b> — jelaskan konsep, standar PSAK, dll</li>
+            <li><i class="ti ti-info-circle" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Bimbingan penggunaan</b> — tanya cara pakai fitur apapun</li>
+            <li><i class="ti ti-school" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Edukasi akuntansi</b> — jelaskan konsep, standar PSAK, dll</li>
           </ul>
           <div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--muted);">
-            💡 Contoh: <i>"Kemarin saya beli laptop Rp 15jt untuk kantor, bayar tunai. Tolong buatkan jurnalnya dan hitung penyusutannya 4 tahun metode garis lurus."</i>
+            <i class="ti ti-bulb" style="font-size:12px;vertical-align:-1px;margin-right:4px;"></i>Contoh: <i>"Kemarin saya beli laptop Rp 15jt untuk kantor, bayar tunai. Tolong buatkan jurnalnya dan hitung penyusutannya 4 tahun metode garis lurus."</i>
           </div>
         </div>
       </div>
@@ -2475,7 +2475,7 @@
   </div>
 
   <!-- DASAR -->
-  <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;">🌱 Dasar — Mulai dari sini</div>
+  <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;"><i class="ti ti-leaf" style="font-size:12px;vertical-align:-1px;margin-right:5px;"></i>Dasar — Mulai dari sini</div>
   <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
     <div class="tut-card" onclick="startTutorialById('pengenalan')">
       <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 00-2-2v0a2 2 0 00-2 2v0M14 10V4a2 2 0 00-2-2v0a2 2 0 00-2 2v2M10 10.5V6a2 2 0 00-2-2v0a2 2 0 00-2 2v8l3 3"/><path d="M18 11a2 2 0 114 0v3a8 8 0 01-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 012.83-2.82L7 15"/></svg></div><div class="tut-card-title">Pengenalan OAS</div>
@@ -2560,7 +2560,7 @@
   </div>
 
   <!-- FITUR BARU -->
-  <div style="font-size:11px;font-weight:700;color:#a78bfa;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;">✨ Fitur Baru</div>
+  <div style="font-size:11px;font-weight:700;color:#a78bfa;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;"><i class="ti ti-sparkles" style="font-size:12px;vertical-align:-1px;margin-right:5px;"></i>Fitur Baru</div>
   <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
     <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-jurnal-berulang')">
       <div class="tut-card-icon"><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div><div class="tut-card-title">Jurnal Berulang</div>
@@ -2588,7 +2588,7 @@
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
     </div>
     <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-anggaran')">
-      <div class="tut-card-icon">🎯</div><div class="tut-card-title">Anggaran vs Aktual</div>
+      <div class="tut-card-icon"><i class="ti ti-target" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div><div class="tut-card-title">Anggaran vs Aktual</div>
       <div class="tut-card-desc">Set target anggaran per akun per bulan, monitor realisasi dengan progress bar dan variance analysis.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~4 menit</span></div>
     </div>
@@ -2608,7 +2608,7 @@
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~4 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('tut-chart-hd')">
-      <div class="tut-card-icon">🔍</div><div class="tut-card-title">Chart HD & Zoom</div>
+      <div class="tut-card-icon"><i class="ti ti-search" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div><div class="tut-card-title">Chart HD & Zoom</div>
       <div class="tut-card-desc">Klik chart mana saja untuk tampilan HD super besar. Scroll horizontal di mobile agar label tidak bertabrakan.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~1 menit</span></div>
     </div>
@@ -2658,7 +2658,7 @@
       <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
     </div>
     <div class="tut-card tut-card-ai" onclick="startTutorialById('ai-advanced')">
-      <div class="tut-card-icon">✨</div><div class="tut-card-title">AI untuk Analisis Keuangan</div>
+      <div class="tut-card-icon"><i class="ti ti-sparkles" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div><div class="tut-card-title">AI untuk Analisis Keuangan</div>
       <div class="tut-card-desc">Minta AI analisis laporan keuanganmu, identifikasi masalah cash flow, dan berikan rekomendasi bisnis.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-hard">Lanjutan</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
     </div>
@@ -2913,7 +2913,7 @@
       padding:10px 14px;display:flex;align-items:center;gap:8px;
       cursor:grab;user-select:none;
     ">
-      <span style="font-size:14px;">[Tutorial]</span>
+      <span style="font-size:14px;"><i class="ti ti-school" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i></span>
       <span id="tut-step-label" style="font-size:11px;font-weight:700;color:var(--accent2);letter-spacing:0.06em;text-transform:uppercase;flex:1;"></span>
       <span id="tut-counter" style="font-size:11px;color:var(--muted);font-family:var(--mono);"></span>
       <!-- Window controls -->
@@ -2962,7 +2962,7 @@
     display:none;align-items:center;gap:8px;
     box-shadow:0 4px 20px rgba(0,0,0,0.4);"
     onclick="tutRestore()">
-    <span style="font-size:14px;">[Tutorial]</span>
+    <span style="font-size:14px;"><i class="ti ti-school" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i></span>
     <span id="tut-mini-label" style="font-size:12px;font-weight:600;color:var(--accent2);">Tutorial</span>
     <span id="tut-mini-counter" style="font-size:11px;color:var(--muted);font-family:var(--mono);"></span>
     <span style="font-size:11px;color:var(--muted);">↑ Buka</span>

@@ -171,7 +171,7 @@ function deleteSlot(slotId) {
   delete slots[slotId];
   localStorage.setItem(STORAGE_SLOTS_KEY, JSON.stringify(slots));
   renderStorageSlots();
-  showAlert('[Hapus] Slot dihapus');
+  showAlert('<i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Slot dihapus');
 }
 
 function renderStorageSlots() {

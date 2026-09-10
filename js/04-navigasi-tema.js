@@ -505,12 +505,12 @@ function renderTutStep() {
   const total = steps.length;
 
   // Progress
-  document.getElementById('tut-step-label').textContent = `${mod.icon} ${mod.title}`;
+  document.getElementById('tut-step-label').innerHTML = `${mod.icon} ${mod.title}`;
   document.getElementById('tut-counter').textContent = `${tutStep+1} / ${total}`;
   document.getElementById('tut-progress').style.width = ((tutStep+1)/total*100) + '%';
 
   // Content
-  document.getElementById('tut-icon').textContent = step.icon;
+  document.getElementById('tut-icon').innerHTML = step.icon;
   document.getElementById('tut-title').textContent = step.title;
   document.getElementById('tut-body').innerHTML = step.body.replace(/\n/g, '<br>').replace(/`([^`]+)`/g, '<code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;color:var(--accent);display:inline-block;margin:2px 0;">$1</code>').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/<b>/g,'<b style="color:var(--text)">');
 

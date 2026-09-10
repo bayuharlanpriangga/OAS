@@ -359,7 +359,7 @@ function showAIConfirm(jurnalActions, otherActions) {
     if(jurnalActions.length > 0) {
       journalList.innerHTML = `
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">
-          [Jurnal] ${jurnalActions.length} Jurnal akan disimpan:
+          <i class="ti ti-book" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> ${jurnalActions.length} Jurnal akan disimpan:
         </div>
         ${jurnalActions.map((j, i) => {
           const total = (j.lines||[]).reduce((s,l)=>s+(l.debit||0),0);
@@ -378,7 +378,7 @@ function showAIConfirm(jurnalActions, otherActions) {
     // Other actions
     if(otherActions.length > 0) {
       otherDiv.style.display = 'block';
-      otherDiv.innerHTML = `[BEP] ${otherActions.length} aksi lain: navigasi, isi kalkulator, dll`;
+      otherDiv.innerHTML = `<i class="ti ti-target" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> ${otherActions.length} aksi lain: navigasi, isi kalkulator, dll`;
     } else {
       otherDiv.style.display = 'none';
     }

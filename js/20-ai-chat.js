@@ -97,7 +97,7 @@ async function callGeminiWithRotation(systemPrompt, messages) {
   // "AQ." auth keys (which replaced the old AIza Standard keys through 2026)
   // are unreliable on the OpenAI-compat path — reports of 400/401 errors
   // even with valid keys — but work correctly here with x-goog-api-key.
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -251,7 +251,7 @@ function updateAIKeyStatus() {
   if(!btn) return;
   const keys = getGeminiKeys();
   if(keys.length > 0) {
-    btn.textContent = `<i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> ${keys.length} Key Aktif`;
+    btn.innerHTML = `<i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> ${keys.length} Key Aktif`;
     btn.className = 'btn btn-ghost btn-sm key-ok';
   } else {
     btn.textContent = 'Setup AI';
@@ -518,7 +518,7 @@ ${getAppContext()}`;
           if(results.length > 0) {
             const execDiv = document.createElement('div');
             execDiv.style.cssText = 'margin-top:12px;padding:10px 12px;background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.25);border-radius:8px;';
-            execDiv.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">[BEP] Aksi Dieksekusi Otomatis</div>'
+            execDiv.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;"><i class="ti ti-target" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Aksi Dieksekusi Otomatis</div>'
               + results.map(r => '<div style="font-size:12.5px;padding:3px 0;color:var(--text);">'+r+'</div>').join('');
             botDiv.querySelector('.ai-bubble').appendChild(execDiv);
           }
@@ -639,15 +639,15 @@ const TUT_MODULES = {
         body:'Cukup klik menu di sidebar — halaman langsung berganti tanpa refresh browser.\n\nMenu yang sedang aktif ditandai dengan warna hijau dan garis di sisi kiri.\n\nSemua data tersimpan sementara selama sesi browser kamu terbuka.',
         target: null },
       { icon:'<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>', title:'Siap Menjelajah!',
-        body:'Sekarang kamu sudah tahu cara navigasi Bayu Harlan Priangga.\n\n<b>Lanjutkan dengan tutorial:</b>\n• <i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Mencatat Pemasukan Kas\n• [Invoice] Mencatat Penjualan\n• <i class="ti ti-chart-bar ti-inline"></i> Membaca Laporan Keuangan\n\nAtau langsung eksplorasi sendiri — jika bingung, tanya <b>Orias Assisten</b>!',
+        body:'Sekarang kamu sudah tahu cara navigasi Bayu Harlan Priangga.\n\n<b>Lanjutkan dengan tutorial:</b>\n• <i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Mencatat Pemasukan Kas\n• <i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Mencatat Penjualan\n• <i class="ti ti-chart-bar ti-inline"></i> Membaca Laporan Keuangan\n\nAtau langsung eksplorasi sendiri — jika bingung, tanya <b>Orias Assisten</b>!',
         target: null }
     ]
   },
 
   'konsep-akuntansi': {
-    title: 'Konsep Dasar Akuntansi', icon: '[Akuntansi]',
+    title: 'Konsep Dasar Akuntansi', icon: '<i class="ti ti-book" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
     steps: [
-      { icon:'[Akuntansi]', title:'Apa itu Akuntansi?',
+      { icon:'<i class="ti ti-book" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>', title:'Apa itu Akuntansi?',
         body:'Akuntansi adalah cara <b>mencatat, mengelompokkan, dan meringkas</b> semua kejadian keuangan bisnis.\n\nBayangkan kamu punya buku catatan keuangan yang rapi — itulah akuntansi. Bedanya, Bayu Harlan Priangga melakukannya secara otomatis!',
         target: null },
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v16l-5-2.5L5 20V4zm9 0h2a2 2 0 012 2v16l-4-2"/></svg>', title:'Akun — Tempat Menyimpan Catatan',
@@ -659,7 +659,7 @@ const TUT_MODULES = {
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm0 0v6h6M8 13h8M8 17h5"/></svg>', title:'Jurnal — Catatan Tiap Transaksi',
         body:'<b>Jurnal</b> adalah catatan resmi setiap transaksi keuangan.\n\nContoh: Kamu bayar listrik Rp 500.000 tunai\n\n<code>Dr. Beban Listrik   Rp 500.000\n  Kr. Kas             Rp 500.000</code>\n\nArtinya: beban listrik bertambah (Dr), kas berkurang (Kr).\n\nBayu Harlan Priangga membuat jurnal ini <b>otomatis</b> saat kamu input transaksi!',
         target: null },
-      { icon:'[Jenis Akun]', title:'5 Jenis Akun',
+      { icon:'<i class="ti ti-list" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>', title:'5 Jenis Akun',
         body:'Semua akun dikelompokkan jadi 5 tipe:\n\n🟢 <b>Aset</b> — apa yang dimiliki bisnis (kas, mesin, gedung)\n🔴 <b>Liabilitas</b> — hutang bisnis (utang bank, utang usaha)\n🔵 <b>Ekuitas</b> — modal pemilik\n🟡 <b>Pendapatan</b> — uang masuk dari penjualan/jasa\n🟠 <b>Beban</b> — pengeluaran operasional\n\nRumus dasar: <b>Aset = Liabilitas + Ekuitas</b>',
         target: null },
       { icon:'<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>', title:'Konsep Sudah Paham!',
@@ -674,7 +674,7 @@ const TUT_MODULES = {
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>', title:'Apa itu Chart of Accounts?',
         body:'<b>Chart of Accounts (CoA)</b> adalah daftar lengkap semua akun yang digunakan perusahaan.\n\nIbaratnya seperti daftar isi buku catatan keuangan — setiap akun punya nomor kode dan nama yang unik.',
         target: '.nav-item[onclick*="akun"]', navTo: 'akun' },
-      { icon:'[Kode]', title:'Kode Akun',
+      { icon:'<i class="ti ti-list" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>', title:'Kode Akun',
         body:'Setiap akun punya <b>kode unik</b> berupa angka:\n\n• <b>1xxx</b> = Aset (1101 = Kas, 1201 = Piutang...)\n• <b>2xxx</b> = Liabilitas (2101 = Utang Usaha...)\n• <b>3xxx</b> = Ekuitas (3101 = Modal...)\n• <b>4xxx</b> = Pendapatan (4101 = Penjualan...)\n• <b>5xxx+</b> = Beban (6101 = Beban Gaji...)\n\nUrutan angka memudahkan pengelompokan laporan.',
         target: '#akun-body', highlight: true },
       { icon:'+', title:'Menambah Akun Baru',
@@ -690,7 +690,7 @@ const TUT_MODULES = {
   },
 
   'catat-kas-masuk': {
-    title: 'Mencatat Pemasukan Kas', icon: '[Jurnal Kas]',
+    title: 'Mencatat Pemasukan Kas', icon: '<i class="ti ti-cash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
     steps: [
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><path d="M3 10h18M3 14h18M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2zm9 5v3"/></svg>', title:'Apa itu Pemasukan Kas?',
         body:'Pemasukan kas adalah semua uang tunai yang masuk ke bisnis:\n\n💰 Modal yang disetor pemilik\n🛍️ Pembayaran dari pelanggan\n📬 Pelunasan piutang\n<i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Pendapatan jasa\n\nSetiap pemasukan kas harus dicatat agar laporan keuangan akurat.',
@@ -720,7 +720,7 @@ const TUT_MODULES = {
     title: 'Mencatat Pengeluaran Kas', icon: '💸',
     steps: [
       { icon:'💸', title:'Apa itu Pengeluaran Kas?',
-        body:'Pengeluaran kas adalah semua uang tunai yang keluar dari bisnis:\n\n💡 Bayar listrik, air, internet\n👥 Bayar gaji karyawan\n🏠 Bayar sewa tempat\n[Jurnal Beli] Beli perlengkapan kantor\n<i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Cicilan pinjaman\n\nSemua harus dicatat agar tidak ada pengeluaran yang "hilang".',
+        body:'Pengeluaran kas adalah semua uang tunai yang keluar dari bisnis:\n\n💡 Bayar listrik, air, internet\n👥 Bayar gaji karyawan\n🏠 Bayar sewa tempat\n<i class="ti ti-shopping-cart" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Beli perlengkapan kantor\n<i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Cicilan pinjaman\n\nSemua harus dicatat agar tidak ada pengeluaran yang "hilang".',
         target: '.nav-item[onclick*="transaksi"]', navTo: 'transaksi' },
       { icon:'↔', title:'Pilih Jenis: Pengeluaran',
         body:'Di dropdown <b>Jenis</b>, pilih:\n\n❌ Penerimaan Kas\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <b>Pengeluaran Kas</b> ← pilih ini\n\nJika pilih Pengeluaran Kas, jurnal yang dibuat:\n<code>Dr. [Akun Lawan] (beban/aset bertambah)\n  Kr. Kas (kas berkurang)</code>',
@@ -738,10 +738,10 @@ const TUT_MODULES = {
   },
 
   'catat-penjualan': {
-    title: 'Mencatat Penjualan', icon: '[Invoice]',
+    title: 'Mencatat Penjualan', icon: '<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
     steps: [
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M5 21V3l2 2 2-2 2 2 2-2 2 2 2-2v18l-2-2-2 2-2-2-2 2-2-2-2 2zm4-11h6m-6 4h6"/></svg>', title:'Mencatat Transaksi Penjualan',
-        body:'Penjualan adalah pendapatan utama bisnis. Di Bayu Harlan Priangga, ada 2 jenis penjualan:\n\n[Jurnal Kas] <b>Penjualan Tunai</b> — pelanggan bayar langsung\n<i class="ti ti-clipboard-list ti-inline"></i> <b>Penjualan Kredit</b> — pelanggan bayar nanti (piutang)\n\nKeduanya punya jurnal berbeda!',
+        body:'Penjualan adalah pendapatan utama bisnis. Di Bayu Harlan Priangga, ada 2 jenis penjualan:\n\n<i class="ti ti-cash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Penjualan Tunai</b> — pelanggan bayar langsung\n<i class="ti ti-clipboard-list ti-inline"></i> <b>Penjualan Kredit</b> — pelanggan bayar nanti (piutang)\n\nKeduanya punya jurnal berbeda!',
         target: '.nav-item[onclick*="transaksi"]', navTo: 'transaksi' },
       { icon:'<i class="ti ti-folder-open" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i>', title:'Buka Tab Penjualan',
         body:'Klik tab <b>"Penjualan"</b> di halaman Transaksi.\n\nKamu akan melihat form dengan kolom:\n• Tanggal\n• No. Invoice\n• Metode Pembayaran\n• Jumlah Penjualan\n• HPP (Harga Pokok)\n• Keterangan',
@@ -765,7 +765,7 @@ const TUT_MODULES = {
   },
 
   'catat-pembelian': {
-    title: 'Mencatat Pembelian', icon: '[Jurnal Beli]',
+    title: 'Mencatat Pembelian', icon: '<i class="ti ti-shopping-cart" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
     steps: [
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent3)"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg>', title:'Mencatat Transaksi Pembelian',
         body:'Pembelian perlu dicatat untuk:\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Menambah stok persediaan\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Mencatat aset baru\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Melacak utang usaha\n\nAda 2 jenis: <b>Tunai</b> (bayar langsung) dan <b>Kredit</b> (hutang dulu).',
@@ -789,9 +789,9 @@ const TUT_MODULES = {
   },
 
   'jurnal-manual': {
-    title: 'Jurnal Manual', icon: '[Edit]',
+    title: 'Jurnal Manual', icon: '<i class="ti ti-pencil" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
     steps: [
-      { icon:'[Edit]', title:'Kapan Pakai Jurnal Manual?',
+      { icon:'<i class="ti ti-pencil" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>', title:'Kapan Pakai Jurnal Manual?',
         body:'Jurnal Manual digunakan untuk transaksi yang tidak tersedia di tab cepat:\n\n<i class="ti ti-adjustments" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Jurnal penyesuaian (penyusutan, akrual)\n💱 Koreksi kesalahan pencatatan\n<i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Transfer antar akun\n<i class="ti ti-clipboard-list ti-inline"></i> Transaksi kompleks (banyak akun sekaligus)\n🗂️ Pembebanan biaya ke beberapa departemen',
         target: '.nav-item[onclick*="transaksi"]', navTo: 'transaksi' },
       { icon:'<i class="ti ti-clipboard-list ti-inline"></i>', title:'Buka Tab Jurnal Manual',
@@ -813,10 +813,10 @@ const TUT_MODULES = {
   },
 
   'jurnal-laporan': {
-    title: 'Membaca Jurnal & Buku Besar', icon: '[Jurnal Umum]',
+    title: 'Membaca Jurnal & Buku Besar', icon: '<i class="ti ti-book" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
     steps: [
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zM10 3v18M3 8h3M3 12h3M3 16h3"/></svg>', title:'Jurnal — Rekaman Semua Transaksi',
-        body:'Bayu Harlan Priangga punya 4 jenis jurnal khusus:\n\n[Jurnal Umum] <b>Jurnal Umum</b> — semua transaksi dalam satu tampilan\n[Jurnal Kas] <b>Jurnal Kas</b> — khusus mutasi uang kas\n[Invoice] <b>Jurnal Penjualan</b> — khusus transaksi jual\n[Jurnal Beli] <b>Jurnal Pembelian</b> — khusus transaksi beli\n\nSetiap transaksi yang kamu input otomatis masuk ke jurnal yang sesuai.',
+        body:'Bayu Harlan Priangga punya 4 jenis jurnal khusus:\n\n<i class="ti ti-book" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Jurnal Umum</b> — semua transaksi dalam satu tampilan\n<i class="ti ti-cash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Jurnal Kas</b> — khusus mutasi uang kas\n<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Jurnal Penjualan</b> — khusus transaksi jual\n<i class="ti ti-shopping-cart" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Jurnal Pembelian</b> — khusus transaksi beli\n\nSetiap transaksi yang kamu input otomatis masuk ke jurnal yang sesuai.',
         target: '.nav-item[onclick*="jurnal-umum"]', navTo: 'jurnal-umum' },
       { icon:'🔍', title:'Filter & Pencarian di Jurnal Umum',
         body:'Di Jurnal Umum ada 2 alat untuk menemukan transaksi:\n\n🔍 <b>Kotak Pencarian</b> — ketik kata kunci dari keterangan transaksi\n📁 <b>Filter Jenis</b> — tampilkan hanya Kas / Penjualan / Pembelian / Manual\n\nContoh: ketik "listrik" → tampil semua transaksi yang keterangannya mengandung kata "listrik".',
@@ -896,11 +896,11 @@ const TUT_MODULES = {
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M3 20.29V5a2 2 0 012-2h13.71a.7.7 0 01.5 1.21L5.21 18.5a.7.7 0 01-1.21-.5zM6 9h8M6 13h5"/></svg>', title:'4 Metode Penyusutan',
         body:'<b>1. Garis Lurus (SLM)</b>\nBeban sama setiap tahun. Paling simpel.\nContoh: mesin Rp 100jt, umur 5 tahun → Rp 20jt/tahun\n\n<b>2. Saldo Menurun Ganda (DDB)</b>\nBeban besar di awal, mengecil di akhir.\nCocok untuk aset teknologi yang cepat usang.\n\n<b>3. Sum of Years Digits (SYD)</b>\nVariasi saldo menurun yang lebih halus.\n\n<b>4. Unit Produksi</b>\nBerdasarkan berapa banyak unit diproduksi.\nCocok untuk mesin pabrik.',
         target: '#py-metode', highlight: true },
-      { icon:'[Kode]', title:'Parameter yang Perlu Diisi',
+      { icon:'<i class="ti ti-list" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>', title:'Parameter yang Perlu Diisi',
         body:'Untuk hitung penyusutan, isi:\n\n• <b>Harga Perolehan</b> — harga beli aset\n• <b>Nilai Sisa/Residu</b> — estimasi nilai saat tidak dipakai lagi\n• <b>Umur Ekonomis</b> — berapa tahun aset dipakai\n• <b>Metode</b> — pilih sesuai kebijakan perusahaan\n\nContoh: Mesin produksi\nHarga: Rp 100.000.000\nResidu: Rp 10.000.000\nUmur: 5 tahun\nMetode: Garis Lurus',
         target: '#py-cost', highlight: true },
       { icon:'<i class="ti ti-clipboard-list ti-inline"></i>', title:'Hasil: Tabel + Jurnal Otomatis',
-        body:'Setelah klik <b>"Hitung & Generate Tabel"</b>, sistem tampilkan:\n\n<i class="ti ti-chart-bar ti-inline"></i> <b>Tabel penyusutan</b> lengkap per tahun:\n• Beban Penyusutan per tahun\n• Akumulasi Penyusutan\n• Nilai Buku Awal dan Akhir\n\n[Jurnal] <b>Jurnal per tahun:</b>\nDr. Beban Penyusutan — Kr. Akumulasi Penyusutan\n\nSalin jurnal ini ke menu Jurnal Manual setiap akhir periode!',
+        body:'Setelah klik <b>"Hitung & Generate Tabel"</b>, sistem tampilkan:\n\n<i class="ti ti-chart-bar ti-inline"></i> <b>Tabel penyusutan</b> lengkap per tahun:\n• Beban Penyusutan per tahun\n• Akumulasi Penyusutan\n• Nilai Buku Awal dan Akhir\n\n<i class="ti ti-book" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Jurnal per tahun:</b>\nDr. Beban Penyusutan — Kr. Akumulasi Penyusutan\n\nSalin jurnal ini ke menu Jurnal Manual setiap akhir periode!',
         target: null },
       { icon:'<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>', title:'Penyusutan Siap Dihitung!',
         body:'Sekarang kamu bisa:\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Pilih metode penyusutan yang tepat\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Generate tabel penyusutan per tahun\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tahu jurnal penyesuaian yang harus dicatat\n\nLanjut ke <b>Kalkulator Persediaan</b>!',
@@ -927,10 +927,10 @@ const TUT_MODULES = {
   },
 
   'kalk-pajak': {
-    title: 'Kalkulator Pajak', icon: '[Invoice]',
+    title: 'Kalkulator Pajak', icon: '<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
     steps: [
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M5 21V3l2 2 2-2 2 2 2-2 2 2 2-2v18l-2-2-2 2-2-2-2 2-2-2-2 2zm4-11h6m-6 4h6"/></svg>', title:'Kalkulator PPN & PPh',
-        body:'Ada 4 jenis pajak yang bisa dihitung:\n\n[Invoice] <b>PPN</b> — Pajak Pertambahan Nilai 12%\n👤 <b>PPh 21</b> — Pajak karyawan dari gaji\n🏢 <b>PPh 23</b> — Pajak atas jasa/dividen/sewa\n🏛️ <b>PPh Badan</b> — Pajak penghasilan perusahaan',
+        body:'Ada 4 jenis pajak yang bisa dihitung:\n\n<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>PPN</b> — Pajak Pertambahan Nilai 12%\n👤 <b>PPh 21</b> — Pajak karyawan dari gaji\n🏢 <b>PPh 23</b> — Pajak atas jasa/dividen/sewa\n🏛️ <b>PPh Badan</b> — Pajak penghasilan perusahaan',
         target: '.nav-item[onclick*="kalk-ppn"]', navTo: 'kalk-ppn' },
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M5 21V3l2 2 2-2 2 2 2-2 2 2 2-2v18l-2-2-2 2-2-2-2 2-2-2-2 2zm4-11h6m-6 4h6"/></svg>', title:'PPN — Eksklusif vs Inklusif',
         body:'<b>Eksklusif (default)</b>\nHarga belum termasuk PPN.\nContoh: DPP Rp 10jt → PPN 12% = Rp 1,2jt → Total Rp 11,2jt\n\n<b>Inklusif</b>\nHarga sudah termasuk PPN.\nContoh: Total Rp 11,2jt → DPP = Rp 10jt → PPN = Rp 1,2jt\n\nPPN harus disetorkan ke DJP setiap bulan oleh PKP (Pengusaha Kena Pajak).',
@@ -948,12 +948,12 @@ const TUT_MODULES = {
   },
 
   'kalk-bep': {
-    title: 'Kalkulator BEP & Margin', icon: '[BEP]',
+    title: 'Kalkulator BEP & Margin', icon: '<i class="ti ti-target" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
     steps: [
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent3)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>', title:'Apa itu BEP?',
         body:'<b>BEP (Break Even Point)</b> adalah titik di mana bisnis tidak untung tidak rugi — tepat impas.\n\nKenapa penting?\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tahu berapa minimal harus jual\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Evaluasi apakah harga jual sudah cukup\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Perencanaan target penjualan',
         target: '.nav-item[onclick*="kalk-bep"]', navTo: 'kalk-bep' },
-      { icon:'[Kode]', title:'3 Parameter Utama BEP',
+      { icon:'<i class="ti ti-list" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>', title:'3 Parameter Utama BEP',
         body:'<b>1. Harga Jual / Unit</b>\nBerapa harga yang dibayar pelanggan per unit produk.\n\n<b>2. Biaya Variabel / Unit</b>\nBiaya yang berubah sesuai jumlah produksi (bahan baku, komisi).\n\n<b>3. Biaya Tetap / Periode</b>\nBiaya yang tidak berubah berapa pun yang diproduksi (sewa, gaji tetap, listrik bulanan).\n\nRumus: <b>BEP = Biaya Tetap ÷ (Harga - Biaya Variabel)</b>',
         target: '#bep-harga', highlight: true },
       { icon:'<i class="ti ti-chart-bar ti-inline"></i>', title:'Hasil yang Didapat',
@@ -966,7 +966,7 @@ const TUT_MODULES = {
   },
 
   'kalk-rasio': {
-    title: 'Kalkulator Rasio Keuangan', icon: '[Rasio]',
+    title: 'Kalkulator Rasio Keuangan', icon: '<i class="ti ti-scale" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
     steps: [
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M3 20.29V5a2 2 0 012-2h13.71a.7.7 0 01.5 1.21L5.21 18.5a.7.7 0 01-1.21-.5zM6 9h8M6 13h5"/></svg>', title:'Rasio Keuangan — Kesehatan Bisnis',
         body:'<b>Rasio keuangan</b> adalah angka-angka yang menunjukkan seberapa sehat bisnis kamu.\n\nIbarat hasil medical check-up untuk bisnis!\n\nBayu Harlan Priangga hitung 20+ rasio sekaligus dari data yang kamu masukkan.',
@@ -1046,7 +1046,7 @@ const TUT_MODULES = {
   },
 
   'tut-invoice': {
-    title: 'Invoice & Piutang', icon: '[Invoice]',
+    title: 'Invoice & Piutang', icon: '<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
     steps: [
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M5 21V3l2 2 2-2 2 2 2-2 2 2 2-2v18l-2-2-2 2-2-2-2 2-2-2-2 2zm4-11h6m-6 4h6"/></svg>', title:'Apa itu Fitur Invoice?',
         body:'Fitur Invoice memungkinkan kamu:\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Buat invoice profesional untuk pelanggan\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Lacak status: Draft → Terkirim → Lunas\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Deteksi otomatis invoice yang sudah jatuh tempo\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Jurnal piutang dibuat otomatis saat invoice dikirim\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Jurnal penerimaan kas dibuat otomatis saat tandai lunas',
@@ -1058,7 +1058,7 @@ const TUT_MODULES = {
         body:'Saat pelanggan membayar:\n1. Temukan invoice di daftar\n2. Ketuk tombol <b><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Lunas</b>\n3. Isi tanggal pembayaran dan nominal\n4. Pilih akun kas/bank penerima\n5. Ketuk <b>Konfirmasi Lunas & Buat Jurnal</b>\n\nJurnal: Kas (Debit) | Piutang Usaha (Kredit) — otomatis!',
         target: null },
       { icon:'🔍', title:'Filter & Monitoring',
-        body:'Gunakan filter status untuk monitoring:\n<i class="ti ti-clipboard-list ti-inline"></i> <b>Semua</b> — lihat semua invoice\n[Jurnal] <b>Draft</b> — belum dikirim ke pelanggan\n<i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> <b>Terkirim</b> — menunggu pembayaran\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <b>Lunas</b> — sudah dibayar\n<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <b>Jatuh Tempo</b> — lewat tanggal bayar\n\nKPI cards di atas menampilkan total tagihan, lunas, belum lunas, dan jumlah jatuh tempo.',
+        body:'Gunakan filter status untuk monitoring:\n<i class="ti ti-clipboard-list ti-inline"></i> <b>Semua</b> — lihat semua invoice\n<i class="ti ti-book" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Draft</b> — belum dikirim ke pelanggan\n<i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> <b>Terkirim</b> — menunggu pembayaran\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <b>Lunas</b> — sudah dibayar\n<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <b>Jatuh Tempo</b> — lewat tanggal bayar\n\nKPI cards di atas menampilkan total tagihan, lunas, belum lunas, dan jumlah jatuh tempo.',
         target: null }
     ]
   },
@@ -1090,7 +1090,7 @@ const TUT_MODULES = {
       { icon:'<i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i>', title:'Update Kurs',
         body:'<b>Update Otomatis:</b>\nKetuk tombol <b><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Update Kurs</b> di pojok kanan atas — kurs langsung diperbarui.\n\n<b>Update Manual:</b>\nDi panel kanan "Atur Kurs Manual", isi nilai kurs terbaru per USD, lalu ketuk <b><i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Simpan Kurs</b>.\n\nKurs disimpan di perangkat dan dipakai untuk konversi.',
         target: null },
-      { icon:'[Kode]', title:'Konverter Cepat',
+      { icon:'<i class="ti ti-list" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>', title:'Konverter Cepat',
         body:'Panel kiri "Konverter Cepat":\n1. Isi nominal yang ingin dikonversi\n2. Pilih mata uang asal (Dari)\n3. Pilih mata uang tujuan (Ke)\n4. Hasil konversi muncul otomatis real-time\n\nContoh: 1.000.000 IDR → berapa USD? Langsung terhitung!',
         target: null }
     ]
@@ -1130,7 +1130,7 @@ const TUT_MODULES = {
   },
 
   'tut-pajak': {
-    title: 'Pajak Otomatis', icon: '[Invoice]',
+    title: 'Pajak Otomatis', icon: '<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
     steps: [
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M5 21V3l2 2 2-2 2 2 2-2 2 2 2-2v18l-2-2-2 2-2-2-2 2-2-2-2 2zm4-11h6m-6 4h6"/></svg>', title:'Pajak Otomatis di OAS',
         body:'OAS otomatis menghitung pajak dari data jurnal kamu:\n\n💰 <b>PPN 12%</b> — dari transaksi penjualan & pembelian\n👤 <b>PPh 21</b> — pajak gaji karyawan (progresif)\n🏢 <b>PPh 23</b> — jasa, royalti, sewa, dividen, bunga\n\nHitung otomatis, buat jurnal pajak satu klik!',
@@ -1184,7 +1184,7 @@ const TUT_MODULES = {
         body:'OAS mendukung export ke 3 format:\n\n<i class="ti ti-chart-bar ti-inline"></i> <b>Excel (.xlsx)</b> — tabel terformat, formula aktif\n📄 <b>PDF</b> — siap cetak/kirim, bisa tambah logo\n<i class="ti ti-clipboard-list ti-inline"></i> <b>CSV</b> — untuk Google Sheets / analisis eksternal\n\nBuka: Sidebar → <b>Export Laporan</b>',
         target: null },
       { icon:'✨', title:'Export Fitur Baru',
-        body:'Selain laporan standar, sekarang bisa export:\n\n[Invoice] <b>Invoice & Piutang</b> — semua invoice + status\n<i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> <b>Jurnal Berulang</b> — daftar template aktif\n🎯 <b>Anggaran vs Aktual</b> — realisasi per akun\n[Invoice] <b>Laporan Pajak</b> — rekap PPN & riwayat transaksi\n<i class="ti ti-trending-up" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> <b>Analitik Bisnis</b> — data 12 bulan tren keuangan',
+        body:'Selain laporan standar, sekarang bisa export:\n\n<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Invoice & Piutang</b> — semua invoice + status\n<i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> <b>Jurnal Berulang</b> — daftar template aktif\n🎯 <b>Anggaran vs Aktual</b> — realisasi per akun\n<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Laporan Pajak</b> — rekap PPN & riwayat transaksi\n<i class="ti ti-trending-up" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> <b>Analitik Bisnis</b> — data 12 bulan tren keuangan',
         target: null },
       { icon:'📄', title:'Export PDF dengan Logo',
         body:'Saat pilih format PDF:\n1. Upload logo perusahaan (PNG/JPG/SVG, maks 2MB)\n2. Logo muncul di pojok kiri atas setiap halaman\n3. Isi nama perusahaan dan periode\n4. Setiap laporan dipisah per halaman otomatis',
@@ -1238,7 +1238,7 @@ const TUT_MODULES = {
     title: 'Setup Saldo Awal', icon: '🏁',
     steps: [
       { icon:'🏁', title:'Mengapa Perlu Saldo Awal?',
-        body:'Saldo awal adalah posisi keuangan bisnis kamu sebelum mulai mencatat di OAS.\n\nContoh:\n[Jurnal Kas] Kamu punya kas Rp 50 juta\n<i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Tabungan bank Rp 200 juta\n🏠 Aset gedung Rp 500 juta\n<i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Utang bank Rp 150 juta\n\nSemua ini perlu diinput agar laporan keuangan akurat dari hari pertama.',
+        body:'Saldo awal adalah posisi keuangan bisnis kamu sebelum mulai mencatat di OAS.\n\nContoh:\n<i class="ti ti-cash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Kamu punya kas Rp 50 juta\n<i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Tabungan bank Rp 200 juta\n🏠 Aset gedung Rp 500 juta\n<i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Utang bank Rp 150 juta\n\nSemua ini perlu diinput agar laporan keuangan akurat dari hari pertama.',
         target: null },
       { icon:'<i class="ti ti-settings ti-inline"></i>', title:'Cara Input Saldo Awal',
         body:'1. Buka <b>Dashboard</b> → ketuk tombol <b>Saldo Awal</b>\n2. Isi saldo untuk setiap akun yang relevan\n3. Sistem akan buat jurnal pembuka otomatis\n\nAlternatif: Input manual via <b>Jurnal Manual</b> dengan keterangan "Saldo Awal [nama akun]"\n\nAkun yang biasanya perlu saldo awal:\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Kas & Bank\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Piutang (jika ada)\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Aset Tetap\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Utang (jika ada)\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Modal Pemilik',

@@ -1624,7 +1624,7 @@ function doGlobalSearch(q) {
       .slice(0, 5).forEach(j => {
         const tot = j.lines.reduce((s,l)=>s+(l.debit||0),0);
         items.push({
-          icon: jeninsBadge(j.jenis) === 'badge-green' ? '[Invoice]' : '[Jurnal]',
+          icon: jeninsBadge(j.jenis) === 'badge-green' ? '<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>' : '<i class="ti ti-book" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
           title: j.ket, sub: `${j.tanggal} · ${j.no} · ${fmtRp(tot)}`,
           type: 'jurnal', badge: j.jenis,
           action: () => { showPage('jurnal-umum'); closeGlobalSearch(); setTimeout(() => { const f=document.getElementById('filter-ju'); if(f){f.value=j.ket.split(' ')[0]; renderJurnalUmum();} }, 100); }
