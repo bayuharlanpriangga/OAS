@@ -92,28 +92,29 @@ async function callGeminiWithRotation(systemPrompt, messages) {
     throw new Error(`⏳ Semua key cooldown ${cooldownSec}s — otomatis coba lagi`);
   }
 
-  // Gemini exposes an OpenAI-compatible Chat Completions endpoint, so the
-  // request/response shape (messages[], choices[0].message.content) stays
-  // the same as before — only the URL, model name, and key format change.
-  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
+  // NOTE: We use Gemini's *native* generateContent endpoint, not the
+  // OpenAI-compatible /v1beta/openai/chat/completions route. Google's newer
+  // "AQ." auth keys (which replaced the old AIza Standard keys through 2026)
+  // are unreliable on the OpenAI-compat path — reports of 400/401 errors
+  // even with valid keys — but work correctly here with x-goog-api-key.
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${availKey}`
+      'x-goog-api-key': availKey
     },
     body: JSON.stringify({
-      model: 'gemini-2.5-flash',
-      max_tokens: 8000,
-      temperature: 0.7,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages
-      ]
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: messages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      })),
+      generationConfig: { maxOutputTokens: 8000, temperature: 0.7 }
     })
   });
 
   if(response.status === 429) {
-    // Parse retry-after — Gemini (via the OpenAI-compat layer) sends seconds
+    // Parse retry-after — Gemini sends seconds
     const errBody = await response.json().catch(()=>({}));
     const errMsg = errBody?.error?.message || '';
     const retryHeader = response.headers.get('retry-after') || response.headers.get('x-ratelimit-reset-requests') || '';
@@ -170,7 +171,7 @@ async function callGeminiWithRotation(systemPrompt, messages) {
   const data = await response.json();
   // Rotate to next key for load balancing
   geminiKeyIndex = (geminiKeyIndex + 1) % keys.length;
-  return data.choices?.[0]?.message?.content || 'Maaf, tidak ada respons.';
+  return data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || 'Maaf, tidak ada respons.';
 }
 
 // startCooldownDisplay moved to smart rate limit section above
@@ -220,8 +221,11 @@ function addGeminiKey() {
   const inp = document.getElementById('gemini-new-key');
   if(!inp) return;
   const key = inp.value.trim();
-  if(!key.startsWith('AIza')) {
-    showAlert('❌ Format Gemini key harus diawali AIza'); return;
+  // Google is migrating keys from the old "AIza" Standard format to the
+  // newer "AQ." Auth key format — accept both since either may show up
+  // depending on the account/project.
+  if(!key.startsWith('AIza') && !key.startsWith('AQ.')) {
+    showAlert('❌ Format Gemini key harus diawali AIza atau AQ.'); return;
   }
   const keys = getGeminiKeys();
   if(keys.includes(key)) { showAlert('Key sudah ada!'); return; }
