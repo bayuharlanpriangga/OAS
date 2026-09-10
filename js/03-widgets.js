@@ -62,8 +62,12 @@ function showCustomConfirmGeneral({ icon, iconColor, iconBorder, title, subtitle
     // Buat modal element
     const modal = document.createElement('div');
     modal.id = 'gcm-backdrop';
+    // z-index 100000: modal ini dipanggil dari mana saja, termasuk dari dalam
+    // #modal-pdf-preview (z-index 9999) dan .pv-cp-popup (z-index 10002) — sebelumnya
+    // z-index 9000 bikin dialog ini ketutup dan baru kelihatan setelah halaman yang
+    // memanggilnya (mis. Preview PDF) ditutup. Dipaksa selalu paling atas di sini.
     modal.style.cssText = `
-      position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9000;
+      position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:100000;
       display:flex;align-items:center;justify-content:center;padding:20px;
       backdrop-filter:blur(4px);animation:gcmFadeIn 0.15s ease;
     `;

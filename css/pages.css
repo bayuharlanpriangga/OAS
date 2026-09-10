@@ -876,6 +876,11 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 .pv-topbar { display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(20,24,36,0.98);border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;flex-wrap:wrap; }
 .pv-topbar-title { font-weight:700;font-size:14px;color:#e2e8f0; }
 .pv-topbar-sub { font-size:10px;color:rgba(255,255,255,0.45); }
+/* FIX: preview PDF & panel edit tampilan SELALU dark (lihat background di atas),
+   jadi tombol .btn-ghost di dalamnya tidak boleh ikut var(--text) app (bisa hitam saat tema Light aktif).
+   Dipaksa terang di sini, terlepas dari tema aplikasi. */
+#modal-pdf-preview .btn-ghost { color:#e2e8f0; border-color:rgba(255,255,255,0.16); }
+#modal-pdf-preview .btn-ghost:hover { color:#67e8f9; border-color:#22d3ee; }
 .pv-body { display:flex;flex:1;overflow:hidden;min-height:0; }
 .pv-sidebar { width:90px;flex-shrink:0;background:rgba(15,18,28,0.98);border-right:1px solid rgba(255,255,255,0.06);overflow-y:auto;padding:10px 8px; }
 .pv-thumb-label { font-size:9px;color:var(--muted);text-align:center;margin-bottom:4px; }
@@ -901,13 +906,15 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 .pv-pal-dot { width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,0.15);cursor:pointer;flex-shrink:0;transition:transform 0.12s; }
 .pv-pal-dot:hover { transform:scale(1.15); }
 .pv-pal-lbl { font-size:11px;color:#e2e8f0;flex:1; }
-.pv-pal-hex { font-family:var(--mono);font-size:10px;color:var(--accent2);background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:3px 6px;width:72px; }
+/* !important: melawan aturan global body.light-mode input{color:var(--text)!important} di theme.css
+   yang bikin teks hex ini ikut hitam saat tema app Light, padahal box ini selalu dark. */
+.pv-pal-hex { font-family:var(--mono);font-size:10px;color:#67e8f9 !important;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:3px 6px;width:72px; }
 .pv-cp-popup { position:fixed;z-index:10002;background:rgba(18,22,36,0.99);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px;box-shadow:0 16px 60px rgba(0,0,0,0.8);width:248px; }
 #pv-sl-canvas { border-radius:7px;cursor:crosshair;display:block;width:100%;height:148px; }
 #pv-hue-slider { width:100%;height:13px;border-radius:7px;cursor:pointer;-webkit-appearance:none;appearance:none;outline:none;margin:8px 0 6px;background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00); }
 #pv-hue-slider::-webkit-slider-thumb { -webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:white;border:2px solid rgba(0,0,0,0.3);cursor:pointer; }
 .pv-hex-row { display:flex;gap:6px;align-items:center;margin-bottom:10px; }
-.pv-hex-row input { flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:5px;color:var(--text);font-family:var(--mono);font-size:12px;padding:5px 8px;outline:none; }
+.pv-hex-row input { flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:5px;color:#e2e8f0 !important;font-family:var(--mono);font-size:12px;padding:5px 8px;outline:none; }
 .pv-hex-row input:focus { border-color:var(--accent2); }
 .pv-cp-swatch { width:32px;height:28px;border-radius:5px;flex-shrink:0;border:2px solid rgba(255,255,255,0.15); }
 .pv-contrast-bar { margin-bottom:8px; }

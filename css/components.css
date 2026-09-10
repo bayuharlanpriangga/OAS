@@ -1022,7 +1022,8 @@ body.light-mode .oas-cal-day.selected { color: #fff; }
   border-radius: 8px;
   background: rgba(20,24,36,0.92);
   border: 1px solid rgba(255,255,255,0.12);
-  color: var(--text);
+  /* Selalu terang: tombol ini duduk di atas canvas gelap, terlepas dari tema app (lihat pv-topbar) */
+  color: #e2e8f0;
   font-size: 16px;
   display: flex;
   align-items: center;

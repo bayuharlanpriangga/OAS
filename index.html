@@ -2788,7 +2788,8 @@
       <div style="display:flex;align-items:center;gap:6px;">
         <div class="modal-title" id="modal-produk-title">Tambah Produk Baru</div>
         <button type="button" class="info-icon-btn" id="produk-info-btn"
-          onclick="toggleInfoPopover(this, 'HPP dihitung otomatis dari kartu stock persediaan dan tidak bisa diubah manual. Ubah data di menu <b>Persediaan</b> untuk memperbarui HPP.')">
+          data-info-html="HPP dihitung otomatis dari kartu stock persediaan dan tidak bisa diubah manual. Ubah data di menu <b>Persediaan</b> untuk memperbarui HPP."
+          onclick="toggleInfoPopover(this, this.dataset.infoHtml)">
           <i class="ti ti-info-circle" style="font-size:15px;"></i>
         </button>
       </div>
@@ -2843,7 +2844,8 @@
           <label style="display:flex;align-items:center;gap:5px;">
             Akun Persediaan (dikredit saat barang keluar)
             <button type="button" class="info-icon-btn info-icon-btn-sm"
-              onclick="toggleInfoPopover(this, 'Pilih akun persediaan aset yang sesuai — mis. <b>1304 Persediaan Barang Jadi</b> untuk produk hasil produksi, bukan selalu 1301.')">
+              data-info-html="Pilih akun persediaan aset yang sesuai — mis. <b>1304 Persediaan Barang Jadi</b> untuk produk hasil produksi, bukan selalu 1301."
+              onclick="toggleInfoPopover(this, this.dataset.infoHtml)">
               <i class="ti ti-info-circle" style="font-size:13px;"></i>
             </button>
           </label>
@@ -5291,7 +5293,7 @@
 <!-- Color picker popup -->
 <div class="pv-cp-popup" id="pv-cp-popup" style="display:none;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-    <span id="pv-cp-title" style="font-size:12px;font-weight:700;color:var(--text);">Pilih Warna</span>
+    <span id="pv-cp-title" style="font-size:12px;font-weight:700;color:#e2e8f0;">Pilih Warna</span>
     <button onclick="pvCloseCP()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;">×</button>
   </div>
   <canvas id="pv-sl-canvas" width="220" height="148"></canvas>

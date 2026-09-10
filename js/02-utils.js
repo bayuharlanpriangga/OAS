@@ -53,17 +53,28 @@ function setSelectVal(id, val) {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ── INFO ICON POPOVER (tombol ⓘ di sebelah judul field/header modal) ──
+// Tombolnya sendiri cuma ikon bulat polos (lihat .info-icon-btn di components.css,
+// tidak ada border/card). Kartu popover-nya baru muncul saat ⓘ ditekan (tap, tetap
+// terbuka sampai ditutup) ATAU saat kursor mouse hover di atasnya (desktop, otomatis
+// hilang saat kursor pergi).
 let _activeInfoPopover = null;
-function toggleInfoPopover(btn, html) {
-  const already = _activeInfoPopover && _activeInfoPopover._btn === btn;
-  closeInfoPopover();
-  if(already) return;
+function _buildInfoPopover(btn, html) {
   const pop = document.createElement('div');
   pop.className = 'info-popover';
   pop.innerHTML = html;
   pop._btn = btn;
   document.body.appendChild(pop);
   _positionInfoPopover(pop, btn);
+  return pop;
+}
+// Dipanggil dari onclick="toggleInfoPopover(this, this.dataset.infoHtml)" — tap/klik
+// MENGUNCI popover terbuka sampai ditekan lagi atau ditutup manual.
+function toggleInfoPopover(btn, html) {
+  const already = _activeInfoPopover && _activeInfoPopover._btn === btn && _activeInfoPopover._pinned;
+  closeInfoPopover();
+  if(already) return;
+  const pop = _buildInfoPopover(btn, html);
+  pop._pinned = true;
   _activeInfoPopover = pop;
   setTimeout(() => {
     document.addEventListener('click', _onDocClickCloseInfoPopover, true);
@@ -86,6 +97,27 @@ function _onDocClickCloseInfoPopover(e) {
     closeInfoPopover();
   }
 }
+// Hover (mouse asli saja — bukan tap layar sentuh): tampilkan sekilas, tidak terkunci,
+// otomatis hilang saat kursor keluar dari tombolnya. Pakai capture:true karena
+// mouseenter/mouseleave tidak bubble, tapi tetap tertangkap ancestor di fase capture.
+const _infoHoverMQ = window.matchMedia('(hover: hover) and (pointer: fine)');
+document.addEventListener('mouseenter', function(e) {
+  if(!_infoHoverMQ.matches) return;
+  const btn = e.target.closest && e.target.closest('.info-icon-btn');
+  if(!btn || (_activeInfoPopover && _activeInfoPopover._btn === btn)) return;
+  const html = btn.dataset.infoHtml;
+  if(!html) return;
+  closeInfoPopover();
+  const pop = _buildInfoPopover(btn, html);
+  pop._pinned = false;
+  _activeInfoPopover = pop;
+}, true);
+document.addEventListener('mouseleave', function(e) {
+  if(!_infoHoverMQ.matches) return;
+  const btn = e.target.closest && e.target.closest('.info-icon-btn');
+  if(!btn) return;
+  if(_activeInfoPopover && _activeInfoPopover._btn === btn && !_activeInfoPopover._pinned) closeInfoPopover();
+}, true);
 function _positionInfoPopover(pop, btn) {
   const rect = btn.getBoundingClientRect();
   const popRect = pop.getBoundingClientRect();
