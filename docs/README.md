@@ -52,7 +52,7 @@
 
 - **Frontend:** Vanilla HTML, CSS, JavaScript (single-page app)
 - **Backend:** [Supabase](https://supabase.com) (autentikasi & database), dengan `localStorage` sebagai cache/fallback offline
-- **AI:** Groq API (Llama 3.3 70B) untuk fitur Orias Assisten
+- **AI:** Gemini Flash 3.6 untuk fitur Orias Assisten
 - **PWA:** Bisa di-install sebagai aplikasi di desktop maupun mobile
 
 ---
