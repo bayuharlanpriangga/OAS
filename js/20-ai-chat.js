@@ -151,6 +151,40 @@ function formatCountdownShort(ms) {
 // Track which key is "up next" for round-robin rotation
 let aiActiveKeyIndex = 0;
 
+// Provider yang sedang "dipakai" secara manual oleh user (lihat
+// setActiveProvider). Disimpan supaya bertahan lintas refresh halaman.
+// Kalau belum pernah dipilih user, default-nya provider dari key pertama.
+const AI_ACTIVE_PROVIDER_STORAGE = 'oas_ai_active_provider';
+let aiActiveProviderId = localStorage.getItem(AI_ACTIVE_PROVIDER_STORAGE) || null;
+
+// Provider aktif yang sebenarnya dipakai untuk render — fallback ke provider
+// key pertama kalau belum pernah dipilih manual atau providernya sudah tidak
+// punya key lagi (mis. semua key provider itu dihapus).
+function getEffectiveActiveProviderId(keys) {
+  if (aiActiveProviderId && keys.some(k => k.provider === aiActiveProviderId)) return aiActiveProviderId;
+  return keys.length ? keys[0].provider : null;
+}
+
+// User klik chip "Siap" di card sebuah provider → provider itu jadi aktif,
+// provider sebelumnya otomatis berhenti jadi yang dipakai. Key yang dipakai
+// otomatis pindah ke key PALING ATAS milik provider ini yang masih bisa
+// dipakai (bukan yang sedang recovery). Kalau semua key provider ini sedang
+// recovery, tidak ada yang bisa diaktifkan — klik diabaikan.
+function setActiveProvider(providerId, ev) {
+  if (ev) ev.stopPropagation();
+  const keys = getAIKeys();
+  let targetIdx = -1;
+  for (let i = 0; i < keys.length; i++) {
+    if (keys[i].provider === providerId && !isRecordCoolingDown(keys[i])) { targetIdx = i; break; }
+  }
+  if (targetIdx === -1) return; // semua key provider ini masih recovery
+  aiActiveProviderId = providerId;
+  aiActiveKeyIndex = targetIdx;
+  try { localStorage.setItem(AI_ACTIVE_PROVIDER_STORAGE, providerId); } catch (e) {}
+  renderAIKeysList();
+  updateAIKeyStatus();
+}
+
 function isRecordCoolingDown(rec) {
   return !!rec.cooldownUntil && Date.now() < rec.cooldownUntil;
 }
@@ -581,17 +615,21 @@ function updateKeyModel(idx, value) {
 }
 
 // Baris 1 key di dalam card provider yang terbuka (masked key, model, hapus, dst).
-function renderKeyRow(rec, i, provider) {
+// isProviderActive: true kalau card provider ini yang lagi jadi provider aktif —
+// hanya dalam kondisi ini salah satu key-nya boleh berstatus "Aktif", selain
+// itu (provider lain) semua key-nya wajar tampil "Siap" semua.
+function renderKeyRow(rec, i, provider, isProviderActive) {
   const now = Date.now();
   const inCooldown = isRecordCoolingDown(rec);
+  const isActiveKey = isProviderActive && i === aiActiveKeyIndex;
   const masked = rec.key.length > 12 ? (rec.key.slice(0, 6) + '••••••••' + rec.key.slice(-4)) : rec.key;
   const expanded = aiKeyExpandedIdx === i;
 
   const statusChip = inCooldown
     ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:${rec.limitType==='daily'?'var(--red)':'var(--accent3)'};"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Recovery</span>`
-    : `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--accent);"><i class="ti ti-circle-check" style="font-size:11px;width:11px;height:11px;"></i> Siap</span>`;
+    : `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--accent);"><i class="ti ti-circle-check" style="font-size:11px;width:11px;height:11px;"></i> ${isActiveKey ? 'Aktif' : 'Siap'}</span>`;
 
-  return `<div style="background:var(--surface);border:1px solid ${inCooldown?'rgba(245,158,11,0.25)':'var(--border)'};border-radius:8px;margin-top:7px;overflow:hidden;">
+  return `<div style="background:var(--surface);border:1px solid ${inCooldown?'rgba(245,158,11,0.25)':(isActiveKey?'rgba(74,222,128,0.4)':'var(--border)')};border-radius:8px;margin-top:7px;overflow:hidden;">
     <div style="display:flex;align-items:center;gap:9px;padding:7px 8px;cursor:pointer;" onclick="toggleKeyDetail(${i})">
       ${renderKeyRing(rec, provider, 32, 3)}
       <div style="flex:1;min-width:0;">
@@ -629,11 +667,14 @@ function renderAIKeysList() {
       groups[rec.provider].push({ rec, idx: i });
     });
 
+    const effectiveActiveProviderId = getEffectiveActiveProviderId(keys);
+
     container.innerHTML = order.map(providerId => {
       const group = groups[providerId];
       const stats = computeProviderStats(providerId, group);
       const { provider, pct, allCooling, coolingCount, nearestRecoveryMs, hasDailyCooldown } = stats;
       const expanded = aiExpandedProvider === providerId;
+      const isActiveProvider = providerId === effectiveActiveProviderId;
 
       let ringColor, centerText, fontSize;
       if (allCooling) {
@@ -647,13 +688,22 @@ function renderAIKeysList() {
       }
       const ringSVG = renderRingSVG(pct, ringColor, centerText, fontSize, 44, 4);
 
-      const statusChip = allCooling
-        ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:${hasDailyCooldown?'var(--red)':'var(--accent3)'};"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Semua key recovery</span>`
-        : coolingCount > 0
-          ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--accent);"><i class="ti ti-circle-check" style="font-size:12px;width:12px;height:12px;"></i> Aktif <span style="color:var(--muted);font-weight:500;">(${coolingCount} recovery)</span></span>`
-          : `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--accent);"><i class="ti ti-circle-check" style="font-size:12px;width:12px;height:12px;"></i> Aktif</span>`;
+      // Chip status level-provider — INI yang boleh mengubah provider aktif.
+      // Diklik hanya berefek kalau lagi nunjukin "Siap" (provider lain, ada
+      // key yg bisa dipakai). Kalau provider ini sudah aktif atau semua
+      // key-nya recovery, chip cuma teks biasa (tidak bisa diklik).
+      let statusChip;
+      if (isActiveProvider) {
+        statusChip = allCooling
+          ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:${hasDailyCooldown?'var(--red)':'var(--accent3)'};"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Aktif (semua key recovery)</span>`
+          : `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--accent);"><i class="ti ti-circle-check" style="font-size:12px;width:12px;height:12px;"></i> Aktif${coolingCount>0?` <span style="color:var(--muted);font-weight:500;">(${coolingCount} recovery)</span>`:''}</span>`;
+      } else if (allCooling) {
+        statusChip = `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:${hasDailyCooldown?'var(--red)':'var(--accent3)'};"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Semua key recovery</span>`;
+      } else {
+        statusChip = `<span onclick="setActiveProvider('${providerId}', event)" data-tooltip="Jadikan provider aktif" style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--muted);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;"><i class="ti ti-circle-check" style="font-size:12px;width:12px;height:12px;"></i> Siap</span>`;
+      }
 
-      return `<div style="background:var(--surface2);border:1px solid ${allCooling?'rgba(245,158,11,0.3)':'rgba(74,222,128,0.2)'};border-radius:9px;margin-bottom:8px;overflow:hidden;">
+      return `<div style="background:var(--surface2);border:1px solid ${allCooling?'rgba(245,158,11,0.3)':(isActiveProvider?'rgba(74,222,128,0.2)':'var(--border)')};border-radius:9px;margin-bottom:8px;overflow:hidden;">
         <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;" onclick="toggleProviderCard('${providerId}')">
           ${ringSVG}
           <div style="flex:1;min-width:0;">
@@ -664,10 +714,10 @@ function renderAIKeysList() {
             </div>
             <div style="margin-top:3px;">${statusChip}</div>
           </div>
-          <i class="ti ${expanded?'ti-chevron-up':'ti-chevron-down'}" style="font-size:14px;width:14px;height:14px;color:var(--muted);flex-shrink:0;"></i>
+          <i class="ti ${expanded?'ti-x':'ti-eye'}" style="font-size:14px;width:14px;height:14px;color:var(--muted);flex-shrink:0;"></i>
         </div>
         ${expanded ? `<div style="padding:0 10px 10px 10px;border-top:1px dashed var(--border);" onclick="event.stopPropagation()">
-          ${group.map(({ rec, idx }) => renderKeyRow(rec, idx, provider)).join('')}
+          ${group.map(({ rec, idx }) => renderKeyRow(rec, idx, provider, isActiveProvider)).join('')}
         </div>` : ''}
       </div>`;
     }).join('');
