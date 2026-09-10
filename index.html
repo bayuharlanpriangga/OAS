@@ -2107,8 +2107,10 @@
         </div>
         <div class="section-sub" style="margin-top:4px;">Ceritakan transaksi atau pertanyaan akuntansi Anda — AI akan mengerjakan & membimbing Anda</div>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="clearAIChat()" style="flex-shrink:0"><i class="ti ti-trash" style="font-size:13px;vertical-align:-2px;margin-right:3px;"></i> Clear</button>
-      <button class="btn btn-ghost btn-sm" onclick="openApiKeyModal()" id="ai-key-status-btn" style="flex-shrink:0;border-color:rgba(245,158,11,0.4);color:var(--accent3);"><i class="ti ti-key" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Setup AI</button>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <button class="btn btn-ghost btn-sm" onclick="clearAIChat()" style="flex-shrink:0"><i class="ti ti-trash" style="font-size:13px;vertical-align:-2px;margin-right:3px;"></i> Clear</button>
+        <button class="btn btn-ghost btn-sm" onclick="openApiKeyModal()" id="ai-key-status-btn" style="flex-shrink:0;border-color:rgba(245,158,11,0.4);color:var(--accent3);"><i class="ti ti-key" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Setup AI</button>
+      </div>
     </div>
 
     <!-- Suggestion chips -->
@@ -3392,15 +3394,16 @@
   <div class="modal" style="max-width:500px;">
     <div class="modal-head">
       <div>
-        <div class="modal-title"><i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Setup Orias Assisten (Gratis)
+        <div class="modal-title"><i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Setup Orias Assisten
           <button onclick="toggleGeminiInfo()" id="gemini-info-toggle-btn" data-tooltip="Panduan setup"
             style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 6px;cursor:pointer;color:var(--muted);vertical-align:-4px;margin-left:6px;display:inline-flex;align-items:center;">
             <i class="ti ti-book" style="font-size:14px;width:14px;height:14px;"></i>
           </button>
         </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Multi-provider — tempel API key apa pun, provider terdeteksi otomatis</div>
         <div style="font-size:11px;color:var(--accent);margin-top:2px;" id="gemini-key-count">Belum ada key</div>
       </div>
-      <button class="modal-close" onclick="closeModal('modal-apikey')">✕</button>
+      <button class="modal-close" onclick="closeApiKeyModal()">✕</button>
     </div>
     <div class="modal-body">
       <div id="gemini-info-box" style="display:none;background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.2);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.8;color:var(--muted);">
@@ -3426,22 +3429,30 @@
           <i class="ti ti-bulb" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Free tier Gemini 3.6 Flash ± 10 req/menit per key. <b style="color:var(--accent)">Buat beberapa key</b> dari project berbeda buat naikin kapasitas.<br>
           Key tersimpan di browser — <b>tidak perlu setup ulang</b> saat buka web lagi.
         </div>
+        <div style="margin-top:10px;font-size:11.5px;color:var(--muted);">
+          <i class="ti ti-sparkles" style="color:var(--accent2);font-size:12px;width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i> Punya API key provider lain (Claude/Anthropic, GPT/OpenAI, Groq, OpenRouter, Grok/xAI, Perplexity)? Tinggal tempel di kotak bawah — provider-nya otomatis terdeteksi dari key-nya, tidak perlu dipilih manual.
+        </div>
       </div>
-      <div id="gemini-keys-list" style="margin-bottom:12px;min-height:20px;"></div>
+      <div id="gemini-keys-list" style="margin-bottom:10px;min-height:20px;"></div>
       <div style="display:flex;gap:8px;">
-        <input type="password" id="gemini-new-key" placeholder="AQ.Abxxxxxxxxxxxxxxxxxxxxxxxx"
+        <input type="password" id="gemini-new-key" placeholder="Tempel API key — Gemini, Claude, GPT, Groq, dll"
           style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;"
-          onkeydown="if(event.key==='Enter')addGeminiKey()">
-        <button onclick="addGeminiKey()" class="btn btn-primary btn-sm">+ Tambah</button>
+          oninput="updateDetectedProviderLabel()"
+          onkeydown="if(event.key==='Enter')addAIKey()">
+        <button onclick="addAIKey()" class="btn btn-primary btn-sm">+ Tambah</button>
         <button onclick="const i=document.getElementById('gemini-new-key');i.type=i.type==='password'?'text':'password'"
           style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;cursor:pointer;color:var(--muted);font-size:14px;"><i class="ti ti-eye" style="font-size:15px;"></i></button>
       </div>
+      <div id="ai-detected-provider" style="display:none;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:7px;"></div>
       <div style="margin-top:10px;font-size:11px;color:var(--muted);background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.15);border-radius:6px;padding:8px 10px;">
-        <i class="ti ti-lock" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Key hanya tersimpan di browser kamu — tidak dikirim ke server mana pun selain langsung ke Google Gemini.
+        <i class="ti ti-lock" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Key hanya tersimpan di browser kamu — tidak dikirim ke server mana pun selain langsung ke provider AI resminya (Google, Anthropic, dll, sesuai key yang ditambahkan).
+      </div>
+      <div style="margin-top:8px;font-size:10.5px;color:var(--muted);opacity:0.75;">
+        <i class="ti ti-info-circle" style="font-size:12px;width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i> Progress pemakaian di bawah adalah estimasi lokal (jumlah request per menit), bukan data kuota resmi dari provider.
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-apikey')">Tutup</button>
+      <button class="btn btn-ghost" onclick="closeApiKeyModal()">Tutup</button>
     </div>
   </div>
 </div>

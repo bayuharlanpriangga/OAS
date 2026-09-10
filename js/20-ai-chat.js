@@ -1,107 +1,224 @@
 
-// GEMINI AI — MULTI-KEY ROTATION
-// Multiple free Gemini API keys — rotate when rate limited
-// Each key has ~10 req/min limit (free tier), rotating between keys multiplies capacity
-// Get free keys at: aistudio.google.com/apikey (free, no credit card)
+// ═══ MULTI-AI — PROVIDER AUTO-DETECT + MULTI-KEY ROTATION ═══
+// API key ditempel apa adanya — provider (Gemini/Claude/GPT/Groq/dst) dikenali
+// otomatis dari pola/prefix key-nya, jadi tidak perlu dipilih manual.
+// Setiap key disimpan sebagai "record" (bukan cuma string) supaya bisa
+// menyimpan status pemakaian & cooldown per key, termasuk lintas refresh halaman.
 
-const GEMINI_KEYS_STORAGE = 'oas_gemini_keys';
-const GEMINI_COOLDOWN_KEY = 'oas_gemini_cooldown';
+const AI_KEYS_STORAGE = 'oas_ai_keys';
+const LEGACY_GEMINI_KEYS_STORAGE = 'oas_gemini_keys'; // format lama: array of string
 
-// Default demo keys (user can add more via modal)
-const DEFAULT_GEMINI_KEYS = [
-  // User needs to add their own free keys from aistudio.google.com/apikey
-  // Format: 'AIza...'
-];
-
-function getGeminiKeys() {
-  const stored = localStorage.getItem(GEMINI_KEYS_STORAGE);
-  if(stored) {
-    try { return JSON.parse(stored); } catch {}
+const AI_PROVIDERS = {
+  gemini: {
+    id: 'gemini', name: 'Google Gemini', badge: 'Ge', color: '#4285F4',
+    kind: 'gemini', defaultModel: 'gemini-3.6-flash',
+    defaultLimit: 10, windowMs: 60000,
+    match: k => /^AIza/.test(k) || /^AQ\./.test(k)
+  },
+  anthropic: {
+    id: 'anthropic', name: 'Claude (Anthropic)', badge: 'Cl', color: '#D97757',
+    kind: 'anthropic', baseUrl: 'https://api.anthropic.com/v1/messages',
+    defaultModel: 'claude-sonnet-4-6',
+    defaultLimit: 50, windowMs: 60000,
+    match: k => /^sk-ant-/.test(k)
+  },
+  groq: {
+    id: 'groq', name: 'Groq', badge: 'Gr', color: '#F55036',
+    kind: 'openai-compat', baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
+    defaultModel: 'llama-3.3-70b-versatile',
+    defaultLimit: 30, windowMs: 60000,
+    match: k => /^gsk_/.test(k)
+  },
+  openrouter: {
+    id: 'openrouter', name: 'OpenRouter', badge: 'OR', color: '#6366F1',
+    kind: 'openai-compat', baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
+    defaultModel: 'openai/gpt-5.1',
+    defaultLimit: 20, windowMs: 60000,
+    match: k => /^sk-or-/.test(k)
+  },
+  xai: {
+    id: 'xai', name: 'xAI (Grok)', badge: 'Gx', color: '#0f172a',
+    kind: 'openai-compat', baseUrl: 'https://api.x.ai/v1/chat/completions',
+    defaultModel: 'grok-4',
+    defaultLimit: 20, windowMs: 60000,
+    match: k => /^xai-/.test(k)
+  },
+  perplexity: {
+    id: 'perplexity', name: 'Perplexity', badge: 'Px', color: '#20808D',
+    kind: 'openai-compat', baseUrl: 'https://api.perplexity.ai/chat/completions',
+    defaultModel: 'sonar',
+    defaultLimit: 20, windowMs: 60000,
+    match: k => /^pplx-/.test(k)
+  },
+  openai: {
+    id: 'openai', name: 'OpenAI (GPT)', badge: 'Op', color: '#10A37F',
+    kind: 'openai-compat', baseUrl: 'https://api.openai.com/v1/chat/completions',
+    defaultModel: 'gpt-5.1',
+    defaultLimit: 20, windowMs: 60000,
+    match: k => /^sk-proj-/.test(k) || /^sk-[A-Za-z0-9_-]{20,}$/.test(k)
+  },
+  unknown: {
+    id: 'unknown', name: 'Provider Tidak Dikenal', badge: '?', color: '#64748b',
+    kind: 'unknown', defaultModel: '',
+    defaultLimit: 10, windowMs: 60000,
+    match: () => true
   }
-  return DEFAULT_GEMINI_KEYS;
+};
+// Urutan cek penting — prefix yang lebih spesifik dicek duluan supaya tidak
+// "tertangkap" aturan generik sk-... milik OpenAI (mis. sk-ant-, sk-or- harus
+// dicek sebelum sk-... generik).
+const AI_PROVIDER_ORDER = ['anthropic', 'groq', 'openrouter', 'xai', 'perplexity', 'gemini', 'openai', 'unknown'];
+
+function detectAIProvider(rawKey) {
+  const k = (rawKey || '').trim();
+  for (const id of AI_PROVIDER_ORDER) {
+    if (AI_PROVIDERS[id].match(k)) return AI_PROVIDERS[id];
+  }
+  return AI_PROVIDERS.unknown;
 }
 
-function saveGeminiKeys(keys) {
-  localStorage.setItem(GEMINI_KEYS_STORAGE, JSON.stringify(keys));
+function makeKeyRecord(rawKey, providerId) {
+  const p = providerId ? AI_PROVIDERS[providerId] : detectAIProvider(rawKey);
+  return {
+    key: rawKey,
+    provider: p.id,
+    model: p.defaultModel,
+    addedAt: Date.now(),
+    usedCount: 0,        // jumlah request di window berjalan (estimasi lokal)
+    windowStart: Date.now(),
+    cooldownUntil: 0,    // epoch ms — 0 = tidak cooldown
+    cooldownTotalMs: 0,  // durasi cooldown terakhir, buat hitung progress recovery
+    limitType: null,     // 'per-minute' | 'daily' | null
+    lastError: null,
+    lastUsed: null
+  };
 }
 
-// Track which key is currently active and their cooldowns
-let geminiKeyIndex = 0;
-let geminiKeyCooldowns = {}; // { keyHash: untilTimestamp }
-
-function getKeyHash(key) { return key.slice(-8); }
-
-function isKeyCooledDown(key) {
-  const hash = getKeyHash(key);
-  const until = geminiKeyCooldowns[hash] || 0;
-  return Date.now() < until;
+function getAIKeys() {
+  const stored = localStorage.getItem(AI_KEYS_STORAGE);
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {}
+  }
+  // Migrasi otomatis dari format lama (array of string, khusus Gemini)
+  const legacy = localStorage.getItem(LEGACY_GEMINI_KEYS_STORAGE);
+  if (legacy) {
+    try {
+      const arr = JSON.parse(legacy);
+      if (Array.isArray(arr) && arr.length) {
+        const migrated = arr.map(k => makeKeyRecord(k, 'gemini'));
+        saveAIKeys(migrated);
+        return migrated;
+      }
+    } catch {}
+  }
+  return [];
 }
 
-function setCooldown(key, ms) {
-  geminiKeyCooldowns[getKeyHash(key)] = Date.now() + ms;
+function saveAIKeys(list) {
+  localStorage.setItem(AI_KEYS_STORAGE, JSON.stringify(list));
 }
 
-function getAvailableKey(keys) {
-  if(!keys.length) return null;
-  // Try current index first
-  for(let attempt = 0; attempt < keys.length; attempt++) {
-    const idx = (geminiKeyIndex + attempt) % keys.length;
-    const key = keys[idx];
-    if(!isKeyCooledDown(key)) {
-      geminiKeyIndex = idx; // remember for next time
-      return key;
+// Alias kompatibilitas lama (dulu API key disimpan sebagai array of string)
+function getGeminiKeys() { return getAIKeys(); }
+function saveGeminiKeys(list) { saveAIKeys(list); }
+
+function getKeyHash(key) { return (key || '').slice(-8); }
+
+function formatCountdown(ms) {
+  if (ms <= 0) return '0 detik';
+  const totalSec = Math.ceil(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}j ${m}m`;
+  if (m > 0) return `${m}m ${s}d`;
+  return `${s} detik`;
+}
+
+function formatCountdownShort(ms) {
+  if (ms <= 0) return '0:00';
+  const totalSec = Math.ceil(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}h`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+// Track which key is "up next" for round-robin rotation
+let aiActiveKeyIndex = 0;
+
+function isRecordCoolingDown(rec) {
+  return !!rec.cooldownUntil && Date.now() < rec.cooldownUntil;
+}
+
+function getAvailableKeyRecord(keys) {
+  if (!keys.length) return null;
+  for (let attempt = 0; attempt < keys.length; attempt++) {
+    const idx = (aiActiveKeyIndex + attempt) % keys.length;
+    const rec = keys[idx];
+    if (!isRecordCoolingDown(rec)) {
+      aiActiveKeyIndex = idx;
+      return rec;
     }
   }
-  return null; // all keys in cooldown
+  return null; // semua key sedang cooldown
 }
 
-function getShortestCooldown(keys) {
+function getShortestCooldownMs(keys) {
   let min = Infinity;
-  keys.forEach(k => {
-    const until = geminiKeyCooldowns[getKeyHash(k)] || 0;
-    if(until > Date.now()) min = Math.min(min, until - Date.now());
+  const now = Date.now();
+  keys.forEach(rec => {
+    if (rec.cooldownUntil > now) min = Math.min(min, rec.cooldownUntil - now);
   });
   return min === Infinity ? 0 : min;
 }
 
-async function callGeminiWithRotation(systemPrompt, messages) {
-  const keys = getGeminiKeys();
-
-  if(!keys.length) {
-    // No keys — show setup prompt
-    showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Belum ada Gemini API Key. Klik Setup AI untuk tambahkan.');
-    openGeminiKeyModal();
-    throw new Error('Gemini API Key belum diset. Klik tombol Setup AI.');
+function trackKeyUsage(rec) {
+  const provider = AI_PROVIDERS[rec.provider] || AI_PROVIDERS.unknown;
+  const now = Date.now();
+  if (now - rec.windowStart > provider.windowMs) {
+    rec.windowStart = now;
+    rec.usedCount = 0;
   }
+  rec.usedCount++;
+  rec.lastUsed = now;
+}
 
-  const availKey = getAvailableKey(keys);
+// Error terstruktur biar logic rotasi/cooldown bisa dipakai sama rata
+// untuk semua provider (bukan cuma Gemini).
+function AIProviderError(message, opts) {
+  const err = new Error(message);
+  err.name = 'AIProviderError';
+  err.status = opts && opts.status;
+  err.retryAfterSec = opts && opts.retryAfterSec;
+  err.isHourlyOrDaily = !!(opts && opts.isHourlyOrDaily);
+  return err;
+}
 
-  if(!availKey) {
-    const cooldownMs = getShortestCooldown(keys);
-    const cooldownSec = Math.ceil(cooldownMs / 1000);
-    // Check if any key has daily limit
-    const hasDailyLimit = keys.some(k => {
-      const info = window.geminiKeyInfo?.[getKeyHash(k)];
-      return info?.limitType === 'daily';
-    });
-    if(hasDailyLimit || cooldownSec > 600) {
-      showAIRateLimitInfo(keys, cooldownSec, 'daily');
-      throw new Error(`Semua key sedang dalam batas limit. Lihat info di bawah.`);
-    }
-    startCooldownDisplay(cooldownSec, true);
-    throw new Error(`⏳ Semua key cooldown ${cooldownSec}s — otomatis coba lagi`);
-  }
+async function parseRateLimitError(response) {
+  const errBody = await response.json().catch(() => ({}));
+  const errMsg = errBody?.error?.message || '';
+  const retryHeader = response.headers.get('retry-after') || response.headers.get('x-ratelimit-reset-requests') || '';
+  const isHourlyOrDaily = /hour|day|daily/i.test(errMsg);
+  const retryAfterSec = retryHeader ? parseInt(retryHeader) : (isHourlyOrDaily ? 3600 : 60);
+  return AIProviderError(errMsg || 'Rate limit', { status: 429, retryAfterSec, isHourlyOrDaily });
+}
 
-  // NOTE: We use Gemini's *native* generateContent endpoint, not the
-  // OpenAI-compatible /v1beta/openai/chat/completions route. Google's newer
-  // "AQ." auth keys (which replaced the old AIza Standard keys through 2026)
-  // are unreliable on the OpenAI-compat path — reports of 400/401 errors
-  // even with valid keys — but work correctly here with x-goog-api-key.
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent`, {
+// NOTE: Gemini pakai endpoint native generateContent (bukan jalur OpenAI-compat
+// /v1beta/openai/chat/completions) — key format baru Google "AQ." tidak stabil
+// lewat jalur OpenAI-compat (pernah 400/401 walau key valid), tapi jalan normal
+// lewat x-goog-api-key di endpoint native ini.
+async function callGeminiOnce(rec, systemPrompt, messages) {
+  const model = rec.model || AI_PROVIDERS.gemini.defaultModel;
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-goog-api-key': availKey
+      'x-goog-api-key': rec.key
     },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: systemPrompt }] },
@@ -113,82 +230,210 @@ async function callGeminiWithRotation(systemPrompt, messages) {
     })
   });
 
-  if(response.status === 429) {
-    // Parse retry-after — Gemini sends seconds
-    const errBody = await response.json().catch(()=>({}));
-    const errMsg = errBody?.error?.message || '';
-    const retryHeader = response.headers.get('retry-after') || response.headers.get('x-ratelimit-reset-requests') || '';
-    
-    // Determine limit type: per-minute (short) vs daily/hourly (long)
-    const isHourlyOrDaily = errMsg.toLowerCase().includes('hour') || errMsg.toLowerCase().includes('day') || errMsg.toLowerCase().includes('daily');
-    const retryAfter = retryHeader ? parseInt(retryHeader) : (isHourlyOrDaily ? 3600 : 60);
-    
-    setCooldown(availKey, retryAfter * 1000);
-    
-    // Mark key with limit type info
-    const keyHash = getKeyHash(availKey);
-    if(!window.geminiKeyInfo) window.geminiKeyInfo = {};
-    window.geminiKeyInfo[keyHash] = {
-      limitType: isHourlyOrDaily ? 'daily' : 'per-minute',
-      resetAt: new Date(Date.now() + retryAfter * 1000),
-      message: errMsg.slice(0, 120)
-    };
-    
-    geminiKeyIndex = (geminiKeyIndex + 1) % keys.length;
-
-    // Try another key immediately
-    const nextKey = getAvailableKey(keys);
-    if(nextKey && nextKey !== availKey) {
-      return await callGeminiWithRotation(systemPrompt, messages);
-    }
-
-    // All keys exhausted — show smart cooldown
-    const shortest = getShortestCooldown(keys);
-    const cooldownSec = Math.ceil(shortest / 1000);
-    
-    if(isHourlyOrDaily) {
-      // Daily limit — show hours remaining
-      const hoursLeft = Math.ceil(cooldownSec / 3600);
-      showAIRateLimitInfo(keys, cooldownSec, 'daily');
-      throw new Error(`Batas harian tercapai. Key ini bisa dipakai lagi dalam ~${hoursLeft} jam. Coba tambah key baru di Setup AI.`);
-    } else {
-      startCooldownDisplay(cooldownSec, true); // true = auto-retry
-      throw new Error(`Rate limit. Cooldown ${cooldownSec}s — otomatis coba lagi`);
-    }
+  if (response.status === 429) throw await parseRateLimitError(response);
+  if (response.status === 401 || response.status === 403) {
+    throw AIProviderError(`API Key tidak valid/ditolak (HTTP ${response.status})`, { status: response.status });
   }
-
-  if(response.status === 401) {
-    setCooldown(availKey, 3600000); // invalid key, skip for 1 hour
-    geminiKeyIndex = (geminiKeyIndex + 1) % keys.length;
-    throw new Error(`API Key tidak valid: ...${getKeyHash(availKey)}. Coba key lain.`);
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw AIProviderError(err?.error?.message || `HTTP ${response.status}`, { status: response.status });
   }
-
-  if(!response.ok) {
-    const err = await response.json().catch(()=>({}));
-    const rawMsg = err?.error?.message || '';
-    if(response.status === 503 || /overloaded|high demand/i.test(rawMsg)) {
-      setCooldown(availKey, 15000); // kasih napas 15 detik ke key ini sebelum dipakai lagi
-      throw new Error('Server Gemini lagi padat (high demand). Coba kirim ulang beberapa detik lagi, atau tambah API key cadangan di Setup AI.');
-    }
-    throw new Error(rawMsg || `HTTP ${response.status}`);
-  }
-
   const data = await response.json();
-  // Rotate to next key for load balancing
-  geminiKeyIndex = (geminiKeyIndex + 1) % keys.length;
   return data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || 'Maaf, tidak ada respons.';
+}
+
+async function callAnthropicOnce(rec, systemPrompt, messages) {
+  const provider = AI_PROVIDERS.anthropic;
+  const model = rec.model || provider.defaultModel;
+  const response = await fetch(provider.baseUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': rec.key,
+      'anthropic-version': '2023-06-01',
+      // Header ini yang membuat API Claude bisa dipanggil langsung dari browser
+      // (tanpa header ini, request lintas-origin dari browser ditolak).
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 8000,
+      system: systemPrompt,
+      messages: messages.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }))
+    })
+  });
+
+  if (response.status === 429) throw await parseRateLimitError(response);
+  if (response.status === 401 || response.status === 403) {
+    throw AIProviderError(`API Key tidak valid/ditolak (HTTP ${response.status})`, { status: response.status });
+  }
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw AIProviderError(err?.error?.message || `HTTP ${response.status}`, { status: response.status });
+  }
+  const data = await response.json();
+  return (data.content || []).map(b => b.text || '').join('') || 'Maaf, tidak ada respons.';
+}
+
+// Handler generik buat semua provider yang endpoint-nya kompatibel gaya OpenAI
+// chat/completions: OpenAI sendiri, Groq, OpenRouter, xAI (Grok), Perplexity.
+async function callOpenAICompatOnce(rec, systemPrompt, messages) {
+  const provider = AI_PROVIDERS[rec.provider];
+  const model = rec.model || provider.defaultModel;
+  const response = await fetch(provider.baseUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${rec.key}`
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }))
+      ],
+      max_tokens: 8000,
+      temperature: 0.7
+    })
+  });
+
+  if (response.status === 429) throw await parseRateLimitError(response);
+  if (response.status === 401 || response.status === 403) {
+    throw AIProviderError(`API Key tidak valid/ditolak (HTTP ${response.status})`, { status: response.status });
+  }
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw AIProviderError(err?.error?.message || `HTTP ${response.status}`, { status: response.status });
+  }
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || 'Maaf, tidak ada respons.';
+}
+
+async function callProviderOnce(rec, systemPrompt, messages) {
+  const provider = AI_PROVIDERS[rec.provider] || AI_PROVIDERS.unknown;
+  if (provider.kind === 'gemini') return callGeminiOnce(rec, systemPrompt, messages);
+  if (provider.kind === 'anthropic') return callAnthropicOnce(rec, systemPrompt, messages);
+  if (provider.kind === 'openai-compat') return callOpenAICompatOnce(rec, systemPrompt, messages);
+  throw AIProviderError('Provider dari key ini tidak dikenali otomatis. Hapus key ini lalu tambahkan key dari provider yang didukung (Gemini, Claude, GPT, Groq, OpenRouter, Grok, atau Perplexity).', { status: 0 });
+}
+
+async function callAIWithRotation(systemPrompt, messages) {
+  const keys = getAIKeys();
+
+  if (!keys.length) {
+    showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Belum ada AI API Key. Klik Setup AI untuk tambahkan.');
+    openApiKeyModal();
+    throw new Error('AI API Key belum diset. Klik tombol Setup AI.');
+  }
+
+  const rec = getAvailableKeyRecord(keys);
+
+  if (!rec) {
+    const cooldownMs = getShortestCooldownMs(keys);
+    const cooldownSec = Math.ceil(cooldownMs / 1000);
+    const hasDailyLimit = keys.some(k => k.limitType === 'daily');
+    if (hasDailyLimit || cooldownSec > 600) {
+      showAIRateLimitInfo(keys, cooldownSec, 'daily');
+      throw new Error('Semua key sedang dalam batas limit. Lihat info di bawah.');
+    }
+    startCooldownDisplay(cooldownSec, true);
+    throw new Error(`⏳ Semua key cooldown ${cooldownSec}s — otomatis coba lagi`);
+  }
+
+  try {
+    const text = await callProviderOnce(rec, systemPrompt, messages);
+    trackKeyUsage(rec);
+    rec.limitType = null;
+    rec.lastError = null;
+    aiActiveKeyIndex = (aiActiveKeyIndex + 1) % keys.length; // load balance ke key berikutnya
+    saveAIKeys(keys);
+    return text;
+  } catch (e) {
+    if (e && e.status === 429) {
+      const retryAfterSec = e.retryAfterSec || 60;
+      rec.cooldownUntil = Date.now() + retryAfterSec * 1000;
+      rec.cooldownTotalMs = retryAfterSec * 1000;
+      rec.limitType = e.isHourlyOrDaily ? 'daily' : 'per-minute';
+      rec.lastError = (e.message || '').slice(0, 160);
+      aiActiveKeyIndex = (aiActiveKeyIndex + 1) % keys.length;
+      saveAIKeys(keys);
+
+      // Coba key lain dulu sebelum nyerah
+      const nextRec = getAvailableKeyRecord(keys);
+      if (nextRec && nextRec !== rec) {
+        return await callAIWithRotation(systemPrompt, messages);
+      }
+
+      const shortest = getShortestCooldownMs(keys);
+      const cooldownSec = Math.ceil(shortest / 1000);
+      if (e.isHourlyOrDaily) {
+        const hoursLeft = Math.ceil(cooldownSec / 3600);
+        showAIRateLimitInfo(keys, cooldownSec, 'daily');
+        throw new Error(`Batas harian tercapai. Key ini bisa dipakai lagi dalam ~${hoursLeft} jam. Coba tambah key baru di Setup AI.`);
+      } else {
+        startCooldownDisplay(cooldownSec, true);
+        throw new Error(`Rate limit. Cooldown ${cooldownSec}s — otomatis coba lagi`);
+      }
+    }
+
+    if (e && (e.status === 401 || e.status === 403)) {
+      rec.cooldownUntil = Date.now() + 3600000; // key invalid, skip 1 jam
+      rec.cooldownTotalMs = 3600000;
+      rec.limitType = null;
+      rec.lastError = (e.message || '').slice(0, 160);
+      aiActiveKeyIndex = (aiActiveKeyIndex + 1) % keys.length;
+      saveAIKeys(keys);
+      throw new Error(`API Key tidak valid: ...${getKeyHash(rec.key)}. Coba key lain.`);
+    }
+
+    rec.lastError = (e && e.message ? e.message : String(e)).slice(0, 160);
+    saveAIKeys(keys);
+    throw e instanceof Error ? e : new Error(String(e));
+  }
+}
+
+// Alias kompatibilitas nama lama
+async function callGeminiWithRotation(systemPrompt, messages) {
+  return callAIWithRotation(systemPrompt, messages);
 }
 
 // startCooldownDisplay moved to smart rate limit section above
 let cooldownInterval = null;
 
-// Gemini Key Modal
-function openGeminiKeyModal() {
-  loadGeminiKeys();
-  // Info/steps box is always collapsed by default when the modal opens
+// ═══ MODAL SETUP AI — render, live update, dan aksi key ═══
+let aiKeyLiveTimer = null;
+let aiKeyExpandedIdx = null;
+
+function openApiKeyModal() {
+  renderAIKeysList();
   const info = document.getElementById('gemini-info-box');
-  if(info) info.style.display = 'none';
+  if (info) info.style.display = 'none';
+  const label = document.getElementById('ai-detected-provider');
+  if (label) label.style.display = 'none';
   document.getElementById('modal-apikey').classList.add('open');
+  startAIKeyLiveUpdates();
+}
+function openGeminiKeyModal() { openApiKeyModal(); } // alias kompatibilitas lama
+
+function closeApiKeyModal() {
+  stopAIKeyLiveUpdates();
+  aiKeyExpandedIdx = null;
+  closeModal('modal-apikey');
+}
+
+function startAIKeyLiveUpdates() {
+  stopAIKeyLiveUpdates();
+  // Update tiap detik selagi modal terbuka — bikin ring pemakaian & countdown
+  // recovery selalu real-time, termasuk saat key sedang cooldown/limit.
+  aiKeyLiveTimer = setInterval(() => {
+    const modal = document.getElementById('modal-apikey');
+    if (!modal || !modal.classList.contains('open')) { stopAIKeyLiveUpdates(); return; }
+    renderAIKeysList();
+  }, 1000);
+}
+
+function stopAIKeyLiveUpdates() {
+  if (aiKeyLiveTimer) { clearInterval(aiKeyLiveTimer); aiKeyLiveTimer = null; }
 }
 
 function toggleGeminiInfo() {
@@ -203,61 +448,182 @@ function toggleGeminiInfo() {
   }
 }
 
-function loadGeminiKeys() {
-  const keys = getGeminiKeys();
-  const container = document.getElementById('gemini-keys-list');
-  if(!container) return;
+function updateDetectedProviderLabel() {
+  const inp = document.getElementById('gemini-new-key');
+  const label = document.getElementById('ai-detected-provider');
+  if (!inp || !label) return;
+  const val = inp.value.trim();
+  if (val.length < 6) { label.style.display = 'none'; return; }
+  const provider = detectAIProvider(val);
+  label.style.display = 'flex';
+  if (provider.id === 'unknown') {
+    label.innerHTML = `<i class="ti ti-question-mark" style="font-size:12px;width:12px;height:12px;color:var(--muted);"></i> Provider belum dikenali — key tetap bisa ditambahkan, tapi mungkin tidak berfungsi`;
+  } else {
+    label.innerHTML = `<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:5px;background:${provider.color};color:#fff;font-size:9px;font-weight:800;flex-shrink:0;">${provider.badge}</span> Terdeteksi: <b style="color:var(--text)">${provider.name}</b>`;
+  }
+}
 
-  container.innerHTML = keys.length ? keys.map((k, i) => {
-    const masked = k.slice(0,8) + '...' + k.slice(-6);
-    const cd = geminiKeyCooldowns[getKeyHash(k)];
-    const inCD = cd && Date.now() < cd;
-    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid ${inCD?'rgba(248,113,113,0.3)':'rgba(74,222,128,0.2)'};border-radius:7px;margin-bottom:6px;">
-      <span style="font-family:var(--mono);font-size:12px;flex:1;color:${inCD?'var(--red)':'var(--accent)'};">${masked} ${inCD?'⏳ cooldown':i===geminiKeyIndex%Math.max(keys.length,1)?'<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color:var(--accent);vertical-align:-2px"><polygon points="5 3 19 12 5 21 5 3"/></svg> aktif':'✓'}</span>
-      <button onclick="removeGeminiKey(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;">✕</button>
-    </div>`;
-  }).join('') : '<div style="text-align:center;color:var(--muted);font-size:13px;padding:16px;">Belum ada key. Tambahkan minimal 1 key.</div>';
+function renderKeyRing(rec, provider) {
+  const now = Date.now();
+  const inCooldown = isRecordCoolingDown(rec);
+  const size = 44, stroke = 4, r = (size - stroke) / 2, c = 2 * Math.PI * r;
+  let pct, ringColor, centerText, fontSize;
+
+  if (inCooldown) {
+    const remain = rec.cooldownUntil - now;
+    const total = rec.cooldownTotalMs || Math.max(1, remain);
+    pct = Math.max(0, Math.min(100, ((total - remain) / total) * 100));
+    ringColor = rec.limitType === 'daily' ? 'var(--red)' : 'var(--accent3)';
+    centerText = formatCountdownShort(remain);
+    fontSize = '9px';
+  } else {
+    const limit = provider.defaultLimit || 10;
+    pct = Math.max(0, Math.min(100, (rec.usedCount / limit) * 100));
+    ringColor = pct >= 90 ? 'var(--red)' : pct >= 60 ? 'var(--accent3)' : 'var(--accent)';
+    centerText = `${Math.round(pct)}%`;
+    fontSize = '10.5px';
+  }
+
+  const dash = (pct / 100) * c;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0;">
+    <g transform="rotate(-90 ${size/2} ${size/2})">
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${stroke}"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${ringColor}" stroke-width="${stroke}"
+        stroke-dasharray="${dash.toFixed(1)} ${c.toFixed(1)}" stroke-linecap="round" style="transition:stroke-dasharray 0.5s ease"/>
+    </g>
+    <text x="${size/2}" y="${size/2}" fill="var(--text)" font-size="${fontSize}" font-family="var(--sans)" font-weight="700"
+      text-anchor="middle" dominant-baseline="central">${centerText}</text>
+  </svg>`;
+}
+
+function toggleKeyDetail(idx) {
+  aiKeyExpandedIdx = aiKeyExpandedIdx === idx ? null : idx;
+  renderAIKeysList();
+}
+
+function copyKeyToClipboard(idx, ev) {
+  if (ev) ev.stopPropagation();
+  const keys = getAIKeys();
+  const rec = keys[idx];
+  if (!rec || !navigator.clipboard) return;
+  navigator.clipboard.writeText(rec.key).then(() => {
+    showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Key disalin');
+  }).catch(() => {});
+}
+
+function updateKeyModel(idx, value) {
+  const keys = getAIKeys();
+  if (!keys[idx]) return;
+  keys[idx].model = value.trim();
+  saveAIKeys(keys);
+}
+
+function renderAIKeysList() {
+  const keys = getAIKeys();
+  const container = document.getElementById('gemini-keys-list');
+  if (!container) return;
+
+  if (!keys.length) {
+    container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:16px;">Belum ada key. Tambahkan minimal 1 key.</div>';
+  } else {
+    const now = Date.now();
+    container.innerHTML = keys.map((rec, i) => {
+      const provider = AI_PROVIDERS[rec.provider] || AI_PROVIDERS.unknown;
+      const inCooldown = isRecordCoolingDown(rec);
+      const isActiveTurn = i === (aiActiveKeyIndex % keys.length);
+      const masked = rec.key.length > 12 ? (rec.key.slice(0, 6) + '••••••••' + rec.key.slice(-4)) : rec.key;
+      const expanded = aiKeyExpandedIdx === i;
+
+      const statusChip = inCooldown
+        ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:${rec.limitType==='daily'?'var(--red)':'var(--accent3)'};"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Recovery</span>`
+        : `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--accent);"><i class="ti ti-circle-check" style="font-size:12px;width:12px;height:12px;"></i> ${isActiveTurn ? 'Aktif' : 'Siap'}</span>`;
+
+      return `<div style="background:var(--surface2);border:1px solid ${inCooldown?'rgba(245,158,11,0.3)':'rgba(74,222,128,0.2)'};border-radius:9px;margin-bottom:8px;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;" onclick="toggleKeyDetail(${i})">
+          ${renderKeyRing(rec, provider)}
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:5px;background:${provider.color};color:#fff;font-size:9px;font-weight:800;flex-shrink:0;">${provider.badge}</span>
+              <span style="font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${provider.name}</span>
+            </div>
+            <div style="margin-top:3px;">${statusChip}</div>
+          </div>
+          <i class="ti ${expanded?'ti-x':'ti-eye'}" style="font-size:14px;width:14px;height:14px;color:var(--muted);flex-shrink:0;"></i>
+        </div>
+        ${expanded ? `<div style="padding:0 10px 10px 10px;border-top:1px dashed var(--border);" onclick="event.stopPropagation()">
+          <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+            <code style="flex:1;font-size:11px;font-family:var(--mono);color:var(--muted);background:var(--surface);padding:6px 8px;border-radius:6px;word-break:break-all;">${masked}</code>
+            <button onclick="copyKeyToClipboard(${i}, event)" data-tooltip="Salin key" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 8px;cursor:pointer;color:var(--muted);flex-shrink:0;"><i class="ti ti-copy" style="font-size:13px;width:13px;height:13px;"></i></button>
+            <button onclick="removeAIKey(${i})" data-tooltip="Hapus key" style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:6px;padding:6px 8px;cursor:pointer;color:var(--red);flex-shrink:0;"><i class="ti ti-trash" style="font-size:13px;width:13px;height:13px;"></i></button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+            <span style="font-size:10.5px;color:var(--muted);flex-shrink:0;">Model:</span>
+            <input type="text" value="${(rec.model||'').replace(/"/g,'&quot;')}" onchange="updateKeyModel(${i}, this.value)"
+              style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;">
+          </div>
+          ${inCooldown ? `<div style="margin-top:8px;font-size:11px;color:var(--muted);">${rec.limitType==='daily'?'Batas harian':'Rate limit'} — bisa dipakai lagi dalam <b style="color:${rec.limitType==='daily'?'var(--red)':'var(--accent3)'}">${formatCountdown(rec.cooldownUntil-now)}</b> (${new Date(rec.cooldownUntil).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})})</div>` : ''}
+          ${rec.lastError ? `<div style="margin-top:6px;font-size:10.5px;color:var(--muted);">Pesan terakhir: ${escapeHtml(rec.lastError)}</div>` : ''}
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  }
 
   const countEl = document.getElementById('gemini-key-count');
-  if(countEl) countEl.textContent = `${keys.length} key — ~${keys.length * 10} req/menit`;
-}
-
-function addGeminiKey() {
-  const inp = document.getElementById('gemini-new-key');
-  if(!inp) return;
-  const key = inp.value.trim();
-  // Google is migrating keys from the old "AIza" Standard format to the
-  // newer "AQ." Auth key format — accept both since either may show up
-  // depending on the account/project.
-  if(!key.startsWith('AIza') && !key.startsWith('AQ.')) {
-    showAlert('❌ Format Gemini key harus diawali AIza atau AQ.'); return;
+  if (countEl) {
+    if (!keys.length) {
+      countEl.textContent = 'Belum ada key';
+    } else {
+      const byProvider = {};
+      keys.forEach(k => { byProvider[k.provider] = (byProvider[k.provider] || 0) + 1; });
+      const summary = Object.keys(byProvider).map(id => `${(AI_PROVIDERS[id]||AI_PROVIDERS.unknown).name} ×${byProvider[id]}`).join(', ');
+      countEl.textContent = `${keys.length} key — ${summary}`;
+    }
   }
-  const keys = getGeminiKeys();
-  if(keys.includes(key)) { showAlert('Key sudah ada!'); return; }
-  keys.push(key);
-  saveGeminiKeys(keys);
-  inp.value = '';
-  loadGeminiKeys();
-  updateAIKeyStatus();
-  showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Key ke-${keys.length} ditambahkan! Kapasitas: ~${keys.length*10} req/menit`);
 }
+function loadGeminiKeys() { renderAIKeysList(); } // alias kompatibilitas lama
 
-function removeGeminiKey(idx) {
-  const keys = getGeminiKeys();
+function addAIKey() {
+  const inp = document.getElementById('gemini-new-key');
+  if (!inp) return;
+  const key = inp.value.trim();
+  if (key.length < 15 || /\s/.test(key)) {
+    showAlert('❌ Format API key tidak valid.'); return;
+  }
+  const keys = getAIKeys();
+  if (keys.some(k => k.key === key)) { showAlert('Key sudah ada!'); return; }
+  const rec = makeKeyRecord(key);
+  keys.push(rec);
+  saveAIKeys(keys);
+  inp.value = '';
+  const label = document.getElementById('ai-detected-provider');
+  if (label) label.style.display = 'none';
+  renderAIKeysList();
+  updateAIKeyStatus();
+  const provider = AI_PROVIDERS[rec.provider];
+  showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ${provider.name} ditambahkan! Total ${keys.length} key aktif.`);
+}
+function addGeminiKey() { addAIKey(); } // alias kompatibilitas lama
+
+function removeAIKey(idx) {
+  const keys = getAIKeys();
   keys.splice(idx, 1);
-  saveGeminiKeys(keys);
-  loadGeminiKeys();
+  saveAIKeys(keys);
+  aiKeyExpandedIdx = null;
+  renderAIKeysList();
   updateAIKeyStatus();
   showAlert('Key dihapus');
 }
+function removeGeminiKey(idx) { removeAIKey(idx); } // alias kompatibilitas lama
 
 function updateAIKeyStatus() {
   const btn = document.getElementById('ai-key-status-btn');
   if(!btn) return;
-  const keys = getGeminiKeys();
+  const keys = getAIKeys();
   if(keys.length > 0) {
+    const now = Date.now();
+    const allCoolingDown = keys.every(k => k.cooldownUntil && now < k.cooldownUntil);
     btn.innerHTML = `<i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> ${keys.length} Key Aktif`;
-    btn.className = 'btn btn-ghost btn-sm key-ok';
+    btn.className = 'btn btn-ghost btn-sm ' + (allCoolingDown ? 'key-missing' : 'key-ok');
   } else {
     btn.textContent = 'Setup AI';
     btn.className = 'btn btn-ghost btn-sm key-missing';
@@ -265,8 +631,6 @@ function updateAIKeyStatus() {
   btn.style.flexShrink = '0';
 }
 
-// Update API key modal to show Gemini setup
-function openApiKeyModal() { openGeminiKeyModal(); }
 
 function useChip(el) {
   document.getElementById('ai-input').value = el.textContent.replace(/^[^\w\s]*\s*/,'').trim();
@@ -350,13 +714,6 @@ function getAppContext() {
 
   const akunList = akuns.map(a => `${a.kode} ${a.nama} (${a.tipe})`).join(', ');
 
-  const kartuStockList = Object.values(multiKartuStock).flatMap(card =>
-    Object.values(card.kategori || {}).map(kat => {
-      const s = getKsSaldoKat(kat);
-      return `${kat.nama} (stok: ${s.totalQty} ${kat.satuan||'unit'}, metode: ${(s.metode||'fifo').toUpperCase()}, HPP saat ini: Rp ${Math.round(s.hppRata||0).toLocaleString('id-ID')}/unit)`;
-    })
-  ).join('\n') || '(belum ada produk di Kartu Stock)';
-
   return `KONTEKS DATA KEUANGAN SAAT INI:
 - Total Aset: Rp ${totalAset.toLocaleString('id-ID')}
 - Total Pendapatan: Rp ${totalPend.toLocaleString('id-ID')}
@@ -366,10 +723,7 @@ function getAppContext() {
 - Jurnal Terbaru:\n${recentJurnals||'(belum ada)'}
 
 DAFTAR AKUN TERSEDIA:
-${akunList}
-
-DAFTAR KARTU STOCK / PRODUK TERSEDIA:
-${kartuStockList}`;
+${akunList}`;
 }
 
 async function sendAI() {
@@ -395,7 +749,7 @@ async function sendAI() {
   document.getElementById('ai-send-btn').textContent = '...';
   const loadingDiv = appendMsg('bot', `<div class="ai-loading"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>`);
 
-  const systemPrompt = `Kamu adalah Orias Assisten — asisten akuntansi canggih yang BISA LANGSUNG MENGEKSEKUSI AKSI di software akuntansi ini secara otomatis. Kamu ditenagai oleh Gemini 3.6 Flash via Google AI, bisa paham bahasa Indonesia formal maupun gaul/casual, dan selalu berusaha membantu sampai masalah beres.
+  const systemPrompt = `Kamu adalah Orias Assisten — asisten akuntansi canggih yang BISA LANGSUNG MENGEKSEKUSI AKSI di software akuntansi ini secara otomatis. Kamu ditenagai oleh model AI yang terhubung ke sistem ini (bisa Gemini, Claude, GPT, atau lainnya tergantung API key yang sedang aktif), bisa paham bahasa Indonesia formal maupun gaul/casual, dan selalu berusaha membantu sampai masalah beres.
 
 IDENTITAS:
 Kamu adalah kombinasi akuntan senior (CPA/CA), konsultan pajak, analis keuangan, dan programmer yang bisa menulis kode aksi. Bahasa Indonesia yang hangat dan profesional.
@@ -416,7 +770,7 @@ JENIS AKSI TERSEDIA:
 
 2. NAVIGASI:
 {"type":"navigate","page":"dashboard"}
-Halaman valid: dashboard, transaksi, jurnal-umum, jurnal-kas, jurnal-penjualan, jurnal-pembelian, buku-besar, neraca-saldo, laba-rugi, neraca, akun, produk, kalk-penyusutan, kalk-persediaan, kalk-bunga, kalk-rasio, kalk-bep, kalk-ppn
+Halaman valid: dashboard, transaksi, jurnal-umum, jurnal-kas, jurnal-penjualan, jurnal-pembelian, buku-besar, neraca-saldo, laba-rugi, neraca, akun, kalk-penyusutan, kalk-persediaan, kalk-bunga, kalk-rasio, kalk-bep, kalk-ppn
 
 3. ISI KALKULATOR PENYUSUTAN:
 {"type":"fillKalkPenyusutan","cost":100000000,"sisa":10000000,"umur":5,"metode":"garis-lurus","nama":"Nama Aset"}
@@ -439,13 +793,6 @@ Metode: garis-lurus, saldo-menurun, saldo-menurun-1x, sum-of-years, unit-produks
 
 9. TAMBAH AKUN:
 {"type":"addAkun","kode":"6106","nama":"Beban Transportasi","tipe":"Beban","kat":"Operasional"}
-
-10. INPUT KARTU STOCK / PERSEDIAAN (masuk/keluar barang):
-{"type":"addKartuStock","produk":"Nama Produk persis dari DAFTAR KARTU STOCK","jenis":"masuk","qty":10,"harga":50000,"tanggal":"2026-04-30","ket":"Pembelian stok"}
-{"type":"addKartuStock","produk":"Nama Produk persis dari DAFTAR KARTU STOCK","jenis":"keluar","qty":5,"tanggal":"2026-04-30","ket":"Penjualan"}
-- jenis "masuk" WAJIB isi "harga" (harga beli per unit). jenis "keluar" TIDAK perlu "harga" — HPP dihitung otomatis sesuai metode (FIFO/LIFO/WA/MWA) produk itu.
-- "produk" WAJIB sama persis (atau sangat mirip) dengan nama di DAFTAR KARTU STOCK di bawah. Kalau produk belum terdaftar, JANGAN mengarang — beritahu user untuk bikin dulu di menu Master Produk.
-- Ini HANYA update stok fisik/HPP di Kartu Stock, BUKAN jurnal. Kalau user juga mau catat penjualan/pembelian lengkap dengan jurnal, kombinasikan dengan addJurnal atau arahkan ke form Transaksi.
 
 ATURAN PENTING:
 - Beri penjelasan lengkap DULU, tulis <ACTIONS> di paling bawah
@@ -500,7 +847,7 @@ ${getAppContext()}`;
       { role: 'user', content: msg }
     ];
 
-    const rawText = await callGeminiWithRotation(systemPrompt, messages);
+    const rawText = await callAIWithRotation(systemPrompt, messages);
 
     // Remove loading
     loadingDiv.remove();

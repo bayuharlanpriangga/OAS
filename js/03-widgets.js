@@ -336,7 +336,7 @@ function showAIRateLimitInfo(keys, cooldownSec, limitType) {
       </div>
       <div style="font-size:12.5px;color:var(--muted);line-height:1.7;margin-bottom:12px;">
         ${limitType === 'daily' 
-          ? `Gemini membatasi penggunaan per hari. Semua key yang kamu miliki sudah mencapai batas.<br><br>
+          ? `Provider AI yang kamu pakai membatasi penggunaan per hari. Semua key yang kamu miliki sudah mencapai batas.<br><br>
              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:3px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Estimasi reset: <b style="color:var(--text)">~${hoursLeft > 1 ? hoursLeft+' jam lagi' : minsLeft+' menit lagi'}</b> (sekitar jam <b style="color:var(--accent)">${resetStr}</b>)`
           : `Semua key sedang cooldown. Reset dalam <b style="color:var(--accent)">${minsLeft} menit</b> (jam ${resetStr}).`
         }
@@ -345,16 +345,15 @@ function showAIRateLimitInfo(keys, cooldownSec, limitType) {
       <!-- Key status list -->
       <div style="margin-bottom:12px;">
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Status Key:</div>
-        ${keys.map((k, i) => {
-          const hash = getKeyHash(k);
-          const cd = geminiKeyCooldowns[hash] || 0;
-          const info = window.geminiKeyInfo?.[hash];
-          const isCD = Date.now() < cd;
-          const resetT = isCD ? new Date(cd).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '-';
-          const lType = info?.limitType === 'daily' ? '📅 Batas harian' : '⏱ Per-menit';
+        ${keys.map((rec, i) => {
+          const provider = (typeof AI_PROVIDERS !== 'undefined' && AI_PROVIDERS[rec.provider]) || { name: 'Key' };
+          const hash = getKeyHash(rec.key);
+          const isCD = !!rec.cooldownUntil && Date.now() < rec.cooldownUntil;
+          const resetT = isCD ? new Date(rec.cooldownUntil).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '-';
+          const lType = rec.limitType === 'daily' ? '📅 Batas harian' : '⏱ Per-menit';
           return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border-radius:6px;margin-bottom:4px;font-size:11.5px;">
             <span style="color:${isCD?'var(--accent3)':'var(--accent)'};">${isCD?'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite;vertical-align:-2px"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>':'<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>'}</span>
-            <span style="font-family:var(--mono);color:var(--muted);">Key ${i+1} (...${hash})</span>
+            <span style="font-family:var(--mono);color:var(--muted);">${provider.name} (...${hash})</span>
             <span style="flex:1;text-align:right;color:var(--muted);">${isCD ? lType+' · reset '+resetT : 'Siap'}</span>
           </div>`;
         }).join('')}
