@@ -165,7 +165,12 @@ async function callGeminiWithRotation(systemPrompt, messages) {
 
   if(!response.ok) {
     const err = await response.json().catch(()=>({}));
-    throw new Error(err?.error?.message || `HTTP ${response.status}`);
+    const rawMsg = err?.error?.message || '';
+    if(response.status === 503 || /overloaded|high demand/i.test(rawMsg)) {
+      setCooldown(availKey, 15000); // kasih napas 15 detik ke key ini sebelum dipakai lagi
+      throw new Error('Server Gemini lagi padat (high demand). Coba kirim ulang beberapa detik lagi, atau tambah API key cadangan di Setup AI.');
+    }
+    throw new Error(rawMsg || `HTTP ${response.status}`);
   }
 
   const data = await response.json();
@@ -345,6 +350,13 @@ function getAppContext() {
 
   const akunList = akuns.map(a => `${a.kode} ${a.nama} (${a.tipe})`).join(', ');
 
+  const kartuStockList = Object.values(multiKartuStock).flatMap(card =>
+    Object.values(card.kategori || {}).map(kat => {
+      const s = getKsSaldoKat(kat);
+      return `${kat.nama} (stok: ${s.totalQty} ${kat.satuan||'unit'}, metode: ${(s.metode||'fifo').toUpperCase()}, HPP saat ini: Rp ${Math.round(s.hppRata||0).toLocaleString('id-ID')}/unit)`;
+    })
+  ).join('\n') || '(belum ada produk di Kartu Stock)';
+
   return `KONTEKS DATA KEUANGAN SAAT INI:
 - Total Aset: Rp ${totalAset.toLocaleString('id-ID')}
 - Total Pendapatan: Rp ${totalPend.toLocaleString('id-ID')}
@@ -354,7 +366,10 @@ function getAppContext() {
 - Jurnal Terbaru:\n${recentJurnals||'(belum ada)'}
 
 DAFTAR AKUN TERSEDIA:
-${akunList}`;
+${akunList}
+
+DAFTAR KARTU STOCK / PRODUK TERSEDIA:
+${kartuStockList}`;
 }
 
 async function sendAI() {
@@ -401,7 +416,7 @@ JENIS AKSI TERSEDIA:
 
 2. NAVIGASI:
 {"type":"navigate","page":"dashboard"}
-Halaman valid: dashboard, transaksi, jurnal-umum, jurnal-kas, jurnal-penjualan, jurnal-pembelian, buku-besar, neraca-saldo, laba-rugi, neraca, akun, kalk-penyusutan, kalk-persediaan, kalk-bunga, kalk-rasio, kalk-bep, kalk-ppn
+Halaman valid: dashboard, transaksi, jurnal-umum, jurnal-kas, jurnal-penjualan, jurnal-pembelian, buku-besar, neraca-saldo, laba-rugi, neraca, akun, produk, kalk-penyusutan, kalk-persediaan, kalk-bunga, kalk-rasio, kalk-bep, kalk-ppn
 
 3. ISI KALKULATOR PENYUSUTAN:
 {"type":"fillKalkPenyusutan","cost":100000000,"sisa":10000000,"umur":5,"metode":"garis-lurus","nama":"Nama Aset"}
@@ -424,6 +439,13 @@ Metode: garis-lurus, saldo-menurun, saldo-menurun-1x, sum-of-years, unit-produks
 
 9. TAMBAH AKUN:
 {"type":"addAkun","kode":"6106","nama":"Beban Transportasi","tipe":"Beban","kat":"Operasional"}
+
+10. INPUT KARTU STOCK / PERSEDIAAN (masuk/keluar barang):
+{"type":"addKartuStock","produk":"Nama Produk persis dari DAFTAR KARTU STOCK","jenis":"masuk","qty":10,"harga":50000,"tanggal":"2026-04-30","ket":"Pembelian stok"}
+{"type":"addKartuStock","produk":"Nama Produk persis dari DAFTAR KARTU STOCK","jenis":"keluar","qty":5,"tanggal":"2026-04-30","ket":"Penjualan"}
+- jenis "masuk" WAJIB isi "harga" (harga beli per unit). jenis "keluar" TIDAK perlu "harga" — HPP dihitung otomatis sesuai metode (FIFO/LIFO/WA/MWA) produk itu.
+- "produk" WAJIB sama persis (atau sangat mirip) dengan nama di DAFTAR KARTU STOCK di bawah. Kalau produk belum terdaftar, JANGAN mengarang — beritahu user untuk bikin dulu di menu Master Produk.
+- Ini HANYA update stok fisik/HPP di Kartu Stock, BUKAN jurnal. Kalau user juga mau catat penjualan/pembelian lengkap dengan jurnal, kombinasikan dengan addJurnal atau arahkan ke form Transaksi.
 
 ATURAN PENTING:
 - Beri penjelasan lengkap DULU, tulis <ACTIONS> di paling bawah

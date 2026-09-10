@@ -228,7 +228,7 @@ function renderAnalitik() {
     if(!c) return null;
     const par = c.parentElement;
     const w = par.offsetWidth - 24 || 400;
-    c.width = w; c.height = parseInt(c.getAttribute('height'))||200;
+    c.width = w; c.height = anBaseHeight(c, 200);
     const ctx = c.getContext('2d');
     ctx.clearRect(0,0,c.width,c.height);
     return { ctx, w: c.width, h: c.height, c };
@@ -316,11 +316,22 @@ function renderAnalitikEmpty() {
 
 // ── DRAWING HELPERS ──────────────────────────────
 
+// Ambil tinggi asli canvas (dalam CSS px) HANYA SEKALI dan simpan di dataset.
+// PENTING: jangan baca dari el.getAttribute('height') tiap render — men-set
+// properti el.height (untuk scaling devicePixelRatio) ikut menimpa attribute
+// height aslinya di DOM. Kalau dibaca ulang tiap render, nilainya membesar
+// terus (compounding) setiap kali chart di-render ulang (mis. klik filter
+// rentang waktu), khususnya di layar dengan devicePixelRatio > 1.
+function anBaseHeight(el, fallback) {
+  if (!el.dataset.baseH) el.dataset.baseH = el.getAttribute('height') || String(fallback);
+  return parseInt(el.dataset.baseH) || fallback;
+}
+
 function anDrawGroupedBar(id, labels, datasets, textClr, gridClr) {
   const el = document.getElementById(id); if(!el) return;
   const par = el.parentElement;
   const dpr = window.devicePixelRatio || 1;
-  const W = par.offsetWidth - 24 || 400; const H = parseInt(el.getAttribute('height'))||180;
+  const W = par.offsetWidth - 24 || 400; const H = anBaseHeight(el, 180);
   el.width = W * dpr; el.height = H * dpr;
   el.style.width = W + 'px'; el.style.height = H + 'px';
   const ctx = el.getContext('2d');
@@ -366,7 +377,7 @@ function anDrawLine(id, labels, datasets, textClr, gridClr) {
   const el = document.getElementById(id); if(!el) return;
   const par = el.parentElement;
   const dpr = window.devicePixelRatio || 1;
-  const W = par.offsetWidth - 24 || 400; const H = parseInt(el.getAttribute('height'))||180;
+  const W = par.offsetWidth - 24 || 400; const H = anBaseHeight(el, 180);
   el.width = W * dpr; el.height = H * dpr;
   el.style.width = W + 'px'; el.style.height = H + 'px';
   const ctx = el.getContext('2d');
@@ -424,7 +435,7 @@ function anDrawBarSignedColor(id, labels, data, textClr, gridClr, isPercent=fals
   const el = document.getElementById(id); if(!el) return;
   const par = el.parentElement;
   const dpr = window.devicePixelRatio || 1;
-  const W = par.offsetWidth - 24 || 400; const H = parseInt(el.getAttribute('height'))||180;
+  const W = par.offsetWidth - 24 || 400; const H = anBaseHeight(el, 180);
   el.width = W * dpr; el.height = H * dpr;
   el.style.width = W + 'px'; el.style.height = H + 'px';
   const ctx = el.getContext('2d');
@@ -590,7 +601,7 @@ function anDrawTopAkun(id, textClr, gridClr) {
   const el = document.getElementById(id); if(!el) return;
   const par = el.parentElement;
   const dpr = window.devicePixelRatio || 1;
-  const W = par.offsetWidth-24||400; const H = parseInt(el.getAttribute('height'))||220;
+  const W = par.offsetWidth-24||400; const H = anBaseHeight(el, 220);
   el.width=W*dpr; el.height=H*dpr;
   el.style.width=W+'px'; el.style.height=H+'px';
   const ctx = el.getContext('2d');
@@ -651,7 +662,7 @@ function anDrawProyeksi(id, months, labels, textClr, gridClr) {
 
   const par = el.parentElement;
   const dpr = window.devicePixelRatio || 1;
-  const W = par.offsetWidth-24||400; const H = parseInt(el.getAttribute('height'))||180;
+  const W = par.offsetWidth-24||400; const H = anBaseHeight(el, 180);
   el.width=W*dpr; el.height=H*dpr;
   el.style.width=W+'px'; el.style.height=H+'px';
   const ctx = el.getContext('2d');

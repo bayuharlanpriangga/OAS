@@ -2452,6 +2452,24 @@ function _makeKsTabEl(val) {
 // ══════════════════════════════════════════════════════════
 
 // Helper: cari kategori dari katId di semua card
+/** Cari kategori kartu stock berdasarkan nama produk (fuzzy, case-insensitive) — dipakai Orias Assisten */
+function _findKatByNama(nama) {
+  if(!nama) return null;
+  const target = nama.toLowerCase().trim();
+  let exact = null, partial = null;
+  for (const card of Object.values(multiKartuStock)) {
+    for (const [katId, kat] of Object.entries(card.kategori || {})) {
+      const katNama = (kat.nama||'').toLowerCase();
+      if (katNama === target) { exact = { katId, kat, card }; break; }
+      if (!partial && (katNama.includes(target) || target.includes(katNama))) {
+        partial = { katId, kat, card };
+      }
+    }
+    if (exact) break;
+  }
+  return exact || partial;
+}
+
 function _findKatById(katId) {
   for (const card of Object.values(multiKartuStock)) {
     if (card.kategori?.[katId]) return { kat: card.kategori[katId], card };

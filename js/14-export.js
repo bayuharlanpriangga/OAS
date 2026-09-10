@@ -2921,7 +2921,7 @@ async function executeAIActions(actions) {
               'laba-rugi':'Laba Rugi', neraca:'Neraca', akun:'Chart of Accounts',
               'kalk-penyusutan':'Kalkulator Penyusutan', 'kalk-persediaan':'Kalkulator Persediaan',
               'kalk-bunga':'Kalkulator Bunga', 'kalk-rasio':'Kalkulator Rasio',
-              'kalk-bep':'Kalkulator BEP', 'kalk-ppn':'Kalkulator PPN & PPh' };
+              'kalk-bep':'Kalkulator BEP', 'kalk-ppn':'Kalkulator PPN & PPh', produk:'Master Produk' };
             results.push(`↔ Berpindah ke: <b>${names[page]||page}</b>`);
           }
           break;
@@ -3013,6 +3013,35 @@ async function executeAIActions(actions) {
           akuns.push({kode:action.kode, nama:action.nama, tipe:action.tipe||'Beban', kat:action.kat||'', normal});
           akuns.sort((a,b)=>a.kode.localeCompare(b.kode));
           results.push(`🗂️ Akun baru ditambahkan: <b>${action.kode} - ${action.nama}</b>`);
+          break;
+        }
+
+        case 'addKartuStock': {
+          const found = _findKatByNama(action.produk);
+          if(!found) {
+            results.push(`<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Produk "${action.produk}" tidak ditemukan di Kartu Stock — dilewati`);
+            break;
+          }
+          const tgl = action.tanggal || today;
+          const qty = Number(action.qty) || 0;
+          if(qty <= 0) { results.push(`⚠️ Qty tidak valid untuk "${found.kat.nama}"`); break; }
+
+          if(action.jenis === 'masuk') {
+            const harga = Number(action.harga) || 0;
+            addKartuStockOnBuy(found.katId, qty, harga, tgl, action.ket || 'Dari AI');
+            results.push(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Kartu Stock <b>${found.kat.nama}</b>: masuk ${qty} unit @ ${fmtRp(harga)}`);
+          } else if(action.jenis === 'keluar') {
+            const hasil = deductKartuStockOnSale(found.katId, qty, tgl, action.ket || 'Dari AI');
+            if(hasil.qtySell < qty) {
+              results.push(`⚠️ Stok "${found.kat.nama}" cuma tersedia ${hasil.qtySell} unit (diminta ${qty}) — dikeluarkan sesuai stok yang ada`);
+            }
+            results.push(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Kartu Stock <b>${found.kat.nama}</b>: keluar ${hasil.qtySell} unit, total HPP ${fmtRp(hasil.hppBatch)}`);
+          } else {
+            results.push(`⚠️ Jenis aksi Kartu Stock tidak dikenal: ${action.jenis}`);
+            break;
+          }
+          if(document.getElementById('page-kalk-persediaan')?.classList.contains('active')) renderKartuStock();
+          if(document.getElementById('page-produk')?.classList.contains('active')) renderProduk();
           break;
         }
 
