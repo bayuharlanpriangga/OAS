@@ -77,7 +77,7 @@ python -m http.server 8000
 
 Untuk fitur sinkronisasi cloud dan Orias Assisten, dibutuhkan konfigurasi:
 - **Supabase** — URL & anon key project Supabase Anda
-- **Groq API key** — didapat gratis di [console.groq.com/keys](https://console.groq.com/keys), disimpan langsung di browser (tidak dikirim ke server manapun)
+- **Gemini Api key** — didapat gratis di (aistudio.google.com/apikey), disimpan langsung di browser (tidak dikirim ke server manapun)
 
 ---
 
