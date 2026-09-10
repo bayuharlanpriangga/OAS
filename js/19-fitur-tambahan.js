@@ -970,7 +970,7 @@ async function buatJurnalDariBankRow(idx) {
   const row = bankRows[idx];
   if(!row) return;
   
-  // Use Groq AI to suggest journal entry
+  // Use Gemini AI to suggest journal entry
   const isIn = row.debit > 0;
   const amt = row.debit || row.kredit;
   const prompt = `Dari mutasi bank: "${row.keterangan}" tanggal ${row.tanggal}, ${isIn?'DEBIT (uang masuk)':'KREDIT (uang keluar)'} Rp ${fmtRp(amt)}. Buatkan jurnal akuntansi yang tepat.`;

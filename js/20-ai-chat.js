@@ -1,54 +1,54 @@
 
-// GROQ AI — MULTI-KEY ROTATION
-// Multiple free Groq API keys — rotate when rate limited
-// Each key has 30 req/min limit, rotating between keys multiplies capacity
-// Get free keys at: console.groq.com (free, no credit card)
+// GEMINI AI — MULTI-KEY ROTATION
+// Multiple free Gemini API keys — rotate when rate limited
+// Each key has ~10 req/min limit (free tier), rotating between keys multiplies capacity
+// Get free keys at: aistudio.google.com/apikey (free, no credit card)
 
-const GROQ_KEYS_STORAGE = 'oas_groq_keys';
-const GROQ_COOLDOWN_KEY = 'oas_groq_cooldown';
+const GEMINI_KEYS_STORAGE = 'oas_gemini_keys';
+const GEMINI_COOLDOWN_KEY = 'oas_gemini_cooldown';
 
 // Default demo keys (user can add more via modal)
-const DEFAULT_GROQ_KEYS = [
-  // User needs to add their own free keys from console.groq.com
-  // Format: 'gsk_...'
+const DEFAULT_GEMINI_KEYS = [
+  // User needs to add their own free keys from aistudio.google.com/apikey
+  // Format: 'AIza...'
 ];
 
-function getGroqKeys() {
-  const stored = localStorage.getItem(GROQ_KEYS_STORAGE);
+function getGeminiKeys() {
+  const stored = localStorage.getItem(GEMINI_KEYS_STORAGE);
   if(stored) {
     try { return JSON.parse(stored); } catch {}
   }
-  return DEFAULT_GROQ_KEYS;
+  return DEFAULT_GEMINI_KEYS;
 }
 
-function saveGroqKeys(keys) {
-  localStorage.setItem(GROQ_KEYS_STORAGE, JSON.stringify(keys));
+function saveGeminiKeys(keys) {
+  localStorage.setItem(GEMINI_KEYS_STORAGE, JSON.stringify(keys));
 }
 
 // Track which key is currently active and their cooldowns
-let groqKeyIndex = 0;
-let groqKeyCooldowns = {}; // { keyHash: untilTimestamp }
+let geminiKeyIndex = 0;
+let geminiKeyCooldowns = {}; // { keyHash: untilTimestamp }
 
 function getKeyHash(key) { return key.slice(-8); }
 
 function isKeyCooledDown(key) {
   const hash = getKeyHash(key);
-  const until = groqKeyCooldowns[hash] || 0;
+  const until = geminiKeyCooldowns[hash] || 0;
   return Date.now() < until;
 }
 
 function setCooldown(key, ms) {
-  groqKeyCooldowns[getKeyHash(key)] = Date.now() + ms;
+  geminiKeyCooldowns[getKeyHash(key)] = Date.now() + ms;
 }
 
 function getAvailableKey(keys) {
   if(!keys.length) return null;
   // Try current index first
   for(let attempt = 0; attempt < keys.length; attempt++) {
-    const idx = (groqKeyIndex + attempt) % keys.length;
+    const idx = (geminiKeyIndex + attempt) % keys.length;
     const key = keys[idx];
     if(!isKeyCooledDown(key)) {
-      groqKeyIndex = idx; // remember for next time
+      geminiKeyIndex = idx; // remember for next time
       return key;
     }
   }
@@ -58,20 +58,20 @@ function getAvailableKey(keys) {
 function getShortestCooldown(keys) {
   let min = Infinity;
   keys.forEach(k => {
-    const until = groqKeyCooldowns[getKeyHash(k)] || 0;
+    const until = geminiKeyCooldowns[getKeyHash(k)] || 0;
     if(until > Date.now()) min = Math.min(min, until - Date.now());
   });
   return min === Infinity ? 0 : min;
 }
 
-async function callGroqWithRotation(systemPrompt, messages) {
-  const keys = getGroqKeys();
+async function callGeminiWithRotation(systemPrompt, messages) {
+  const keys = getGeminiKeys();
 
   if(!keys.length) {
     // No keys — show setup prompt
-    showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Belum ada Groq API Key. Klik Setup AI untuk tambahkan.');
-    openGroqKeyModal();
-    throw new Error('Groq API Key belum diset. Klik tombol Setup AI.');
+    showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Belum ada Gemini API Key. Klik Setup AI untuk tambahkan.');
+    openGeminiKeyModal();
+    throw new Error('Gemini API Key belum diset. Klik tombol Setup AI.');
   }
 
   const availKey = getAvailableKey(keys);
@@ -81,7 +81,7 @@ async function callGroqWithRotation(systemPrompt, messages) {
     const cooldownSec = Math.ceil(cooldownMs / 1000);
     // Check if any key has daily limit
     const hasDailyLimit = keys.some(k => {
-      const info = window.groqKeyInfo?.[getKeyHash(k)];
+      const info = window.geminiKeyInfo?.[getKeyHash(k)];
       return info?.limitType === 'daily';
     });
     if(hasDailyLimit || cooldownSec > 600) {
@@ -92,14 +92,17 @@ async function callGroqWithRotation(systemPrompt, messages) {
     throw new Error(`⏳ Semua key cooldown ${cooldownSec}s — otomatis coba lagi`);
   }
 
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  // Gemini exposes an OpenAI-compatible Chat Completions endpoint, so the
+  // request/response shape (messages[], choices[0].message.content) stays
+  // the same as before — only the URL, model name, and key format change.
+  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${availKey}`
     },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: 'gemini-2.5-flash',
       max_tokens: 8000,
       temperature: 0.7,
       messages: [
@@ -110,7 +113,7 @@ async function callGroqWithRotation(systemPrompt, messages) {
   });
 
   if(response.status === 429) {
-    // Parse retry-after — Groq sends seconds
+    // Parse retry-after — Gemini (via the OpenAI-compat layer) sends seconds
     const errBody = await response.json().catch(()=>({}));
     const errMsg = errBody?.error?.message || '';
     const retryHeader = response.headers.get('retry-after') || response.headers.get('x-ratelimit-reset-requests') || '';
@@ -123,19 +126,19 @@ async function callGroqWithRotation(systemPrompt, messages) {
     
     // Mark key with limit type info
     const keyHash = getKeyHash(availKey);
-    if(!window.groqKeyInfo) window.groqKeyInfo = {};
-    window.groqKeyInfo[keyHash] = {
+    if(!window.geminiKeyInfo) window.geminiKeyInfo = {};
+    window.geminiKeyInfo[keyHash] = {
       limitType: isHourlyOrDaily ? 'daily' : 'per-minute',
       resetAt: new Date(Date.now() + retryAfter * 1000),
       message: errMsg.slice(0, 120)
     };
     
-    groqKeyIndex = (groqKeyIndex + 1) % keys.length;
+    geminiKeyIndex = (geminiKeyIndex + 1) % keys.length;
 
     // Try another key immediately
     const nextKey = getAvailableKey(keys);
     if(nextKey && nextKey !== availKey) {
-      return await callGroqWithRotation(systemPrompt, messages);
+      return await callGeminiWithRotation(systemPrompt, messages);
     }
 
     // All keys exhausted — show smart cooldown
@@ -155,7 +158,7 @@ async function callGroqWithRotation(systemPrompt, messages) {
 
   if(response.status === 401) {
     setCooldown(availKey, 3600000); // invalid key, skip for 1 hour
-    groqKeyIndex = (groqKeyIndex + 1) % keys.length;
+    geminiKeyIndex = (geminiKeyIndex + 1) % keys.length;
     throw new Error(`API Key tidak valid: ...${getKeyHash(availKey)}. Coba key lain.`);
   }
 
@@ -166,75 +169,75 @@ async function callGroqWithRotation(systemPrompt, messages) {
 
   const data = await response.json();
   // Rotate to next key for load balancing
-  groqKeyIndex = (groqKeyIndex + 1) % keys.length;
+  geminiKeyIndex = (geminiKeyIndex + 1) % keys.length;
   return data.choices?.[0]?.message?.content || 'Maaf, tidak ada respons.';
 }
 
 // startCooldownDisplay moved to smart rate limit section above
 let cooldownInterval = null;
 
-// Groq Key Modal
-function openGroqKeyModal() {
-  loadGroqKeys();
+// Gemini Key Modal
+function openGeminiKeyModal() {
+  loadGeminiKeys();
   // Info/steps box is always collapsed by default when the modal opens
-  const info = document.getElementById('groq-info-box');
+  const info = document.getElementById('gemini-info-box');
   if(info) info.style.display = 'none';
   document.getElementById('modal-apikey').classList.add('open');
 }
 
-function toggleGroqInfo() {
-  const info = document.getElementById('groq-info-box');
+function toggleGeminiInfo() {
+  const info = document.getElementById('gemini-info-box');
   if(!info) return;
   const isHidden = info.style.display === 'none';
   info.style.display = isHidden ? 'block' : 'none';
-  const btn = document.getElementById('groq-info-toggle-btn');
+  const btn = document.getElementById('gemini-info-toggle-btn');
   if(btn) {
     btn.style.color = isHidden ? 'var(--accent2)' : 'var(--muted)';
     btn.style.borderColor = isHidden ? 'rgba(34,211,238,0.4)' : 'var(--border)';
   }
 }
 
-function loadGroqKeys() {
-  const keys = getGroqKeys();
-  const container = document.getElementById('groq-keys-list');
+function loadGeminiKeys() {
+  const keys = getGeminiKeys();
+  const container = document.getElementById('gemini-keys-list');
   if(!container) return;
 
   container.innerHTML = keys.length ? keys.map((k, i) => {
     const masked = k.slice(0,8) + '...' + k.slice(-6);
-    const cd = groqKeyCooldowns[getKeyHash(k)];
+    const cd = geminiKeyCooldowns[getKeyHash(k)];
     const inCD = cd && Date.now() < cd;
     return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid ${inCD?'rgba(248,113,113,0.3)':'rgba(74,222,128,0.2)'};border-radius:7px;margin-bottom:6px;">
-      <span style="font-family:var(--mono);font-size:12px;flex:1;color:${inCD?'var(--red)':'var(--accent)'};">${masked} ${inCD?'⏳ cooldown':i===groqKeyIndex%Math.max(keys.length,1)?'<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color:var(--accent);vertical-align:-2px"><polygon points="5 3 19 12 5 21 5 3"/></svg> aktif':'✓'}</span>
-      <button onclick="removeGroqKey(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;">✕</button>
+      <span style="font-family:var(--mono);font-size:12px;flex:1;color:${inCD?'var(--red)':'var(--accent)'};">${masked} ${inCD?'⏳ cooldown':i===geminiKeyIndex%Math.max(keys.length,1)?'<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="color:var(--accent);vertical-align:-2px"><polygon points="5 3 19 12 5 21 5 3"/></svg> aktif':'✓'}</span>
+      <button onclick="removeGeminiKey(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;">✕</button>
     </div>`;
   }).join('') : '<div style="text-align:center;color:var(--muted);font-size:13px;padding:16px;">Belum ada key. Tambahkan minimal 1 key.</div>';
 
-  const countEl = document.getElementById('groq-key-count');
-  if(countEl) countEl.textContent = `${keys.length} key — ~${keys.length * 30} req/menit`;
+  const countEl = document.getElementById('gemini-key-count');
+  if(countEl) countEl.textContent = `${keys.length} key — ~${keys.length * 10} req/menit`;
 }
 
-function addGroqKey() {
-  const inp = document.getElementById('groq-new-key');
+function addGeminiKey() {
+  const inp = document.getElementById('gemini-new-key');
   if(!inp) return;
   const key = inp.value.trim();
-  if(!key.startsWith('gsk_')) {
-    showAlert('❌ Format Groq key harus diawali gsk_'); return;
+  if(!key.startsWith('AIza')) {
+    showAlert('❌ Format Gemini key harus diawali AIza'); return;
   }
-  const keys = getGroqKeys();
+  const keys = getGeminiKeys();
   if(keys.includes(key)) { showAlert('Key sudah ada!'); return; }
   keys.push(key);
-  saveGroqKeys(keys);
+  saveGeminiKeys(keys);
   inp.value = '';
-  loadGroqKeys();
+  loadGeminiKeys();
   updateAIKeyStatus();
-  showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Key ke-${keys.length} ditambahkan! Kapasitas: ~${keys.length*30} req/menit`);
+  showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Key ke-${keys.length} ditambahkan! Kapasitas: ~${keys.length*10} req/menit`);
 }
 
-function removeGroqKey(idx) {
-  const keys = getGroqKeys();
+function removeGeminiKey(idx) {
+  const keys = getGeminiKeys();
   keys.splice(idx, 1);
-  saveGroqKeys(keys);
-  loadGroqKeys();
+  saveGeminiKeys(keys);
+  loadGeminiKeys();
   updateAIKeyStatus();
   showAlert('Key dihapus');
 }
@@ -242,7 +245,7 @@ function removeGroqKey(idx) {
 function updateAIKeyStatus() {
   const btn = document.getElementById('ai-key-status-btn');
   if(!btn) return;
-  const keys = getGroqKeys();
+  const keys = getGeminiKeys();
   if(keys.length > 0) {
     btn.textContent = `<i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> ${keys.length} Key Aktif`;
     btn.className = 'btn btn-ghost btn-sm key-ok';
@@ -253,8 +256,8 @@ function updateAIKeyStatus() {
   btn.style.flexShrink = '0';
 }
 
-// Update API key modal to show Groq setup
-function openApiKeyModal() { openGroqKeyModal(); }
+// Update API key modal to show Gemini setup
+function openApiKeyModal() { openGeminiKeyModal(); }
 
 function useChip(el) {
   document.getElementById('ai-input').value = el.textContent.replace(/^[^\w\s]*\s*/,'').trim();
@@ -373,7 +376,7 @@ async function sendAI() {
   document.getElementById('ai-send-btn').textContent = '...';
   const loadingDiv = appendMsg('bot', `<div class="ai-loading"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>`);
 
-  const systemPrompt = `Kamu adalah Orias Assisten — asisten akuntansi canggih yang BISA LANGSUNG MENGEKSEKUSI AKSI di software akuntansi ini secara otomatis. Kamu ditenagai oleh Llama 3.1 70B via Groq, bisa paham bahasa Indonesia formal maupun gaul/casual, dan selalu berusaha membantu sampai masalah beres.
+  const systemPrompt = `Kamu adalah Orias Assisten — asisten akuntansi canggih yang BISA LANGSUNG MENGEKSEKUSI AKSI di software akuntansi ini secara otomatis. Kamu ditenagai oleh Gemini 2.5 Flash via Google AI, bisa paham bahasa Indonesia formal maupun gaul/casual, dan selalu berusaha membantu sampai masalah beres.
 
 IDENTITAS:
 Kamu adalah kombinasi akuntan senior (CPA/CA), konsultan pajak, analis keuangan, dan programmer yang bisa menulis kode aksi. Bahasa Indonesia yang hangat dan profesional.
@@ -471,7 +474,7 @@ ${getAppContext()}`;
       { role: 'user', content: msg }
     ];
 
-    const rawText = await callGroqWithRotation(systemPrompt, messages);
+    const rawText = await callGeminiWithRotation(systemPrompt, messages);
 
     // Remove loading
     loadingDiv.remove();

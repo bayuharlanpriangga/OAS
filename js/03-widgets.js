@@ -336,7 +336,7 @@ function showAIRateLimitInfo(keys, cooldownSec, limitType) {
       </div>
       <div style="font-size:12.5px;color:var(--muted);line-height:1.7;margin-bottom:12px;">
         ${limitType === 'daily' 
-          ? `Groq membatasi penggunaan per hari. Semua key yang kamu miliki sudah mencapai batas.<br><br>
+          ? `Gemini membatasi penggunaan per hari. Semua key yang kamu miliki sudah mencapai batas.<br><br>
              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:3px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Estimasi reset: <b style="color:var(--text)">~${hoursLeft > 1 ? hoursLeft+' jam lagi' : minsLeft+' menit lagi'}</b> (sekitar jam <b style="color:var(--accent)">${resetStr}</b>)`
           : `Semua key sedang cooldown. Reset dalam <b style="color:var(--accent)">${minsLeft} menit</b> (jam ${resetStr}).`
         }
@@ -347,8 +347,8 @@ function showAIRateLimitInfo(keys, cooldownSec, limitType) {
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Status Key:</div>
         ${keys.map((k, i) => {
           const hash = getKeyHash(k);
-          const cd = groqKeyCooldowns[hash] || 0;
-          const info = window.groqKeyInfo?.[hash];
+          const cd = geminiKeyCooldowns[hash] || 0;
+          const info = window.geminiKeyInfo?.[hash];
           const isCD = Date.now() < cd;
           const resetT = isCD ? new Date(cd).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '-';
           const lType = info?.limitType === 'daily' ? '📅 Batas harian' : '⏱ Per-menit';
@@ -361,7 +361,7 @@ function showAIRateLimitInfo(keys, cooldownSec, limitType) {
       </div>
 
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button onclick="openGroqKeyModal()" style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);border-radius:7px;padding:7px 14px;cursor:pointer;color:var(--accent);font-size:12px;font-family:var(--sans);font-weight:600;">
+        <button onclick="openGeminiKeyModal()" style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);border-radius:7px;padding:7px 14px;cursor:pointer;color:var(--accent);font-size:12px;font-family:var(--sans);font-weight:600;">
           + Tambah Key Baru
         </button>
         ${limitType !== 'daily' ? `<button id="ai-retry-btn" onclick="retryAfterCooldown()" style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.25);border-radius:7px;padding:7px 14px;cursor:pointer;color:var(--accent2);font-size:12px;font-family:var(--sans);font-weight:600;">
