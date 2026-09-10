@@ -403,6 +403,7 @@ let cooldownInterval = null;
 // ═══ MODAL SETUP AI — render, live update, dan aksi key ═══
 let aiKeyLiveTimer = null;
 let aiKeyExpandedIdx = null;
+let aiExpandedProvider = null; // provider id yang cardnya sedang dibuka
 
 function openApiKeyModal() {
   renderAIKeysList();
@@ -418,6 +419,7 @@ function openGeminiKeyModal() { openApiKeyModal(); } // alias kompatibilitas lam
 function closeApiKeyModal() {
   stopAIKeyLiveUpdates();
   aiKeyExpandedIdx = null;
+  aiExpandedProvider = null;
   closeModal('modal-apikey');
 }
 
@@ -463,10 +465,38 @@ function updateDetectedProviderLabel() {
   }
 }
 
-function renderKeyRing(rec, provider) {
+// Pemakaian "efektif" 1 key, dihitung real-time saat render (bukan cuma
+// saat request beneran jalan) — begitu window per-menitnya lewat, otomatis
+// dianggap pulih/reset ke 0 meski belum ada request baru yang memicu reset
+// di trackKeyUsage(). Ini murni buat tampilan; state asli tetap dijaga oleh
+// trackKeyUsage() supaya rotasi key tetap konsisten.
+function getEffectiveUsedCount(rec, provider) {
+  const now = Date.now();
+  if (now - rec.windowStart > provider.windowMs) return 0;
+  return rec.usedCount;
+}
+
+// Ring SVG generik — dipakai baik buat ring gabungan per-provider maupun
+// ring kecil per-key di dalam card yang dibuka.
+function renderRingSVG(pct, ringColor, centerText, fontSize, size, stroke) {
+  size = size || 44; stroke = stroke || 4;
+  const r = (size - stroke) / 2, c = 2 * Math.PI * r;
+  const dash = (Math.max(0, Math.min(100, pct)) / 100) * c;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0;">
+    <g transform="rotate(-90 ${size/2} ${size/2})">
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${stroke}"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${ringColor}" stroke-width="${stroke}"
+        stroke-dasharray="${dash.toFixed(1)} ${c.toFixed(1)}" stroke-linecap="round" style="transition:stroke-dasharray 0.5s ease"/>
+    </g>
+    <text x="${size/2}" y="${size/2}" fill="var(--text)" font-size="${fontSize}" font-family="var(--sans)" font-weight="700"
+      text-anchor="middle" dominant-baseline="central">${centerText}</text>
+  </svg>`;
+}
+
+// Ring per-key individual (dipakai di dalam card provider yang terbuka).
+function renderKeyRing(rec, provider, size, stroke) {
   const now = Date.now();
   const inCooldown = isRecordCoolingDown(rec);
-  const size = 44, stroke = 4, r = (size - stroke) / 2, c = 2 * Math.PI * r;
   let pct, ringColor, centerText, fontSize;
 
   if (inCooldown) {
@@ -478,22 +508,54 @@ function renderKeyRing(rec, provider) {
     fontSize = '9px';
   } else {
     const limit = provider.defaultLimit || 10;
-    pct = Math.max(0, Math.min(100, (rec.usedCount / limit) * 100));
+    const used = getEffectiveUsedCount(rec, provider);
+    pct = Math.max(0, Math.min(100, (used / limit) * 100));
     ringColor = pct >= 90 ? 'var(--red)' : pct >= 60 ? 'var(--accent3)' : 'var(--accent)';
     centerText = `${Math.round(pct)}%`;
     fontSize = '10.5px';
   }
+  return renderRingSVG(pct, ringColor, centerText, fontSize, size, stroke);
+}
 
-  const dash = (pct / 100) * c;
-  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0;">
-    <g transform="rotate(-90 ${size/2} ${size/2})">
-      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${stroke}"/>
-      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${ringColor}" stroke-width="${stroke}"
-        stroke-dasharray="${dash.toFixed(1)} ${c.toFixed(1)}" stroke-linecap="round" style="transition:stroke-dasharray 0.5s ease"/>
-    </g>
-    <text x="${size/2}" y="${size/2}" fill="var(--text)" font-size="${fontSize}" font-family="var(--sans)" font-weight="700"
-      text-anchor="middle" dominant-baseline="central">${centerText}</text>
-  </svg>`;
+// Statistik gabungan 1 provider — kapasitas total = jumlah key × limit per
+// key, dipakai-nya dijumlah dari semua key (key yang lagi cooldown dihitung
+// "penuh" kapasitasnya sampai dia pulih). Progress bar ini otomatis
+// "merata-ratakan" ulang tiap kali jumlah key provider itu berubah, dan
+// otomatis turun bobotnya begitu salah satu key pulih (real-time, dihitung
+// ulang tiap render — lihat getEffectiveUsedCount).
+function computeProviderStats(providerId, group) {
+  const provider = AI_PROVIDERS[providerId] || AI_PROVIDERS.unknown;
+  const limit = provider.defaultLimit || 10;
+  const now = Date.now();
+  let totalCapacity = 0, totalUsed = 0, anyAvailable = false, coolingCount = 0, nearestRecoveryMs = Infinity;
+  let hasDailyCooldown = false;
+
+  group.forEach(({ rec }) => {
+    totalCapacity += limit;
+    if (isRecordCoolingDown(rec)) {
+      totalUsed += limit; // key lagi cooldown = dianggap penuh terpakai
+      coolingCount++;
+      nearestRecoveryMs = Math.min(nearestRecoveryMs, rec.cooldownUntil - now);
+      if (rec.limitType === 'daily') hasDailyCooldown = true;
+    } else {
+      totalUsed += Math.min(limit, getEffectiveUsedCount(rec, provider));
+      anyAvailable = true;
+    }
+  });
+
+  const pct = totalCapacity ? Math.max(0, Math.min(100, (totalUsed / totalCapacity) * 100)) : 0;
+  return {
+    provider, limit, totalCapacity, totalUsed, pct, anyAvailable,
+    coolingCount, allCooling: coolingCount === group.length,
+    nearestRecoveryMs: nearestRecoveryMs === Infinity ? 0 : nearestRecoveryMs,
+    hasDailyCooldown
+  };
+}
+
+function toggleProviderCard(providerId) {
+  aiExpandedProvider = aiExpandedProvider === providerId ? null : providerId;
+  aiKeyExpandedIdx = null;
+  renderAIKeysList();
 }
 
 function toggleKeyDetail(idx) {
@@ -518,51 +580,94 @@ function updateKeyModel(idx, value) {
   saveAIKeys(keys);
 }
 
+// Baris 1 key di dalam card provider yang terbuka (masked key, model, hapus, dst).
+function renderKeyRow(rec, i, provider) {
+  const now = Date.now();
+  const inCooldown = isRecordCoolingDown(rec);
+  const masked = rec.key.length > 12 ? (rec.key.slice(0, 6) + '••••••••' + rec.key.slice(-4)) : rec.key;
+  const expanded = aiKeyExpandedIdx === i;
+
+  const statusChip = inCooldown
+    ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:${rec.limitType==='daily'?'var(--red)':'var(--accent3)'};"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Recovery</span>`
+    : `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--accent);"><i class="ti ti-circle-check" style="font-size:11px;width:11px;height:11px;"></i> Siap</span>`;
+
+  return `<div style="background:var(--surface);border:1px solid ${inCooldown?'rgba(245,158,11,0.25)':'var(--border)'};border-radius:8px;margin-top:7px;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:9px;padding:7px 8px;cursor:pointer;" onclick="toggleKeyDetail(${i})">
+      ${renderKeyRing(rec, provider, 32, 3)}
+      <div style="flex:1;min-width:0;">
+        <code style="font-size:10.5px;font-family:var(--mono);color:var(--muted);">${masked}</code>
+        <div style="margin-top:2px;">${statusChip}</div>
+      </div>
+      <i class="ti ${expanded?'ti-x':'ti-eye'}" style="font-size:13px;width:13px;height:13px;color:var(--muted);flex-shrink:0;"></i>
+    </div>
+    ${expanded ? `<div style="padding:0 8px 8px 8px;border-top:1px dashed var(--border);" onclick="event.stopPropagation()">
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+        <button onclick="copyKeyToClipboard(${i}, event)" data-tooltip="Salin key" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;cursor:pointer;color:var(--muted);flex-shrink:0;"><i class="ti ti-copy" style="font-size:13px;width:13px;height:13px;"></i></button>
+        <button onclick="removeAIKey(${i})" data-tooltip="Hapus key" style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:6px;padding:6px 8px;cursor:pointer;color:var(--red);flex-shrink:0;"><i class="ti ti-trash" style="font-size:13px;width:13px;height:13px;"></i></button>
+        <span style="font-size:10.5px;color:var(--muted);flex-shrink:0;">Model:</span>
+        <input type="text" value="${(rec.model||'').replace(/"/g,'&quot;')}" onchange="updateKeyModel(${i}, this.value)"
+          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;min-width:0;">
+      </div>
+      ${inCooldown ? `<div style="margin-top:8px;font-size:11px;color:var(--muted);">${rec.limitType==='daily'?'Batas harian':'Rate limit'} — bisa dipakai lagi dalam <b style="color:${rec.limitType==='daily'?'var(--red)':'var(--accent3)'}">${formatCountdown(rec.cooldownUntil-now)}</b> (${new Date(rec.cooldownUntil).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})})</div>` : ''}
+      ${rec.lastError ? `<div style="margin-top:6px;font-size:10.5px;color:var(--muted);">Pesan terakhir: ${escapeHtml(rec.lastError)}</div>` : ''}
+    </div>` : ''}
+  </div>`;
+}
+
 function renderAIKeysList() {
   const keys = getAIKeys();
   const container = document.getElementById('gemini-keys-list');
   if (!container) return;
 
   if (!keys.length) {
-    container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:16px;">Belum ada key. Tambahkan minimal 1 key.</div>';
+    container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:16px;">Belum ada key. Tambahkan minimal 1 key — jumlahnya bebas, tidak dibatasi.</div>';
   } else {
-    const now = Date.now();
-    container.innerHTML = keys.map((rec, i) => {
-      const provider = AI_PROVIDERS[rec.provider] || AI_PROVIDERS.unknown;
-      const inCooldown = isRecordCoolingDown(rec);
-      const isActiveTurn = i === (aiActiveKeyIndex % keys.length);
-      const masked = rec.key.length > 12 ? (rec.key.slice(0, 6) + '••••••••' + rec.key.slice(-4)) : rec.key;
-      const expanded = aiKeyExpandedIdx === i;
+    // Kelompokkan key per provider — 1 provider = 1 card, meski keynya banyak.
+    const groups = {}; const order = [];
+    keys.forEach((rec, i) => {
+      if (!groups[rec.provider]) { groups[rec.provider] = []; order.push(rec.provider); }
+      groups[rec.provider].push({ rec, idx: i });
+    });
 
-      const statusChip = inCooldown
-        ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:${rec.limitType==='daily'?'var(--red)':'var(--accent3)'};"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Recovery</span>`
-        : `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--accent);"><i class="ti ti-circle-check" style="font-size:12px;width:12px;height:12px;"></i> ${isActiveTurn ? 'Aktif' : 'Siap'}</span>`;
+    container.innerHTML = order.map(providerId => {
+      const group = groups[providerId];
+      const stats = computeProviderStats(providerId, group);
+      const { provider, pct, allCooling, coolingCount, nearestRecoveryMs, hasDailyCooldown } = stats;
+      const expanded = aiExpandedProvider === providerId;
 
-      return `<div style="background:var(--surface2);border:1px solid ${inCooldown?'rgba(245,158,11,0.3)':'rgba(74,222,128,0.2)'};border-radius:9px;margin-bottom:8px;overflow:hidden;">
-        <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;" onclick="toggleKeyDetail(${i})">
-          ${renderKeyRing(rec, provider)}
+      let ringColor, centerText, fontSize;
+      if (allCooling) {
+        ringColor = hasDailyCooldown ? 'var(--red)' : 'var(--accent3)';
+        centerText = formatCountdownShort(nearestRecoveryMs);
+        fontSize = '9px';
+      } else {
+        ringColor = pct >= 90 ? 'var(--red)' : pct >= 60 ? 'var(--accent3)' : 'var(--accent)';
+        centerText = `${Math.round(pct)}%`;
+        fontSize = '10.5px';
+      }
+      const ringSVG = renderRingSVG(pct, ringColor, centerText, fontSize, 44, 4);
+
+      const statusChip = allCooling
+        ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:${hasDailyCooldown?'var(--red)':'var(--accent3)'};"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Semua key recovery</span>`
+        : coolingCount > 0
+          ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--accent);"><i class="ti ti-circle-check" style="font-size:12px;width:12px;height:12px;"></i> Aktif <span style="color:var(--muted);font-weight:500;">(${coolingCount} recovery)</span></span>`
+          : `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--accent);"><i class="ti ti-circle-check" style="font-size:12px;width:12px;height:12px;"></i> Aktif</span>`;
+
+      return `<div style="background:var(--surface2);border:1px solid ${allCooling?'rgba(245,158,11,0.3)':'rgba(74,222,128,0.2)'};border-radius:9px;margin-bottom:8px;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;" onclick="toggleProviderCard('${providerId}')">
+          ${ringSVG}
           <div style="flex:1;min-width:0;">
             <div style="display:flex;align-items:center;gap:6px;">
               <span style="display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:5px;background:${provider.color};color:#fff;font-size:9px;font-weight:800;flex-shrink:0;">${provider.badge}</span>
               <span style="font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${provider.name}</span>
+              <span style="font-size:10px;color:var(--muted);flex-shrink:0;">×${group.length} key</span>
             </div>
             <div style="margin-top:3px;">${statusChip}</div>
           </div>
-          <i class="ti ${expanded?'ti-x':'ti-eye'}" style="font-size:14px;width:14px;height:14px;color:var(--muted);flex-shrink:0;"></i>
+          <i class="ti ${expanded?'ti-chevron-up':'ti-chevron-down'}" style="font-size:14px;width:14px;height:14px;color:var(--muted);flex-shrink:0;"></i>
         </div>
         ${expanded ? `<div style="padding:0 10px 10px 10px;border-top:1px dashed var(--border);" onclick="event.stopPropagation()">
-          <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
-            <code style="flex:1;font-size:11px;font-family:var(--mono);color:var(--muted);background:var(--surface);padding:6px 8px;border-radius:6px;word-break:break-all;">${masked}</code>
-            <button onclick="copyKeyToClipboard(${i}, event)" data-tooltip="Salin key" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 8px;cursor:pointer;color:var(--muted);flex-shrink:0;"><i class="ti ti-copy" style="font-size:13px;width:13px;height:13px;"></i></button>
-            <button onclick="removeAIKey(${i})" data-tooltip="Hapus key" style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:6px;padding:6px 8px;cursor:pointer;color:var(--red);flex-shrink:0;"><i class="ti ti-trash" style="font-size:13px;width:13px;height:13px;"></i></button>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
-            <span style="font-size:10.5px;color:var(--muted);flex-shrink:0;">Model:</span>
-            <input type="text" value="${(rec.model||'').replace(/"/g,'&quot;')}" onchange="updateKeyModel(${i}, this.value)"
-              style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;">
-          </div>
-          ${inCooldown ? `<div style="margin-top:8px;font-size:11px;color:var(--muted);">${rec.limitType==='daily'?'Batas harian':'Rate limit'} — bisa dipakai lagi dalam <b style="color:${rec.limitType==='daily'?'var(--red)':'var(--accent3)'}">${formatCountdown(rec.cooldownUntil-now)}</b> (${new Date(rec.cooldownUntil).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})})</div>` : ''}
-          ${rec.lastError ? `<div style="margin-top:6px;font-size:10.5px;color:var(--muted);">Pesan terakhir: ${escapeHtml(rec.lastError)}</div>` : ''}
+          ${group.map(({ rec, idx }) => renderKeyRow(rec, idx, provider)).join('')}
         </div>` : ''}
       </div>`;
     }).join('');

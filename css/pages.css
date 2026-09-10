@@ -906,9 +906,19 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 .pv-pal-dot { width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,0.15);cursor:pointer;flex-shrink:0;transition:transform 0.12s; }
 .pv-pal-dot:hover { transform:scale(1.15); }
 .pv-pal-lbl { font-size:11px;color:#e2e8f0;flex:1; }
-/* !important: melawan aturan global body.light-mode input{color:var(--text)!important} di theme.css
-   yang bikin teks hex ini ikut hitam saat tema app Light, padahal box ini selalu dark. */
-.pv-pal-hex { font-family:var(--mono);font-size:10px;color:#67e8f9 !important;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:3px 6px;width:72px; }
+.pv-pal-hex { font-family:var(--mono);font-size:10px;font-weight:700;color:#e0f2fe !important;-webkit-text-fill-color:#e0f2fe;background:rgba(15,23,42,0.55) !important;border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:3px 6px;width:72px; }
+/* FIX: aturan lama di atas kalah SPESIFISITAS-nya (0,1,0) lawan
+   `body.light-mode input{color:var(--text)!important}` di theme.css (0,1,2) —
+   sama-sama !important, tapi selector lebih spesifik yang menang, bukan yang
+   ditulis belakangan. Makanya di tema Terang teks hex ini ikut jadi gelap
+   padahal box-nya selalu dark. Naikkan spesifisitasnya di sini (0,2,1) biar
+   selalu menang di kedua tema. */
+body.light-mode .pv-pal-hex, .pv-pal-hex {
+  color:#e0f2fe !important; -webkit-text-fill-color:#e0f2fe;
+}
+body.light-mode .pv-pal-hex:focus, .pv-pal-hex:focus {
+  color:#e0f2fe !important; -webkit-text-fill-color:#e0f2fe; border-color:var(--accent2);
+}
 .pv-cp-popup { position:fixed;z-index:10002;background:rgba(18,22,36,0.99);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px;box-shadow:0 16px 60px rgba(0,0,0,0.8);width:248px; }
 #pv-sl-canvas { border-radius:7px;cursor:crosshair;display:block;width:100%;height:148px; }
 #pv-hue-slider { width:100%;height:13px;border-radius:7px;cursor:pointer;-webkit-appearance:none;appearance:none;outline:none;margin:8px 0 6px;background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00); }
@@ -916,6 +926,9 @@ body.light-mode .auth-btn-primary { color: #fff; background: var(--accent); }
 .pv-hex-row { display:flex;gap:6px;align-items:center;margin-bottom:10px; }
 .pv-hex-row input { flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:5px;color:#e2e8f0 !important;font-family:var(--mono);font-size:12px;padding:5px 8px;outline:none; }
 .pv-hex-row input:focus { border-color:var(--accent2); }
+/* Sama seperti .pv-pal-hex — popup ini selalu dark terlepas dari tema
+   Terang/Gelap aplikasi, jadi teksnya perlu menang lawan body.light-mode input. */
+body.light-mode .pv-hex-row input, .pv-hex-row input { color:#e2e8f0 !important; -webkit-text-fill-color:#e2e8f0; }
 .pv-cp-swatch { width:32px;height:28px;border-radius:5px;flex-shrink:0;border:2px solid rgba(255,255,255,0.15); }
 .pv-contrast-bar { margin-bottom:8px; }
 .pv-contrast-lbl { display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:3px; }
