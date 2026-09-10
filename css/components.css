@@ -474,6 +474,24 @@ input[type=checkbox] { accent-color: var(--accent); cursor: pointer; }
 [data-tooltip]:nth-child(2)::after { left: 0; transform: translateX(0); }
 [data-tooltip]:last-child::after { left: auto; right: 0; transform: translateX(0); }
 
+/* INFO ICON BUTTON + POPOVER (field/header help) */
+.info-icon-btn {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  padding: 2px; border-radius: 50%; display: inline-flex; align-items: center;
+  justify-content: center; line-height: 0; flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+.info-icon-btn:hover { color: var(--accent2); background: rgba(34,211,238,0.12); }
+.info-icon-btn-sm { padding: 1px; }
+.info-popover {
+  position: fixed; z-index: 10000; max-width: 260px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; font-size: 11.5px; line-height: 1.5; color: var(--muted);
+  font-weight: 400; text-transform: none; letter-spacing: normal;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.info-popover b { color: var(--text); }
+
 /* CUSTOM DATE PICKER */
 .oas-date-wrapper { position: relative; display: inline-block; width: 100%; }
 .oas-date-display {

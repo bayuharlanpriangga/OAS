@@ -51,6 +51,52 @@ function setSelectVal(id, val) {
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── INFO ICON POPOVER (tombol ⓘ di sebelah judul field/header modal) ──
+let _activeInfoPopover = null;
+function toggleInfoPopover(btn, html) {
+  const already = _activeInfoPopover && _activeInfoPopover._btn === btn;
+  closeInfoPopover();
+  if(already) return;
+  const pop = document.createElement('div');
+  pop.className = 'info-popover';
+  pop.innerHTML = html;
+  pop._btn = btn;
+  document.body.appendChild(pop);
+  _positionInfoPopover(pop, btn);
+  _activeInfoPopover = pop;
+  setTimeout(() => {
+    document.addEventListener('click', _onDocClickCloseInfoPopover, true);
+    window.addEventListener('scroll', closeInfoPopover, true);
+    window.addEventListener('resize', closeInfoPopover, true);
+  }, 0);
+}
+function closeInfoPopover() {
+  if(!_activeInfoPopover) return;
+  _activeInfoPopover.remove();
+  _activeInfoPopover = null;
+  document.removeEventListener('click', _onDocClickCloseInfoPopover, true);
+  window.removeEventListener('scroll', closeInfoPopover, true);
+  window.removeEventListener('resize', closeInfoPopover, true);
+}
+function _onDocClickCloseInfoPopover(e) {
+  if(!_activeInfoPopover) return;
+  const btn = _activeInfoPopover._btn;
+  if(!_activeInfoPopover.contains(e.target) && e.target !== btn && !(btn && btn.contains(e.target))) {
+    closeInfoPopover();
+  }
+}
+function _positionInfoPopover(pop, btn) {
+  const rect = btn.getBoundingClientRect();
+  const popRect = pop.getBoundingClientRect();
+  let left = rect.left + rect.width/2 - popRect.width/2;
+  left = Math.max(8, Math.min(left, window.innerWidth - popRect.width - 8));
+  let top = rect.bottom + 8;
+  if(top + popRect.height > window.innerHeight - 8) top = rect.top - popRect.height - 8;
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+
 function emptyState(msg, desc){
   const descText = desc !== undefined ? desc : 'Tambah transaksi baru untuk memulai';
   return `<div class="empty-state"><div class="empty-icon"><svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:0.35"><rect x="4" y="8" width="28" height="20" rx="4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 14h28" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="21" r="2" fill="currentColor"/><rect x="15" y="20" width="10" height="2" rx="1" fill="currentColor"/></svg></div><div class="empty-title">${msg}</div>${descText ? `<div class="empty-desc">${descText}</div>` : ''}</div>`;

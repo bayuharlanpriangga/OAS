@@ -178,7 +178,7 @@ function hapusAkun(kode) {
 }
 
 function openModalAkun(){document.getElementById('modal-akun').classList.add('open');setTimeout(upgradeFormPickers,80);}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');if(typeof closeInfoPopover==='function')closeInfoPopover();}
 
 // AKUN PICKER BOTTOM SHEET
 let _pickerTriggerBtn = null;

@@ -2785,7 +2785,13 @@
 <div class="modal-backdrop" id="modal-produk">
   <div class="modal" style="max-width:560px;">
     <div class="modal-head">
-      <div class="modal-title" id="modal-produk-title">Tambah Produk Baru</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="modal-title" id="modal-produk-title">Tambah Produk Baru</div>
+        <button type="button" class="info-icon-btn" id="produk-info-btn"
+          onclick="toggleInfoPopover(this, 'HPP dihitung otomatis dari kartu stock persediaan dan tidak bisa diubah manual. Ubah data di menu <b>Persediaan</b> untuk memperbarui HPP.')">
+          <i class="ti ti-info-circle" style="font-size:15px;"></i>
+        </button>
+      </div>
       <button class="modal-close" onclick="closeModal('modal-produk')">✕</button>
     </div>
     <div class="modal-body">
@@ -2809,10 +2815,6 @@
             <span style="font-size:13px;color:var(--muted);white-space:nowrap;">%</span>
           </div>
           <div style="font-size:10px;color:var(--muted);margin-top:4px;">Kosongkan = tidak kena PPN</div>
-          <div style="margin-top:8px;display:flex;align-items:flex-start;gap:7px;">
-            <input type="checkbox" id="produk-ppn-inclusive" style="width:15px;height:15px;margin-top:1px;cursor:pointer;" onchange="updateProdukPpnBreakdown()">
-            <label for="produk-ppn-inclusive" style="font-size:11px;color:var(--muted);cursor:pointer;margin:0;line-height:1.4;">PPN sudah termasuk harga jual (inclusive) — untuk toko/UMKM yang menetapkan 1 harga jual ke pembeli</label>
-          </div>
           <div id="produk-ppn-breakdown" style="font-size:10.5px;color:var(--muted);margin-top:6px;font-family:var(--mono);"></div>
         </div>
       </div>
@@ -2838,19 +2840,25 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Akun Persediaan (dikredit saat barang keluar)</label>
+          <label style="display:flex;align-items:center;gap:5px;">
+            Akun Persediaan (dikredit saat barang keluar)
+            <button type="button" class="info-icon-btn info-icon-btn-sm"
+              onclick="toggleInfoPopover(this, 'Pilih akun persediaan aset yang sesuai — mis. <b>1304 Persediaan Barang Jadi</b> untuk produk hasil produksi, bukan selalu 1301.')">
+              <i class="ti ti-info-circle" style="font-size:13px;"></i>
+            </button>
+          </label>
           <input type="hidden" id="produk-akun-pers" value="1301">
           <button class="opt-picker-btn" type="button" id="produk-akun-pers-btn" onclick="openSimplePicker('produk-akun-pers','produk-akun-pers-btn','persediaan')">
             <span class="opt-picker-label">Pilih Akun...</span>
             <span class="opt-picker-arrow">▾</span>
           </button>
-          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Pilih akun persediaan aset yang sesuai — mis. <b>1304 Persediaan Barang Jadi</b> untuk produk hasil produksi, bukan selalu 1301.</div>
         </div>
       </div>
-      <div style="font-size:11px;color:var(--muted);background:rgba(34,211,238,0.06);border:1px solid rgba(34,211,238,0.15);border-radius:8px;padding:9px 12px;">
-        <i class="ti ti-info-circle ti-inline"></i>
-        HPP dihitung otomatis dari kartu stock persediaan dan tidak bisa diubah manual.
-        Ubah data di menu <b>Persediaan</b> untuk memperbarui HPP.
+
+      <!-- PPN Inclusive — di bawah supaya tidak mengganggu tatanan field harga/PPN -->
+      <div style="display:flex;align-items:center;gap:7px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+        <input type="checkbox" id="produk-ppn-inclusive" style="width:15px;height:15px;cursor:pointer;flex-shrink:0;" onchange="updateProdukPpnBreakdown()">
+        <label for="produk-ppn-inclusive" style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text);cursor:pointer;margin:0;">PPN termasuk harga jual (inclusive)</label>
       </div>
     </div>
     <div class="modal-footer">
