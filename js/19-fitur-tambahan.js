@@ -685,8 +685,9 @@ function hapusAnggaran(id) {
 function renderPajakOtomatis() {
   showOpSpinner('Menghitung Pajak...', 'Menganalisis transaksi kena pajak');
   setTimeout(()=>{
-    // Hanya hitung dari jurnal jenis 'PPN' yang dibuat otomatis saat transaksi
-    const ppnJurnals = jurnalEntries.filter(j => j.jenis === 'PPN');
+    // Hitung dari jurnal jenis 'PPN' (entry PPN terpisah, mis. sisi pembelian)
+    // ATAU entry 'Penjualan' yang PPN-nya sudah digabung jadi satu entry dengan penjualannya
+    const ppnJurnals = jurnalEntries.filter(j => j.jenis === 'PPN' || j.jenis === 'Penjualan');
     let ppnKeluaran = 0, totalDppKeluaran = 0;
     let ppnMasukan  = 0, totalDppMasukan  = 0;
     const ppnRows = [], ppnMasukanRows = [];

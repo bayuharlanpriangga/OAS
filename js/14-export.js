@@ -813,7 +813,8 @@ function pvMakeDash(nama,periode,t,c1,c2,c3){
   const tB=akuns.filter(a=>a.tipe==='Beban').reduce((s,a)=>s+pvSaldo(a.kode),0);
   const lk=tP-tH,lb=lk-tB;
   const kpis=[{l:'Total Pendapatan',v:rp(tP),c:c2},{l:'Laba Kotor',v:rp(lk),c:lk>=0?c2:'#ef4444'},{l:'Laba Bersih',v:rp(lb),c:lb>=0?c2:'#ef4444'},{l:'Total HPP',v:rp(tH),c:'#ef4444'},{l:'Total Beban',v:rp(tB),c:'#ef4444'},{l:'Margin',v:tP?((lb/tP)*100).toFixed(1)+'%':'—',c:c2}];
-  const body='<div class="pv-sec">Ringkasan Keuangan</div><div class="kpi-grid">'+kpis.map(k=>'<div class="kpi"><div class="kpi-l">'+k.l+'</div><div class="kpi-v" style="color:'+k.c+';">'+k.v+'</div></div>').join('')+'</div><div class="pv-sec">Ringkasan Transaksi</div><table><thead><tr><th>Keterangan</th><th>Jumlah</th></tr></thead><tbody><tr><td>Total Jurnal</td><td>'+jurnalEntries.length+' entri</td></tr><tr><td>Jurnal Penjualan</td><td>'+jurnalEntries.filter(j=>j.jenis==='Penjualan').length+' entri</td></tr><tr><td>Jurnal PPN</td><td>'+jurnalEntries.filter(j=>j.jenis==='PPN').length+' entri</td></tr><tr class="tot"><td>Periode</td><td>'+periode+'</td></tr></tbody></table>';
+  const _jurnalAdaPpn=j=>j.lines.some(l=>(l.kredit>0&&(l.akun==='2301'||(akuns.find(a=>a.kode===l.akun)?.nama||'').toLowerCase().includes('ppn')))||(l.debit>0&&(l.akun==='1502'||(akuns.find(a=>a.kode===l.akun)?.nama||'').toLowerCase().includes('ppn'))));
+  const body='<div class="pv-sec">Ringkasan Keuangan</div><div class="kpi-grid">'+kpis.map(k=>'<div class="kpi"><div class="kpi-l">'+k.l+'</div><div class="kpi-v" style="color:'+k.c+';">'+k.v+'</div></div>').join('')+'</div><div class="pv-sec">Ringkasan Transaksi</div><table><thead><tr><th>Keterangan</th><th>Jumlah</th></tr></thead><tbody><tr><td>Total Jurnal</td><td>'+jurnalEntries.length+' entri</td></tr><tr><td>Jurnal Penjualan</td><td>'+jurnalEntries.filter(j=>j.jenis==='Penjualan').length+' entri</td></tr><tr><td>Jurnal PPN</td><td>'+jurnalEntries.filter(_jurnalAdaPpn).length+' entri</td></tr><tr class="tot"><td>Periode</td><td>'+periode+'</td></tr></tbody></table>';
   return pvWrap(t,c1,c2,c3,nama,periode,body,2);
 }
 
@@ -852,7 +853,7 @@ function pvMakeSaldo(nama,periode,t,c1,c2,c3){
 }
 
 function pvMakePajak(nama,periode,t,c1,c2,c3){
-  const ppnJ=jurnalEntries.filter(j=>j.jenis==='PPN');let total=0;
+  const ppnJ=jurnalEntries.filter(j=>j.jenis==='PPN'||j.jenis==='Penjualan');let total=0;
   const rows=ppnJ.map(j=>{const krd=j.lines.find(l=>l.kredit>0&&(l.akun==='2301'||l.akun?.startsWith('23')));const ppn=krd?krd.kredit:0;total+=ppn;const dpp=j._ppnTarif?Math.round(ppn/(j._ppnTarif/100)):0;return ppn?'<tr><td style="font-size:9.5px;">'+j.tanggal+'</td><td>'+j.keterangan+'</td><td style="text-align:right;">'+rp(dpp)+'</td><td style="text-align:center;">'+(j._ppnTarif||'—')+'%</td><td style="text-align:right;">'+rp(ppn)+'</td></tr>':''}).join('');
   const body='<div class="pv-sec">Laporan PPN</div><table><thead><tr><th>Tanggal</th><th>Keterangan</th><th style="text-align:right;">DPP</th><th style="text-align:center;">Tarif</th><th style="text-align:right;">PPN</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5" style="text-align:center;padding:18px;color:#9ca3af;">Belum ada transaksi kena PPN</td></tr>')+(total?'<tr class="tot"><td colspan="4">Total PPN</td><td style="text-align:right;">'+rp(total)+'</td></tr>':'')+'</tbody></table>';
   return pvWrap(t,c1,c2,c3,nama,periode,body,'—');

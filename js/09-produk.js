@@ -106,12 +106,20 @@ function renderProduk() {
       ? `<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(250,204,21,0.12);color:#facc15;border:1px solid rgba(250,204,21,0.3);white-space:nowrap;">PPN ${ppnTarif}%</span>`
       : `<span style="font-size:9px;color:var(--muted);">Non-PKP</span>`;
 
-    // Harga jual + harga inkl. PPN jika ada
+    // Harga jual + breakdown PPN (mode exclusive: harga + PPN di atas; mode inclusive: harga sudah termasuk PPN)
+    const ppnInclusive = !!override?.ppnInclusive;
     let hargaJualCell;
     if(hargaJual) {
-      const hargaInkl = ppnTarif != null ? Math.round(hargaJual * (1 + ppnTarif/100)) : null;
-      hargaJualCell = `<div style="font-weight:600;">${fmtRp(hargaJual)}</div>`
-        + (hargaInkl != null ? `<div style="font-size:10px;color:var(--muted);">incl. PPN: ${fmtRp(hargaInkl)}</div>` : '');
+      if(ppnTarif != null && ppnInclusive) {
+        const ppnNom   = Math.round(hargaJual * ppnTarif/100);
+        const hargaDpp = hargaJual - ppnNom;
+        hargaJualCell = `<div style="font-weight:600;">${fmtRp(hargaJual)} <span style="font-size:9px;font-weight:400;color:var(--accent2);">(incl. PPN)</span></div>`
+          + `<div style="font-size:10px;color:var(--muted);">excl. PPN: ${fmtRp(hargaDpp)}</div>`;
+      } else {
+        const hargaInkl = ppnTarif != null ? Math.round(hargaJual * (1 + ppnTarif/100)) : null;
+        hargaJualCell = `<div style="font-weight:600;">${fmtRp(hargaJual)}</div>`
+          + (hargaInkl != null ? `<div style="font-size:10px;color:var(--muted);">incl. PPN: ${fmtRp(hargaInkl)}</div>` : '');
+      }
     } else {
       hargaJualCell = '<span style="font-size:11px;color:var(--muted);">Belum diset</span>';
     }
@@ -169,6 +177,8 @@ function openModalEditProdukHarga(katId, cardId) {
   document.getElementById('produk-harga-jual').value = override?.hargaJual || '';
   const ppnEl = document.getElementById('produk-ppn');
   if(ppnEl) ppnEl.value = override?.ppn != null ? override.ppn : '';
+  const ppnInclEl = document.getElementById('produk-ppn-inclusive');
+  if(ppnInclEl) ppnInclEl.checked = !!override?.ppnInclusive;
 
   // Akun buttons
   const akunPend = override?.akunPend || '4101';
@@ -198,7 +208,30 @@ function openModalEditProdukHarga(katId, cardId) {
           saldo.layers.map(l=>`${l.qty}×${fmtRp(l.harga)}`).join(' + ') + `</div>` : ''}
       </div>`;
   }
+  updateProdukPpnBreakdown();
   openModal('modal-produk');
+}
+
+/** Preview real-time breakdown jurnal berdasarkan harga jual, tarif PPN & mode inclusive/exclusive */
+function updateProdukPpnBreakdown() {
+  const box = document.getElementById('produk-ppn-breakdown');
+  if(!box) return;
+  const harga = parseFloat(document.getElementById('produk-harga-jual')?.value) || 0;
+  const ppnRaw = document.getElementById('produk-ppn')?.value;
+  const ppn = (ppnRaw !== '' && ppnRaw != null) ? parseFloat(ppnRaw) : null;
+  const inclusive = !!document.getElementById('produk-ppn-inclusive')?.checked;
+
+  if(!harga || ppn == null || ppn <= 0) { box.innerHTML = ''; return; }
+
+  if(inclusive) {
+    const ppnNominal = Math.round(harga * ppn/100);
+    const dpp = harga - ppnNominal;
+    box.innerHTML = `Kas ${fmtRp(harga)} = Penjualan ${fmtRp(dpp)} + PPN ${fmtRp(ppnNominal)}`;
+  } else {
+    const ppnNominal = Math.round(harga * ppn/100);
+    const total = harga + ppnNominal;
+    box.innerHTML = `Kas ${fmtRp(total)} = Penjualan ${fmtRp(harga)} + PPN ${fmtRp(ppnNominal)}`;
+  }
 }
 
 function simpanProduk() {
@@ -209,6 +242,7 @@ function simpanProduk() {
   const akunPers = document.getElementById('produk-akun-pers')?.value||'1301';
   const _ppnRaw  = document.getElementById('produk-ppn')?.value;
   const ppn      = (_ppnRaw !== '' && _ppnRaw != null) ? parseFloat(_ppnRaw) : null;
+  const ppnInclusive = document.getElementById('produk-ppn-inclusive')?.checked || false;
   let ks = null;
   Object.values(multiKartuStock).forEach(card => {
     if (card.id === ksId) ks = card;
@@ -220,7 +254,7 @@ function simpanProduk() {
   setTimeout(() => {
     try {
       const idx = produkList.findIndex(p => p.ksId === ksId);
-      const data = { ksId, hargaJual, akunPend, akunHpp, akunPers, ppn };
+      const data = { ksId, hargaJual, akunPend, akunHpp, akunPers, ppn, ppnInclusive };
       if(idx >= 0) produkList[idx] = { ...produkList[idx], ...data };
       else produkList.push(data);
       saveToStorage(false);

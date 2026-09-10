@@ -9,6 +9,27 @@ function jeninsBadge(j){
   return 'badge-gray';
 }
 
+// ── Deteksi baris PPN di dalam satu entry jurnal (untuk badge gabungan) ──
+function _isAkunPpnKeluar(kode){
+  if(kode==='2301') return true;
+  const a = akuns.find(x=>x.kode===kode);
+  return !!(a && a.nama && a.nama.toLowerCase().includes('ppn') && a.nama.toLowerCase().includes('keluar'));
+}
+function _isAkunPpnMasuk(kode){
+  if(kode==='1502') return true;
+  const a = akuns.find(x=>x.kode===kode);
+  return !!(a && a.nama && a.nama.toLowerCase().includes('ppn') && a.nama.toLowerCase().includes('masuk'));
+}
+/** Jika entry ini punya baris PPN yang menempel pada jenis lain (mis. digabung ke Penjualan), kembalikan label badge kedua */
+function getPpnSubBadge(j){
+  if(!j || j.jenis==='PPN') return null; // entry PPN murni sudah punya badge sendiri
+  const hasKeluar = j.lines.some(l => l.kredit>0 && _isAkunPpnKeluar(l.akun));
+  if(hasKeluar) return 'PPN Keluaran';
+  const hasMasuk = j.lines.some(l => l.debit>0 && _isAkunPpnMasuk(l.akun));
+  if(hasMasuk) return 'PPN Masukan';
+  return null;
+}
+
 // RENDER JURNAL UMUM
 function renderJurnalUmum() {
   const search = document.getElementById('filter-ju')?.value?.toLowerCase()||'';
@@ -22,17 +43,23 @@ function renderJurnalUmum() {
     if(search && !j.ket.toLowerCase().includes(search)) return false;
     return true;
   });
-  filtered.forEach(j=>{
+  // Tampilkan entry terbaru di ATAS agar tidak perlu scroll panjang tiap ada transaksi baru
+  filtered.slice().reverse().forEach(j=>{
     const idx = jurnalEntries.indexOf(j);
     // Sync attachment count from localStorage
     const attachCount = (allAttach[j.no]||[]).length;
+    const ppnSubBadge = getPpnSubBadge(j);
+    const badgeCell = `<div style="display:flex;flex-direction:column;gap:3px;align-items:flex-start;">
+        <span class="badge ${jeninsBadge(j.jenis)}">${j.jenis}</span>
+        ${ppnSubBadge ? `<span class="badge badge-yellow" style="font-size:9px;">${ppnSubBadge}</span>` : ''}
+      </div>`;
     j.lines.forEach((l,i)=>{
       const a=akuns.find(x=>x.kode===l.akun);
       rows.push(`<tr>
         ${i===0?`<td rowspan="${j.lines.length}">${fmtDate(j.tanggal)}</td>
                  <td rowspan="${j.lines.length}" style="font-family:var(--mono);font-size:12px;">${j.no}</td>
                  <td rowspan="${j.lines.length}">${j.ket}${j.kodeRef?`<span style="font-size:9px;color:var(--muted);display:block;font-family:var(--mono);">${j.kodeRef}</span>`:''}</td>
-                 <td rowspan="${j.lines.length}"><span class="badge ${jeninsBadge(j.jenis)}">${j.jenis}</span></td>`:''}
+                 <td rowspan="${j.lines.length}">${badgeCell}</td>`:''}
         <td style="${l.debit?'':'padding-left:28px'}">${a?.nama||l.akun}</td>
         <td class="debit">${l.debit?fmtRp(l.debit):''}</td>
         <td class="kredit">${l.kredit?fmtRp(l.kredit):''}</td>
@@ -71,7 +98,8 @@ function renderJurnalKas() {
       }
     });
   });
-  body.innerHTML = rows.join('') || `<tr><td colspan="6">${emptyState('Belum ada transaksi kas')}</td></tr>`;
+  // Saldo dihitung berurutan sesuai tanggal transaksi (chronological), tapi ditampilkan terbaru di ATAS
+  body.innerHTML = rows.slice().reverse().join('') || `<tr><td colspan="6">${emptyState('Belum ada transaksi kas')}</td></tr>`;
   document.getElementById('jurnal-kas-total').innerHTML=
     `<span style="font-size:12.5px;color:var(--muted);">Total Penerimaan: <b style="color:var(--accent);font-family:var(--mono);">${fmtRp(totalIn)}</b> &nbsp;|&nbsp; Total Pengeluaran: <b style="color:var(--red);font-family:var(--mono);">${fmtRp(totalOut)}</b> &nbsp;|&nbsp; Saldo Akhir Kas: <b style="color:var(--accent2);font-family:var(--mono);">${fmtRp(saldo)}</b></span>`;
 }

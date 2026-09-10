@@ -603,12 +603,40 @@ function simpanPenjualan() {
   }
   const debAkun = metode==='tunai'?'1101':'1201';
   const debNama = metode==='tunai'?'Kas masuk':'Piutang usaha';
-  addJurnal({tanggal,ket,jenis:'Penjualan',ref:inv,kontakId,lines:[
-    {akun:debAkun,ket:debNama,debit:jumlah,kredit:0},
-    {akun:akunPendapatanKode,ket:akunPendapatanNama,debit:0,kredit:jumlah},
-  ]});
+
+  // ── Deteksi PPN dari Master Produk (kalau penjualan barang) & hitung breakdown ──
+  const _ksIdJual  = document.getElementById('jual-produk-id')?.value;
+  const _ppnProduk = _ksIdJual ? produkList.find(p => p.ksId === _ksIdJual) : null;
+  const _adaPpn    = !!(_ppnProduk?.ppn != null && _ppnProduk.ppn > 0);
+  let _baseAmount = jumlah, _ppnNominal = 0, _kasTotal = jumlah;
+  if(_adaPpn) {
+    if(_ppnProduk.ppnInclusive) {
+      // Harga jual di Master Produk sudah termasuk PPN → pecah dari harga total
+      _ppnNominal = Math.round(jumlah * _ppnProduk.ppn / 100);
+      _baseAmount = jumlah - _ppnNominal;
+      _kasTotal   = jumlah;
+    } else {
+      // Harga jual belum termasuk PPN → PPN ditambahkan di atas harga
+      _baseAmount = jumlah;
+      _ppnNominal = Math.round(jumlah * _ppnProduk.ppn / 100);
+      _kasTotal   = jumlah + _ppnNominal;
+    }
+  }
+  // ── Satu entry jurnal penjualan: Kas/Piutang (D) — Pendapatan (K) — Utang PPN Keluaran (K) ──
+  const _jualLines = [
+    {akun:debAkun,ket:debNama,debit:_kasTotal,kredit:0},
+    {akun:akunPendapatanKode,ket:akunPendapatanNama,debit:0,kredit:_baseAmount},
+  ];
+  if(_adaPpn && _ppnNominal > 0) {
+    const _akunPpnOut = akuns.find(a=>a.kode==='2301') ? '2301'
+      : akuns.find(a=>a.nama.toLowerCase().includes('ppn')&&a.tipe==='Liabilitas')?.kode || '2301';
+    _jualLines.push({ akun: _akunPpnOut, ket: `Utang PPN Keluaran ${_ppnProduk.ppn}%`, debit: 0, kredit: _ppnNominal });
+  }
+  addJurnal({tanggal,ket,jenis:'Penjualan',ref:inv,kontakId,
+    _ppnTarif: _adaPpn ? _ppnProduk.ppn : undefined,
+    _ksId: _ksIdJual || undefined,
+    lines:_jualLines});
   // Auto-deduct stok & hitung HPP multi-layer (FIFO/LIFO/WA) dari kartu stock
-  const _ksIdJual = document.getElementById('jual-produk-id')?.value;
   const _qtyJual  = parseFloat(document.getElementById('jual-produk-qty')?.value)||1;
   if(_ksIdJual) {
     const _foundJual = _findKatById(_ksIdJual);
@@ -627,20 +655,6 @@ function simpanPenjualan() {
         { akun: akunHpp,  ket: 'HPP', debit: hppReal, kredit: 0 },
         { akun: akunPers, ket: 'Persediaan keluar', debit: 0, kredit: hppReal },
       ]});
-    }
-    // ── Auto-jurnal PPN jika produk ber-PPN di master produk ──
-    const _ppnProduk = produkList.find(p => p.ksId === _ksIdJual);
-    if(_ppnProduk?.ppn != null && _ppnProduk.ppn > 0) {
-      const _ppnNominal = Math.round(jumlah * _ppnProduk.ppn / 100);
-      const _akunPpnOut = akuns.find(a=>a.kode==='2301') ? '2301'
-        : akuns.find(a=>a.nama.toLowerCase().includes('ppn')&&a.tipe==='Liabilitas')?.kode || '2301';
-      addJurnal({ tanggal, ket: `PPN Keluaran ${_ppnProduk.ppn}% — ${ket}`, jenis: 'PPN',
-        ref: inv, kontakId, _ppnTarif: _ppnProduk.ppn, _ksId: _ksIdJual,
-        lines: [
-          { akun: metode==='tunai'?'1101':'1201', ket: 'Kas/Piutang PPN', debit: _ppnNominal, kredit: 0 },
-          { akun: _akunPpnOut, ket: `Utang PPN Keluaran ${_ppnProduk.ppn}%`, debit: 0, kredit: _ppnNominal },
-        ]
-      });
     }
     if(_foundJual) {
       kartuStockTab = getKsSaldo(_foundJual.kat).metode || 'fifo';
