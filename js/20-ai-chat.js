@@ -866,7 +866,7 @@ function renderAIKeysList() {
       } else if (allCooling) {
         statusChip = `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:${hasDailyCooldown?'var(--red)':'var(--accent3)'};"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Semua key recovery</span>`;
       } else {
-        statusChip = `<span onclick="setActiveProvider('${providerId}', event)" data-tooltip="Jadikan provider aktif" style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--muted);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;"><i class="ti ti-circle-check" style="font-size:12px;width:12px;height:12px;"></i> Siap</span>`;
+        statusChip = `<span onclick="setActiveProvider('${providerId}', event)" style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--muted);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;"><i class="ti ti-circle-check" style="font-size:12px;width:12px;height:12px;"></i> Siap</span>`;
       }
 
       return `<div style="background:var(--surface2);border:1px solid ${allCooling?'rgba(245,158,11,0.3)':(isActiveProvider?'rgba(74,222,128,0.2)':'var(--border)')};border-radius:9px;margin-bottom:8px;overflow:hidden;">
