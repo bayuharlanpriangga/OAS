@@ -1264,18 +1264,57 @@ function addQuickBtn(div, label, fn) {
 }
 
 function formatAIResponse(text) {
-  // Convert markdown-like to HTML
+  // Convert markdown-like to HTML — dibuat supaya balasan AI (yang sering
+  // pakai heading, tabel, rumus, list, dst seperti kebiasaan AI pada umumnya)
+  // tampil rapi, bukan simbol mentah (####, ---, |...|, $$...$$).
   let html = escapeHtml(text);
 
-  // Bold **text**
-  html = html.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
-  // Italic *text*
-  html = html.replace(/\*(.+?)\*/g, '<i>$1</i>');
-  // Code `text`
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Fenced code block ```...```
+  html = html.replace(/```[a-zA-Z]*\n?([\s\S]*?)```/g, (m, code) => {
+    return `<pre><code>${code.trim()}</code></pre>`;
+  });
 
-  // Jurnal block: lines with Dr/Kr pattern
-  html = html.replace(/((?:(?:Dr\.?|Debit|Debet|Kr\.?|Kredit)[^\n]+\n?)+)/gi, (match) => {
+  // Tabel markdown: baris header | col | col |, baris pemisah |---|---|, lalu baris data
+  html = html.replace(/((?:^\|.*\|[ \t]*$\n?)+)/gm, (block) => {
+    const lines = block.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 2 || !/^\|?[\s:|-]+\|?$/.test(lines[1])) return block;
+    const parseRow = (line) => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+    const head = parseRow(lines[0]);
+    const rows = lines.slice(2).map(parseRow);
+    let t = '<table class="ai-table"><thead><tr>' + head.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+    rows.forEach(r => { t += '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>'; });
+    t += '</tbody></table>';
+    return t;
+  });
+
+  // Rumus ala LaTeX $$...$$ (blok) dan $...$ (inline) — disederhanakan jadi teks
+  // terbaca, bukan kode LaTeX mentah, karena app ini tidak pakai renderer math.
+  html = html.replace(/\$\$([\s\S]+?)\$\$/g, (m, expr) => {
+    const clean = expr.replace(/\\text\{([^}]*)\}/g, '$1')
+      .replace(/\\times/g, '×').replace(/\\div/g, '÷').replace(/\\cdot/g, '·')
+      .replace(/\\le/g, '≤').replace(/\\ge/g, '≥').replace(/\\ne/g, '≠')
+      .replace(/\\\\/g, ' ').trim();
+    return `<div class="ai-formula">${clean}</div>`;
+  });
+  html = html.replace(/\$([^$\n]+)\$/g, (m, expr) => {
+    const clean = expr.replace(/\\text\{([^}]*)\}/g, '$1').trim();
+    return `<code>${clean}</code>`;
+  });
+
+  // Headers #### ### ## #
+  html = html.replace(/^####\s+(.+)$/gm, '<div class="ai-h4">$1</div>');
+  html = html.replace(/^###\s+(.+)$/gm, '<div class="ai-h3">$1</div>');
+  html = html.replace(/^##\s+(.+)$/gm, '<div class="ai-h2">$1</div>');
+  html = html.replace(/^#\s+(.+)$/gm, '<div class="ai-h1">$1</div>');
+
+  // Garis pemisah ---
+  html = html.replace(/^(?:---+|\*\*\*+|___+)\s*$/gm, '<hr class="ai-hr">');
+
+  // Blockquote >
+  html = html.replace(/^&gt;\s?(.+)$/gm, '<div class="ai-quote">$1</div>');
+
+  // Jurnal block: baris dengan pola Dr/Kr (bukan bagian dari tabel — cek "|")
+  html = html.replace(/((?:^\s*(?:Dr\.?|Debit|Debet|Kr\.?|Kredit)\s[^\n|]*\n?)+)/gim, (match) => {
     const lines = match.trim().split('\n').map(l => {
       const isDr = /^(Dr\.?|Debit|Debet)/i.test(l.trim());
       return `<div class="${isDr?'dr':'kr'}">${l.trim()}</div>`;
@@ -1283,13 +1322,25 @@ function formatAIResponse(text) {
     return `<div class="jurnal-preview">${lines}</div>`;
   });
 
-  // Numbered list
-  html = html.replace(/^(\d+\.\s.+)$/gm, '<div style="padding:3px 0;">$1</div>');
-  // Bullet list
-  html = html.replace(/^[-•]\s(.+)$/gm, '<div style="padding:2px 0 2px 4px;">• $1</div>');
-  // Headers ### 
-  html = html.replace(/^###\s(.+)$/gm, '<div style="font-weight:700;color:var(--accent2);margin:10px 0 4px;">$1</div>');
-  html = html.replace(/^##\s(.+)$/gm, '<div style="font-weight:700;font-size:15px;margin:10px 0 4px;">$1</div>');
+  // Bullet list (- • *) — dikelompokkan jadi satu <ul>, bukan div lepas-lepas
+  html = html.replace(/(?:^[-•*]\s.+$\n?)+/gm, (block) => {
+    const items = block.trim().split('\n').map(l => l.replace(/^[-•*]\s/, ''));
+    return '<ul class="ai-list">' + items.map(i => `<li>${i}</li>`).join('') + '</ul>';
+  });
+  // Numbered list — dikelompokkan jadi satu <ol>
+  html = html.replace(/(?:^\d+\.\s.+$\n?)+/gm, (block) => {
+    const items = block.trim().split('\n').map(l => l.replace(/^\d+\.\s/, ''));
+    return '<ol class="ai-list">' + items.map(i => `<li>${i}</li>`).join('') + '</ol>';
+  });
+
+  // Bold **text**
+  html = html.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  // Italic *text*
+  html = html.replace(/\*(.+?)\*/g, '<i>$1</i>');
+  // Code `text`
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Link [teks](url)
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
 
   // Line breaks
   html = html.replace(/\n\n/g, '<br><br>');

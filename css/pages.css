@@ -238,6 +238,37 @@
 }
 .ai-bubble .jurnal-preview .dr { color: var(--accent); }
 .ai-bubble .jurnal-preview .kr { color: var(--red); padding-left: 24px; }
+.ai-bubble .ai-h1 { font-weight: 800; font-size: 16px; margin: 12px 0 6px; color: var(--text); }
+.ai-bubble .ai-h1:first-child, .ai-bubble .ai-h2:first-child, .ai-bubble .ai-h3:first-child, .ai-bubble .ai-h4:first-child { margin-top: 0; }
+.ai-bubble .ai-h2 { font-weight: 700; font-size: 15px; margin: 10px 0 4px; color: var(--text); }
+.ai-bubble .ai-h3 { font-weight: 700; font-size: 13.5px; margin: 10px 0 4px; color: var(--accent2); }
+.ai-bubble .ai-h4 { font-weight: 700; font-size: 12.5px; margin: 8px 0 3px; color: var(--accent2); }
+.ai-bubble hr.ai-hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+.ai-bubble .ai-quote {
+  border-left: 3px solid var(--accent2); padding: 2px 10px;
+  margin: 6px 0; color: var(--muted); font-style: italic;
+}
+.ai-bubble .ai-formula {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 12px; margin: 8px 0;
+  font-family: var(--mono); font-size: 12.5px; text-align: center;
+  color: var(--accent2); overflow-x: auto; white-space: nowrap;
+}
+.ai-bubble table.ai-table {
+  width: 100%; border-collapse: collapse; margin: 10px 0;
+  font-size: 12.5px; display: block; overflow-x: auto; white-space: nowrap;
+}
+.ai-bubble table.ai-table th, .ai-bubble table.ai-table td {
+  border: 1px solid var(--border); padding: 6px 10px; text-align: left;
+}
+.ai-bubble table.ai-table th {
+  background: var(--bg); color: var(--text); font-weight: 700;
+  white-space: nowrap;
+}
+.ai-bubble table.ai-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+.ai-bubble a { color: var(--accent2); text-decoration: underline; }
+.ai-bubble ul.ai-list, .ai-bubble ol.ai-list { margin: 4px 0; padding-left: 22px; }
+.ai-bubble ul.ai-list li, .ai-bubble ol.ai-list li { padding: 2px 0; }
 .ai-loading { display: flex; align-items: center; gap: 6px; padding: 4px 0; }
 .ai-dot { width: 7px; height: 7px; background: var(--accent2); border-radius: 50%; animation: bounce 1.2s infinite; }
 .ai-dot:nth-child(2) { animation-delay: 0.2s; }
