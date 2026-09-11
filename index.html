@@ -3421,32 +3421,10 @@
       <button class="modal-close" onclick="closeApiKeyModal()">✕</button>
     </div>
     <div class="modal-body">
-      <div id="gemini-info-box" style="display:none;background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.2);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.8;color:var(--muted);">
-        <b style="color:var(--accent2)"><i class="ti ti-sparkles" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Gemini API — Gratis (free tier)!</b><br>
-        AI Orias pakai <b>Gemini 3.6 Flash</b> via Google AI. Tidak perlu kartu kredit untuk mulai, tinggal login akun Google.<br><br>
-
-        <b style="color:var(--accent)"><i class="ti ti-clipboard-list ti-inline"></i> Langkah-langkah (±2 menit):</b><br><br>
-
-        <b style="color:var(--text)">1.</b> Buka <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent2);text-decoration:underline;font-weight:600;">aistudio.google.com/apikey</a> di tab baru<br>
-        &nbsp;&nbsp;&nbsp;↳ Login pakai akun Google, terima syarat & ketentuan<br><br>
-
-        <b style="color:var(--text)">2.</b> Klik tombol <b style="color:var(--text)">Create API key</b><br><br>
-
-        <b style="color:var(--text)">3.</b> Pilih project Google Cloud (atau biarkan dibuatkan otomatis)<br>
-        &nbsp;&nbsp;&nbsp;• Klik <b>Create API key</b> untuk konfirmasi<br><br>
-
-        <b style="color:var(--text)">4.</b> Key langsung muncul — bentuknya <code style="background:var(--surface);padding:1px 6px;border-radius:4px;font-size:11px;">AQ.Abxxx...</code> (key format baru dari Google, kadang masih ada yang dapat <code style="background:var(--surface);padding:1px 6px;border-radius:4px;font-size:11px;">AIzaxxx...</code>)<br>
-        &nbsp;&nbsp;&nbsp;↳ Copy key-nya. Google tetap menyimpan key ini di dashboard, jadi bisa dilihat lagi kapan-kapan kalau lupa copy<br><br>
-
-        <b style="color:var(--text)">5.</b> Paste di kotak bawah → klik <b>+ Tambah</b> → selesai! <i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i><br><br>
-
-        <div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:7px;padding:8px 10px;font-size:12px;">
-          <i class="ti ti-bulb" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Free tier Gemini 3.6 Flash ± 10 req/menit per key. <b style="color:var(--accent)">Buat beberapa key</b> dari project berbeda buat naikin kapasitas.<br>
-          Key tersimpan di browser — <b>tidak perlu setup ulang</b> saat buka web lagi.
-        </div>
-        <div style="margin-top:10px;font-size:11.5px;color:var(--muted);">
-          <i class="ti ti-sparkles" style="color:var(--accent2);font-size:12px;width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i> Punya API key provider lain (Claude/Anthropic, GPT/OpenAI, Groq, OpenRouter, Grok/xAI, Perplexity)? Tinggal tempel di kotak bawah — provider-nya otomatis terdeteksi dari key-nya, tidak perlu dipilih manual.
-        </div>
+      <div id="gemini-info-box" style="display:none;background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.2);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.7;color:var(--muted);">
+        <b style="color:var(--accent2)"><i class="ti ti-sparkles" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Panduan Setup — Pilih Provider</b><br>
+        AI Orias mendukung banyak provider sekaligus. Tap salah satu modul di bawah untuk lihat langkah-langkah lengkap & link pembuatan API key-nya masing-masing.
+        <div id="provider-guide-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px;"></div>
       </div>
       <div id="gemini-keys-list" style="margin-bottom:10px;min-height:20px;"></div>
       <div style="display:flex;gap:8px;">
@@ -3468,6 +3446,29 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeApiKeyModal()">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PANDUAN PROVIDER (detail per modul, dibuka dari grid di atas) -->
+<div class="modal-backdrop" id="modal-provider-guide" style="z-index:2100;" onclick="if(event.target===this)closeModal('modal-provider-guide')">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-head">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+        <span id="pg-badge" style="width:30px;height:30px;border-radius:8px;color:#fff;font-size:12px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"></span>
+        <div style="min-width:0;">
+          <div class="modal-title" id="pg-title" style="font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px;" id="pg-tagline"></div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-provider-guide')">✕</button>
+    </div>
+    <div class="modal-body" id="pg-body" style="font-size:13px;line-height:1.7;color:var(--muted);"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-provider-guide')">Tutup</button>
+      <a id="pg-open-link" href="#" target="_blank" rel="noopener" class="btn btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;">
+        <i class="ti ti-external-link" style="font-size:14px;"></i> Buka Halaman API Key
+      </a>
     </div>
   </div>
 </div>

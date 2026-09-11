@@ -441,6 +441,7 @@ let aiExpandedProvider = null; // provider id yang cardnya sedang dibuka
 
 function openApiKeyModal() {
   renderAIKeysList();
+  renderProviderGuideGrid();
   const info = document.getElementById('gemini-info-box');
   if (info) info.style.display = 'none';
   const label = document.getElementById('ai-detected-provider');
@@ -482,6 +483,171 @@ function toggleGeminiInfo() {
     btn.style.color = isHidden ? 'var(--accent2)' : 'var(--muted)';
     btn.style.borderColor = isHidden ? 'rgba(34,211,238,0.4)' : 'var(--border)';
   }
+}
+
+// ═══ PANDUAN SETUP PER PROVIDER ═══
+// Konten panduan (tagline, langkah-langkah, link pembuatan key) untuk tiap
+// provider yang didukung. Data identitas (nama/badge/warna) tetap diambil
+// dari AI_PROVIDERS supaya selalu konsisten dengan detector di atas — di
+// sini cuma nyimpen bagian yang khusus buat panduan.
+const PROVIDER_GUIDES = {
+  gemini: {
+    tagline: 'Gratis, tanpa kartu kredit',
+    keyUrl: 'https://aistudio.google.com/apikey',
+    keyUrlLabel: 'aistudio.google.com/apikey',
+    keyFormats: ['AQ.Abxxx...', 'AIzaxxx...'],
+    note: 'Free tier Gemini 3.6 Flash ± 10 req/menit per key. Buat beberapa key dari project berbeda buat naikin kapasitas.',
+    steps: [
+      { t: 'Buka halaman API key', d: 'Buka <b>aistudio.google.com/apikey</b> di tab baru, login pakai akun Google & terima syarat ketentuan.' },
+      { t: 'Klik "Create API key"', d: 'Tombolnya ada di bagian atas halaman.' },
+      { t: 'Pilih project Google Cloud', d: 'Pilih project yang sudah ada, atau biarkan dibuatkan otomatis, lalu klik <b>Create API key</b> untuk konfirmasi.' },
+      { t: 'Salin key yang muncul', d: 'Key langsung tampil (format baru <b>AQ.Abxxx...</b>, kadang masih dapat format lama <b>AIzaxxx...</b>). Google tetap menyimpannya di dashboard kalau lupa copy.' },
+      { t: 'Tempel di modal setup', d: 'Paste di kotak input → klik <b>+ Tambah</b> → selesai.' }
+    ]
+  },
+  anthropic: {
+    tagline: 'Berbayar — isi saldo dulu',
+    keyUrl: 'https://console.anthropic.com/settings/keys',
+    keyUrlLabel: 'console.anthropic.com/settings/keys',
+    keyFormats: ['sk-ant-...'],
+    note: 'Anthropic tidak punya free tier permanen — key baru bisa dipakai setelah akun diisi saldo/kredit minimum di menu Billing.',
+    steps: [
+      { t: 'Buka console Anthropic', d: 'Buka <b>console.anthropic.com/settings/keys</b>, login atau daftar akun Anthropic.' },
+      { t: 'Lengkapi billing', d: 'Kalau belum pernah isi saldo, buka menu <b>Billing</b> dan isi kredit dulu — key tidak aktif tanpa ini.' },
+      { t: 'Klik "Create Key"', d: 'Beri nama key bebas, misalnya "OAS".' },
+      { t: 'Salin key sekali tampil', d: 'Key (<b>sk-ant-...</b>) cuma ditampilkan sekali saat dibuat — langsung disalin sebelum modal ditutup.' },
+      { t: 'Tempel di modal setup', d: 'Paste di kotak input → klik <b>+ Tambah</b>.' }
+    ]
+  },
+  groq: {
+    tagline: 'Gratis, free tier besar',
+    keyUrl: 'https://console.groq.com/keys',
+    keyUrlLabel: 'console.groq.com/keys',
+    keyFormats: ['gsk_...'],
+    note: 'Free tier Groq cukup besar dan cepat (Llama 3.3 70B) — cocok jadi provider cadangan performa tinggi.',
+    steps: [
+      { t: 'Buka console Groq', d: 'Buka <b>console.groq.com/keys</b>, login pakai Google, GitHub, atau email.' },
+      { t: 'Klik "Create API Key"', d: 'Beri nama key bebas.' },
+      { t: 'Salin key yang muncul', d: 'Key (<b>gsk_...</b>) hanya ditampilkan sekali — langsung disalin.' },
+      { t: 'Tempel di modal setup', d: 'Paste di kotak input → klik <b>+ Tambah</b>.' }
+    ]
+  },
+  openrouter: {
+    tagline: 'Sebagian gratis, sebagian kredit',
+    keyUrl: 'https://openrouter.ai/keys',
+    keyUrlLabel: 'openrouter.ai/keys',
+    keyFormats: ['sk-or-...'],
+    note: 'OpenRouter jadi gerbang ke banyak model sekaligus. Sebagian model gratis (ditandai ":free"), sisanya perlu isi kredit dulu.',
+    steps: [
+      { t: 'Buka OpenRouter Keys', d: 'Buka <b>openrouter.ai/keys</b>, login pakai Google/GitHub/email.' },
+      { t: 'Klik "Create Key"', d: 'Beri nama key, atur limit kredit kalau perlu (opsional).' },
+      { t: 'Salin key yang muncul', d: 'Key (<b>sk-or-...</b>) langsung tampil — salin sebelum modal ditutup.' },
+      { t: 'Tempel di modal setup', d: 'Paste di kotak input → klik <b>+ Tambah</b>.' }
+    ]
+  },
+  xai: {
+    tagline: 'Berbayar — isi saldo dulu',
+    keyUrl: 'https://console.x.ai',
+    keyUrlLabel: 'console.x.ai',
+    keyFormats: ['xai-...'],
+    note: 'API xAI (Grok) berbayar — key baru bisa dipakai setelah isi billing/kredit di console.',
+    steps: [
+      { t: 'Buka console xAI', d: 'Buka <b>console.x.ai</b>, login pakai akun X.' },
+      { t: 'Lengkapi billing', d: 'Isi kredit/billing dulu di menu Billing kalau belum pernah.' },
+      { t: 'Buka menu API Keys', d: 'Klik <b>Create API Key</b>, beri nama bebas.' },
+      { t: 'Salin key yang muncul', d: 'Key (<b>xai-...</b>) langsung tampil — salin sebelum modal ditutup.' },
+      { t: 'Tempel di modal setup', d: 'Paste di kotak input → klik <b>+ Tambah</b>.' }
+    ]
+  },
+  perplexity: {
+    tagline: 'Berbayar — perlu API credit',
+    keyUrl: 'https://www.perplexity.ai/settings/api',
+    keyUrlLabel: 'perplexity.ai/settings/api',
+    keyFormats: ['pplx-...'],
+    note: 'Butuh akun Perplexity dengan API credit aktif — terpisah dari langganan Perplexity Pro biasa.',
+    steps: [
+      { t: 'Buka pengaturan API', d: 'Buka <b>perplexity.ai/settings/api</b>, login akun Perplexity.' },
+      { t: 'Isi API credit', d: 'Tambahkan API credit kalau belum ada saldo.' },
+      { t: 'Klik "Generate"', d: 'Di bagian API Keys, klik <b>Generate</b> untuk bikin key baru.' },
+      { t: 'Salin key yang muncul', d: 'Key (<b>pplx-...</b>) langsung tampil — salin sebelum modal ditutup.' },
+      { t: 'Tempel di modal setup', d: 'Paste di kotak input → klik <b>+ Tambah</b>.' }
+    ]
+  },
+  openai: {
+    tagline: 'Berbayar — isi saldo dulu',
+    keyUrl: 'https://platform.openai.com/api-keys',
+    keyUrlLabel: 'platform.openai.com/api-keys',
+    keyFormats: ['sk-proj-...', 'sk-...'],
+    note: 'Ini portal API/billing OpenAI, terpisah dari akun ChatGPT biasa. OpenAI API tidak gratis — isi saldo dulu di menu Billing.',
+    steps: [
+      { t: 'Buka platform OpenAI', d: 'Buka <b>platform.openai.com/api-keys</b>, login/daftar akun OpenAI.' },
+      { t: 'Lengkapi billing', d: 'Buka menu <b>Billing</b>, isi saldo minimum — key tidak berfungsi tanpa ini.' },
+      { t: 'Klik "Create new secret key"', d: 'Beri nama key bebas.' },
+      { t: 'Salin key sekali tampil', d: 'Key (<b>sk-proj-...</b> atau <b>sk-...</b>) hanya ditampilkan sekali — langsung disalin.' },
+      { t: 'Tempel di modal setup', d: 'Paste di kotak input → klik <b>+ Tambah</b>.' }
+    ]
+  }
+};
+
+// Grid modul provider di dalam panel panduan (gemini-info-box). Di-render
+// sekali dari AI_PROVIDER_ORDER (kecuali 'unknown') supaya daftarnya selalu
+// sinkron sama provider yang benar-benar didukung detector.
+function renderProviderGuideGrid() {
+  const grid = document.getElementById('provider-guide-grid');
+  if (!grid) return;
+  grid.innerHTML = AI_PROVIDER_ORDER.filter(id => id !== 'unknown').map(id => {
+    const p = AI_PROVIDERS[id];
+    const g = PROVIDER_GUIDES[id];
+    return `<button type="button" onclick="openProviderGuideModal('${id}')" style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 9px;cursor:pointer;text-align:left;font-family:inherit;">
+      <span style="width:22px;height:22px;border-radius:6px;background:${p.color};color:#fff;font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${p.badge}</span>
+      <span style="flex:1;min-width:0;">
+        <span style="display:block;font-size:11.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</span>
+        <span style="display:block;font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${g ? g.tagline : ''}</span>
+      </span>
+      <i class="ti ti-chevron-right" style="font-size:14px;color:var(--muted);flex-shrink:0;"></i>
+    </button>`;
+  }).join('');
+}
+
+// Buka modal detail 1 provider — dipanggil saat modul provider di-tap dari
+// grid panduan. Modal ini TIDAK expand ke bawah di tempat, tapi muncul
+// sebagai modal terpisah di atas modal setup (bukan menggantikannya), jadi
+// modal setup tetap ada di belakangnya begitu modal ini ditutup.
+function openProviderGuideModal(providerId) {
+  const p = AI_PROVIDERS[providerId];
+  const g = PROVIDER_GUIDES[providerId];
+  if (!p || !g) return;
+
+  document.getElementById('pg-badge').style.background = p.color;
+  document.getElementById('pg-badge').textContent = p.badge;
+  document.getElementById('pg-title').textContent = p.name;
+  document.getElementById('pg-tagline').textContent = g.tagline;
+
+  const stepsHtml = g.steps.map((s, i) => `
+    <div style="display:flex;gap:10px;${i < g.steps.length - 1 ? 'margin-bottom:12px;' : ''}">
+      <span style="width:20px;height:20px;border-radius:50%;background:${p.color};color:#fff;font-size:10.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">${i + 1}</span>
+      <div>
+        <div style="font-weight:700;color:var(--text);font-size:12.5px;">${s.t}</div>
+        <div style="margin-top:2px;">${s.d}</div>
+      </div>
+    </div>`).join('');
+
+  const formatsHtml = g.keyFormats.map(f => `<code style="background:var(--surface2);padding:1px 6px;border-radius:4px;font-size:11px;margin-right:4px;">${f}</code>`).join('');
+
+  document.getElementById('pg-body').innerHTML = `
+    <div style="margin-bottom:14px;">${stepsHtml}</div>
+    <div style="font-size:11.5px;margin-bottom:10px;">
+      <i class="ti ti-key" style="font-size:12px;width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i> Format key: ${formatsHtml}
+    </div>
+    <div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:7px;padding:8px 10px;font-size:12px;">
+      <i class="ti ti-bulb" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> ${g.note}
+    </div>`;
+
+  const link = document.getElementById('pg-open-link');
+  link.href = g.keyUrl;
+  link.title = g.keyUrlLabel;
+
+  openModal('modal-provider-guide');
 }
 
 function updateDetectedProviderLabel() {
