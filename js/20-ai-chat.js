@@ -25,7 +25,7 @@ const AI_PROVIDERS = {
   groq: {
     id: 'groq', name: 'Groq', badge: 'Gr', color: '#F55036',
     kind: 'openai-compat', baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
-    defaultModel: 'llama-3.3-70b-versatile',
+    defaultModel: 'openai/gpt-oss-120b',
     defaultLimit: 30, windowMs: 60000,
     match: k => /^gsk_/.test(k)
   },
@@ -524,7 +524,7 @@ const PROVIDER_GUIDES = {
     keyUrl: 'https://console.groq.com/keys',
     keyUrlLabel: 'console.groq.com/keys',
     keyFormats: ['gsk_...'],
-    note: 'Free tier Groq cukup besar dan cepat (Llama 3.3 70B) — cocok jadi provider cadangan performa tinggi.',
+    note: 'Free tier Groq cukup besar dan cepat (GPT-OSS 120B) — cocok jadi provider cadangan performa tinggi.',
     steps: [
       { t: 'Buka console Groq', d: 'Buka <b>console.groq.com/keys</b>, login pakai Google, GitHub, atau email.' },
       { t: 'Klik "Create API Key"', d: 'Beri nama key bebas.' },
