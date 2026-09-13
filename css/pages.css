@@ -68,6 +68,18 @@
 .filter-bar input:focus, .filter-bar select:focus { border-color: var(--accent); }
 .filter-bar input { min-width: 180px; }
 
+/* Date input dengan custom calendar icon overlay (dipakai di form Aset Tetap, dll) */
+.date-input-wrap { position: relative; }
+.date-input-wrap input[type="date"] { width: 100%; padding-right: 36px; }
+.date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator,
+.date-input-wrap input[type="date"]::-webkit-inner-spin-button {
+  opacity: 0; position: absolute; right: 0; width: 100%; height: 100%; cursor: pointer;
+}
+.date-input-wrap .date-input-icon {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  pointer-events: none; color: var(--muted);
+}
+
 /* Responsive scroll */
 .table-scroll { overflow-x: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 .table-scroll::-webkit-scrollbar { height: 4px; width: 4px; }

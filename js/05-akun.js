@@ -42,24 +42,17 @@ function tipeBadge(t){
   return 'badge-yellow';
 }
 
+let coaFilterTipe = '';
+
 function renderAkun() {
   const body = document.getElementById('akun-body');
   const search = (document.getElementById('coa-search')?.value || '').toLowerCase();
-  const filterTipe = document.getElementById('coa-filter-tipe')?.value || '';
-  const filterKat = document.getElementById('coa-filter-kat')?.value || '';
+  const filterTipe = coaFilterTipe;
   const grouped = document.getElementById('coa-group-tipe')?.checked !== false;
   const saldoMap = computeSaldoAll ? computeSaldoAll() : {};
 
-  // Update category filter options
-  const katSel = document.getElementById('coa-filter-kat');
-  if(katSel && katSel.options.length <= 1) {
-    const kats = [...new Set(akuns.map(a=>a.kat).filter(Boolean))].sort();
-    kats.forEach(k => { const o=document.createElement('option'); o.value=k; o.textContent=k; katSel.appendChild(o); });
-  }
-
   let filtered = akuns.filter(a => {
     if(filterTipe && a.tipe !== filterTipe) return false;
-    if(filterKat && a.kat !== filterKat) return false;
     if(search && !a.nama.toLowerCase().includes(search) && !a.kode.includes(search)) return false;
     return true;
   });
@@ -76,16 +69,16 @@ function renderAkun() {
     statsEl.innerHTML = tipes.map((t,i) => {
       const n = akuns.filter(a=>a.tipe===t).length;
       return `<span class="badge ${colors[i]}" style="cursor:pointer;padding:4px 10px;font-size:11px;" 
-        onclick="document.getElementById('coa-filter-tipe').value='${t}';renderAkun()">
+        onclick="coaFilterTipe='${t}';renderAkun()">
         ${t} (${n})</span>`;
     }).join('') + `<span class="badge badge-gray" style="cursor:pointer;padding:4px 10px;font-size:11px;"
-      onclick="document.getElementById('coa-filter-tipe').value='';renderAkun()">Semua (${akuns.length})</span>`;
+      onclick="coaFilterTipe='';renderAkun()">Semua (${akuns.length})</span>`;
   }
 
   if(!body) return;
 
   let html = '';
-  if(grouped && !filterTipe && !search && !filterKat) {
+  if(grouped && !filterTipe && !search) {
     // Grouped by type
     const tipeOrder = ['Aset','Liabilitas','Ekuitas','Pendapatan','HPP','Beban'];
     const tipeLabels = {

@@ -1189,20 +1189,8 @@
   <!-- Search & Filter bar -->
   <div class="filter-bar" style="margin-bottom:16px;">
     <input type="text" id="coa-search" placeholder="Cari nama atau kode akun..." oninput="renderAkun()" style="min-width:220px;">
-    <select id="coa-filter-tipe" onchange="renderAkun()">
-      <option value="">Semua Tipe</option>
-      <option value="Aset">Aset</option>
-      <option value="Liabilitas">Liabilitas</option>
-      <option value="Ekuitas">Ekuitas</option>
-      <option value="Pendapatan">Pendapatan</option>
-      <option value="HPP">HPP</option>
-      <option value="Beban">Beban</option>
-    </select>
-    <select id="coa-filter-kat" onchange="renderAkun()">
-      <option value="">Semua Kategori</option>
-    </select>
-    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;">
-      <input type="checkbox" id="coa-group-tipe" checked onchange="renderAkun()" style="accent-color:var(--accent)">
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;flex-shrink:0;white-space:nowrap;">
+      <input type="checkbox" id="coa-group-tipe" checked onchange="renderAkun()" style="accent-color:var(--accent);flex-shrink:0;">
       Grup per tipe
     </label>
   </div>
@@ -4870,8 +4858,11 @@
         </div>
         <div class="form-group"><label>Lokasi / Keterangan</label><input type="text" id="at-lokasi" placeholder="Kantor Pusat"></div>
       </div>
-      <div class="form-group"><label>Buat Jurnal Perolehan Otomatis?</label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;margin-top:6px;"><input type="checkbox" id="at-buat-jurnal" checked style="accent-color:var(--accent)"> Ya — buat jurnal debit Aset Tetap / kredit Kas</label>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text);">
+          <input type="checkbox" id="at-buat-jurnal" checked style="accent-color:var(--accent);flex-shrink:0;">
+          Buat Jurnal Perolehan Otomatis (Aset Tetap/Kredit Kas)
+        </label>
       </div>
     </div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-aset-tetap')">Batal</button><button class="btn btn-primary" onclick="simpanAsetTetap()"><i class="ti ti-device-floppy ti-btn"></i> Simpan Aset</button></div>

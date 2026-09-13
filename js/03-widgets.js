@@ -941,13 +941,6 @@ function upgradeFormPickers() {
     subMap: { tunai: 'Bayar langsung (Kas)', kredit: 'Utang usaha' }
   });
 
-  // COA filters
-  const coaTipe = document.getElementById('coa-filter-tipe');
-  if (coaTipe) upgradeSelectToOptPicker(coaTipe, { title: 'Filter Tipe Akun' });
-
-  const coaKat = document.getElementById('coa-filter-kat');
-  if (coaKat) upgradeSelectToOptPicker(coaKat, { title: 'Filter Kategori' });
-
   // Jurnal umum type filter
   const juType = document.getElementById('filter-ju-type');
   if (juType) upgradeSelectToOptPicker(juType, { title: 'Filter Tipe Jurnal' });
@@ -1306,20 +1299,6 @@ function upgradePajakPickers() {
     title: '<i class="ti ti-filter" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Filter Jenis Jurnal',
     iconMap: { '': '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 6H3M16 12H8M13 18h-2"/></svg>', Kas: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><path d="M3 10h18M3 14h18M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2zm9 5v3"/></svg>', Penjualan: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M5 21V3l2 2 2-2 2 2 2-2 2 2 2-2v18l-2-2-2 2-2-2-2 2-2-2-2 2zm4-11h6m-6 4h6"/></svg>', Pembelian: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent3)"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg>', Manual: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4l10.5-10.5a1.5 1.5 0 00-4-4L5 17v3zm13.5-13.5l4 4"/></svg>' },
     subMap: { '': 'Tampilkan semua jenis', Kas: 'Penerimaan & pengeluaran kas', Penjualan: 'Transaksi penjualan / invoice', Pembelian: 'Transaksi pembelian', Manual: 'Jurnal penyesuaian manual' }
-  });
-
-  // COA Filter Tipe
-  const coaTipe2 = document.getElementById('coa-filter-tipe');
-  if(coaTipe2 && !coaTipe2.dataset.upgraded) upgradeSelectToOptPicker(coaTipe2, {
-    title: '<i class="ti ti-filter" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Filter Tipe Akun',
-    iconMap: { '': '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 6H3M16 12H8M13 18h-2"/></svg>', Aset: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h2M9 13h2M13 9h2M13 13h2"/></svg>', Liabilitas: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red)"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>', Ekuitas: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>', Pendapatan: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>', HPP: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 5v8l-9 5-9-5V8l9-5zm0 0v9m9-4l-9 4-9-4"/></svg>', Beban: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent3)"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>' },
-    subMap: { '': 'Tampilkan semua tipe', Aset: 'Kekayaan perusahaan', Liabilitas: 'Utang & kewajiban', Ekuitas: 'Modal pemilik', Pendapatan: 'Penghasilan usaha', HPP: 'Harga pokok penjualan', Beban: 'Pengeluaran operasional' }
-  });
-
-  // COA Filter Kategori
-  const coaKat2 = document.getElementById('coa-filter-kat');
-  if(coaKat2 && !coaKat2.dataset.upgraded) upgradeSelectToOptPicker(coaKat2, {
-    title: '<i class="ti ti-filter" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Filter Kategori Akun'
   });
 
   // Kalkulator Penyusutan metode (py-metode)
