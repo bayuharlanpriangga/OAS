@@ -30,8 +30,18 @@ function getPpnSubBadge(j){
   return null;
 }
 
+// Tombol "Setting Saldo Awal" hanya boleh muncul SEBELUM ada transaksi apapun —
+// begitu ada 1 jurnal tercatat (termasuk saldo awal itu sendiri), tombol
+// disembunyikan karena bisnis sudah dianggap "berjalan". Kalau semua jurnal
+// dihapus (jurnalEntries kosong lagi), tombol otomatis muncul kembali.
+function updateSaldoAwalBtnVisibility() {
+  const btn = document.getElementById('btn-setting-saldo-awal');
+  if (btn) btn.style.display = (typeof jurnalEntries !== 'undefined' && jurnalEntries.length) ? 'none' : '';
+}
+
 // RENDER JURNAL UMUM
 function renderJurnalUmum() {
+  updateSaldoAwalBtnVisibility();
   const search = document.getElementById('filter-ju')?.value?.toLowerCase()||'';
   const type = document.getElementById('filter-ju-type')?.value||'';
   const body = document.getElementById('jurnal-umum-body');
@@ -79,15 +89,19 @@ function renderJurnalUmum() {
 
 // RENDER JURNAL KAS
 function renderJurnalKas() {
+  const search = document.getElementById('filter-jk')?.value?.toLowerCase()||'';
   const body = document.getElementById('jurnal-kas-body');
   let saldo=0, totalIn=0, totalOut=0;
   const rows=[];
   jurnalEntries.forEach(j=>{
+    const match = !search || j.ket.toLowerCase().includes(search) || (j.no||'').toLowerCase().includes(search);
     j.lines.forEach(l=>{
       if(l.akun==='1101'){
         const masuk=l.debit||0, keluar=l.kredit||0;
+        // Saldo berjalan tetap dihitung dari SEMUA transaksi (bukan hasil filter)
+        // supaya kolom "Saldo" & total tetap akurat walau lagi mencari sesuatu.
         saldo+=masuk-keluar; totalIn+=masuk; totalOut+=keluar;
-        if(masuk||keluar) rows.push(`<tr>
+        if((masuk||keluar) && match) rows.push(`<tr>
           <td>${fmtDate(j.tanggal)}</td>
           <td style="font-family:var(--mono);font-size:12px;">${j.no}</td>
           <td>${j.ket}</td>
@@ -99,16 +113,18 @@ function renderJurnalKas() {
     });
   });
   // Saldo dihitung berurutan sesuai tanggal transaksi (chronological), tapi ditampilkan terbaru di ATAS
-  body.innerHTML = rows.slice().reverse().join('') || `<tr><td colspan="6">${emptyState('Belum ada transaksi kas')}</td></tr>`;
+  body.innerHTML = rows.slice().reverse().join('') || `<tr><td colspan="6">${emptyState(search ? 'Tidak ada transaksi kas sesuai pencarian' : 'Belum ada transaksi kas')}</td></tr>`;
   document.getElementById('jurnal-kas-total').innerHTML=
     `<span style="font-size:12.5px;color:var(--muted);">Total Penerimaan: <b style="color:var(--accent);font-family:var(--mono);">${fmtRp(totalIn)}</b> &nbsp;|&nbsp; Total Pengeluaran: <b style="color:var(--red);font-family:var(--mono);">${fmtRp(totalOut)}</b> &nbsp;|&nbsp; Saldo Akhir Kas: <b style="color:var(--accent2);font-family:var(--mono);">${fmtRp(saldo)}</b></span>`;
 }
 
 // RENDER JURNAL PENJUALAN
 function renderJurnalPenjualan() {
+  const search = document.getElementById('filter-jp')?.value?.toLowerCase()||'';
   const body = document.getElementById('jurnal-penjualan-body');
   const rows=[];
   jurnalEntries.filter(j=>j.jenis==='Penjualan').forEach(j=>{
+    if(search && !j.ket.toLowerCase().includes(search) && !(j.ref||j.no||'').toLowerCase().includes(search)) return;
     const kasLine=j.lines.find(l=>['1101','1201'].includes(l.akun));
     const jualLine=j.lines.find(l=>l.akun==='4101');
     if(jualLine) rows.push(`<tr>
@@ -120,14 +136,16 @@ function renderJurnalPenjualan() {
       <td class="kredit">${fmtRp(jualLine?.kredit||0)}</td>
     </tr>`);
   });
-  body.innerHTML = rows.join('') || `<tr><td colspan="6">${emptyState('Belum ada penjualan')}</td></tr>`;
+  body.innerHTML = rows.join('') || `<tr><td colspan="6">${emptyState(search ? 'Tidak ada penjualan sesuai pencarian' : 'Belum ada penjualan')}</td></tr>`;
 }
 
 // RENDER JURNAL PEMBELIAN
 function renderJurnalPembelian() {
+  const search = document.getElementById('filter-jb')?.value?.toLowerCase()||'';
   const body = document.getElementById('jurnal-pembelian-body');
   const rows=[];
   jurnalEntries.filter(j=>j.jenis==='Pembelian').forEach(j=>{
+    if(search && !j.ket.toLowerCase().includes(search) && !(j.ref||j.no||'').toLowerCase().includes(search)) return;
     const krLine=j.lines.find(l=>['1101','2101'].includes(l.akun)&&l.kredit);
     const drLine=j.lines.find(l=>l.debit&&l.akun!=='1101'&&l.akun!=='2101');
     if(drLine) rows.push(`<tr>
@@ -139,7 +157,7 @@ function renderJurnalPembelian() {
       <td class="kredit">${fmtRp(krLine?.kredit||0)}</td>
     </tr>`);
   });
-  body.innerHTML = rows.join('') || `<tr><td colspan="6">${emptyState('Belum ada pembelian')}</td></tr>`;
+  body.innerHTML = rows.join('') || `<tr><td colspan="6">${emptyState(search ? 'Tidak ada pembelian sesuai pencarian' : 'Belum ada pembelian')}</td></tr>`;
 }
 
 // RENDER BUKU BESAR

@@ -1289,6 +1289,13 @@ function confirmResetAll() {
 
 // SALDO AWAL
 function openModalSaldoAwal() {
+  // Saldo awal cuma boleh diatur SEBELUM ada transaksi apapun. Tombolnya sendiri
+  // sudah disembunyikan lewat updateSaldoAwalBtnVisibility(), tapi guard ini jaga-jaga
+  // kalau fungsi ini dipanggil dari jalur lain (mis. Orias AI / console).
+  if (typeof jurnalEntries !== 'undefined' && jurnalEntries.length) {
+    showAlert('Saldo awal hanya bisa diatur sebelum ada transaksi. Hapus semua jurnal dulu kalau perlu mengubah saldo awal.');
+    return;
+  }
   const tgl = new Date().toISOString().split('T')[0];
   const saldoTglInput = document.getElementById('saldo-awal-tgl');
   if (saldoTglInput && saldoTglInput._oasSetDate) saldoTglInput._oasSetDate(tgl);

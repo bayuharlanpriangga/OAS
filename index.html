@@ -816,7 +816,7 @@
   <div class="section-header">
     <div><div class="section-title">Jurnal Umum</div><div class="section-sub">Semua entri jurnal</div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-ghost btn-sm" onclick="openModalSaldoAwal()"><i class="ti ti-settings ti-inline"></i> Setting Saldo Awal</button>
+      <button id="btn-setting-saldo-awal" class="btn btn-ghost btn-sm" onclick="openModalSaldoAwal()" data-tooltip="Hanya bisa diatur sebelum ada transaksi apapun"><i class="ti ti-settings ti-inline"></i> Setting Saldo Awal</button>
       <button class="btn btn-danger btn-sm" onclick="confirmResetAll()"><i class="ti ti-trash ti-btn"></i> Reset Semua Data</button>
     </div>
   </div>
@@ -920,6 +920,9 @@
   <div class="section-header">
     <div><div class="section-title">Jurnal Kas</div><div class="section-sub">Penerimaan dan pengeluaran kas</div></div>
   </div>
+  <div class="filter-bar">
+    <input type="text" id="filter-jk" placeholder="Cari keterangan, no. jurnal..." oninput="renderJurnalKas()">
+  </div>
   <div class="table-card">
     <div class="table-scroll">
       <table>
@@ -939,6 +942,9 @@
   <div class="section-header">
     <div><div class="section-title">Jurnal Penjualan</div><div class="section-sub">Semua transaksi penjualan</div></div>
   </div>
+  <div class="filter-bar">
+    <input type="text" id="filter-jp" placeholder="Cari keterangan, no. invoice..." oninput="renderJurnalPenjualan()">
+  </div>
   <div class="table-card">
     <div class="table-scroll">
       <table>
@@ -956,6 +962,9 @@
 <div class="page" id="page-jurnal-pembelian">
   <div class="section-header">
     <div><div class="section-title">Jurnal Pembelian</div><div class="section-sub">Semua transaksi pembelian</div></div>
+  </div>
+  <div class="filter-bar">
+    <input type="text" id="filter-jb" placeholder="Cari keterangan, no. faktur..." oninput="renderJurnalPembelian()">
   </div>
   <div class="table-card">
     <div class="table-scroll">
