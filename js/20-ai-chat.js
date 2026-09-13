@@ -598,7 +598,7 @@ function renderProviderGuideGrid() {
   grid.innerHTML = AI_PROVIDER_ORDER.filter(id => id !== 'unknown').map(id => {
     const p = AI_PROVIDERS[id];
     const g = PROVIDER_GUIDES[id];
-    return `<button type="button" onclick="openProviderGuideModal('${id}')" style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 9px;cursor:pointer;text-align:left;font-family:inherit;">
+    return `<button type="button" onclick="openProviderGuideModal('${id}')" style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 9px;cursor:pointer;text-align:left;font-family:inherit;min-width:0;overflow:hidden;">
       <span style="width:22px;height:22px;border-radius:6px;background:${p.color};color:#fff;font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${p.badge}</span>
       <span style="flex:1;min-width:0;">
         <span style="display:block;font-size:11.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</span>
