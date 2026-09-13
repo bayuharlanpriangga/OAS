@@ -2625,7 +2625,7 @@ function _updateLockHeaderBtn() {
 // Semua aktivitas penting di seluruh fitur dilog ke auditLog()
 // Di-inject setelah semua fungsi sudah terdefinisi
 // ══════════════════════════════════════════════════════════════════════════
-(function _installAuditHooks() {
+function _installAuditHooks() {
   'use strict';
 
   // Helper: wrap fungsi dengan audit, toleran terhadap fungsi yang belum ada
@@ -2947,13 +2947,14 @@ function _updateLockHeaderBtn() {
     _al('edit', 'system', 'Simpan manual (manual save)', 'MANUAL-SAVE');
   });
 
-  // 34. Simpan Jurnal dari AI
+  // 34. Simpan Jurnal dari AI — dicatat dengan label role "AI" karena aksi ini
+  //     dieksekusi otomatis oleh Orias AI, bukan diketik manual oleh pengguna.
   _wrap('saveJurnalFromAI', null, function(parsed) {
     try {
       const lines = parsed?.lines || parsed?.entries || [];
       const ket = parsed?.keterangan || parsed?.ket || parsed?.description || '—';
       const total = lines.reduce ? lines.reduce((s, l) => s + (l.debit || 0), 0) : 0;
-      _al('create', 'jurnal', `Simpan Jurnal dari AI: "${ket}" — ${_rp(total)}`, 'AI-JURNAL');
+      _al('create', 'jurnal', `Simpan Jurnal dari AI: "${ket}" — ${_rp(total)}`, 'AI-JURNAL', {aiActed:true});
     } catch(e) {}
   });
 
@@ -2968,6 +2969,52 @@ function _updateLockHeaderBtn() {
   // 36. Clear AI Chat
   _wrap('clearAIChat', null, function() {
     _al('edit', 'ai', 'Reset riwayat chat Orias AI', 'AI-CLEAR');
+  });
+
+  // 36b. Tambah API Key AI — cek jumlah key sebelum & sesudah, karena addAIKey()
+  //      bisa gagal diam-diam (format invalid / key duplikat) tanpa exception.
+  _wrap('addAIKey', function() {
+    try {
+      window._auditAIKeyCountBefore = (typeof getAIKeys === 'function') ? getAIKeys().length : 0;
+    } catch(e) {}
+  }, function() {
+    try {
+      const keys = (typeof getAIKeys === 'function') ? getAIKeys() : [];
+      if (keys.length <= (window._auditAIKeyCountBefore||0)) return; // gagal ditambahkan
+      const rec = keys[keys.length - 1];
+      const providerName = (typeof AI_PROVIDERS !== 'undefined' && AI_PROVIDERS[rec.provider])
+        ? AI_PROVIDERS[rec.provider].name : (rec.provider || '—');
+      const masked = rec.key && rec.key.length > 10 ? (rec.key.slice(0,6) + '••••' + rec.key.slice(-4)) : '••••';
+      _al('create', 'ai', `Tambah API key AI: ${providerName} (${masked})`, 'AI-KEY-ADD');
+    } catch(e) {}
+  });
+
+  // 36c. Hapus API Key AI — capture SEBELUM splice() menghapus datanya
+  _wrap('removeAIKey', function(idx) {
+    try {
+      const keys = (typeof getAIKeys === 'function') ? getAIKeys() : [];
+      const rec = keys[idx];
+      if (rec) {
+        const providerName = (typeof AI_PROVIDERS !== 'undefined' && AI_PROVIDERS[rec.provider])
+          ? AI_PROVIDERS[rec.provider].name : (rec.provider || '—');
+        const masked = rec.key && rec.key.length > 10 ? (rec.key.slice(0,6) + '••••' + rec.key.slice(-4)) : '••••';
+        window._auditAIKeyRemoved = `${providerName} (${masked})`;
+      }
+    } catch(e) {}
+  }, function() {
+    try {
+      if (window._auditAIKeyRemoved) _al('delete', 'ai', `Hapus API key AI: ${window._auditAIKeyRemoved}`, 'AI-KEY-DEL');
+      window._auditAIKeyRemoved = null;
+    } catch(e) {}
+  });
+
+  // 36d. Ganti provider AI aktif
+  _wrap('setActiveProvider', null, function(providerId) {
+    try {
+      const providerName = (typeof AI_PROVIDERS !== 'undefined' && AI_PROVIDERS[providerId])
+        ? AI_PROVIDERS[providerId].name : (providerId || '—');
+      _al('edit', 'ai', `Ganti provider AI aktif: ${providerName}`, 'AI-PROVIDER-SWITCH');
+    } catch(e) {}
   });
 
   // 37. Tutorial — mulai
@@ -3293,4 +3340,22 @@ function _updateLockHeaderBtn() {
   };
 
   console.log('[OAS Audit] Hooks installed — ' + new Date().toLocaleTimeString('id-ID'));
-})();
+}
+
+// PENTING: file ini (08) dimuat lebih awal dari banyak modul lain (09..20) yang
+// baru mendefinisikan fungsi-fungsi yang mau di-hook di atas (mis. doResetAll di
+// 15-storage.js, clearAIChat/sendAI/saveJurnalFromAI di 20-ai-chat.js). Kalau
+// _installAuditHooks() dipanggil langsung di sini (saat file ini dieksekusi),
+// window.doResetAll dkk masih undefined — hook terpasang ke slot kosong, lalu
+// begitu file modul tsb belakangan mendeklarasikan `function namaSama(){...}`,
+// deklarasi itu MENIMPA hook yang sudah dipasang (function declaration di scope
+// global selalu menulis ulang window.namaSama). Efeknya: reset data, hapus chat
+// AI, dsb tidak pernah tercatat di Audit Trail meski kodenya terlihat benar.
+// Fix: tunda pemasangan hook sampai semua script <script defer> selesai jalan
+// (DOMContentLoaded baru terpicu setelah itu), jadi semua fungsi target sudah
+// pasti terdefinisi final saat di-wrap.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _installAuditHooks);
+} else {
+  _installAuditHooks();
+}

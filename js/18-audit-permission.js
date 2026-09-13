@@ -13,8 +13,13 @@ function _getCurrentActorLabel() {
 function auditLog(action, category, description, meta = {}) {
   try {
     const logs      = auditGetAll();
-    const who       = _getCurrentActorLabel();
-    const role      = _getActorRole();
+    // meta.aiActed: aksi ini dieksekusi otomatis oleh Orias AI (bukan diketik
+    // manual oleh pengguna) — dicatat dengan label role "AI" tersendiri supaya
+    // bisa dibedakan dari aksi yang dilakukan langsung oleh Owner/Admin/Member.
+    const isAI      = !!meta.aiActed;
+    const who       = isAI ? 'Orias AI' : _getCurrentActorLabel();
+    const role      = isAI ? 'ai' : _getActorRole();
+    if (isAI) { meta = {...meta}; delete meta.aiActed; }
     const companyId   = (typeof currentCompany !== 'undefined' && currentCompany?.id)   || null;
     const companyName = (typeof currentCompany !== 'undefined' && currentCompany?.name) || null;
     const entry = {
@@ -119,12 +124,14 @@ function _renderAuditKPI(logs) {
   // Count by role
   const ownerCount  = logs.filter(e=>e.role==='owner').length;
   const memberCount = logs.filter(e=>e.role==='member'||e.role==='admin').length;
+  const aiCount     = logs.filter(e=>e.role==='ai').length;
   const kpis = [
     { label:'Total Log',        val:logs.length.toLocaleString('id-ID'), icon:'shield-check',   clr:'var(--accent2)' },
     { label:'Hari Ini',         val:todayLogs.length,                    icon:'calendar-today', clr:'var(--accent)'  },
     { label:'Aksi Hapus',       val:logs.filter(e=>e.action==='delete').length, icon:'trash',   clr:'var(--red)'     },
     { label:'Oleh Owner',       val:ownerCount,                           icon:'crown',          clr:'#facc15'        },
     { label:'Oleh Tim',         val:memberCount,                          icon:'users',          clr:'var(--accent3)' },
+    { label:'Oleh AI',          val:aiCount,                              icon:'robot',          clr:'#4ade80'        },
   ];
   el.innerHTML = kpis.map(k=>
     `<div style="flex:1;min-width:110px;background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:12px 14px;">
