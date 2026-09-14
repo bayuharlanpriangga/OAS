@@ -179,8 +179,6 @@ function renderAccountSwitcher() {
   }).join('') || `<div style="padding:14px;text-align:center;font-size:12px;color:var(--muted);">Belum ada akun tersimpan</div>`;
 
   panel.innerHTML = `
-    <div class="acc-switch-menuitem" onclick="openAccountSettings()"><i class="ti ti-user-cog" style="font-size:14px;vertical-align:-2px;margin-right:6px;"></i> Pengaturan Akun</div>
-    <div class="acc-switch-divider"></div>
     ${rows}
     <div class="acc-switch-divider"></div>
     ${list.length < ACCOUNT_SWITCHER_MAX

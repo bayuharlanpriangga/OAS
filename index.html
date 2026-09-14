@@ -273,6 +273,11 @@
         <span class="nav-card-icon" style="display:inline-flex;align-items:center;justify-content:center;"><i class="ti ti-login"></i></span>
         Gabung Bisnis
       </div>
+      <!-- Settings — dipindah dari klik chip profil di atas -->
+      <div class="nav-card" id="nav-settings" onclick="openAccountSettings()">
+        <span class="nav-card-icon" style="display:inline-flex;align-items:center;justify-content:center;"><i class="ti ti-settings"></i></span>
+        Settings
+      </div>
     </div>
 
   </nav>
@@ -4272,13 +4277,15 @@
     </div>
   </div>
 
+  <div style="max-width:860px;margin:0 auto;">
+
   <div class="accs-tabs" style="margin-bottom:16px;">
     <button class="accs-tab active" onclick="switchSettingsTab('akun')" id="settings-tab-akun"><i class="ti ti-user-cog" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Akun</button>
     <button class="accs-tab" onclick="switchSettingsTab('transaksi')" id="settings-tab-transaksi"><i class="ti ti-receipt" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Transaksi</button>
   </div>
 
   <!-- ═══ SUB-PAGE: AKUN ═══ -->
-  <div class="settings-panel active" id="settings-panel-akun" style="max-width:520px;">
+  <div class="settings-panel active" id="settings-panel-akun" style="max-width:520px;margin:0 auto;">
       <!-- Avatar & info -->
       <div id="accs-user-header" style="text-align:center;margin-bottom:20px;">
         <div style="position:relative;display:inline-block;">
@@ -4367,7 +4374,7 @@
   </div>
 
   <!-- ═══ SUB-PAGE: TRANSAKSI ═══ -->
-  <div class="settings-panel" id="settings-panel-transaksi" style="max-width:620px;display:none;">
+  <div class="settings-panel" id="settings-panel-transaksi" style="max-width:620px;display:none;margin:0 auto;">
     <div class="accs-tabs">
       <button class="accs-tab active" onclick="switchSettingsTransTab('jual')" id="settings-transtab-jual"><i class="ti ti-arrow-up-circle" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Penjualan</button>
       <button class="accs-tab" onclick="switchSettingsTransTab('beli')" id="settings-transtab-beli"><i class="ti ti-arrow-down-circle" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Pembelian</button>
@@ -4385,6 +4392,8 @@
       </div>
       <div id="settings-beli-list"></div>
     </div>
+  </div>
+
   </div>
 </div>
 
