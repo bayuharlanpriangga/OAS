@@ -1282,8 +1282,8 @@ function updateUserChip() {
   if (chip) {
     chip.style.display = 'flex';
     chip.style.pointerEvents = '';
-    chip.onclick = () => openAccountSettings();
-    chip.title = 'Informasi Akun';
+    chip.onclick = () => toggleAccountSwitcher();
+    chip.title = 'Ganti akun / riwayat login';
   }
 
   // Chip atas: tampilkan foto profil / inisial user

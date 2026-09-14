@@ -547,6 +547,44 @@
 .accs-danger-desc { font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.5; }
 .accs-spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.2); border-top-color:currentColor; border-radius:50%; animation:spin 0.6s linear infinite; vertical-align:middle; margin-right:6px; }
 
+/* ═══ SETTINGS — drill-down list nav (gaya mobile app) ═══ */
+.settings-view { display:none; }
+.settings-view.active { display:block; animation:oasPickerIn 0.15s ease; }
+.settings-back-btn {
+  display:none; align-items:center; justify-content:center; gap:4px; background:var(--surface2); border:1px solid var(--border);
+  color:var(--text); font-size:13px; font-weight:600; font-family:var(--sans);
+  cursor:pointer; width:32px; height:32px; border-radius:9px; flex-shrink:0;
+}
+.settings-back-btn.show { display:inline-flex; }
+.settings-back-btn:hover { background:var(--surface); color:var(--accent2); }
+.settings-list { background:var(--surface2); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+.settings-list-item {
+  display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer;
+  border-bottom:1px solid var(--border); transition:background 0.15s;
+}
+.settings-list-item:last-child { border-bottom:none; }
+.settings-list-item:hover { background:var(--surface); }
+.settings-list-item.no-click { cursor:default; }
+.settings-list-item.no-click:hover { background:none; }
+.sli-icon { width:22px; text-align:center; color:var(--muted); font-size:16px; flex-shrink:0; }
+.sli-body { flex:1; min-width:0; }
+.sli-label { font-size:13.5px; font-weight:600; color:var(--text); }
+.sli-desc { font-size:11px; color:var(--muted); margin-top:1px; }
+.sli-value { font-size:12.5px; color:var(--muted); max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:0; }
+.sli-chevron { color:var(--muted); font-size:15px; flex-shrink:0; }
+.settings-list-gap { height:16px; }
+.settings-section-label { font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted); margin:18px 2px 8px; }
+.settings-section-label:first-child { margin-top:0; }
+/* Password sensor + salin */
+.pw-reveal-box {
+  display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border);
+  border-radius:9px; padding:10px 12px; margin-top:6px;
+}
+.pw-reveal-box input { flex:1; min-width:0; background:none; border:none; outline:none; color:var(--text); font-size:14px; font-family:var(--mono); letter-spacing:1px; }
+.pw-reveal-box button { background:none; border:none; color:var(--muted); cursor:pointer; padding:4px; flex-shrink:0; display:flex; align-items:center; }
+.pw-reveal-box button:hover { color:var(--text); }
+.pw-unknown-note { font-size:11.5px; color:var(--muted); line-height:1.5; margin-top:6px; padding:10px 12px; background:var(--surface2); border:1px solid var(--border); border-radius:9px; }
+
 /* Transisi kemunculan icon — proses "terbentuk" bagian demi bagian (bukan wipe/tiba-tiba muncul) */
 @keyframes partBuildIn {
   0%   { opacity: 0; transform: scale(0.3) translateY(5px); }

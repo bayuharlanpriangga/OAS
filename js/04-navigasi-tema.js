@@ -105,8 +105,11 @@ function showPage(id) {
   if(id && id.startsWith('kalk')) setTimeout(() => { setupNumberInputs(); upgradeFormPickers(); upgradePajakPickers(); }, 300);
   if(id==='jurnal-umum') { renderJurnalUmum(); setTimeout(upgradeFormPickers, 80); }
   if(id==='settings') {
-    if(typeof accsLoadUserInfo === 'function') accsLoadUserInfo();
-    if(typeof accsLoadProviders === 'function') accsLoadProviders();
+    // Selalu mulai dari daftar Akun/Transaksi (root) — kecuali kalau ada
+    // kode lain (mis. openAccountSettings / deep-link Master Produk) yang
+    // langsung menimpa stack ini lewat settingsResetTo/settingsNavigate
+    // di baris berikutnya (dijalankan sesudah showPage() ini selesai).
+    if(typeof settingsResetTo === 'function') settingsResetTo(['root']);
   }
   if(id==='rekonsiliasi-bank') { setTimeout(upgradeFormPickers, 80); }
   if(id==='jurnal-kas') { renderJurnalKas(); setTimeout(upgradeFormPickers, 80); }
