@@ -75,6 +75,7 @@
 <script defer src="js/18-audit-permission.js"></script>
 <script defer src="js/19-fitur-tambahan.js"></script>
 <script defer src="js/20-ai-chat.js"></script>
+<script defer src="js/21-settings-page.js"></script>
 <script defer src="js/99-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- Tabler webfont CDN dihapus: semua ikon "ti-*" sudah self-hosted sebagai SVG mask di css/icons.css (lihat komentar di file itu). Menghapus dependency CDN ini supaya ikon tidak pernah gagal/putus saat CDN lambat atau diblokir jaringan/ad-blocker. -->
@@ -97,16 +98,18 @@
   <div class="logo"><span style="color:var(--accent);letter-spacing:0.08em;">OAS</span><button class="logo-close" onclick="closeSidebar()"><i class="ti ti-x"></i></button></div>
 
   <!-- CHIP AKUN / BISNIS di dalam sidebar -->
-  <div id="sidebar-account-area" style="padding:10px 12px 6px;border-bottom:1px solid var(--border);">
-    <!-- CHIP ATAS: Info Akun (dulunya switch bisnis) -->
-    <div id="user-company-chip" onclick="openAccountSettings()" title="Informasi Akun" style="width:100%;border-radius:10px;padding:8px 12px;justify-content:flex-start;gap:10px;max-width:100%;">
+  <div id="sidebar-account-area" style="padding:10px 12px 6px;border-bottom:1px solid var(--border);position:relative;">
+    <!-- CHIP ATAS: Info Akun → buka Account Switcher -->
+    <div id="user-company-chip" onclick="toggleAccountSwitcher()" title="Ganti akun / Pengaturan Akun" style="width:100%;border-radius:10px;padding:8px 12px;justify-content:flex-start;gap:10px;max-width:100%;cursor:pointer;">
       <div class="chip-avatar" id="chip-avatar" style="width:36px;height:36px;font-size:14px;overflow:hidden;flex-shrink:0;">?</div>
       <div style="flex:1;min-width:0;">
         <div class="chip-name" id="chip-company-name" style="font-size:13px;">Memuat...</div>
         <div id="chip-sub" style="font-size:10px;color:var(--muted);margin-top:1px;">Info akun</div>
       </div>
-      
+      <i class="ti ti-chevron-down" style="font-size:14px;color:var(--muted);flex-shrink:0;"></i>
     </div>
+    <!-- DROPDOWN ACCOUNT SWITCHER -->
+    <div id="account-switcher-panel" class="acc-switch-panel"></div>
     <!-- BISNIS AKTIF + TOMBOL SWITCH -->
     <button onclick="handleChipClick()" id="sidebar-accs-btn"
       style="width:100%;margin-top:6px;padding:7px 12px;background:transparent;border:1px solid var(--border);
@@ -1182,6 +1185,10 @@
       <div class="section-sub" id="coa-count-sub">103 akun tersedia</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="openModalAkunTrash()" title="Sampah COA — akun terhapus tersimpan 30 hari" id="coa-trash-btn" style="position:relative;">
+        <i class="ti ti-trash ti-btn"></i>
+        <span id="coa-trash-badge" style="display:none;position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:20px;align-items:center;justify-content:center;padding:0 3px;"></span>
+      </button>
       <button class="btn btn-primary btn-sm" onclick="openModalAkun()">+ Tambah Akun</button>
     </div>
   </div>
@@ -2779,6 +2786,26 @@
   </div>
 </div>
 
+<!-- MODAL SAMPAH COA — akun terhapus, retensi 30 hari -->
+<div class="modal-backdrop" id="modal-akun-trash">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <div class="modal-title"><i class="ti ti-trash" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Sampah Chart of Accounts</div>
+      <button class="modal-close" onclick="closeModal('modal-akun-trash')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6;">
+        Akun yang dihapus disimpan di sini selama <b>30 hari</b> sebelum terhapus permanen otomatis.
+        Jurnal lama yang memakai akun ini tetap utuh — restore akun untuk menyambungkannya kembali.
+      </div>
+      <div id="akun-trash-body"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-akun-trash')">Tutup</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- MODAL PRODUK -->
 <div class="modal-backdrop" id="modal-produk">
@@ -2819,41 +2846,12 @@
         </div>
       </div>
 
-      <!-- Akun -->
-      <div class="form-row">
-        <div class="form-group">
-          <label>Akun Pendapatan</label>
-          <input type="hidden" id="produk-akun-pend" value="4101">
-          <button class="opt-picker-btn" type="button" id="produk-akun-pend-btn" onclick="openSimplePicker('produk-akun-pend','produk-akun-pend-btn','pendapatan')">
-            <span class="opt-picker-label">Pilih Akun...</span>
-            <span class="opt-picker-arrow">▾</span>
-          </button>
-        </div>
-        <div class="form-group">
-          <label>Akun HPP / Persediaan Keluar</label>
-          <input type="hidden" id="produk-akun-hpp" value="5101">
-          <button class="opt-picker-btn" type="button" id="produk-akun-hpp-btn" onclick="openSimplePicker('produk-akun-hpp','produk-akun-hpp-btn','hpp')">
-            <span class="opt-picker-label">Pilih Akun...</span>
-            <span class="opt-picker-arrow">▾</span>
-          </button>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label style="display:flex;align-items:center;gap:5px;">
-            Akun Persediaan (dikredit saat barang keluar)
-            <button type="button" class="info-icon-btn info-icon-btn-sm"
-              data-info-html="Pilih akun persediaan aset yang sesuai — mis. <b>1304 Persediaan Barang Jadi</b> untuk produk hasil produksi, bukan selalu 1301."
-              onclick="toggleInfoPopover(this, this.dataset.infoHtml)">
-              <i class="ti ti-info-circle" style="font-size:13px;"></i>
-            </button>
-          </label>
-          <input type="hidden" id="produk-akun-pers" value="1301">
-          <button class="opt-picker-btn" type="button" id="produk-akun-pers-btn" onclick="openSimplePicker('produk-akun-pers','produk-akun-pers-btn','persediaan')">
-            <span class="opt-picker-label">Pilih Akun...</span>
-            <span class="opt-picker-arrow">▾</span>
-          </button>
-        </div>
+      <!-- Akun pendapatan/HPP/persediaan sekarang diatur terpusat -->
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(34,211,238,0.06);border:1px solid rgba(34,211,238,0.2);border-radius:8px;padding:10px 12px;margin-top:2px;font-size:12px;color:var(--muted);line-height:1.5;">
+        <i class="ti ti-info-circle" style="font-size:15px;color:var(--accent2);flex-shrink:0;"></i>
+        <div>Akun Pendapatan, HPP &amp; Persediaan sekarang diatur terpusat di
+          <a href="javascript:void(0)" onclick="closeModal('modal-produk');showPage('settings');switchSettingsTab('transaksi');switchSettingsTransTab('jual');" style="color:var(--accent2);font-weight:600;">Settings → Transaksi → Penjualan</a>,
+          bukan per-produk lagi.</div>
       </div>
 
       <!-- PPN Inclusive — di bawah supaya tidak mengganggu tatanan field harga/PPN -->
@@ -4265,14 +4263,22 @@
 
 
 
-<!-- MODAL PENGATURAN AKUN -->
-<div class="modal-backdrop" id="modal-account-settings">
-  <div class="modal" style="max-width:520px;">
-    <div class="modal-head">
-      <div class="modal-title"><i class="ti ti-user-cog" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Pengaturan Akun</div>
-      <button class="modal-close" onclick="closeModal('modal-account-settings')">✕</button>
+<!-- HALAMAN SETTINGS — Akun (dulu modal Pengaturan Akun) + Transaksi -->
+<div class="page" id="page-settings">
+  <div class="section-header" style="margin-bottom:12px;">
+    <div>
+      <div class="section-title">Settings</div>
+      <div class="section-sub">Akun, autentikasi &amp; pengaturan transaksi</div>
     </div>
-    <div class="modal-body" style="padding-top:20px;">
+  </div>
+
+  <div class="accs-tabs" style="margin-bottom:16px;">
+    <button class="accs-tab active" onclick="switchSettingsTab('akun')" id="settings-tab-akun"><i class="ti ti-user-cog" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Akun</button>
+    <button class="accs-tab" onclick="switchSettingsTab('transaksi')" id="settings-tab-transaksi"><i class="ti ti-receipt" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Transaksi</button>
+  </div>
+
+  <!-- ═══ SUB-PAGE: AKUN ═══ -->
+  <div class="settings-panel active" id="settings-panel-akun" style="max-width:520px;">
       <!-- Avatar & info -->
       <div id="accs-user-header" style="text-align:center;margin-bottom:20px;">
         <div style="position:relative;display:inline-block;">
@@ -4358,10 +4364,29 @@
           </button>
         </div>
       </div>
+  </div>
+
+  <!-- ═══ SUB-PAGE: TRANSAKSI ═══ -->
+  <div class="settings-panel" id="settings-panel-transaksi" style="max-width:620px;display:none;">
+    <div class="accs-tabs">
+      <button class="accs-tab active" onclick="switchSettingsTransTab('jual')" id="settings-transtab-jual"><i class="ti ti-arrow-up-circle" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Penjualan</button>
+      <button class="accs-tab" onclick="switchSettingsTransTab('beli')" id="settings-transtab-beli"><i class="ti ti-arrow-down-circle" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Pembelian</button>
+    </div>
+    <div class="accs-panel active" id="settings-transpanel-jual">
+      <div class="accs-info-box">
+        Atur akun mana yang dipakai untuk tiap jenis penjualan. Defaultnya mengikuti akun bawaan (kode di bawah kode default) —
+        ubah kalau kamu mau pakai akun lain, misalnya karena akun bawaannya sudah dihapus dari COA.
+      </div>
+      <div id="settings-jual-list"></div>
+    </div>
+    <div class="accs-panel" id="settings-transpanel-beli">
+      <div class="accs-info-box">
+        Atur akun mana yang dipakai untuk tiap jenis pembelian.
+      </div>
+      <div id="settings-beli-list"></div>
     </div>
   </div>
 </div>
-
 
 
 

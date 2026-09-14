@@ -180,20 +180,10 @@ function openModalEditProdukHarga(katId, cardId) {
   const ppnInclEl = document.getElementById('produk-ppn-inclusive');
   if(ppnInclEl) ppnInclEl.checked = !!override?.ppnInclusive;
 
-  // Akun buttons
-  const akunPend = override?.akunPend || '4101';
-  const akunHpp  = override?.akunHpp  || '5101';
-  const akunPers = override?.akunPers || guessAkunPersediaanDefault(`${ks.nama||''} ${card?.nama||''}`);
-  document.getElementById('produk-akun-pend').value = akunPend;
-  document.getElementById('produk-akun-hpp').value  = akunHpp;
-  const persEl = document.getElementById('produk-akun-pers');
-  if(persEl) persEl.value = akunPers;
-  const pendBtn = document.getElementById('produk-akun-pend-btn');
-  const hppBtn  = document.getElementById('produk-akun-hpp-btn');
-  const persBtn = document.getElementById('produk-akun-pers-btn');
-  if(pendBtn) pendBtn.textContent = akuns.find(a=>a.kode===akunPend)?.nama || 'Pilih Akun...';
-  if(hppBtn)  hppBtn.textContent  = akuns.find(a=>a.kode===akunHpp)?.nama  || 'Pilih Akun...';
-  if(persBtn) persBtn.textContent = akuns.find(a=>a.kode===akunPers)?.nama || 'Pilih Akun...';
+  // Akun pendapatan/HPP/persediaan sekarang diatur terpusat di
+  // Settings > Transaksi > Penjualan (lihat js/21-settings-page.js).
+  // override.akunHpp/akunPers lama (jika ada) tetap dihormati sebagai
+  // pengecualian khusus produk ini — hanya tidak bisa diedit dari sini lagi.
 
   // Update read-only HPP info
   const hppInfo = document.getElementById('produk-hpp-readonly');
@@ -237,9 +227,6 @@ function updateProdukPpnBreakdown() {
 function simpanProduk() {
   const ksId     = document.getElementById('produk-edit-id').value;
   const hargaJual= parseFloat(document.getElementById('produk-harga-jual').value)||0;
-  const akunPend = document.getElementById('produk-akun-pend').value||'4101';
-  const akunHpp  = document.getElementById('produk-akun-hpp').value||'5101';
-  const akunPers = document.getElementById('produk-akun-pers')?.value||'1301';
   const _ppnRaw  = document.getElementById('produk-ppn')?.value;
   const ppn      = (_ppnRaw !== '' && _ppnRaw != null) ? parseFloat(_ppnRaw) : null;
   const ppnInclusive = document.getElementById('produk-ppn-inclusive')?.checked || false;
@@ -254,7 +241,10 @@ function simpanProduk() {
   setTimeout(() => {
     try {
       const idx = produkList.findIndex(p => p.ksId === ksId);
-      const data = { ksId, hargaJual, akunPend, akunHpp, akunPers, ppn, ppnInclusive };
+      // akunPend/akunHpp/akunPers TIDAK di-set lagi dari sini — kalau produk
+      // punya override lama dari versi sebelumnya, biarkan tetap ada (lihat
+      // openModalEditProdukHarga). Produk baru pakai Settings > Transaksi.
+      const data = { ksId, hargaJual, ppn, ppnInclusive };
       if(idx >= 0) produkList[idx] = { ...produkList[idx], ...data };
       else produkList.push(data);
       saveToStorage(false);

@@ -1,5 +1,31 @@
 
 // DATA
+// Akun yang dihapus dari COA masuk sini dulu (soft-delete, retensi 30 hari)
+// sebelum dihapus permanen — lihat js/05-akun.js: hapusAkun()/restoreAkunTrash()
+let akunsTrash = []; // [{...objekAkun, deletedAt: ISOString}]
+
+// Pengaturan mapping akun per jenis transaksi (Settings > Transaksi).
+// Key = kode akun default/jenis (identitas jenis, JANGAN diubah — dipakai
+// juga untuk logic internal seperti deteksi produk/persediaan).
+// Value = kode akun yang benar-benar dipakai saat posting jurnal.
+// Kosong/sama dengan key = pakai default bawaan.
+let transaksiAkunSettings = {
+  jual: { '4101':'4101', '4102':'4102', '4105':'4105', '4106':'4106', '4107':'4107', '4202':'4202' },
+  beli: { '1301':'1301', '1302':'1302', '1303':'1303', '1304':'1304', '1401':'1401', '5101':'5101' },
+  // Dulu diset per-produk di Master Produk — sekarang terpusat di sini.
+  // Kosong = pakai default otomatis (5101 utk HPP, tebak otomatis utk persediaan).
+  jualHpp: '',
+  jualPersediaan: ''
+};
+
+// Resolve kode akun aktif untuk jenis transaksi tertentu.
+// kategori: 'jual' | 'beli'. kodeDefault: kode akun bawaan/identitas jenis.
+function resolveAkunSetting(kategori, kodeDefault) {
+  const map = transaksiAkunSettings?.[kategori];
+  const v = map && map[kodeDefault];
+  return v || kodeDefault;
+}
+
 let akuns = [
   // ═══════ ASET LANCAR ═══════
   {kode:'1101',nama:'Kas',tipe:'Aset',kat:'Lancar',normal:'D'},

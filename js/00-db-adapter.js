@@ -71,6 +71,7 @@ const DB = {
     resetPasswordForEmail:(email, opts) => _supa.auth.resetPasswordForEmail(email, opts),
     updateUser:           (opts)        => _supa.auth.updateUser(opts),
     refreshSession:       (opts)        => _supa.auth.refreshSession(opts),
+    setSession:           (opts)        => _supa.auth.setSession(opts),
     exchangeCodeForSession:(code)       => _supa.auth.exchangeCodeForSession(code),
     linkIdentity:         (opts)        => _supa.auth.linkIdentity(opts),
     unlinkIdentity:       (identity)    => _supa.auth.unlinkIdentity(identity),

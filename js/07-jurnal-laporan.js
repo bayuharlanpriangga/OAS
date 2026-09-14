@@ -64,13 +64,12 @@ function renderJurnalUmum() {
         ${ppnSubBadge ? `<span class="badge badge-yellow" style="font-size:9px;">${ppnSubBadge}</span>` : ''}
       </div>`;
     j.lines.forEach((l,i)=>{
-      const a=akuns.find(x=>x.kode===l.akun);
       rows.push(`<tr>
         ${i===0?`<td rowspan="${j.lines.length}">${fmtDate(j.tanggal)}</td>
                  <td rowspan="${j.lines.length}" style="font-family:var(--mono);font-size:12px;">${j.no}</td>
                  <td rowspan="${j.lines.length}">${j.ket}${j.kodeRef?`<span style="font-size:9px;color:var(--muted);display:block;font-family:var(--mono);">${j.kodeRef}</span>`:''}</td>
                  <td rowspan="${j.lines.length}">${badgeCell}</td>`:''}
-        <td style="${l.debit?'':'padding-left:28px'}">${a?.nama||l.akun}</td>
+        <td style="${l.debit?'':'padding-left:28px'}">${akunNamaTampil(l.akun)}</td>
         <td class="debit">${l.debit?fmtRp(l.debit):''}</td>
         <td class="kredit">${l.kredit?fmtRp(l.kredit):''}</td>
         ${i===0?`<td rowspan="${j.lines.length}" style="text-align:center;vertical-align:middle;padding:4px 2px;">
@@ -153,7 +152,7 @@ function renderJurnalPembelian() {
       <td style="font-family:var(--mono);font-size:12px;">${j.ref||j.no}</td>
       <td>${j.ket}</td>
       <td><span class="badge ${krLine?.akun==='1101'?'badge-green':'badge-yellow'}">${krLine?.akun==='1101'?'Tunai':'Kredit'}</span></td>
-      <td>${akuns.find(a=>a.kode===drLine.akun)?.nama||drLine.akun} — <span class="debit">${fmtRp(drLine.debit)}</span></td>
+      <td>${akunNamaTampil(drLine.akun)} — <span class="debit">${fmtRp(drLine.debit)}</span></td>
       <td class="kredit">${fmtRp(krLine?.kredit||0)}</td>
     </tr>`);
   });

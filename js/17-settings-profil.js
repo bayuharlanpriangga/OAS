@@ -287,7 +287,9 @@ const SUPPORTED_PROVIDERS = [
 
 async function openAccountSettings() {
   if (!currentUser) { typeof showAuthModal === 'function' ? showAuthModal() : alert('Login dulu.'); return; }
-  openModal('modal-account-settings');
+  if(typeof closeAccountSwitcher === 'function') closeAccountSwitcher();
+  showPage('settings');
+  if(typeof switchSettingsTab === 'function') switchSettingsTab('akun');
   switchAccsTab('providers');
   await accsLoadUserInfo();
   await accsLoadProviders();
@@ -529,8 +531,9 @@ async function accsLogoutAll() {
 }
 
 function switchAccsTab(tab) {
-  document.querySelectorAll('.accs-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.accs-panel').forEach(p => p.classList.remove('active'));
+  const scope = document.getElementById('settings-panel-akun') || document;
+  scope.querySelectorAll('.accs-tab').forEach(t => t.classList.remove('active'));
+  scope.querySelectorAll('.accs-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('accs-tab-' + tab)?.classList.add('active');
   document.getElementById('accs-panel-' + tab)?.classList.add('active');
 }

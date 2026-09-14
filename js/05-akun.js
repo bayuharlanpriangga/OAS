@@ -1,4 +1,15 @@
 
+// Tampilkan nama akun untuk laporan — kalau akunnya sudah masuk Sampah COA
+// (soft-deleted) atau kodenya tidak dikenali sama sekali, tetap tampilkan
+// peringatan yang jelas alih-alih diam-diam nampilin kode akunnya saja.
+function akunNamaTampil(kode) {
+  const a = akuns.find(x => x.kode === kode);
+  if (a) return escapeHtml(a.nama);
+  const diTrash = typeof akunsTrash !== 'undefined' && akunsTrash.find(x => x.kode === kode);
+  const label = diTrash ? `Akun tidak ditemukan (${escapeHtml(kode)} — di Sampah COA)` : `Akun tidak ditemukan (${escapeHtml(kode)})`;
+  return `<span style="color:var(--red);" title="${label}"><i class="ti ti-alert-triangle" style="font-size:11px;vertical-align:-1px;"></i> ${label}</span>`;
+}
+
 // SIMPLE PICKER untuk form kas & pembelian
 let _simplePickerHiddenId = null;
 let _simplePickerBtnId = null;
@@ -60,6 +71,14 @@ function renderAkun() {
   // Update count subtitle
   const subEl = document.getElementById('coa-count-sub');
   if(subEl) subEl.textContent = `${filtered.length} dari ${akuns.length} akun ditampilkan`;
+
+  // Update badge Sampah COA
+  if(typeof purgeExpiredAkunTrash === 'function') purgeExpiredAkunTrash();
+  const trashBadge = document.getElementById('coa-trash-badge');
+  if(trashBadge) {
+    if(akunsTrash.length > 0) { trashBadge.style.display = 'flex'; trashBadge.textContent = akunsTrash.length; }
+    else trashBadge.style.display = 'none';
+  }
 
   // Stats bar
   const statsEl = document.getElementById('coa-stats');
@@ -141,33 +160,106 @@ function buildAkunRow(a, saldoMap) {
 function hapusAkun(kode) {
   const a = akuns.find(x=>x.kode===kode);
   if(!a) return;
-  // Check if used in journals
   const usedIn = jurnalEntries.filter(j=>j.lines.some(l=>l.akun===kode)).length;
-  if(usedIn > 0) {
-    showAlert(`❌ Akun "${a.nama}" tidak bisa dihapus — dipakai di ${usedIn} jurnal.`);
-    return;
-  }
   showCustomConfirmGeneral({
     icon: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red)"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3"/></svg>',
     iconColor: 'rgba(248,113,113,0.15)',
     iconBorder: 'rgba(248,113,113,0.3)',
     title: 'Hapus Akun?',
-    subtitle: `Akun <b>${a.kode} — ${a.nama}</b> akan dihapus permanen`,
+    subtitle: `Akun <b>${a.kode} — ${a.nama}</b> akan dipindah ke Sampah COA`,
     rows: [
       { label: 'Kode', value: a.kode, color: 'var(--muted)' },
       { label: 'Nama', value: a.nama, color: 'var(--text)' },
       { label: 'Tipe', value: a.tipe, color: 'var(--accent2)' },
+      ...(usedIn > 0 ? [{ label: 'Dipakai di', value: `${usedIn} jurnal`, color: 'var(--accent3)' }] : []),
     ],
-    warning: '<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Aksi ini tidak bisa dibatalkan.',
+    warning: usedIn > 0
+      ? `<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Akun ini dipakai di ${usedIn} jurnal. Jurnal lama tetap utuh (nominal tidak hilang) tapi akan tampil "akun tidak ditemukan" sampai akun ini di-restore dari Sampah COA. Tersimpan 30 hari sebelum terhapus permanen.`
+      : '<i class="ti ti-info-circle" style="color:var(--muted);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tersimpan di Sampah COA selama 30 hari — bisa di-restore kapan saja sebelum itu.',
     btnLabel: '<i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Ya, Hapus Akun',
     btnGradient: 'linear-gradient(135deg,#f87171,#dc2626)',
   }).then(ok => {
     if(!ok) return;
     akuns = akuns.filter(x=>x.kode!==kode);
+    akunsTrash = akunsTrash.filter(x=>x.kode!==kode); // hindari duplikat kalau kode sama pernah di-trash sebelumnya
+    akunsTrash.push({ ...a, deletedAt: new Date().toISOString() });
     renderAkun();
     markDirty();
-    showAlert(`✓ Akun ${a.kode} - ${a.nama} dihapus`);
+    showAlert(`<i class="ti ti-trash" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Akun ${a.kode} - ${a.nama} dipindah ke Sampah COA (tersimpan 30 hari)`);
   });
+}
+
+// ══════════════════════════════════════════════════════════
+// SAMPAH COA — soft-delete akun, retensi 30 hari
+// ══════════════════════════════════════════════════════════
+const AKUN_TRASH_RETENTION_DAYS = 30;
+
+function _akunTrashSisaHari(deletedAt) {
+  const elapsedMs = Date.now() - new Date(deletedAt).getTime();
+  const sisaMs = (AKUN_TRASH_RETENTION_DAYS * 86400000) - elapsedMs;
+  return Math.max(0, Math.ceil(sisaMs / 86400000));
+}
+
+// Hapus permanen entri yang sudah lewat 30 hari — dipanggil tiap load data & tiap render trash
+function purgeExpiredAkunTrash() {
+  if(!Array.isArray(akunsTrash) || !akunsTrash.length) return;
+  const before = akunsTrash.length;
+  akunsTrash = akunsTrash.filter(x => _akunTrashSisaHari(x.deletedAt) > 0);
+  if(akunsTrash.length < before && typeof markDirty === 'function') markDirty();
+}
+
+function openModalAkunTrash() {
+  purgeExpiredAkunTrash();
+  renderAkunTrashList();
+  openModal('modal-akun-trash');
+}
+
+function renderAkunTrashList() {
+  const body = document.getElementById('akun-trash-body');
+  if(!body) return;
+  purgeExpiredAkunTrash();
+  if(!akunsTrash.length) {
+    body.innerHTML = `<div style="text-align:center;padding:30px 16px;color:var(--muted);font-size:13px;">
+      <i class="ti ti-trash" style="font-size:26px;display:block;margin:0 auto 8px;opacity:0.4;"></i>
+      Sampah COA kosong
+    </div>`;
+    return;
+  }
+  body.innerHTML = akunsTrash.slice().sort((a,b)=> new Date(b.deletedAt)-new Date(a.deletedAt)).map(a => {
+    const sisaHari = _akunTrashSisaHari(a.deletedAt);
+    const urgent = sisaHari <= 5;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;background:var(--surface2);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;font-size:13px;">${escapeHtml(a.kode)} — ${escapeHtml(a.nama)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${escapeHtml(a.tipe||'')}${a.kat?' · '+escapeHtml(a.kat):''}</div>
+      </div>
+      <span style="font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap;
+        background:${urgent?'rgba(248,113,113,0.12)':'rgba(148,163,184,0.12)'};color:${urgent?'var(--red)':'var(--muted)'};">
+        ${sisaHari} hari lagi
+      </span>
+      <button onclick="restoreAkunTrash('${escJsAttr(a.kode)}')" title="Kembalikan akun ini"
+        style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.25);color:var(--accent2);cursor:pointer;font-size:11px;font-weight:600;padding:6px 10px;border-radius:6px;white-space:nowrap;">
+        <i class="ti ti-arrow-back-up" style="font-size:12px;vertical-align:-2px;margin-right:3px;"></i> Restore
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function restoreAkunTrash(kode) {
+  const idx = akunsTrash.findIndex(x=>x.kode===kode);
+  if(idx < 0) return;
+  const item = akunsTrash[idx];
+  if(akuns.find(x=>x.kode===kode)) {
+    showAlert(`❌ Kode akun ${kode} sudah dipakai akun lain di COA. Ubah/hapus dulu akun aktif dengan kode tersebut sebelum restore.`);
+    return;
+  }
+  const { deletedAt, ...akunAsli } = item;
+  akuns.push(akunAsli);
+  akunsTrash.splice(idx, 1);
+  renderAkunTrashList();
+  renderAkun();
+  markDirty();
+  showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Akun ${akunAsli.kode} - ${akunAsli.nama} berhasil di-restore. Jurnal lama yang mereferensikannya otomatis terhubung kembali.`);
 }
 
 function openModalAkun(){document.getElementById('modal-akun').classList.add('open');setTimeout(upgradeFormPickers,80);}

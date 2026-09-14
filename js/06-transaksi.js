@@ -473,11 +473,12 @@ function onBeliJumlahChange() { _updateBeliTotalHint(); }
 
 /** Build jurnal lines untuk pembelian */
 function _getBeliJurnalLines(akunKode, totalBeli, metode, ket) {
+  const akunEfektif = resolveAkunSetting('beli', akunKode);
   const krAkun = metode === 'tunai' ? '1101' : '2101';
   const krNama = metode === 'tunai' ? 'Kas' : 'Utang Usaha';
-  const akunNama = akuns.find(a=>a.kode===akunKode)?.nama || akunKode;
+  const akunNama = akuns.find(a=>a.kode===akunEfektif)?.nama || akunEfektif;
   return [
-    { akun: akunKode, ket, debit: totalBeli, kredit: 0 },
+    { akun: akunEfektif, ket, debit: totalBeli, kredit: 0 },
     { akun: krAkun,   ket: krNama, debit: 0, kredit: totalBeli },
   ];
 }
@@ -625,7 +626,7 @@ function simpanPenjualan() {
   // ── Satu entry jurnal penjualan: Kas/Piutang (D) — Pendapatan (K) — Utang PPN Keluaran (K) ──
   const _jualLines = [
     {akun:debAkun,ket:debNama,debit:_kasTotal,kredit:0},
-    {akun:akunPendapatanKode,ket:akunPendapatanNama,debit:0,kredit:_baseAmount},
+    {akun:resolveAkunSetting('jual', akunPendapatanKode),ket:akunPendapatanNama,debit:0,kredit:_baseAmount},
   ];
   if(_adaPpn && _ppnNominal > 0) {
     const _akunPpnOut = akuns.find(a=>a.kode==='2301') ? '2301'
@@ -648,8 +649,9 @@ function simpanPenjualan() {
     const hppReal = hppResult ? hppResult.hppBatch : (hpp || 0);
     if(hppReal > 0) {
       const overrideProduk = produkList.find(p => p.ksId === _ksIdJual);
-      const akunHpp  = overrideProduk?.akunHpp  || '5101';
+      const akunHpp  = overrideProduk?.akunHpp  || transaksiAkunSettings.jualHpp || '5101';
       const akunPers = overrideProduk?.akunPers
+        || transaksiAkunSettings.jualPersediaan
         || guessAkunPersediaanDefault(`${_foundJual?.kat?.nama||''} ${_foundJual?.card?.nama||''}`);
       addJurnal({ tanggal, ket: 'HPP ' + ket, jenis: 'Penjualan', ref: inv, kontakId, lines: [
         { akun: akunHpp,  ket: 'HPP', debit: hppReal, kredit: 0 },
@@ -666,8 +668,8 @@ function simpanPenjualan() {
   } else if(hpp > 0) {
     // Fallback: tidak ada produk dipilih, pakai hpp manual dari form
     addJurnal({tanggal, ket:'HPP '+ket, jenis:'Penjualan', ref:inv, kontakId, lines:[
-      {akun:'5101', ket:'HPP', debit:hpp, kredit:0},
-      {akun:'1301', ket:'Persediaan', debit:0, kredit:hpp},
+      {akun:transaksiAkunSettings.jualHpp||'5101', ket:'HPP', debit:hpp, kredit:0},
+      {akun:transaksiAkunSettings.jualPersediaan||'1301', ket:'Persediaan', debit:0, kredit:hpp},
     ]});
   }
   // Update total transaksi di kontak jika dipilih

@@ -96,6 +96,9 @@ function loadFromStorage() {
     if(data.akuns && data.akuns.length > 0) {
       akuns = data.akuns;
     }
+    if(Array.isArray(data.akunsTrash)) akunsTrash = data.akunsTrash;
+    if(data.transaksiAkunSettings) transaksiAkunSettings = { ...transaksiAkunSettings, ...data.transaksiAkunSettings };
+    if(typeof purgeExpiredAkunTrash === 'function') purgeExpiredAkunTrash();
     const meta = JSON.parse(localStorage.getItem(getMetaKey()) || localStorage.getItem(META_KEY_LEGACY) || '{}');
     lastSaveTime = meta.lastSave ? new Date(meta.lastSave) : null;
     renderDashboard();
@@ -114,6 +117,8 @@ function serializeData() {
     jurnalEntries: jurnalEntries,
     jurnalCounter: jurnalCounter,
     akuns: akuns,
+    akunsTrash: akunsTrash,
+    transaksiAkunSettings: transaksiAkunSettings,
     produkList: produkList,
     appName: 'Bayu Harlan Priangga'
   };
@@ -154,6 +159,8 @@ function loadFromSlot(slotId) {
     if(slot.data.akuns && slot.data.akuns.length > 0) {
       akuns = slot.data.akuns;
     }
+    if(Array.isArray(slot.data.akunsTrash)) akunsTrash = slot.data.akunsTrash;
+    if(slot.data.transaksiAkunSettings) transaksiAkunSettings = { ...transaksiAkunSettings, ...slot.data.transaksiAkunSettings };
     saveToStorage(false);
     renderDashboard();
     renderStorageSlots();
@@ -332,6 +339,8 @@ function importBackupJSON(input) {
         jurnalCounter = data.jurnalCounter || jurnalEntries.length + 1;
       }
       if(data.akuns && data.akuns.length > 0) akuns = data.akuns;
+      if(Array.isArray(data.akunsTrash)) akunsTrash = data.akunsTrash;
+      if(data.transaksiAkunSettings) transaksiAkunSettings = { ...transaksiAkunSettings, ...data.transaksiAkunSettings };
       saveToStorage(false);
       renderDashboard();
       closeModal('modal-storage');

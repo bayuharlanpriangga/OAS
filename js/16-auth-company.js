@@ -51,6 +51,7 @@ async function initSupabase() {
   // Pasang listener DULU agar SIGNED_IN dari OAuth redirect tidak terlewat
   DB.auth.onAuthStateChange(async (event, session) => {
     console.log('[Auth]', event, session?.user?.email);
+    if(session && typeof saveCurrentAccountToSwitcher === 'function') saveCurrentAccountToSwitcher(session);
 
     if (event === 'SIGNED_IN') {
       if (currentCompany) {

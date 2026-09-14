@@ -57,11 +57,12 @@ const pageTitles = {
   'aset-tetap':['Register Aset Tetap','Daftar aset · Penyusutan otomatis · Nilai buku'],
   'kontak':['Master Kontak','Pelanggan & Supplier · Histori transaksi'],
   'audit-trail':['Audit Trail','Riwayat aktivitas · Role pengguna · Siapa · Kapan'],
+  'settings':['Settings','Akun, autentikasi & pengaturan transaksi'],
 };
 
 function showPage(id) {
-  // Cek permission sebelum buka halaman (kecuali dashboard)
-  if (id !== 'dashboard' && !isAdmin() && typeof hasPerm === 'function') {
+  // Cek permission sebelum buka halaman (kecuali dashboard & settings — settings itu personal, bukan data bisnis)
+  if (id !== 'dashboard' && id !== 'settings' && !isAdmin() && typeof hasPerm === 'function') {
     if (!hasPerm(id, 'read')) {
       showAlert('⛔ Akses ditolak.\n\nKamu tidak punya izin untuk membuka modul ini.\nHubungi admin untuk mengatur ulang hak akses.');
       return;
@@ -103,6 +104,10 @@ function showPage(id) {
   // Setup number inputs for calculator pages
   if(id && id.startsWith('kalk')) setTimeout(() => { setupNumberInputs(); upgradeFormPickers(); upgradePajakPickers(); }, 300);
   if(id==='jurnal-umum') { renderJurnalUmum(); setTimeout(upgradeFormPickers, 80); }
+  if(id==='settings') {
+    if(typeof accsLoadUserInfo === 'function') accsLoadUserInfo();
+    if(typeof accsLoadProviders === 'function') accsLoadProviders();
+  }
   if(id==='rekonsiliasi-bank') { setTimeout(upgradeFormPickers, 80); }
   if(id==='jurnal-kas') { renderJurnalKas(); setTimeout(upgradeFormPickers, 80); }
   if(id==='jurnal-penjualan') { renderJurnalPenjualan(); setTimeout(upgradeFormPickers, 80); }
