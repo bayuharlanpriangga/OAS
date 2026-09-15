@@ -2919,11 +2919,19 @@ async function executeAIActions(actions) {
             const names = { dashboard:'Dashboard', transaksi:'Transaksi',
               'jurnal-umum':'Jurnal Umum', 'jurnal-kas':'Jurnal Kas',
               'jurnal-penjualan':'Jurnal Penjualan', 'jurnal-pembelian':'Jurnal Pembelian',
+              'jurnal-berulang':'Jurnal Berulang',
               'buku-besar':'Buku Besar', 'neraca-saldo':'Neraca Saldo',
-              'laba-rugi':'Laba Rugi', neraca:'Neraca', akun:'Chart of Accounts',
+              'laba-rugi':'Laba Rugi', neraca:'Neraca', 'arus-kas':'Arus Kas',
+              'perubahan-ekuitas':'Perubahan Ekuitas', analitik:'Analitik',
+              akun:'Chart of Accounts', produk:'Master Produk',
+              'aset-tetap':'Aset Tetap', kontak:'Kontak', invoice:'Invoice',
+              anggaran:'Anggaran', notifikasi:'Notifikasi', pajak:'Pajak Auto',
+              kurs:'Kurs', rekonsiliasi:'Rekonsiliasi', 'rekonsiliasi-bank':'Rekonsiliasi Bank',
+              'audit-trail':'Audit Trail', settings:'Settings', tutorial:'Tutorial',
+              'ai-assistant':'Orias Assisten',
               'kalk-penyusutan':'Kalkulator Penyusutan', 'kalk-persediaan':'Kalkulator Persediaan',
               'kalk-bunga':'Kalkulator Bunga', 'kalk-rasio':'Kalkulator Rasio',
-              'kalk-bep':'Kalkulator BEP', 'kalk-ppn':'Kalkulator PPN & PPh', produk:'Master Produk' };
+              'kalk-bep':'Kalkulator BEP', 'kalk-ppn':'Kalkulator PPN & PPh' };
             results.push(`↔ Berpindah ke: <b>${names[page]||page}</b>`);
           }
           break;
@@ -3044,6 +3052,121 @@ async function executeAIActions(actions) {
           }
           if(document.getElementById('page-kalk-persediaan')?.classList.contains('active')) renderKartuStock();
           if(document.getElementById('page-produk')?.classList.contains('active')) renderProduk();
+          break;
+        }
+
+        case 'addKontak': {
+          if(!action.nama) { results.push(`❌ Nama kontak wajib diisi — dilewati`); break; }
+          const existing = kontakList.find(k => k.nama.toLowerCase() === String(action.nama).toLowerCase());
+          const kontak = {
+            id: existing?.id || 'KTK_' + Date.now(),
+            nama: action.nama,
+            tipe: action.tipe || 'pelanggan',
+            telp: action.telp || '', email: action.email || '', alamat: action.alamat || '',
+            npwp: action.npwp || '', pic: action.pic || '', catatan: action.catatan || '',
+            createdAt: existing?.createdAt || new Date().toISOString()
+          };
+          if(existing) { const idx = kontakList.findIndex(k=>k.id===existing.id); kontakList[idx] = {...existing, ...kontak}; }
+          else kontakList.unshift(kontak);
+          saveFiturBaru();
+          if(document.getElementById('page-kontak')?.classList.contains('active')) { renderKontak(); renderKontakKPI(); }
+          results.push(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Kontak ${existing?'diperbarui':'ditambahkan'}: <b>${kontak.nama}</b> (${kontak.tipe})`);
+          break;
+        }
+
+        case 'addAsetTetap': {
+          if(!action.nama || !action.harga) { results.push(`❌ Nama aset dan harga perolehan wajib diisi — dilewati`); break; }
+          const aset = {
+            id: 'AT_' + Date.now(),
+            nama: action.nama, hargaPerolehan: Number(action.harga) || 0,
+            kategori: action.kategori || 'Peralatan', tglPerolehan: action.tglPerolehan || today,
+            nilaiResidu: Number(action.residu) || 0, umurEkonomis: Number(action.umur) || 5,
+            metode: action.metode || 'garis-lurus', lokasi: action.lokasi || '',
+            status: 'aktif', createdAt: new Date().toISOString()
+          };
+          asetTetapList.unshift(aset);
+          saveToStorage(false); saveFiturBaru();
+          if(document.getElementById('page-aset-tetap')?.classList.contains('active')) { renderAsetTetap(); renderAsetTetapKPI(); }
+          if(typeof renderDashboard === 'function') renderDashboard();
+          results.push(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Aset tetap ditambahkan: <b>${aset.nama}</b> — ${rp(aset.hargaPerolehan)}, ${aset.umurEkonomis} tahun (${aset.metode})`);
+          break;
+        }
+
+        case 'setAnggaran': {
+          if(!action.akunKode || !action.periode || !action.nominal) { results.push(`❌ Akun, periode, dan nominal anggaran wajib diisi — dilewati`); break; }
+          const akunNm = akuns.find(a=>a.kode===action.akunKode)?.nama || action.akunKode;
+          const exist = anggaranList.findIndex(a => a.akunKode === action.akunKode && a.periode === action.periode);
+          const item = { id: 'ang_' + Date.now(), akunKode: action.akunKode, periode: action.periode, nominal: Number(action.nominal) || 0, catatan: action.catatan || '' };
+          if(exist >= 0) anggaranList[exist] = item; else anggaranList.push(item);
+          saveFiturBaru();
+          if(document.getElementById('page-anggaran')?.classList.contains('active')) renderAnggaranPage();
+          results.push(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Anggaran diset: <b>${akunNm}</b> periode ${item.periode} — ${rp(item.nominal)}`);
+          break;
+        }
+
+        case 'setHargaProduk': {
+          const found = _findKatByNama(action.produk);
+          if(!found) { results.push(`<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Produk "${action.produk}" tidak ditemukan di Kartu Stock — dilewati`); break; }
+          const hargaJual = Number(action.hargaJual) || 0;
+          const ppn = (action.ppn !== undefined && action.ppn !== null && action.ppn !== '') ? Number(action.ppn) : null;
+          const ppnInclusive = !!action.ppnInclusive;
+          const idx = produkList.findIndex(p => p.ksId === found.katId);
+          const data = { ksId: found.katId, hargaJual, ppn, ppnInclusive };
+          if(idx >= 0) produkList[idx] = { ...produkList[idx], ...data }; else produkList.push(data);
+          saveToStorage(false);
+          if(document.getElementById('page-produk')?.classList.contains('active')) renderProduk();
+          results.push(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Harga produk <b>${found.kat.nama}</b> diset: ${rp(hargaJual)}${ppn!=null?` (PPN ${ppn}%${ppnInclusive?' inclusive':''})`:''}`);
+          break;
+        }
+
+        case 'addInvoice': {
+          if(!action.pelanggan || !Array.isArray(action.items) || !action.items.length) { results.push(`❌ Pelanggan dan minimal 1 item invoice wajib diisi — dilewati`); break; }
+          const items = action.items.map(it => ({ nama: it.nama || 'Item', qty: Number(it.qty)||1, harga: Number(it.harga)||0 }));
+          const subtotal = items.reduce((s,it)=>s+it.qty*it.harga, 0);
+          const ppnOn = !!action.ppn;
+          const ppnNom = ppnOn ? Math.round(subtotal*0.12) : 0;
+          const total = subtotal + ppnNom;
+          const status = action.status === 'terkirim' ? 'terkirim' : 'draft';
+          const akunPiutang = action.akunPiutang || akuns.find(a=>a.nama.toLowerCase().includes('piutang'))?.kode || '';
+          const akunPend = action.akunPend || akuns.find(a=>a.kode==='4101')?.kode || '';
+          const inv = {
+            id: 'INV_' + Date.now(), noInvoice: action.noInvoice || `INV-${new Date(action.tanggal||today).getFullYear()}-${String(invoiceList.length+1).padStart(3,'0')}`,
+            pelanggan: action.pelanggan, tanggal: action.tanggal || today,
+            jatuhTempo: action.jatuhTempo || today, deskripsi: action.deskripsi || '',
+            items, subtotal, ppn: ppnNom, total, sisaTagihan: total, status,
+            akunPiutang, akunPend, createdAt: new Date().toISOString()
+          };
+          if(status === 'terkirim' && akunPiutang && akunPend) {
+            const entry = { id:'JRN_INV_'+Date.now(), tanggal:inv.tanggal, jenis:'Manual',
+              keterangan:`Invoice ${inv.noInvoice} — ${inv.pelanggan}`,
+              lines:[
+                {akun:akunPiutang, debit:total, kredit:0},
+                {akun:akunPend, debit:0, kredit:subtotal},
+                ...(ppnNom>0?[{akun:akuns.find(a=>a.nama.toLowerCase().includes('ppn')&&a.tipe==='Liabilitas')?.kode||akunPend, debit:0, kredit:ppnNom}]:[])
+              ].filter(l=>l.akun)
+            };
+            jurnalEntries.push(entry);
+            saveToStorage(false);
+          }
+          invoiceList.unshift(inv);
+          saveFiturBaru();
+          if(document.getElementById('page-invoice')?.classList.contains('active')) { renderInvoiceList(); renderInvoiceKPI(); }
+          if(typeof cekNotifikasi === 'function') cekNotifikasi();
+          results.push(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Invoice <b>${inv.noInvoice}</b> (${status}) untuk ${inv.pelanggan} — ${rp(total)}`);
+          break;
+        }
+
+        case 'addAlertNotifikasi': {
+          if(!action.nama) { results.push(`❌ Nama alert wajib diisi — dilewati`); break; }
+          notifAlerts.push({
+            id: 'alert_' + Date.now(), nama: action.nama, tipe: action.tipe || 'saldo-minimum',
+            batas: action.batas != null ? Number(action.batas) : null,
+            akun: action.akun || null, aktif: true, createdAt: new Date().toISOString()
+          });
+          saveFiturBaru();
+          if(document.getElementById('page-notifikasi')?.classList.contains('active')) renderNotifikasiPage();
+          if(typeof cekNotifikasi === 'function') cekNotifikasi();
+          results.push(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Alert notifikasi ditambahkan: <b>${action.nama}</b>`);
           break;
         }
 
