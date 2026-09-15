@@ -101,25 +101,20 @@ function renderProduk() {
       ).join('');
     }
 
-    // Badge PPN
+    // Badge PPN — warna menandakan status: BIRU = inclusive (harga jual sudah termasuk PPN),
+    // KUNING = exclusive (PPN ditambahkan di atas harga jual). Ganti teks "(incl./excl. PPN)"
+    // yang tadinya di bawah harga jual — sekarang cukup dari warna badge ini.
+    const ppnInclusive = !!override?.ppnInclusive;
     const ppnBadge = ppnTarif != null
-      ? `<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(250,204,21,0.12);color:#facc15;border:1px solid rgba(250,204,21,0.3);white-space:nowrap;">PPN ${ppnTarif}%</span>`
+      ? (ppnInclusive
+          ? `<span title="PPN inclusive — sudah termasuk di harga jual" style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(34,211,238,0.12);color:#22d3ee;border:1px solid rgba(34,211,238,0.3);white-space:nowrap;">PPN ${ppnTarif}%</span>`
+          : `<span title="PPN exclusive — ditambahkan di atas harga jual" style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(250,204,21,0.12);color:#facc15;border:1px solid rgba(250,204,21,0.3);white-space:nowrap;">PPN ${ppnTarif}%</span>`)
       : `<span style="font-size:9px;color:var(--muted);">Non-PKP</span>`;
 
-    // Harga jual + breakdown PPN (mode exclusive: harga + PPN di atas; mode inclusive: harga sudah termasuk PPN)
-    const ppnInclusive = !!override?.ppnInclusive;
+    // Harga jual — polos, tanpa keterangan "incl./excl. PPN" (statusnya sudah terwakili warna badge PPN)
     let hargaJualCell;
     if(hargaJual) {
-      if(ppnTarif != null && ppnInclusive) {
-        const ppnNom   = Math.round(hargaJual * ppnTarif/100);
-        const hargaDpp = hargaJual - ppnNom;
-        hargaJualCell = `<div style="font-weight:600;">${fmtRp(hargaJual)} <span style="font-size:9px;font-weight:400;color:var(--accent2);">(incl. PPN)</span></div>`
-          + `<div style="font-size:10px;color:var(--muted);">excl. PPN: ${fmtRp(hargaDpp)}</div>`;
-      } else {
-        const hargaInkl = ppnTarif != null ? Math.round(hargaJual * (1 + ppnTarif/100)) : null;
-        hargaJualCell = `<div style="font-weight:600;">${fmtRp(hargaJual)}</div>`
-          + (hargaInkl != null ? `<div style="font-size:10px;color:var(--muted);">incl. PPN: ${fmtRp(hargaInkl)}</div>` : '');
-      }
+      hargaJualCell = `<div style="font-weight:600;">${fmtRp(hargaJual)}</div>`;
     } else {
       hargaJualCell = '<span style="font-size:11px;color:var(--muted);">Belum diset</span>';
     }

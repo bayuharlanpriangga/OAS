@@ -1053,10 +1053,11 @@ async function sendAI() {
   const msg = input.value.trim();
   if(!msg) return;
 
-  // Hide chips after first message — hide both chips and toggle bar
+  // Hide chips after first message — hide both chips and toggle bar (no-op sekarang karena chips sudah dihapus dari halaman)
   const chipsToggleBar = document.getElementById('ai-chips-toggle')?.parentElement;
   if(chipsToggleBar) chipsToggleBar.style.display = 'none';
-  document.getElementById('ai-chips').style.display='none';
+  const chipsEl = document.getElementById('ai-chips');
+  if(chipsEl) chipsEl.style.display = 'none';
 
   input.value = '';
   input.style.height = '44px';
@@ -1736,9 +1737,6 @@ const TUT_MODULES = {
       { icon:'💬', title:'Cara Bicara dengan AI',
         body:'Kamu bisa bicara natural, contoh:\n\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <i>"Kemarin beli laptop Rp 12jt untuk kantor, bayar tunai"</i>\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <i>"Gaji karyawan bulan ini Rp 8jt, belum dibayar"</i>\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <i>"Jual 50 unit barang @ Rp 25rb, bayar transfer"</i>\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <i>"Hitung penyusutan mesin 100jt umur 5 tahun"</i>\n\nAI akan pahami maksudmu dan buatkan jurnal/kalkulasi yang benar.',
         target: '#ai-input', highlight: true },
-      { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent3)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>', title:'Quick Chips — Pertanyaan Cepat',
-        body:'Di atas kotak chat ada tombol-tombol <b>chip shortcut</b>.\n\nKlik salah satu untuk langsung mengirim pertanyaan umum ke AI tanpa perlu mengetik.\n\nChip akan hilang setelah kamu mulai chat — kamu bisa refresh halaman untuk munculkan lagi.',
-        target: '#ai-chips', highlight: true },
       { icon:'<i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i>', title:'Simpan Jurnal dari AI',
         body:'Jika AI membuatkan jurnal, akan muncul tombol:\n\n<b>"<i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Simpan Jurnal ke Sistem"</b>\n\nKlik tombol itu → jurnal langsung masuk ke database tanpa perlu input manual!\n\nJuga ada tombol shortcut ke kalkulator yang relevan dari jawaban AI.',
         target: null },

@@ -2123,25 +2123,6 @@
       </div>
     </div>
 
-    <!-- Suggestion chips -->
-    <!-- Chips toggle header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;">
-      <span style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;"><i class="ti ti-bulb" style="font-size:12px;vertical-align:-1px;margin-right:4px;"></i>Contoh Pertanyaan</span>
-      <button id="ai-chips-toggle" onclick="toggleAIChips()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--muted);cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:4px;transition:all 0.15s;">
-        <span id="ai-chips-toggle-icon">▲</span> <span id="ai-chips-toggle-label">Sembunyikan</span>
-      </button>
-    </div>
-    <div id="ai-chips" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;flex-shrink:0;">
-      <button class="chip" onclick="useChip(this)"><i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Beli barang dagangan Rp 5jt tunai</button>
-      <button class="chip" onclick="useChip(this)"><i class="ti ti-trending-down" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Hitung penyusutan mesin Rp 100jt umur 5 tahun</button>
-      <button class="chip" onclick="useChip(this)"><i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Jual barang Rp 15jt kredit, HPP Rp 9jt</button>
-      <button class="chip" onclick="useChip(this)"><i class="ti ti-chart-bar ti-inline"></i> Analisis rasio keuangan saya</button>
-      <button class="chip" onclick="useChip(this)"><i class="ti ti-calculator" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Hitung PPh 21 gaji Rp 12jt TK/0</button>
-      <button class="chip" onclick="useChip(this)"><i class="ti ti-info-circle" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Bagaimana cara input jurnal manual?</button>
-      <button class="chip" onclick="useChip(this)"><i class="ti ti-target" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> BEP harga jual 50rb, biaya variabel 30rb, biaya tetap 20jt</button>
-      <button class="chip" onclick="useChip(this)"><i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Cara mencatat pembayaran utang usaha</button>
-    </div>
-
     <!-- Chat area -->
     <div id="ai-chat" style="flex:1;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:12px 12px 0 0;padding:16px;display:flex;flex-direction:column;gap:16px;min-height:0;">
       <div class="ai-msg ai-msg-bot">
@@ -2847,14 +2828,6 @@
           <div style="font-size:10px;color:var(--muted);margin-top:4px;">Kosongkan = tidak kena PPN</div>
           <div id="produk-ppn-breakdown" style="font-size:10.5px;color:var(--muted);margin-top:6px;font-family:var(--mono);"></div>
         </div>
-      </div>
-
-      <!-- Akun pendapatan/HPP/persediaan sekarang diatur terpusat -->
-      <div style="display:flex;align-items:center;gap:8px;background:rgba(34,211,238,0.06);border:1px solid rgba(34,211,238,0.2);border-radius:8px;padding:10px 12px;margin-top:2px;font-size:12px;color:var(--muted);line-height:1.5;">
-        <i class="ti ti-info-circle" style="font-size:15px;color:var(--accent2);flex-shrink:0;"></i>
-        <div>Akun Pendapatan, HPP &amp; Persediaan sekarang diatur terpusat di
-          <a href="javascript:void(0)" onclick="closeModal('modal-produk');showPage('settings');switchSettingsTab('transaksi');switchSettingsTransTab('jual');" style="color:var(--accent2);font-weight:600;">Settings → Transaksi → Penjualan</a>,
-          bukan per-produk lagi.</div>
       </div>
 
       <!-- PPN Inclusive — di bawah supaya tidak mengganggu tatanan field harga/PPN -->
