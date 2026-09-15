@@ -4388,46 +4388,6 @@
       </div>
     </div>
 
-    <!-- MODAL: UBAH PASSWORD (dipanggil dari tombol "Ubah Password" di Informasi Akun) -->
-    <div class="modal-backdrop" id="modal-ubah-password">
-      <div class="modal" style="max-width:420px;">
-        <div class="modal-head">
-          <div class="modal-title"><i class="ti ti-lock ti-inline"></i> Ubah Password</div>
-          <button class="modal-close" onclick="closeModal('modal-ubah-password')">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="accs-field" id="accs-field-pw-old">
-            <label>PASSWORD LAMA</label>
-            <div style="position:relative;">
-              <input type="password" id="accs-input-pw-old" placeholder="Password saat ini" style="padding-right:44px;">
-              <button type="button" onclick="toggleAccsPw('accs-input-pw-old')" class="auth-pw-toggle"><i class="ti ti-eye" style="font-size:15px;"></i></button>
-            </div>
-          </div>
-          <div class="accs-field">
-            <label>PASSWORD BARU</label>
-            <div style="position:relative;">
-              <input type="password" id="accs-input-pw1" placeholder="Minimal 6 karakter" style="padding-right:44px;">
-              <button type="button" onclick="toggleAccsPw('accs-input-pw1')" class="auth-pw-toggle"><i class="ti ti-eye" style="font-size:15px;"></i></button>
-            </div>
-          </div>
-          <div class="accs-field">
-            <label>KONFIRMASI PASSWORD BARU</label>
-            <div style="position:relative;">
-              <input type="password" id="accs-input-pw2" placeholder="Ulangi password" style="padding-right:44px;">
-              <button type="button" onclick="toggleAccsPw('accs-input-pw2')" class="auth-pw-toggle"><i class="ti ti-eye" style="font-size:15px;"></i></button>
-            </div>
-          </div>
-          <button class="auth-btn-primary" onclick="accsUpdatePassword()" id="accs-btn-save-pw" style="margin-top:4px;width:100%;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Simpan Password
-          </button>
-          <div id="accs-msg-password" class="accs-msg"></div>
-          <div style="text-align:center;margin-top:14px;">
-            <span class="auth-forgot" onclick="accsForgotPassword()" style="font-size:12px;">Lupa password?</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- ═══ LEVEL 1: TRANSAKSI ═══ -->
     <div class="settings-view" id="settings-view-transaksi">
       <div class="settings-list">
@@ -4461,6 +4421,45 @@
       <div id="settings-beli-list"></div>
     </div>
 
+  </div>
+</div>
+
+<!-- MODAL: UBAH PASSWORD (dipanggil dari tombol "Ubah Password" di Informasi Akun) -->
+<div class="modal-backdrop" id="modal-ubah-password">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-head">
+      <div class="modal-title"><i class="ti ti-lock ti-inline"></i> Ubah Password</div>
+      <button class="modal-close" onclick="closeModal('modal-ubah-password')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="accs-field" id="accs-field-pw-old">
+        <label>PASSWORD LAMA</label>
+        <div style="position:relative;">
+          <input type="password" id="accs-input-pw-old" placeholder="Password saat ini" style="padding-right:44px;">
+          <button type="button" onclick="toggleAccsPw('accs-input-pw-old')" class="auth-pw-toggle"><i class="ti ti-eye" style="font-size:15px;"></i></button>
+        </div>
+      </div>
+      <div class="accs-field">
+        <label>PASSWORD BARU</label>
+        <div style="position:relative;">
+          <input type="password" id="accs-input-pw1" placeholder="Minimal 6 karakter" style="padding-right:44px;">
+          <button type="button" onclick="toggleAccsPw('accs-input-pw1')" class="auth-pw-toggle"><i class="ti ti-eye" style="font-size:15px;"></i></button>
+        </div>
+      </div>
+      <div class="accs-field">
+        <label>KONFIRMASI PASSWORD BARU</label>
+        <div style="position:relative;">
+          <input type="password" id="accs-input-pw2" placeholder="Ulangi password" style="padding-right:44px;">
+          <button type="button" onclick="toggleAccsPw('accs-input-pw2')" class="auth-pw-toggle"><i class="ti ti-eye" style="font-size:15px;"></i></button>
+        </div>
+      </div>
+      <button class="auth-btn-primary" onclick="accsUpdatePassword()" id="accs-btn-save-pw" style="margin-top:4px;width:100%;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Simpan Password
+      </button>
+      <div style="text-align:center;margin-top:14px;">
+        <span class="auth-forgot" onclick="accsForgotPassword()" style="font-size:12px;">Lupa password?</span>
+      </div>
+    </div>
   </div>
 </div>
 </div><!-- end content -->

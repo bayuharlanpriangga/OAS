@@ -361,6 +361,34 @@ function handleProfilePhotoUpload(input) {
 async function accsLoadProviders() {
   const container = document.getElementById('accs-providers-list');
   container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite;vertical-align:-2px"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Memuat koneksi...</div>';
+
+  // Mode Tamu (belum login sama sekali) — tetap tampilkan daftar metode login
+  // yang tersedia (Email & Password, Google, dst) supaya user tahu apa yang
+  // bisa dipakai, statusnya "Belum login", dan diklik langsung ke halaman login.
+  if (!currentUser) {
+    const goLogin = "typeof showAuthModal === 'function' ? showAuthModal() : alert('Login dulu.')";
+    let html = `<div class="provider-card" onclick="${goLogin}" style="cursor:pointer;">
+      <div class="provider-icon"><i class="ti ti-mail" style="font-size:20px;"></i></div>
+      <div class="provider-info">
+        <div class="provider-name">Email &amp; Password</div>
+        <div class="provider-status">Belum login</div>
+      </div>
+    </div>`;
+    for (const p of SUPPORTED_PROVIDERS) {
+      html += `<div class="provider-card" onclick="${goLogin}" style="cursor:pointer;">
+        <div class="provider-icon">${p.icon}</div>
+        <div class="provider-info">
+          <div class="provider-name">${p.name}</div>
+          <div class="provider-status">Belum login</div>
+        </div>
+      </div>`;
+    }
+    container.innerHTML = html;
+    const pwSection = document.getElementById('accs-current-pw-section');
+    if (pwSection) pwSection.style.display = 'none';
+    return;
+  }
+
   try {
     // Gunakan currentUser dari memori terlebih dulu (hindari hang pada fresh OAuth session)
     // Refresh dari server dengan timeout 4 detik — jika timeout, tetap gunakan data lokal
@@ -504,7 +532,23 @@ async function accsUpdateProfile() {
 }
 
 // Buka modal Ubah Password — dipanggil dari tombol "Ubah Password" di Informasi Akun.
+// Hitung ulang langsung dari currentUser — jangan cuma andalkan window._accsHasEmailPw
+// (yang di-set accsLoadProviders secara async), supaya tetap akurat walau user klik
+// tombol "Ubah Password" sebelum proses loading provider itu selesai.
+function accsHasEmailLogin() {
+  const user = currentUser;
+  if (!user) return false;
+  const linkedIds = (user.identities || []).map(i => i.provider);
+  return linkedIds.includes('email') ||
+    !!(user.app_metadata?.providers?.includes('email')) ||
+    !!(user.user_metadata?.has_password) ||
+    !!window._accsHasEmailPw;
+}
+
 function openAccsPasswordModal() {
+  // Mode Tamu (belum login) tidak punya akun/password sama sekali — jangan buka modal.
+  if (!currentUser) { showAlert('❌ Belum memiliki password.'); return; }
+
   const pwOld = document.getElementById('accs-input-pw-old');
   const pw1   = document.getElementById('accs-input-pw1');
   const pw2   = document.getElementById('accs-input-pw2');
@@ -516,7 +560,7 @@ function openAccsPasswordModal() {
 
   // Kalau akun belum pernah punya password (login via Google saja), tidak ada
   // "password lama" yang bisa diverifikasi — sembunyikan field itu.
-  const hasEmailPw = !!window._accsHasEmailPw;
+  const hasEmailPw = accsHasEmailLogin();
   const fieldOld = document.getElementById('accs-field-pw-old');
   if (fieldOld) fieldOld.style.display = hasEmailPw ? 'block' : 'none';
 
@@ -524,14 +568,14 @@ function openAccsPasswordModal() {
 }
 
 async function accsUpdatePassword() {
-  const hasEmailPw = !!window._accsHasEmailPw;
+  const hasEmailPw = accsHasEmailLogin();
   const pwOld = document.getElementById('accs-input-pw-old').value;
   const pw1   = document.getElementById('accs-input-pw1').value;
   const pw2   = document.getElementById('accs-input-pw2').value;
-  if (hasEmailPw && !pwOld) { accsShowMsg('password', '❌ Masukkan password lama.', 'error'); return; }
-  if (!pw1) { accsShowMsg('password', '❌ Password tidak boleh kosong.', 'error'); return; }
-  if (pw1.length < 6) { accsShowMsg('password', '❌ Password minimal 6 karakter.', 'error'); return; }
-  if (pw1 !== pw2) { accsShowMsg('password', '❌ Konfirmasi password tidak cocok.', 'error'); return; }
+  if (hasEmailPw && !pwOld) { showAlert('❌ Masukkan password lama.'); return; }
+  if (!pw1) { showAlert('❌ Password tidak boleh kosong.'); return; }
+  if (pw1.length < 6) { showAlert('❌ Password minimal 6 karakter.'); return; }
+  if (pw1 !== pw2) { showAlert('❌ Konfirmasi password tidak cocok.'); return; }
   const btn = document.getElementById('accs-btn-save-pw');
   btn.innerHTML = '<span class="accs-spinner"></span>Menyimpan...'; btn.disabled = true;
   try {
@@ -540,7 +584,7 @@ async function accsUpdatePassword() {
     if (hasEmailPw && pwOld) {
       const { error: reauthErr } = await DB.auth.signInWithPassword({ email: currentUser.email, password: pwOld });
       if (reauthErr) {
-        accsShowMsg('password', '❌ Password lama salah.', 'error');
+        showAlert('❌ Password lama salah.');
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Simpan Password'; btn.disabled = false;
         return;
       }
@@ -568,14 +612,14 @@ async function accsUpdatePassword() {
     document.getElementById('accs-input-pw-old').value = '';
     document.getElementById('accs-input-pw1').value = '';
     document.getElementById('accs-input-pw2').value = '';
-    accsShowMsg('password', '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Password berhasil diatur! Kamu sekarang bisa login dengan email + password juga.', 'success');
+    showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Password berhasil diatur! Kamu sekarang bisa login dengan email + password juga.');
     // Refresh session, reload providers, dan tutup modal setelah 1.5 detik
     setTimeout(async () => {
       try { await DB.auth.refreshSession(); } catch(e3) {}
       accsLoadProviders();
       closeModal('modal-ubah-password');
     }, 1500);
-  } catch(e) { accsShowMsg('password', '❌ ' + e.message, 'error'); }
+  } catch(e) { showAlert('❌ ' + e.message); }
   finally { btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Simpan Password'; btn.disabled = false; }
 }
 
@@ -587,9 +631,9 @@ async function accsForgotPassword() {
   try {
     const { error } = await DB.auth.resetPasswordForEmail(currentUser.email);
     if (error) throw error;
-    accsShowMsg('password', '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Link reset password sudah dikirim ke ' + currentUser.email, 'success');
+    showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Link reset password sudah dikirim ke ' + currentUser.email);
   } catch(e) {
-    accsShowMsg('password', '❌ ' + e.message, 'error');
+    showAlert('❌ ' + e.message);
   }
 }
 
