@@ -309,7 +309,10 @@ async function openAccountSettings() {
 }
 
 async function accsLoadUserInfo() {
-  const user = currentUser; if (!user) return;
+  const user = currentUser;
+  const dangerZone = document.getElementById('accs-danger-zone');
+  if (dangerZone) dangerZone.style.display = user ? 'block' : 'none';
+  if (!user) return;
   const photoURL = user.user_metadata?.avatar_url || user.user_metadata?.picture || localStorage.getItem('oas_profile_photo');
   const initial = (user.user_metadata?.full_name || user.user_metadata?.name || user.email || '?').charAt(0).toUpperCase();
   const avatarEl = document.getElementById('accs-avatar');
@@ -391,6 +394,7 @@ async function accsLoadProviders() {
     const hasEmail = freshLinkedIds.includes('email') ||
       !!(user?.app_metadata?.providers?.includes('email')) ||
       !!(user?.user_metadata?.has_password);
+    window._accsHasEmailPw = hasEmail;
 
     let html = '';
 
@@ -499,15 +503,49 @@ async function accsUpdateProfile() {
   finally { btn.innerHTML = '<i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Simpan Perubahan'; btn.disabled = false; }
 }
 
+// Buka modal Ubah Password — dipanggil dari tombol "Ubah Password" di Informasi Akun.
+function openAccsPasswordModal() {
+  const pwOld = document.getElementById('accs-input-pw-old');
+  const pw1   = document.getElementById('accs-input-pw1');
+  const pw2   = document.getElementById('accs-input-pw2');
+  if (pwOld) pwOld.value = '';
+  if (pw1)   pw1.value = '';
+  if (pw2)   pw2.value = '';
+  const msg = document.getElementById('accs-msg-password');
+  if (msg) { msg.style.display = 'none'; msg.innerHTML = ''; }
+
+  // Kalau akun belum pernah punya password (login via Google saja), tidak ada
+  // "password lama" yang bisa diverifikasi — sembunyikan field itu.
+  const hasEmailPw = !!window._accsHasEmailPw;
+  const fieldOld = document.getElementById('accs-field-pw-old');
+  if (fieldOld) fieldOld.style.display = hasEmailPw ? 'block' : 'none';
+
+  document.getElementById('modal-ubah-password').classList.add('open');
+}
+
 async function accsUpdatePassword() {
-  const pw1 = document.getElementById('accs-input-pw1').value;
-  const pw2 = document.getElementById('accs-input-pw2').value;
+  const hasEmailPw = !!window._accsHasEmailPw;
+  const pwOld = document.getElementById('accs-input-pw-old').value;
+  const pw1   = document.getElementById('accs-input-pw1').value;
+  const pw2   = document.getElementById('accs-input-pw2').value;
+  if (hasEmailPw && !pwOld) { accsShowMsg('password', '❌ Masukkan password lama.', 'error'); return; }
   if (!pw1) { accsShowMsg('password', '❌ Password tidak boleh kosong.', 'error'); return; }
   if (pw1.length < 6) { accsShowMsg('password', '❌ Password minimal 6 karakter.', 'error'); return; }
   if (pw1 !== pw2) { accsShowMsg('password', '❌ Konfirmasi password tidak cocok.', 'error'); return; }
   const btn = document.getElementById('accs-btn-save-pw');
   btn.innerHTML = '<span class="accs-spinner"></span>Menyimpan...'; btn.disabled = true;
   try {
+    // Verifikasi password lama dulu (re-auth) sebelum mengganti — supaya orang
+    // lain yang kebetulan masih login di perangkat ini tidak bisa asal ganti password.
+    if (hasEmailPw && pwOld) {
+      const { error: reauthErr } = await DB.auth.signInWithPassword({ email: currentUser.email, password: pwOld });
+      if (reauthErr) {
+        accsShowMsg('password', '❌ Password lama salah.', 'error');
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Simpan Password'; btn.disabled = false;
+        return;
+      }
+    }
+
     const { error } = await DB.auth.updateUser({ password: pw1 });
     if (error) throw error;
 
@@ -527,16 +565,32 @@ async function accsUpdatePassword() {
     // tersimpan di localStorage perangkat ini.
     if (currentUser?.id) cachePasswordLocally(currentUser.id, pw1);
 
+    document.getElementById('accs-input-pw-old').value = '';
     document.getElementById('accs-input-pw1').value = '';
     document.getElementById('accs-input-pw2').value = '';
     accsShowMsg('password', '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Password berhasil diatur! Kamu sekarang bisa login dengan email + password juga.', 'success');
-    // Refresh session dan reload providers setelah 1.5 detik
+    // Refresh session, reload providers, dan tutup modal setelah 1.5 detik
     setTimeout(async () => {
       try { await DB.auth.refreshSession(); } catch(e3) {}
       accsLoadProviders();
+      closeModal('modal-ubah-password');
     }, 1500);
   } catch(e) { accsShowMsg('password', '❌ ' + e.message, 'error'); }
   finally { btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Simpan Password'; btn.disabled = false; }
+}
+
+// Link "Lupa password?" di dalam modal Ubah Password — kirim email reset ke
+// alamat akun yang sedang login (beda dari doModalForgotPassword yang dipakai
+// di modal login, yang mengambil email dari field input).
+async function accsForgotPassword() {
+  if (!currentUser?.email) return;
+  try {
+    const { error } = await DB.auth.resetPasswordForEmail(currentUser.email);
+    if (error) throw error;
+    accsShowMsg('password', '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Link reset password sudah dikirim ke ' + currentUser.email, 'success');
+  } catch(e) {
+    accsShowMsg('password', '❌ ' + e.message, 'error');
+  }
 }
 
 async function accsLogoutAll() {
