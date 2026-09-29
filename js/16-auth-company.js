@@ -1353,7 +1353,16 @@ async function loadDataFromSupabase() {
     .order('kode');
 
   if (akunData && akunData.length > 0) {
-    akuns = akunData.map(r => ({ kode: r.kode, nama: r.nama, tipe: r.tipe, normal: r.normal, _id: r.id }));
+    // `kat` (sub-kategori: Lancar/Tetap/Kontra/dst) dipakai laporan arus kas, neraca,
+    // dashboard & penyusutan. Kalau kolom di DB masih kosong (data lama), isi dari
+    // default berdasarkan kode akun supaya akun bawaan tetap punya kategori.
+    const _defKat = {};
+    getDefaultAkuns().forEach(d => { _defKat[d.kode] = d.kat; });
+    akuns = akunData.map(r => ({
+      kode: r.kode, nama: r.nama, tipe: r.tipe, normal: r.normal,
+      kat: r.kat || _defKat[r.kode] || '',
+      _id: r.id
+    }));
   } else {
     // Default chart of accounts jika belum ada
     akuns = getDefaultAkuns();
@@ -1436,7 +1445,7 @@ async function saveAkunsToSupabase() {
   const payload = akuns.map(a => ({
     company_id: currentCompany.id,
     kode: a.kode, nama: a.nama,
-    tipe: a.tipe, normal: a.normal
+    tipe: a.tipe, kat: a.kat || '', normal: a.normal
   }));
   await DB.table('akuns').upsert(payload, { onConflict: 'company_id,kode' });
 }
@@ -1740,6 +1749,7 @@ CREATE TABLE akuns (
   kode text NOT NULL,
   nama text,
   tipe text,
+  kat text,
   normal text,
   UNIQUE(company_id, kode)
 );
