@@ -1,7 +1,4 @@
-
-// ══════════════════════════════════════════════════════════════
 // JURNAL BERULANG
-// ══════════════════════════════════════════════════════════════
 function openModalJurnalBerulang(editId) {
   // Reset picker buttons
   ['jb-akun-debit','jb-akun-kredit'].forEach(id => {
@@ -195,9 +192,7 @@ function toggleAktifJB(id) {
   if(j) { j.aktif = !j.aktif; saveFiturBaru(); renderJurnalBerulang(); }
 }
 
-// ══════════════════════════════════════════════════════════════
 // INVOICE & PIUTANG
-// ══════════════════════════════════════════════════════════════
 let _invItems = [];
 
 function openModalInvoice(editId) {
@@ -439,9 +434,7 @@ function hitungKonversi() {
   const el2=document.getElementById('kurs-hasil-detail'); if(el2) el2.textContent=`${fmt(nominal,dari)} ${dari} = ${fmt(hasil,ke)} ${ke} · Kurs: 1 ${dari} = ${fmt(hasil/nominal,ke)} ${ke}`;
 }
 
-// ══════════════════════════════════════════════════════════════
 // NOTIFIKASI & ALERT
-// ══════════════════════════════════════════════════════════════
 function openModalAlertBaru() { renderAlertForm(); openModal('modal-alert-baru'); setTimeout(upgradeFormPickers, 80); }
 
 function renderAlertForm() {
@@ -556,9 +549,7 @@ function hapusAlert(id) {
   notifAlerts=notifAlerts.filter(x=>x.id!==id);saveFiturBaru();renderNotifikasiPage();showAlert('✓ Alert dihapus');
 }
 
-// ══════════════════════════════════════════════════════════════
 // ANGGARAN vs AKTUAL
-// ══════════════════════════════════════════════════════════════
 function openModalAnggaran(editId) {
   // Reset akun picker button
   const h=document.getElementById('ang-akun'); if(h) h.value='';
@@ -679,9 +670,7 @@ function hapusAnggaran(id) {
   anggaranList=anggaranList.filter(a=>a.id!==id);saveFiturBaru();renderAnggaranPage();showAlert('✓ Anggaran dihapus');
 }
 
-// ══════════════════════════════════════════════════════════════
 // PAJAK OTOMATIS
-// ══════════════════════════════════════════════════════════════
 function renderPajakOtomatis() {
   showOpSpinner('Menghitung Pajak...', 'Menganalisis transaksi kena pajak');
   setTimeout(()=>{
@@ -895,8 +884,26 @@ function parseFlexDate(str) {
 }
 
 function parseRp(str) {
+  if(typeof str === 'number') return isFinite(str) ? str : 0;
   if(!str || str==='-') return 0;
-  return parseFloat(String(str).replace(/[^\d,\.]/g,'').replace(',','.')) || 0;
+  const raw = String(str).trim();
+  const neg = /^\(.*\)$/.test(raw) || /^-/.test(raw);
+  let s = raw.replace(/[^\d,\.]/g,'');
+  const lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
+  if(lastDot > -1 && lastComma > -1){
+    // Dua pemisah: yang paling akhir = desimal, yang lain = ribuan
+    s = lastComma > lastDot ? s.replace(/\./g,'').replace(',','.') : s.replace(/,/g,'');
+  } else if(lastComma > -1){
+    const p = s.split(',');
+    // "1,000,000" atau "1,000" (3 digit di belakang) = ribuan; selain itu koma = desimal (format ID)
+    s = (p.length > 2 || p[1].length === 3) ? s.replace(/,/g,'') : s.replace(',','.');
+  } else if(lastDot > -1){
+    const p = s.split('.');
+    // "1.000.000" atau "1.000" = ribuan (format ID); "12.5" = desimal
+    if(p.length > 2 || p[1].length === 3) s = s.replace(/\./g,'');
+  }
+  const v = parseFloat(s) || 0;
+  return neg ? -v : v;
 }
 
 function processBankRows(rows, filename) {
