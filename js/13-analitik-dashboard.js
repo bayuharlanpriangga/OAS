@@ -1327,7 +1327,13 @@ function renderDashboard() {
   akuns.forEach(a => {
     const s = saldoMapAll[a.kode]||{debit:0,kredit:0};
     const b = a.normal==='D'?s.debit-s.kredit:s.kredit-s.debit;
-    if(a.tipe==='Aset' && a.kat!=='Tetap') tA += b;
+    if(a.tipe==='Aset' && a.kat!=='Tetap'){
+      if(a.kat==='Kontra'){
+        // Akum. penyusutan sudah tercermin di nilai buku asetTetapList (jangan dihitung 2x);
+        // kontra lain (CKPN piutang, amortisasi) MENGURANGI total aset.
+        if(!/penyusutan/i.test(a.nama)) tA -= b;
+      } else tA += b;
+    }
   });
   // Tambahkan nilai buku bersih aset tetap dari asetTetapList (selalu real-time, termasuk penyusutan)
   const atNilaiBuku = typeof asetTetapList !== 'undefined'

@@ -45,6 +45,8 @@ let akuns = [
   {kode:'1502',nama:'PPN Masukan (Pajak Dibayar Dimuka)',tipe:'Aset',kat:'Lancar',normal:'D'},
   {kode:'1503',nama:'PPh Dibayar Dimuka (Uang Muka Pajak)',tipe:'Aset',kat:'Lancar',normal:'D'},
   {kode:'1601',nama:'Biaya Dibayar Dimuka',tipe:'Aset',kat:'Lancar',normal:'D'},
+  {kode:'1602',nama:'Sewa Dibayar di Muka',tipe:'Aset',kat:'Lancar',normal:'D'},
+  {kode:'1603',nama:'Asuransi Dibayar di Muka',tipe:'Aset',kat:'Lancar',normal:'D'},
   // ═══════ ASET TETAP ═══════
   {kode:'1701',nama:'Tanah',tipe:'Aset',kat:'Tetap',normal:'D'},
   {kode:'1702',nama:'Bangunan',tipe:'Aset',kat:'Tetap',normal:'D'},
@@ -62,6 +64,8 @@ let akuns = [
   // ═══════ ASET LAIN-LAIN ═══════
   {kode:'1801',nama:'Aset Tidak Berwujud (Goodwill/Lisensi)',tipe:'Aset',kat:'Tidak Berwujud',normal:'D'},
   {kode:'1802',nama:'Amortisasi Aset Tidak Berwujud',tipe:'Aset',kat:'Kontra',normal:'K'},
+  {kode:'1803',nama:'Perangkat Lunak (Software)',tipe:'Aset',kat:'Tidak Berwujud',normal:'D'},
+  {kode:'1804',nama:'Aset Takberwujud dalam Pengembangan',tipe:'Aset',kat:'Tidak Berwujud',normal:'D'},
   {kode:'1901',nama:'Investasi Jangka Panjang',tipe:'Aset',kat:'Investasi',normal:'D'},
   // ═══════ LIABILITAS LANCAR ═══════
   {kode:'2101',nama:'Utang Usaha',tipe:'Liabilitas',kat:'Lancar',normal:'K'},
@@ -86,8 +90,11 @@ let akuns = [
   // ═══════ EKUITAS ═══════
   {kode:'3101',nama:'Modal Pemilik / Modal Disetor',tipe:'Ekuitas',kat:'Modal',normal:'K'},
   {kode:'3102',nama:'Prive / Pengambilan Pribadi',tipe:'Ekuitas',kat:'Modal',normal:'D'},
+  {kode:'3103',nama:'Tambahan Modal Disetor',tipe:'Ekuitas',kat:'Modal',normal:'K'},
+  {kode:'3104',nama:'Surplus Revaluasi',tipe:'Ekuitas',kat:'Modal',normal:'K'},
   {kode:'3201',nama:'Laba Ditahan',tipe:'Ekuitas',kat:'Laba',normal:'K'},
   {kode:'3202',nama:'Laba Tahun Berjalan',tipe:'Ekuitas',kat:'Laba',normal:'K'},
+  {kode:'3203',nama:'Dividen',tipe:'Ekuitas',kat:'Laba',normal:'D'},
   // ═══════ PENDAPATAN ═══════
   {kode:'4101',nama:'Penjualan Barang',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
   {kode:'4102',nama:'Penjualan Jasa',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
@@ -124,6 +131,7 @@ let akuns = [
   {kode:'6205',nama:'Beban Perlengkapan Kantor',tipe:'Beban',kat:'Operasional',normal:'D'},
   {kode:'6206',nama:'Beban Pemeliharaan & Perbaikan',tipe:'Beban',kat:'Operasional',normal:'D'},
   {kode:'6207',nama:'Beban Kebersihan & Keamanan',tipe:'Beban',kat:'Operasional',normal:'D'},
+  {kode:'6208',nama:'Beban Kerugian Penurunan Nilai Piutang',tipe:'Beban',kat:'Operasional',normal:'D'},
   {kode:'6301',nama:'Beban Penyusutan Bangunan',tipe:'Beban',kat:'Penyusutan',normal:'D'},
   {kode:'6302',nama:'Beban Penyusutan Kendaraan',tipe:'Beban',kat:'Penyusutan',normal:'D'},
   {kode:'6303',nama:'Beban Penyusutan Peralatan Kantor',tipe:'Beban',kat:'Penyusutan',normal:'D'},

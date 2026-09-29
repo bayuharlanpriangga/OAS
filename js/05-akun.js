@@ -360,7 +360,9 @@ function simpanAkun(){
   const kat=document.getElementById('new-akun-kat').value.trim();
   if(!kode||!nama){showAlert('Kode dan nama akun wajib diisi!');return;}
   if(akuns.find(a=>a.kode===kode)){showAlert('Kode akun sudah ada!');return;}
-  const normal=['Aset','Beban','HPP'].includes(tipe)?'D':'K';
+  let normal=['Aset','Beban','HPP'].includes(tipe)?'D':'K';
+  // Akun kontra (mis. Akumulasi Penyusutan, Retur Penjualan): saldo normal dibalik dari tipe induknya
+  if(/^kontra/i.test(kat)) normal = normal==='D'?'K':'D';
   akuns.push({kode,nama,tipe,kat,normal});
   akuns.sort((a,b)=>a.kode.localeCompare(b.kode));
   closeModal('modal-akun');
@@ -414,6 +416,8 @@ function getDefaultAkuns() {
     {kode:'1502',nama:'PPN Masukan (Pajak Dibayar Dimuka)',tipe:'Aset',kat:'Lancar',normal:'D'},
     {kode:'1503',nama:'PPh Dibayar Dimuka (Uang Muka Pajak)',tipe:'Aset',kat:'Lancar',normal:'D'},
     {kode:'1601',nama:'Biaya Dibayar Dimuka',tipe:'Aset',kat:'Lancar',normal:'D'},
+    {kode:'1602',nama:'Sewa Dibayar di Muka',tipe:'Aset',kat:'Lancar',normal:'D'},
+    {kode:'1603',nama:'Asuransi Dibayar di Muka',tipe:'Aset',kat:'Lancar',normal:'D'},
     {kode:'1701',nama:'Tanah',tipe:'Aset',kat:'Tetap',normal:'D'},
     {kode:'1702',nama:'Bangunan',tipe:'Aset',kat:'Tetap',normal:'D'},
     {kode:'1703',nama:'Akumulasi Penyusutan Bangunan',tipe:'Aset',kat:'Kontra',normal:'K'},
@@ -429,6 +433,8 @@ function getDefaultAkuns() {
     {kode:'1752',nama:'Akumulasi Penyusutan Komputer',tipe:'Aset',kat:'Kontra',normal:'K'},
     {kode:'1801',nama:'Aset Tidak Berwujud (Goodwill/Lisensi)',tipe:'Aset',kat:'Tidak Berwujud',normal:'D'},
     {kode:'1802',nama:'Amortisasi Aset Tidak Berwujud',tipe:'Aset',kat:'Kontra',normal:'K'},
+    {kode:'1803',nama:'Perangkat Lunak (Software)',tipe:'Aset',kat:'Tidak Berwujud',normal:'D'},
+    {kode:'1804',nama:'Aset Takberwujud dalam Pengembangan',tipe:'Aset',kat:'Tidak Berwujud',normal:'D'},
     {kode:'1901',nama:'Investasi Jangka Panjang',tipe:'Aset',kat:'Investasi',normal:'D'},
     {kode:'2101',nama:'Utang Usaha',tipe:'Liabilitas',kat:'Lancar',normal:'K'},
     {kode:'2102',nama:'Utang Lain-lain',tipe:'Liabilitas',kat:'Lancar',normal:'K'},
@@ -450,8 +456,11 @@ function getDefaultAkuns() {
     {kode:'2803',nama:'Utang Obligasi',tipe:'Liabilitas',kat:'Jk Panjang',normal:'K'},
     {kode:'3101',nama:'Modal Pemilik / Modal Disetor',tipe:'Ekuitas',kat:'Modal',normal:'K'},
     {kode:'3102',nama:'Prive / Pengambilan Pribadi',tipe:'Ekuitas',kat:'Modal',normal:'D'},
+    {kode:'3103',nama:'Tambahan Modal Disetor',tipe:'Ekuitas',kat:'Modal',normal:'K'},
+    {kode:'3104',nama:'Surplus Revaluasi',tipe:'Ekuitas',kat:'Modal',normal:'K'},
     {kode:'3201',nama:'Laba Ditahan',tipe:'Ekuitas',kat:'Laba',normal:'K'},
     {kode:'3202',nama:'Laba Tahun Berjalan',tipe:'Ekuitas',kat:'Laba',normal:'K'},
+    {kode:'3203',nama:'Dividen',tipe:'Ekuitas',kat:'Laba',normal:'D'},
     {kode:'4101',nama:'Penjualan Barang',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
     {kode:'4102',nama:'Penjualan Jasa',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
     {kode:'4105',nama:'Penjualan Produk Manufaktur',tipe:'Pendapatan',kat:'Operasional',normal:'K'},
@@ -485,6 +494,7 @@ function getDefaultAkuns() {
     {kode:'6205',nama:'Beban Perlengkapan Kantor',tipe:'Beban',kat:'Operasional',normal:'D'},
     {kode:'6206',nama:'Beban Pemeliharaan & Perbaikan',tipe:'Beban',kat:'Operasional',normal:'D'},
     {kode:'6207',nama:'Beban Kebersihan & Keamanan',tipe:'Beban',kat:'Operasional',normal:'D'},
+    {kode:'6208',nama:'Beban Kerugian Penurunan Nilai Piutang',tipe:'Beban',kat:'Operasional',normal:'D'},
     {kode:'6301',nama:'Beban Penyusutan Bangunan',tipe:'Beban',kat:'Penyusutan',normal:'D'},
     {kode:'6302',nama:'Beban Penyusutan Kendaraan',tipe:'Beban',kat:'Penyusutan',normal:'D'},
     {kode:'6303',nama:'Beban Penyusutan Peralatan Kantor',tipe:'Beban',kat:'Penyusutan',normal:'D'},
