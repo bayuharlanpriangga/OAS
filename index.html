@@ -836,6 +836,7 @@
       <option value="Penjualan">Penjualan</option>
       <option value="Pembelian">Pembelian</option>
       <option value="Manual">Manual</option>
+      <option value="Penutup">Penutup</option>
     </select>
   </div>
   <div class="table-card">
@@ -1766,7 +1767,7 @@
 <div class="page" id="page-kalk-ppn">
   <div class="section-header">
     <div><div class="section-title">Kalkulator PPN & PPh</div>
-    <div class="section-sub">PPN 12% · PPh 21 · PPh 23 · PPh Badan · Tarif Progresif</div></div>
+    <div class="section-sub">PPN 11%/12% · PPh 21 · PPh 23 · PPh Badan · Tarif Progresif</div></div>
   </div>
   <div class="tabs" id="pajak-tabs">
     <div class="tab active" onclick="switchPajakTab('ppn',this)">PPN</div>
@@ -1788,7 +1789,7 @@
           <div class="form-row"><div class="form-group"><label>Nilai (Rp)</label><input type="number" id="ppn-nilai" placeholder="10000000" oninput="hitungPPN()"></div>
           <div class="form-group"><label>Tarif PPN (%)</label>
             <select id="ppn-tarif" onchange="hitungPPN()">
-              <option value="12">12% (2025)</option><option value="11">11%</option><option value="0">0% (ekspor/fasilitas)</option><option value="custom">Custom</option>
+              <option value="11">11% (barang/jasa non-mewah, PMK 131/2024)</option><option value="12">12% (barang mewah / PPnBM)</option><option value="0">0% (ekspor/fasilitas)</option><option value="custom">Custom</option>
             </select></div></div>
           <div class="form-row" id="ppn-custom-row" style="display:none"><div class="form-group"><label>Tarif Custom (%)</label><input type="number" id="ppn-custom" placeholder="12" oninput="hitungPPN()"></div></div>
           <div class="form-row full"><div class="form-group"><label>Keterangan Transaksi</label><input type="text" id="ppn-ket" placeholder="Penjualan barang kena pajak"></div></div>
@@ -2388,7 +2389,7 @@
 <div class="page" id="page-pajak">
   <div class="section-header">
     <div><div class="section-title"><i class="ti ti-receipt-tax" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Pajak Otomatis</div>
-    <div class="section-sub">PPN 12% · PPh 21 · PPh 23 · Laporan SPT</div></div>
+    <div class="section-sub">PPN 11%/12% · PPh 21 · PPh 23 · Laporan SPT</div></div>
     <button class="btn btn-primary" onclick="renderPajakOtomatis()"><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Hitung Ulang</button>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;" id="pajak-kpi"></div>
@@ -2587,7 +2588,7 @@
     </div>
     <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-pajak')">
       <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V3l2 2 2-2 2 2 2-2 2 2 2-2v18l-2-2-2 2-2-2-2 2-2-2-2 2zm4-11h6m-6 4h6"/></svg></div><div class="tut-card-title">Pajak Otomatis</div>
-      <div class="tut-card-desc">Kalkulasi PPN 12%, PPh 21 karyawan, PPh 23. Jurnal pajak otomatis dan ringkasan SPT tahunan.</div>
+      <div class="tut-card-desc">Kalkulasi PPN 11%/12%, PPh 21 karyawan, PPh 23. Jurnal pajak otomatis dan ringkasan SPT tahunan.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~5 menit</span></div>
     </div>
   </div>
@@ -2622,7 +2623,7 @@
     </div>
     <div class="tut-card" onclick="startTutorialById('kalk-pajak')">
       <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V3l2 2 2-2 2 2 2-2 2 2 2-2v18l-2-2-2 2-2-2-2 2-2-2-2 2zm4-11h6m-6 4h6"/></svg></div><div class="tut-card-title">Kalkulator PPN & PPh</div>
-      <div class="tut-card-desc">Hitung PPN 12%, PPh 21 karyawan, PPh 23, dan PPh Badan. Otomatis dengan tarif terbaru.</div>
+      <div class="tut-card-desc">Hitung PPN 11%/12%, PPh 21 karyawan, PPh 23, dan PPh Badan. Otomatis dengan tarif terbaru.</div>
       <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~5 menit</span></div>
     </div>
     <div class="tut-card" onclick="startTutorialById('kalk-bep')">
@@ -2986,20 +2987,27 @@
 <div class="modal-backdrop" id="modal-hapus-jurnal">
   <div class="modal" style="max-width:400px;">
     <div class="modal-head">
-      <div class="modal-title"><i class="ti ti-trash" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Hapus Jurnal</div>
+      <div class="modal-title"><i class="ti ti-arrow-back-up" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Balik Jurnal</div>
       <button class="modal-close" onclick="closeModal('modal-hapus-jurnal')">✕</button>
     </div>
     <div class="modal-body">
       <div style="text-align:center;padding:8px 0 16px;">
         <div style="font-size:36px;margin-bottom:12px;"><i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i></div>
-        <div style="font-weight:600;font-size:15px;margin-bottom:8px;">Hapus jurnal ini?</div>
+        <div style="font-weight:600;font-size:15px;margin-bottom:8px;">Buat jurnal pembalik untuk jurnal ini?</div>
         <div id="hapus-jurnal-info" style="font-size:13px;color:var(--muted);background:var(--surface2);border-radius:8px;padding:12px;text-align:left;line-height:1.7;"></div>
-        <div style="font-size:12px;color:var(--red);margin-top:12px;">Tindakan ini tidak bisa dibatalkan. Semua baris debit/kredit jurnal ini akan dihapus.</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:12px;text-align:left;line-height:1.6;">Jurnal yang sudah diposting tidak dihapus. Sistem membuat jurnal baru dengan debit dan kredit ditukar, sehingga saldo kembali netral dan jurnal asli tetap tercatat untuk audit.</div>
+        <div id="balik-jurnal-kunci-info" style="display:none;font-size:12px;color:var(--accent3);margin-top:10px;text-align:left;line-height:1.6;"></div>
+        <div style="text-align:left;margin-top:14px;">
+          <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Tanggal jurnal pembalik</label>
+          <input type="date" id="balik-jurnal-tgl" style="width:100%;">
+          <label style="font-size:12px;color:var(--muted);display:block;margin:10px 0 4px;">Alasan pembalikan</label>
+          <input type="text" id="balik-jurnal-alasan" placeholder="cth: salah akun, transaksi dibatalkan" style="width:100%;">
+        </div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-hapus-jurnal')">Batal</button>
-      <button class="btn btn-danger" id="hapus-jurnal-confirm-btn"><i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Ya, Hapus</button>
+      <button class="btn btn-danger" id="hapus-jurnal-confirm-btn"><i class="ti ti-arrow-back-up" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Buat Jurnal Pembalik</button>
     </div>
   </div>
 </div>
@@ -4374,6 +4382,16 @@
           <div class="sli-body"><div class="sli-label">Pembelian</div></div>
           <span class="sli-chevron"><i class="ti ti-chevron-right"></i></span>
         </div>
+        <div class="settings-list-item" onclick="settingsNavigate('transaksi-pajak')">
+          <span class="sli-icon"><i class="ti ti-receipt-tax" style="font-size:18px;"></i></span>
+          <div class="sli-body"><div class="sli-label">Pajak (PPN)</div></div>
+          <span class="sli-chevron"><i class="ti ti-chevron-right"></i></span>
+        </div>
+        <div class="settings-list-item" onclick="settingsNavigate('transaksi-kunci')">
+          <span class="sli-icon"><i class="ti ti-lock" style="font-size:18px;"></i></span>
+          <div class="sli-body"><div class="sli-label">Kunci Periode</div></div>
+          <span class="sli-chevron"><i class="ti ti-chevron-right"></i></span>
+        </div>
       </div>
     </div>
 
@@ -4392,6 +4410,19 @@
         Atur akun mana yang dipakai untuk tiap jenis pembelian.
       </div>
       <div id="settings-beli-list"></div>
+    </div>
+
+    <!-- LEVEL 2: TRANSAKSI > PAJAK -->
+    <div class="settings-view" id="settings-view-transaksi-pajak">
+      <div class="accs-info-box">
+        Tarif PPN default untuk invoice dan rekap pajak. Sejak 2025 barang/jasa non-mewah dihitung 12% × DPP nilai lain 11/12 (efektif 11%, PMK 131/2024); barang mewah kena PPnBM 12% dari harga jual penuh. Konfirmasi ke konsultan pajak untuk kasus khusus (mis. PPN besaran tertentu).
+      </div>
+      <div class="settings-list" id="settings-pajak-list"></div>
+    </div>
+
+    <!-- LEVEL 2: TRANSAKSI > KUNCI PERIODE -->
+    <div class="settings-view" id="settings-view-transaksi-kunci">
+      <div id="settings-kunci-body" style="padding:4px 2px;"></div>
     </div>
 
   </div>
@@ -4628,7 +4659,10 @@
       <div style="background:var(--surface2);border-radius:10px;padding:14px;margin-top:14px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="color:var(--muted);font-size:13px;">Subtotal</span><span id="inv-subtotal" style="font-family:var(--mono);font-size:13px;">Rp 0</span></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <label style="color:var(--muted);font-size:13px;">PPN <input type="checkbox" id="inv-ppn-check" onchange="hitungTotalInvoice()" style="accent-color:var(--accent);cursor:pointer;"> 12%</label>
+          <label style="color:var(--muted);font-size:13px;">PPN <input type="checkbox" id="inv-ppn-check" onchange="hitungTotalInvoice()" style="accent-color:var(--accent);cursor:pointer;">
+            <select id="inv-ppn-tarif" onchange="hitungTotalInvoice()" style="background:var(--surface);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;padding:2px 4px;">
+              <option value="11">11% (non-mewah)</option><option value="12">12% (mewah)</option>
+            </select></label>
           <span id="inv-ppn-val" style="font-family:var(--mono);font-size:13px;">Rp 0</span>
         </div>
         <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px;"><span style="font-weight:700;">Total</span><span id="inv-total" style="font-family:var(--mono);font-weight:700;color:var(--accent);font-size:16px;">Rp 0</span></div>
@@ -4757,7 +4791,6 @@
           <label>Ke Metode (Tujuan)</label>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;" id="ks-ke-opts">
             <button class="ks-conv-btn ks-conv-ke" data-val="fifo" onclick="selectKsConvKe('fifo',this)"><i class="ti ti-clipboard-list ti-inline"></i> FIFO</button>
-            <button class="ks-conv-btn ks-conv-ke" data-val="lifo" onclick="selectKsConvKe('lifo',this)"><i class="ti ti-clipboard-list ti-inline"></i> LIFO</button>
             <button class="ks-conv-btn ks-conv-ke active" data-val="wa" onclick="selectKsConvKe('wa',this)"><i class="ti ti-clipboard-list ti-inline"></i> Weighted Avg</button>
             <button class="ks-conv-btn ks-conv-ke" data-val="mwa" onclick="selectKsConvKe('mwa',this)"><i class="ti ti-clipboard-list ti-inline"></i> Moving WA</button>
           </div>

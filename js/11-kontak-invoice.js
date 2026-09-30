@@ -176,9 +176,15 @@ function renderInvoiceItems() {
 
 function tambahItemInvoice() { _invItems.push({nama:'',qty:1,harga:0}); renderInvoiceItems(); }
 
+// Tarif PPN yang dipilih di form invoice (persen). Default dari Settings > Transaksi > Pajak.
+function _invPpnTarif() {
+  const v = parseFloat(document.getElementById('inv-ppn-tarif')?.value);
+  return isNaN(v) ? ppnTarifDefault() : v;
+}
+
 function hitungTotalInvoice() {
   const subtotal = _invItems.reduce((s,it)=>s+it.qty*it.harga,0);
-  const ppn = document.getElementById('inv-ppn-check')?.checked ? subtotal*0.12 : 0;
+  const ppn = document.getElementById('inv-ppn-check')?.checked ? hitungPpn(subtotal, _invPpnTarif()) : 0;
   const total = subtotal + ppn;
   const fmt = v=>v.toLocaleString('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0});
   const sub=document.getElementById('inv-subtotal'); if(sub) sub.textContent=fmt(subtotal);
@@ -190,9 +196,11 @@ function simpanInvoice(status) {
   const pelanggan = document.getElementById('inv-pelanggan').value.trim();
   const nominal = _invItems.reduce((s,it)=>s+it.qty*it.harga,0);
   const ppnCheck = document.getElementById('inv-ppn-check')?.checked;
-  const ppn = ppnCheck ? nominal*0.12 : 0;
+  const ppnTarif = _invPpnTarif();
+  const ppn = ppnCheck ? hitungPpn(nominal, ppnTarif) : 0;
   const total = nominal + ppn;
   if(!pelanggan || !nominal) { showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Lengkapi pelanggan dan minimal 1 item'); return; }
+  if(status === 'terkirim' && !guardPeriode(document.getElementById('inv-tgl').value, 'diposting')) return;
   showOpSpinner('Menyimpan Invoice...', 'Membuat jurnal piutang');
   setTimeout(()=>{
     const inv = {
@@ -201,7 +209,7 @@ function simpanInvoice(status) {
       pelanggan, tanggal: document.getElementById('inv-tgl').value,
       jatuhTempo: document.getElementById('inv-jatuh-tempo').value,
       deskripsi: document.getElementById('inv-deskripsi').value,
-      items: [..._invItems], subtotal: nominal, ppn, total,
+      items: [..._invItems], subtotal: nominal, ppn, ppnTarif: ppnCheck ? ppnTarif : 0, total,
       sisaTagihan: total, status,
       akunPiutang: document.getElementById('inv-akun-piutang').value,
       akunPend: document.getElementById('inv-akun-pend').value,
@@ -218,7 +226,7 @@ function simpanInvoice(status) {
           ...(ppn>0?[{akun:akuns.find(a=>a.nama.toLowerCase().includes('ppn')&&a.tipe==='Liabilitas')?.kode||inv.akunPend, debit:0, kredit:ppn}]:[])
         ].filter(l=>l.akun)
       };
-      jurnalEntries.push(entry);
+      if(!postJurnalLegacy(entry)) { hideOpSpinner(); return; }
       saveToStorage(false);
     }
     invoiceList.unshift(inv);
@@ -303,6 +311,7 @@ function konfirmasiLunasInvoice() {
   const tgl = document.getElementById('inv-lunas-tgl').value;
   const nominal = parseFloat(document.getElementById('inv-lunas-nominal').value)||0;
   const akunKas = document.getElementById('inv-lunas-akun').value;
+  if(!guardPeriode(tgl, 'diposting')) return;
   showOpSpinner('Memproses Pembayaran...', 'Membuat jurnal penerimaan kas');
   setTimeout(()=>{
     const entry = {
@@ -310,7 +319,7 @@ function konfirmasiLunasInvoice() {
       keterangan:`Pelunasan ${inv.noInvoice} — ${inv.pelanggan}`,
       lines:[{akun:akunKas,debit:nominal,kredit:0},{akun:inv.akunPiutang,debit:0,kredit:nominal}]
     };
-    jurnalEntries.push(entry);
+    if(!postJurnalLegacy(entry)) { hideOpSpinner(); return; }
     inv.sisaTagihan = Math.max(0, inv.sisaTagihan - nominal);
     if(inv.sisaTagihan <= 0) inv.status = 'lunas';
     saveFiturBaru(); saveToStorage(false);

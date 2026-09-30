@@ -19,6 +19,8 @@ const SETTINGS_TITLES = {
   'transaksi':       ['Transaksi', 'Pengaturan akun default per jenis transaksi'],
   'transaksi-jual':  ['Penjualan', 'Akun default untuk tiap jenis penjualan'],
   'transaksi-beli':  ['Pembelian', 'Akun default untuk tiap jenis pembelian'],
+  'transaksi-pajak': ['Pajak', 'Tarif PPN default untuk invoice & rekap pajak'],
+  'transaksi-kunci': ['Kunci Periode', 'Cegah perubahan jurnal pada periode yang sudah ditutup'],
 };
 
 let settingsStack = ['root'];
@@ -66,6 +68,8 @@ function renderSettingsView() {
   if (current === 'transaksi' || current === 'transaksi-jual' || current === 'transaksi-beli') {
     renderSettingsTransaksi();
   }
+  if (current === 'transaksi-pajak') renderSettingsPajak();
+  if (current === 'transaksi-kunci') renderSettingsKunci();
 }
 
 // ── Wrapper kompatibilitas (dipanggil dari tempat lama: tombol dashboard,
@@ -139,6 +143,67 @@ function _resetSettingsAkun(kategori, jenis) {
 }
 
 // Dulu diset per-produk di Master Produk (akunHpp/akunPers) — sekarang default global di sini.
+// PAJAK — tarif PPN default
+function renderSettingsPajak() {
+  const box = document.getElementById('settings-pajak-list');
+  if (!box) return;
+  const aktif = ppnTarifDefault();
+  box.innerHTML = PPN_TARIF_OPSI.map(o => `
+    <div class="settings-list-item" onclick="setPpnTarifDefault(${o.value})" style="cursor:pointer;${o.value === aktif ? 'border-color:var(--accent);' : ''}">
+      <div class="sli-body">
+        <div class="sli-label">${escapeHtml(o.label)}${o.value === aktif ? ' <span style="font-size:10px;color:var(--accent);">● dipakai</span>' : ''}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${escapeHtml(o.sub)}</div>
+      </div>
+    </div>`).join('');
+}
+async function setPpnTarifDefault(v) {
+  transaksiAkunSettings.ppnTarif = Number(v);
+  renderSettingsPajak();
+  const ok = await savePeriodeKunciToCloud(); // menyimpan kunci periode + tarif PPN sekaligus
+  showAlert(ok === false ? 'Tarif PPN tersimpan di perangkat ini, tapi gagal sinkron ke cloud.' : 'Tarif PPN default diubah ke ' + labelTarifPpn() + '.');
+}
+
+// KUNCI PERIODE
+function renderSettingsKunci() {
+  const box = document.getElementById('settings-kunci-body');
+  if (!box) return;
+  const admin = typeof isAdmin === 'function' ? isAdmin() : true;
+  const status = periodeKunciSampai
+    ? `Periode sampai <b>${fmtDate(periodeKunciSampai)}</b> dikunci.`
+    : 'Belum ada periode yang dikunci.';
+  box.innerHTML = `
+    <div style="font-size:13px;margin-bottom:12px;">${status}</div>
+    ${admin ? `
+    <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Kunci semua jurnal sampai tanggal</label>
+    <input type="date" id="kunci-periode-tgl" value="${escapeHtml(periodeKunciSampai || '')}" style="width:100%;margin-bottom:10px;">
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" onclick="simpanKunciPeriode()"><i class="ti ti-lock" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Simpan Kunci</button>
+      ${periodeKunciSampai ? `<button class="btn btn-ghost" onclick="bukaKunciPeriode()">Buka Kunci</button>` : ''}
+    </div>` : `<div style="font-size:12px;color:var(--muted);">Hanya admin yang bisa mengubah kunci periode.</div>`}
+    <div style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6;">
+      Jurnal bertanggal pada atau sebelum tanggal kunci tidak bisa ditambah. Untuk mengoreksi jurnal di periode terkunci, buat jurnal pembalik bertanggal setelah tanggal kunci.
+      Tutup Buku (Jurnal Penutup) otomatis mengunci sampai akhir tahun bukunya. Kunci ini ditegakkan oleh aplikasi; untuk perlindungan penuh terhadap akses langsung ke database, perlu aturan tambahan di Supabase.
+    </div>`;
+}
+async function simpanKunciPeriode() {
+  if (typeof isAdmin === 'function' && !isAdmin()) { showAlert('Hanya admin yang bisa mengubah kunci periode.'); return; }
+  const v = (document.getElementById('kunci-periode-tgl')?.value || '').trim();
+  if (!v) { showAlert('Pilih tanggalnya dulu, atau pakai Buka Kunci.'); return; }
+  if (periodeKunciSampai && v < periodeKunciSampai && !confirm('Tanggal kunci dimundurkan dari ' + fmtDate(periodeKunciSampai) + ' ke ' + fmtDate(v) + '. Periode di antaranya jadi bisa diubah lagi. Lanjutkan?')) return;
+  periodeKunciSampai = v;
+  const ok = await savePeriodeKunciToCloud();
+  renderSettingsKunci();
+  showAlert(ok === false ? 'Kunci tersimpan di perangkat ini, tapi gagal sinkron ke cloud.' : 'Periode sampai ' + fmtDate(v) + ' dikunci.');
+}
+async function bukaKunciPeriode() {
+  if (typeof isAdmin === 'function' && !isAdmin()) { showAlert('Hanya admin yang bisa mengubah kunci periode.'); return; }
+  if (!confirm('Buka semua kunci periode? Jurnal di periode lama bisa ditambah lagi.')) return;
+  periodeKunciSampai = '';
+  const ok = await savePeriodeKunciToCloud();
+  renderSettingsKunci();
+  showAlert(ok === false ? 'Kunci dibuka di perangkat ini, tapi gagal sinkron ke cloud.' : 'Kunci periode dibuka.');
+}
+
 function _renderSettingsHppPersediaan() {
   const box = document.getElementById('settings-jual-list');
   if (!box) return;

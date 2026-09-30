@@ -139,7 +139,7 @@ function jalankanJurnalBerulang(id) {
       keterangan:`[Auto] ${j.nama}`,
       lines:[{akun:j.akunDebit,debit:j.nominal,kredit:0},{akun:j.akunKredit,debit:0,kredit:j.nominal}]
     };
-    jurnalEntries.push(entry);
+    if(!postJurnalLegacy(entry)) { hideOpSpinner(); return; }
     jurnalBerulangHistory.unshift({tgl, nama:j.nama, nominal:j.nominal, jurnalId:entry.id});
     j.berikutnya = hitungTanggalBerikutnya(j.berikutnya, j.frekuensi);
     saveFiturBaru(); saveToStorage(false);
@@ -169,7 +169,7 @@ function jalankanSemuaJurnalBerulang() {
       keterangan:`[Auto] ${j.nama}`,
       lines:[{akun:j.akunDebit,debit:j.nominal,kredit:0},{akun:j.akunKredit,debit:0,kredit:j.nominal}]
     };
-    jurnalEntries.push(entry);
+    if(!postJurnalLegacy(entry)) { setTimeout(next, 150); return; }
     jurnalBerulangHistory.unshift({tgl, nama:j.nama, nominal:j.nominal, jurnalId:entry.id});
     j.berikutnya = hitungTanggalBerikutnya(j.berikutnya, j.frekuensi);
     setTimeout(next, 150);
@@ -217,6 +217,8 @@ function openModalInvoice(editId) {
   if(piutangDefault) setPickerDefault('inv-akun-piutang','inv-akun-piutang-btn',piutangDefault.kode);
   if(pendDefault) setPickerDefault('inv-akun-pend','inv-akun-pend-btn',pendDefault.kode);
 
+  const _sel = document.getElementById('inv-ppn-tarif');
+  if(_sel) _sel.value = String(ppnTarifDefault() === 12 ? 12 : 11);
   renderInvoiceItems();
   openModal('modal-invoice');
   setTimeout(upgradeFormPickers, 80);
@@ -317,7 +319,7 @@ function importSatuRekon(idx) {
         ? [{akun:kas.kode,debit:Math.abs(b.nominal),kredit:0},{akun:oth.kode,debit:0,kredit:Math.abs(b.nominal)}]
         : [{akun:oth.kode,debit:Math.abs(b.nominal),kredit:0},{akun:kas.kode,debit:0,kredit:Math.abs(b.nominal)}]
     };
-    jurnalEntries.push(entry);
+    if(!postJurnalLegacy(entry)) { hideOpSpinner(); return; }
     b.status='cocok'; b.jurnalId=entry.id; b.nominalJurnal=Math.abs(b.nominal);
     saveToStorage(false); renderRekonTable(_rekonFilter);
     showAlert('✓ Jurnal berhasil dibuat dari mutasi bank');
@@ -345,7 +347,8 @@ function importRekonSebagaiJurnal() {
     const entry={id:'JRN_REKON_'+Date.now()+'_'+i,tanggal:b.tgl,jenis:'Manual',keterangan:`[Rekon] ${b.ket}`,
       lines:b.nominal>0?[{akun:kas.kode,debit:Math.abs(b.nominal),kredit:0},{akun:oth.kode,debit:0,kredit:Math.abs(b.nominal)}]
         :[{akun:oth.kode,debit:Math.abs(b.nominal),kredit:0},{akun:kas.kode,debit:0,kredit:Math.abs(b.nominal)}]};
-    jurnalEntries.push(entry); b.status='cocok'; b.jurnalId=entry.id; b.nominalJurnal=Math.abs(b.nominal);
+    if(!postJurnalLegacy(entry)) return;
+    b.status='cocok'; b.jurnalId=entry.id; b.nominalJurnal=Math.abs(b.nominal);
   }
   next();
 }
@@ -482,8 +485,8 @@ function cekNotifikasi() {
       });
     }
     if(a.tipe==='laba-negatif') {
-      const pend=jurnalEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&ac.tipe==='Pendapatan'?l.kredit:0)},0),0);
-      const beban=jurnalEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&ac.tipe==='Beban'?l.debit:0)},0),0);
+      const pend=getJurnalTanpaPenutup().reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&ac.tipe==='Pendapatan'?(l.kredit||0)-(l.debit||0):0)},0),0);
+      const beban=getJurnalTanpaPenutup().reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&['Beban','HPP'].includes(ac.tipe)?(l.debit||0)-(l.kredit||0):0)},0),0);
       if(pend-beban<0) notifs.push({tipe:'danger',msg:`📉 ${a.nama}: Laba bersih negatif (${rp(pend-beban)})`, alertId:a.id});
     }
   });
@@ -1253,38 +1256,121 @@ function renderPajakPanel() {
       </div>`).join('')}`;
 }
 
-// HAPUS & RESET
-function konfirmasiHapusJurnal(idx) {
+// JURNAL PEMBALIK (pengganti hapus jurnal)
+// Jurnal yang sudah diposting tidak dihapus dan tidak di-splice dari jurnalEntries maupun
+// dari cloud. Koreksinya berupa jurnal baru dengan debit/kredit ditukar, sehingga saldo
+// kembali netral tetapi jejak audit (jurnal asal + pembaliknya) tetap ada.
+// Batasan: pembalikan hanya memengaruhi buku besar. Stok di kartu stock dan status invoice
+// TIDAK ikut dikembalikan otomatis — koreksi stok/invoice dilakukan di modulnya masing-masing.
+function buatJurnalPembalik(asal, opsi) {
+  opsi = opsi || {};
+  if (!asal) return null;
+  const today = new Date().toISOString().split('T')[0];
+  const tgl = opsi.tanggal || today;
+
+  if (isJurnalPembalik(asal)) {
+    showAlert('Jurnal ini sendiri adalah jurnal pembalik dan tidak bisa dibalik lagi. Kalau transaksinya ingin dicatat ulang, buat jurnal baru.');
+    return null;
+  }
+  const sudah = getReversedMap().get(asal.no);
+  if (sudah) {
+    showAlert('Jurnal ' + escapeHtml(asal.no) + ' sudah dibalik oleh ' + escapeHtml(sudah) + '.');
+    return null;
+  }
+  if (asal.tanggal && tgl < asal.tanggal) {
+    showAlert('Tanggal jurnal pembalik tidak boleh lebih awal dari tanggal jurnal asal (' + fmtDate(asal.tanggal) + ').');
+    return null;
+  }
+  // Yang dicek adalah tanggal pembaliknya, bukan tanggal jurnal asal: justru karena periode asal
+  // sudah dikunci, koreksinya dicatat di periode yang masih terbuka.
+  if (!guardPeriode(tgl, 'dibuatkan jurnal pembalik')) return null;
+
+  // Entri lama hasil input kalkulator/invoice kadang belum punya nomor — beri nomor dulu
+  // supaya relasi asal <-> pembalik bisa dilacak.
+  if (!asal.no) {
+    asal.no = 'JRN-' + String(jurnalCounter++).padStart(3,'0');
+    if (typeof markDirty === 'function') markDirty();
+  }
+
+  const ketAsli = ketTanpaPrefixPembalik(asal.ket || asal.keterangan || '');
+  const alasan = String(opsi.alasan || '').trim();
+  const entry = {
+    tanggal: tgl,
+    ket: '[Pembalik ' + asal.no + '] ' + ketAsli + (alasan ? ' — ' + alasan : ''),
+    // jenis diwarisi supaya jurnal pembalik ikut terhitung di laporan/rekap sejenis (Penjualan,
+    // Pembelian, Kas, Penutup, ...) dan nilainya saling meniadakan dengan jurnal asal.
+    jenis: asal.jenis || 'Manual',
+    reversalOf: asal.no,
+    lines: (asal.lines || []).map(l => ({
+      akun: l.akun,
+      ket: 'Pembalik: ' + (l.ket || ''),
+      debit: l.kredit || 0,
+      kredit: l.debit || 0
+    }))
+  };
+  if (asal.ref) entry.ref = asal.ref;
+  if (asal.kontakId) entry.kontakId = asal.kontakId;
+
+  // Jurnal penutup dibalik hanya lewat jalur ini setelah user membuka kunci periodenya sendiri,
+  // jadi tanggal pembaliknya tetap wajib lolos guardPeriode di atas.
+  addJurnal(entry);
+  return entry;
+}
+
+function konfirmasiBalikJurnal(idx) {
   const j = jurnalEntries[idx];
-  if(!j) return;
+  if (!j) return;
+  if (isJurnalPembalik(j)) {
+    showAlert('Jurnal ini adalah jurnal pembalik dari ' + escapeHtml(getReversalOf(j)) + ' dan tidak bisa dibalik lagi.');
+    return;
+  }
+  const sudah = getReversedMap().get(j.no);
+  if (sudah) { showAlert('Jurnal ' + escapeHtml(j.no) + ' sudah dibalik oleh ' + escapeHtml(sudah) + '.'); return; }
+
   const totalDebit = j.lines.reduce((s,l)=>s+(l.debit||0),0);
   document.getElementById('hapus-jurnal-info').innerHTML =
-    `<b>No:</b> ${j.no}<br>
+    `<b>No:</b> ${escapeHtml(j.no)}<br>
      <b>Tanggal:</b> ${fmtDate(j.tanggal)}<br>
-     <b>Keterangan:</b> ${escapeHtml(j.ket)}<br>
-     <b>Jenis:</b> ${j.jenis}<br>
+     <b>Keterangan:</b> ${escapeHtml(ketTanpaPrefixPembalik(j.ket))}<br>
+     <b>Jenis:</b> ${escapeHtml(j.jenis)}<br>
      <b>Jumlah Baris:</b> ${j.lines.length} baris<br>
      <b>Total:</b> ${fmtRp(totalDebit)}`;
+
+  const today = new Date().toISOString().split('T')[0];
+  const tglInput = document.getElementById('balik-jurnal-tgl');
+  if (tglInput) { if (tglInput._oasSetDate) tglInput._oasSetDate(today); else tglInput.value = today; }
+  const alasanInput = document.getElementById('balik-jurnal-alasan');
+  if (alasanInput) alasanInput.value = '';
+  const warnEl = document.getElementById('balik-jurnal-kunci-info');
+  if (warnEl) {
+    warnEl.style.display = isPeriodeTerkunci(j.tanggal) ? 'block' : 'none';
+    warnEl.textContent = isPeriodeTerkunci(j.tanggal)
+      ? 'Periode jurnal ini sudah dikunci (sampai ' + fmtDate(periodeKunciSampai) + '). Jurnal pembalik harus bertanggal setelah tanggal kunci.'
+      : '';
+  }
+
   document.getElementById('hapus-jurnal-confirm-btn').onclick = async () => {
-    const entry = jurnalEntries[idx];
-    jurnalEntries.splice(idx, 1);
+    const tgl = (document.getElementById('balik-jurnal-tgl')?.value || '').trim();
+    const alasan = (document.getElementById('balik-jurnal-alasan')?.value || '').trim();
+    if (!tgl) { showAlert('Pilih tanggal jurnal pembalik.'); return; }
+    if (alasan.length < 3) { showAlert('Isi alasan pembalikan (minimal 3 karakter) untuk jejak audit.'); return; }
+    // Ambil ulang objeknya lewat nomor jurnal — indeks bisa bergeser kalau ada jurnal masuk dari cloud.
+    const asal = jurnalEntries.find(x => x === j) || jurnalEntries[idx];
+    let hasil = null;
+    try { hasil = buatJurnalPembalik(asal, { tanggal: tgl, alasan }); }
+    catch (e) { if (!(e instanceof PeriodeTerkunciError)) throw e; return; }
+    if (!hasil) return;
     closeModal('modal-hapus-jurnal');
     renderJurnalUmum();
     renderDashboard();
-    // Hapus dari Supabase/cloud jika sudah tersimpan
-    if (entry && entry._id && typeof deleteJurnalFromSupabase === 'function') {
-      try {
-        await deleteJurnalFromSupabase(entry);
-        showAlert('<i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Jurnal berhasil dihapus & tersinkron ke cloud');
-      } catch(e) {
-        showAlert('<i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Jurnal dihapus (lokal), tapi gagal sinkron cloud — coba simpan ulang');
-      }
-    } else {
-      showAlert('<i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Jurnal berhasil dihapus');
-    }
+    showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Jurnal pembalik ' + escapeHtml(hasil.no) + ' dibuat untuk ' + escapeHtml(asal.no) + '. Jurnal asli tetap tercatat.');
   };
   document.getElementById('modal-hapus-jurnal').classList.add('open');
 }
+
+// Nama lama dipertahankan agar pemanggil lama (dan wrapper audit di 08/14) tidak error.
+// Fungsinya sekarang membuat jurnal pembalik, bukan menghapus.
+function konfirmasiHapusJurnal(idx) { return konfirmasiBalikJurnal(idx); }
 
 function confirmResetAll() {
   document.getElementById('reset-confirm-input').value = '';
@@ -1375,6 +1461,7 @@ function simpanSaldoAwal() {
     return;
   }
 
+  if(!guardPeriode(tgl, 'diposting')) return;
   addJurnal({ tanggal: tgl, ket, jenis: 'Saldo Awal', lines });
   closeModal('modal-saldo-awal');
   renderDashboard();

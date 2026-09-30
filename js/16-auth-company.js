@@ -1254,6 +1254,7 @@ async function selectCompany(company) {
   // Reset semua data agar tidak bocor ke bisnis baru
   multiKartuStock = {};
   jurnalEntries = [];
+  periodeKunciSampai = ''; // kunci milik bisnis lain tidak boleh terbawa
   activeKartuStockId = null;
   activeKategoriId = null;
 
@@ -1386,6 +1387,9 @@ async function loadDataFromSupabase() {
     }
     // Load kartu stock dari cloud
     loadKartuStockFromData(cloudData);
+    // Kunci periode disimpan di cloud supaya berlaku di semua perangkat/anggota tim
+    periodeKunciSampai = (typeof cloudData._periode_kunci === 'string') ? cloudData._periode_kunci : '';
+    if (typeof cloudData._ppn_tarif === 'number') transaksiAkunSettings.ppnTarif = cloudData._ppn_tarif;
   }
 
   updateSaveIndicator('saved');
@@ -1466,6 +1470,25 @@ async function saveProfilToSupabase(profilData) {
     }, { onConflict: 'company_id' });
   } catch(e) {
     console.warn('saveProfilToSupabase error:', e);
+  }
+}
+
+// SAVE KUNCI PERIODE KE CLOUD (merge ke company_profiles.data, tidak menimpa key lain)
+async function savePeriodeKunciToCloud() {
+  markDirty();
+  if (!currentCompany) return true; // mode tamu: cukup lewat serializeData() lokal
+  try {
+    const { data: existing } = await DB.table('company_profiles').select('data').eq('company_id', currentCompany.id).single();
+    const existingData = (existing && existing.data) ? existing.data : {};
+    const { error } = await DB.table('company_profiles').upsert({
+      company_id: currentCompany.id,
+      data: { ...existingData, _periode_kunci: periodeKunciSampai || '', _ppn_tarif: ppnTarifDefault() },
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'company_id' });
+    return !error;
+  } catch(e) {
+    console.warn('savePeriodeKunciToCloud error:', e);
+    return false;
   }
 }
 
@@ -1586,7 +1609,15 @@ window.saveToStorage = async function(showToast = true) {
 // OVERRIDE addJurnal — auto save ke Supabase + audit hook
 
 const _origAddJurnal = addJurnal;
-function addJurnal(entry) {
+function addJurnal(entry, opsi) {
+  // Backstop kunci periode. Form-form input sudah mengecek lewat guardPeriode() sebelum sampai
+  // sini; ini menjaga jalur lain (AI, kalkulator, impor) supaya tidak menembus periode terkunci.
+  // Melempar error (bukan return diam-diam) agar pemanggil tidak mengira jurnalnya tersimpan.
+  // opsi.abaikanKunci hanya dipakai jurnal penutup, yang memang jurnal sistem akhir periode.
+  if (!(opsi && opsi.abaikanKunci) && isPeriodeTerkunci(entry.tanggal)) {
+    guardPeriode(entry.tanggal, 'diposting');
+    throw new PeriodeTerkunciError('Periode terkunci sampai ' + periodeKunciSampai + ': ' + entry.tanggal);
+  }
   entry.no = 'JRN-' + String(jurnalCounter++).padStart(3,'0');
   jurnalEntries.push(entry);
   if (currentCompany) {
@@ -1600,6 +1631,20 @@ function addJurnal(entry) {
       `Jurnal ${entry.jenis||'Manual'}: ${entry.ket||entry.keterangan||'—'} — ${fmtRp(total)}`,
       {ref:entry.no||entry.id,debit:total});
   } catch(e){}
+}
+
+// Jalur posting untuk modul lama (invoice, pelunasan, PPh, rekon, penyusutan, jurnal berulang, dst)
+// yang dulu langsung `jurnalEntries.push(...)` dengan bentuk data berbeda ({keterangan, id}, tanpa
+// nomor). Push langsung melewati nomor jurnal, sync cloud, audit log, dan kunci periode. Sekarang
+// semuanya lewat addJurnal(). Mengembalikan entry, atau null kalau periodenya terkunci.
+function postJurnalLegacy(entry) {
+  if (!entry) return null;
+  if (!entry.ket) entry.ket = entry.keterangan || '';
+  if (!entry.jenis) entry.jenis = 'Manual';
+  if (entry.no && !entry.kodeRef) entry.kodeRef = entry.no; // pertahankan kode lama (mis. ADJ-...)
+  try { addJurnal(entry); }
+  catch (e) { if (e instanceof PeriodeTerkunciError) return null; throw e; }
+  return entry;
 }
 
 // OVERRIDE manualSave — pastikan async Supabase save berjalan benar

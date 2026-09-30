@@ -3,7 +3,7 @@
 // jadi setiap kamu update kode, user otomatis dapat versi terbaru
 // TANPA perlu ganti query version manual di index.html.
 // Cache di sini murni untuk fallback saat offline, bukan sumber utama.
-const CACHE_NAME = 'oas-v5';
+const CACHE_NAME = 'oas-v6';
 const CORE_ASSETS = [
   './',
   './index.html',

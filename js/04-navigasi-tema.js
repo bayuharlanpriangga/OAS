@@ -39,7 +39,7 @@ const pageTitles = {
   'kalk-bunga':['Bunga & Anuitas','Bunga Tunggal · Majemuk · Cicilan · PV/FV'],
   'kalk-rasio':['Rasio Keuangan','Likuiditas · Solvabilitas · Profitabilitas · Aktivitas'],
   'kalk-bep':['BEP & Margin','Break Even · Contribution Margin · Margin of Safety'],
-  'kalk-ppn':['PPN & PPh','PPN 12% · PPh 21 · PPh 23 · PPh Badan'],
+  'kalk-ppn':['PPN & PPh','PPN 11%/12% · PPh 21 · PPh 23 · PPh Badan'],
   'ai-assistant':['Orias Assisten','Asisten keuangan berbasis AI'],
   'tutorial':['Tutorial','Panduan penggunaan software langkah demi langkah'],
   'analitik':['Analitik & Tren Bisnis','Pendapatan · Laba · Arus Kas · Posisi Keuangan · Proyeksi'],
@@ -50,7 +50,7 @@ const pageTitles = {
   'kurs':['Multi Mata Uang','Kurs otomatis · Konversi transaksi · History kurs'],
   'notifikasi':['Notifikasi & Alert','Peringatan otomatis · Batas anggaran · Jatuh tempo'],
   'anggaran':['Anggaran vs Aktual','Target per akun · Monitoring realisasi · Variance'],
-  'pajak':['Pajak Otomatis','PPN 12% · PPh 21 · PPh 23 · Laporan SPT'],
+  'pajak':['Pajak Otomatis','PPN 11%/12% · PPh 21 · PPh 23 · Laporan SPT'],
   'arus-kas':['Laporan Arus Kas','Metode Tidak Langsung · PSAK 2'],
   'perubahan-ekuitas':['Laporan Perubahan Ekuitas','Mutasi modal pemilik · PSAK 1'],
   'produk':['Master Produk','Daftar produk & layanan · Stok · Harga'],
@@ -432,13 +432,14 @@ function openModalPenyesuaian() { deteksiPenyesuaianOtomatis(); }
 // ══════════════════════════════════════════════════════════════
 function renderArusKas() {
   const periodVal=document.getElementById('arus-kas-period')?.value||'all';
-  const saldoMap=getFilteredSaldo(periodVal);
+  const saldoMap=getFilteredSaldo(periodVal, { tanpaPenutup: true });
   const el=document.getElementById('arus-kas-content'); if(!el)return;
   const profil=JSON.parse(localStorage.getItem('oas_profil')||localStorage.getItem('oas_profil_v1')||'{}');
   const namaPerusahaan=profil.nama||'Perusahaan';
   const getSaldo=(kode)=>{const a=akuns.find(x=>x.kode===kode);if(!a)return 0;const s=saldoMap[kode]||{debit:0,kredit:0};return a.normal==='D'?s.debit-s.kredit:s.kredit-s.debit;};
   const sumK=(...kodes)=>kodes.reduce((acc,k)=>acc+getSaldo(k),0);
-  const labaBersih=akuns.filter(a=>a.tipe==='Pendapatan').reduce((acc,a)=>acc+getSaldo(a.kode),0)-akuns.filter(a=>['HPP','Beban'].includes(a.tipe)).reduce((acc,a)=>acc+getSaldo(a.kode),0);
+  const _pl=a=>plNatural(a,saldoMap[a.kode]);
+  const labaBersih=akuns.filter(a=>a.tipe==='Pendapatan').reduce((acc,a)=>acc+_pl(a),0)-akuns.filter(a=>['HPP','Beban'].includes(a.tipe)).reduce((acc,a)=>acc+_pl(a),0);
   const penyusutan=akuns.filter(a=>a.tipe==='Aset'&&a.kat==='Kontra'&&a.nama.toLowerCase().includes('penyusutan')).reduce((acc,a)=>{const s=saldoMap[a.kode]||{debit:0,kredit:0};return acc+(s.kredit-s.debit);},0);
   const deltaPiutang=-(akuns.filter(a=>a.kode.startsWith('12')).reduce((acc,a)=>acc+getSaldo(a.kode),0));
   const deltaPersediaan=-(akuns.filter(a=>a.kode.startsWith('13')).reduce((acc,a)=>acc+getSaldo(a.kode),0));

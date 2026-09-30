@@ -389,7 +389,7 @@ function _buatJurnalPenyesuaianAuto(items) {
       debit:  l.debit  || 0,
       kredit: l.kredit || 0
     }));
-    jurnalEntries.push({
+    postJurnalLegacy({
       no: kode,
       tanggal: today,
       ket: 'J. Penyesuaian — ' + r.judul.replace(/[^\w\s\-]/gu,'').trim().slice(0,60),
@@ -511,6 +511,22 @@ function fillPenyesuaian(type) {
 
 // ===== KARTU STOCK / CATATAN PERSEDIAAN =====
 // Struktur storage: kartuStockData[metode] = [{tgl, ket, mQty, mHarga, kQty, kHarga, saldoQty, saldoHarga, keluarLayers, saldoLayers, id}]
+// Metode persediaan yang boleh dipilih untuk pembukuan baru.
+// LIFO sengaja tidak ada: tidak diakui PSAK 14 (Persediaan) dan tidak boleh dipakai untuk
+// penghitungan pajak. Mesin hitung LIFO di bawah TETAP dipertahankan supaya kartu lama yang
+// sudah terlanjur memakai LIFO tidak berubah angkanya diam-diam sebelum dikonversi user.
+const KS_METODE_DIAKUI = ['fifo','wa','mwa'];
+function ksMetodeDiakui(m) { return KS_METODE_DIAKUI.includes(m); }
+// True kalau masih ada kartu stok yang berisi catatan LIFO (data lama).
+function ksAdaDataLifo() {
+  try {
+    return Object.values(multiKartuStock || {}).some(card =>
+      Object.values(card.kategori || {}).some(kat => (kat.data?.lifo || []).length > 0)
+      || (card.data?.lifo || []).length > 0
+    ) || (kartuStockData?.lifo || []).length > 0;
+  } catch(e) { return false; }
+}
+
 let kartuStockData = { fifo:[], lifo:[], wa:[], mwa:[] };
 let kartuStockTab = 'fifo';
 let kartuStockIdCounter = 0;
@@ -1120,7 +1136,6 @@ function openKsExtraMetodePicker(cardId) {
     title: 'Pilih Metode',
     options: [
       {value:'fifo', label:'FIFO', sub:'First In First Out'},
-      {value:'lifo', label:'LIFO', sub:'Last In First Out'},
       {value:'wa',   label:'Weighted Average', sub:'Rata-rata Tertimbang'},
       {value:'mwa',  label:'Moving Average', sub:'Rata-rata Bergerak'},
     ],
@@ -1382,8 +1397,8 @@ const _ksIcon   = { fifo:'🔼', lifo:'🔽', wa:'<i class="ti ti-scale ti-inlin
 
 function openKonversiKartuStock() {
   _ksConvDari = kartuStockTab;
-  // Default tujuan: metode lain
-  const allM = ['fifo','lifo','wa','mwa'];
+  // Default tujuan: metode lain (LIFO tidak pernah jadi tujuan — tidak diakui PSAK 14 & pajak)
+  const allM = KS_METODE_DIAKUI;
   _ksConvKe = allM.find(m => m !== _ksConvDari) || 'wa';
   // Update button states
   document.querySelectorAll('.ks-conv-dari').forEach(b => {
@@ -1408,7 +1423,7 @@ function selectKsConvDari(val, el) {
   el.classList.add('active');
   // Jika sama dengan tujuan, swap tujuan
   if (_ksConvDari === _ksConvKe) {
-    const allM = ['fifo','lifo','wa','mwa'];
+    const allM = KS_METODE_DIAKUI;
     _ksConvKe = allM.find(m => m !== _ksConvDari) || 'wa';
     document.querySelectorAll('.ks-conv-ke').forEach(b => {
       b.classList.toggle('active', b.dataset.val === _ksConvKe);
@@ -1419,6 +1434,10 @@ function selectKsConvDari(val, el) {
 }
 
 function selectKsConvKe(val, el) {
+  if (!ksMetodeDiakui(val)) {
+    showAlert('LIFO tidak diakui PSAK 14 dan aturan pajak, jadi tidak bisa dijadikan metode tujuan. Pilih FIFO, Weighted Average, atau Moving Average.');
+    return;
+  }
   _ksConvKe = val;
   document.querySelectorAll('.ks-conv-ke').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
@@ -1653,6 +1672,17 @@ function eksekusiKonversiKS() {
 }
 
 function switchKartuStockTab(tab, el) {
+  // LIFO: tolak kalau belum ada data LIFO lama; kalau ada, izinkan lihat tapi beri peringatan.
+  if (!ksMetodeDiakui(tab)) {
+    if (!ksAdaDataLifo()) {
+      showAlert('LIFO tidak diakui PSAK 14 dan aturan pajak untuk pembukuan, jadi tidak tersedia. Gunakan FIFO, Weighted Average, atau Moving Average.');
+      return;
+    }
+    if (!window._ksLifoWarned) {
+      window._ksLifoWarned = true;
+      showAlert('Kartu ini masih berisi data LIFO lama. LIFO tidak diakui PSAK 14 dan aturan pajak — pindahkan ke FIFO/Rata-rata lewat Konversi Metode.');
+    }
+  }
   kartuStockTab = tab;
   document.querySelectorAll('#kartu-stock-tabs button').forEach(b => {
     b.style.background = 'var(--surface2)';
@@ -2397,12 +2427,18 @@ function openProdukFilterCardPicker() {
 // ══════════════════════════════════════════════════════════
 function openKsMetodePicker() {
   const cur = document.getElementById('ks-metode-current')?.value || 'fifo';
+  // LIFO tidak diakui PSAK 14 (Persediaan) maupun aturan pajak (UU PPh Pasal 10 ayat 6),
+  // jadi tidak boleh dipilih untuk pembukuan baru. Opsi ini hanya ditampilkan kalau kartu
+  // yang sedang dibuka memang masih berisi data LIFO lama, supaya user bisa melihat dan
+  // memindahkannya lewat Konversi Metode.
   const opts = [
     { value:'fifo', label:'FIFO', sub:'First In First Out — Barang masuk pertama, keluar pertama' },
-    { value:'lifo', label:'LIFO', sub:'Last In First Out — Barang masuk terakhir, keluar pertama' },
     { value:'wa',   label:'Weighted Average', sub:'Rata-rata Tertimbang — rata-rata dari semua pembelian' },
     { value:'mwa',  label:'Moving Average', sub:'Rata-rata Bergerak — diperbarui setiap transaksi masuk' },
   ];
+  if (cur === 'lifo') {
+    opts.splice(1, 0, { value:'lifo', label:'LIFO (tidak diakui)', sub:'Data lama — pindahkan ke FIFO/Rata-rata lewat Konversi Metode' });
+  }
   openOptPicker({
     title: 'Pilih Metode Persediaan',
     options: opts,

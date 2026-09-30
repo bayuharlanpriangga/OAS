@@ -50,24 +50,31 @@ function renderJurnalUmum() {
   let rows=[];
   const filtered = jurnalEntries.filter(j=>{
     if(type && j.jenis!==type) return false;
-    if(search && !j.ket.toLowerCase().includes(search)) return false;
+    if(search && !(j.ket||j.keterangan||'').toLowerCase().includes(search)) return false;
     return true;
   });
+  const revMap = getReversedMap(); // nomor jurnal asal -> nomor jurnal pembaliknya
   // Tampilkan entry terbaru di ATAS agar tidak perlu scroll panjang tiap ada transaksi baru
   filtered.slice().reverse().forEach(j=>{
     const idx = jurnalEntries.indexOf(j);
     // Sync attachment count from localStorage
     const attachCount = (allAttach[j.no]||[]).length;
     const ppnSubBadge = getPpnSubBadge(j);
+    const dibalikOleh = revMap.get(j.no) || '';
+    const pembalikAtas = getReversalOf(j);
+    const ketTampil = ketTanpaPrefixPembalik(j.ket || j.keterangan || '');
+    const statusKet = pembalikAtas
+      ? `<span style="font-size:9px;color:var(--accent3);display:block;font-family:var(--mono);">Pembalik ${escapeHtml(pembalikAtas)}</span>`
+      : (dibalikOleh ? `<span style="font-size:9px;color:var(--accent3);display:block;font-family:var(--mono);">Dibalik oleh ${escapeHtml(dibalikOleh)}</span>` : '');
     const badgeCell = `<div style="display:flex;flex-direction:column;gap:3px;align-items:flex-start;">
-        <span class="badge ${jeninsBadge(j.jenis)}">${j.jenis}</span>
+        <span class="badge ${jeninsBadge(j.jenis)}">${escapeHtml(j.jenis)}</span>
         ${ppnSubBadge ? `<span class="badge badge-yellow" style="font-size:9px;">${ppnSubBadge}</span>` : ''}
       </div>`;
     j.lines.forEach((l,i)=>{
       rows.push(`<tr>
         ${i===0?`<td rowspan="${j.lines.length}">${fmtDate(j.tanggal)}</td>
-                 <td rowspan="${j.lines.length}" style="font-family:var(--mono);font-size:12px;">${j.no}</td>
-                 <td rowspan="${j.lines.length}">${j.ket}${j.kodeRef?`<span style="font-size:9px;color:var(--muted);display:block;font-family:var(--mono);">${j.kodeRef}</span>`:''}</td>
+                 <td rowspan="${j.lines.length}" style="font-family:var(--mono);font-size:12px;">${escapeHtml(j.no)}</td>
+                 <td rowspan="${j.lines.length}">${escapeHtml(ketTampil)}${statusKet}${j.kodeRef?`<span style="font-size:9px;color:var(--muted);display:block;font-family:var(--mono);">${escapeHtml(j.kodeRef)}</span>`:''}</td>
                  <td rowspan="${j.lines.length}">${badgeCell}</td>`:''}
         <td style="${l.debit?'':'padding-left:28px'}">${akunNamaTampil(l.akun)}</td>
         <td class="debit">${l.debit?fmtRp(l.debit):''}</td>
@@ -76,9 +83,11 @@ function renderJurnalUmum() {
             <button onclick="openAttachModal(${idx})" title="Lampiran" style="background:none;border:none;cursor:pointer;padding:4px 5px;border-radius:6px;transition:all 0.15s;opacity:${attachCount?'1':'0.35'};display:flex;align-items:center;gap:3px;color:${attachCount?'var(--accent2)':'var(--muted)'};" onmouseover="this.style.opacity='1';this.style.background='rgba(34,211,238,0.08)'" onmouseout="this.style.opacity='${attachCount?1:0.35}';this.style.background='none'"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>${attachCount?`<span style="font-size:10px;font-weight:600;font-family:var(--mono)">${attachCount}</span>`:''}</button>
           </td>
           <td rowspan="${j.lines.length}" style="text-align:center;vertical-align:middle;">
-          <button onclick="konfirmasiHapusJurnal(${idx})" data-tooltip="Hapus Jurnal"
-            style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:6px;padding:5px 8px;cursor:pointer;color:var(--red);font-size:13px;transition:all 0.15s;"
-            onmouseover="this.style.background='rgba(248,113,113,0.25)'" onmouseout="this.style.background='rgba(248,113,113,0.1)'"><i class="ti ti-trash" style="font-size:14px;"></i></button>
+          ${(dibalikOleh || pembalikAtas)
+            ? `<span title="${pembalikAtas ? 'Jurnal pembalik — tidak bisa dibalik lagi' : 'Sudah dibalik oleh ' + escapeHtml(dibalikOleh)}" style="font-size:10px;color:var(--muted);">${pembalikAtas ? '—' : 'Dibalik'}</span>`
+            : `<button onclick="konfirmasiBalikJurnal(${idx})" data-tooltip="Balik Jurnal"
+            style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:5px 8px;cursor:pointer;color:var(--accent3);font-size:13px;transition:all 0.15s;"
+            onmouseover="this.style.background='rgba(245,158,11,0.25)'" onmouseout="this.style.background='rgba(245,158,11,0.1)'"><i class="ti ti-arrow-back-up" style="font-size:14px;"></i></button>`}
         </td>`:''}
       </tr>`);
     });
@@ -122,7 +131,8 @@ function renderJurnalPenjualan() {
   const search = document.getElementById('filter-jp')?.value?.toLowerCase()||'';
   const body = document.getElementById('jurnal-penjualan-body');
   const rows=[];
-  jurnalEntries.filter(j=>j.jenis==='Penjualan').forEach(j=>{
+  const _revMapJ = getReversedMap();
+  jurnalEntries.filter(j=>j.jenis==='Penjualan' && !isJurnalPembalik(j) && !_revMapJ.has(j.no)).forEach(j=>{
     if(search && !j.ket.toLowerCase().includes(search) && !(j.ref||j.no||'').toLowerCase().includes(search)) return;
     const kasLine=j.lines.find(l=>['1101','1201'].includes(l.akun));
     const jualLine=j.lines.find(l=>l.akun==='4101');
@@ -143,7 +153,8 @@ function renderJurnalPembelian() {
   const search = document.getElementById('filter-jb')?.value?.toLowerCase()||'';
   const body = document.getElementById('jurnal-pembelian-body');
   const rows=[];
-  jurnalEntries.filter(j=>j.jenis==='Pembelian').forEach(j=>{
+  const _revMapB = getReversedMap();
+  jurnalEntries.filter(j=>j.jenis==='Pembelian' && !isJurnalPembalik(j) && !_revMapB.has(j.no)).forEach(j=>{
     if(search && !j.ket.toLowerCase().includes(search) && !(j.ref||j.no||'').toLowerCase().includes(search)) return;
     const krLine=j.lines.find(l=>['1101','2101'].includes(l.akun)&&l.kredit);
     const drLine=j.lines.find(l=>l.debit&&l.akun!=='1101'&&l.akun!=='2101');
@@ -217,7 +228,8 @@ function renderNeraca() {
   const asetRows=[],liabRows=[],ekRows=[];
   const labaBersih = (() => {
     let p=0,b=0;
-    akuns.forEach(a=>{const s=getSaldoAkun(a.kode);if(a.tipe==='Pendapatan')p+=s;if(['Beban','HPP'].includes(a.tipe))b+=s;});
+    const _map = computeSaldoAll(); // termasuk jurnal penutup: laba tahun tertutup sudah pindah ke 3201
+    akuns.forEach(a=>{const s=plNatural(a,_map[a.kode]);if(a.tipe==='Pendapatan')p+=s;if(['Beban','HPP'].includes(a.tipe))b+=s;});
     return p-b;
   })();
   akuns.forEach(a=>{
@@ -278,12 +290,13 @@ function exportArusKasPDF(){const el=document.getElementById('arus-kas-content')
 // ══════════════════════════════════════════════════════════════
 function renderPerubahanEkuitas(){
   const periodVal=document.getElementById('pe-period')?.value||'all';
-  const saldoMap=getFilteredSaldo(periodVal);
+  const saldoMap=getFilteredSaldo(periodVal, { tanpaPenutup: true });
   const el=document.getElementById('pe-content');if(!el)return;
   const profil=JSON.parse(localStorage.getItem('oas_profil')||localStorage.getItem('oas_profil_v1')||'{}');
   const getSaldo=(kode)=>{const a=akuns.find(x=>x.kode===kode);if(!a)return 0;const s=saldoMap[kode]||{debit:0,kredit:0};return a.normal==='D'?s.debit-s.kredit:s.kredit-s.debit;};
   const modalDisetor=getSaldo('3101'),prive=getSaldo('3102'),labaDitahan=getSaldo('3201');
-  const labaBersih=akuns.filter(a=>a.tipe==='Pendapatan').reduce((acc,a)=>acc+getSaldo(a.kode),0)-akuns.filter(a=>['HPP','Beban'].includes(a.tipe)).reduce((acc,a)=>acc+getSaldo(a.kode),0);
+  const _pl=a=>plNatural(a,saldoMap[a.kode]);
+  const labaBersih=akuns.filter(a=>a.tipe==='Pendapatan').reduce((acc,a)=>acc+_pl(a),0)-akuns.filter(a=>['HPP','Beban'].includes(a.tipe)).reduce((acc,a)=>acc+_pl(a),0);
   const totalEkuitas=modalDisetor-prive+labaDitahan+labaBersih;
   const ekuitasAwal=labaDitahan+modalDisetor;
   const rpR=v=>{const f='Rp '+Math.abs(Math.round(v)).toLocaleString('id-ID');return v<0?`<span style="color:var(--red);">(${f})</span>`:`<span>${f}</span>`;};
@@ -324,7 +337,10 @@ function renderReportWithPeriod(pageId, periodVal) {
   if(sel) sel.value = periodVal;
 }
 
-function getFilteredSaldo(periodVal) {
+// opts.tanpaPenutup = true -> jurnal penutup tidak ikut dihitung. Wajib untuk laporan laba rugi
+// (dan turunannya: perubahan ekuitas, arus kas), kalau tidak pendapatan/beban tahun yang sudah
+// ditutup terbaca nol. Neraca saldo sengaja tetap memasukkan jurnal penutup (posisi setelah penutupan).
+function getFilteredSaldo(periodVal, opts) {
   const now = new Date(); const y=now.getFullYear(), m=now.getMonth();
   let from=null, to=null;
   if(periodVal==='this-month'){from=new Date(y,m,1);to=new Date(y,m+1,0);}
@@ -332,7 +348,8 @@ function getFilteredSaldo(periodVal) {
   else if(periodVal==='this-quarter'){const q=Math.floor(m/3);from=new Date(y,q*3,1);to=new Date(y,q*3+3,0);}
   else if(periodVal==='this-year'){from=new Date(y,0,1);to=new Date(y,11,31);}
 
-  const filtJurnals = from ? jurnalEntries.filter(j=>{const d=new Date(j.tanggal);return d>=from&&d<=to;}) : jurnalEntries;
+  const sumber = (opts && opts.tanpaPenutup) ? getJurnalTanpaPenutup() : jurnalEntries;
+  const filtJurnals = from ? sumber.filter(j=>{const d=new Date(j.tanggal);return d>=from&&d<=to;}) : sumber;
   const map = {};
   filtJurnals.forEach(j=>j.lines.forEach(l=>{
     if(!map[l.akun]) map[l.akun]={debit:0,kredit:0};
@@ -342,11 +359,10 @@ function getFilteredSaldo(periodVal) {
 }
 
 function renderLabaRugiFiltered(periodVal='all') {
-  const saldoMap = getFilteredSaldo(periodVal);
+  const saldoMap = getFilteredSaldo(periodVal, { tanpaPenutup: true });
   const getSaldo = (kode) => {
     const a=akuns.find(x=>x.kode===kode); if(!a) return 0;
-    const s=saldoMap[kode]||{debit:0,kredit:0};
-    return a.normal==='D'?s.debit-s.kredit:s.kredit-s.debit;
+    return plNatural(a, saldoMap[kode]); // kontra (4103/4104/5103) bernilai negatif -> mengurangi total
   };
   let tP=0,tH=0,tB=0;
   const pRows=[],hRows=[],bRows=[];

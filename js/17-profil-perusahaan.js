@@ -341,7 +341,6 @@ function showDemoModeBanner() {
 // INV METODE CUSTOM SELECT
 const _invMetodeList = [
   { value:'fifo', label:'FIFO', sub:'First In First Out', icon:'<i class="ti ti-download ti-inline"></i>' },
-  { value:'lifo', label:'LIFO', sub:'Last In First Out', icon:'<i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i>' },
   { value:'wa',   label:'Weighted Average', sub:'Rata-rata Tertimbang', icon:'<i class="ti ti-scale ti-inline"></i>' },
   { value:'mwa',  label:'Moving Weighted Average', sub:'Rata-rata Bergerak', icon:'<i class="ti ti-trending-up" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i>' },
 ];

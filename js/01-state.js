@@ -15,7 +15,11 @@ let transaksiAkunSettings = {
   // Dulu diset per-produk di Master Produk — sekarang terpusat di sini.
   // Kosong = pakai default otomatis (5101 utk HPP, tebak otomatis utk persediaan).
   jualHpp: '',
-  jualPersediaan: ''
+  jualPersediaan: '',
+  // Tarif PPN efektif default (persen) untuk invoice, ringkasan pajak & kalkulator.
+  // 11 = BKP/JKP non-mewah (12% x DPP nilai lain 11/12, PMK 131/2024 Pasal 3).
+  // 12 = BKP mewah yang kena PPnBM (12% x harga jual penuh, PMK 131/2024 Pasal 2).
+  ppnTarif: 11
 };
 
 // Resolve kode akun aktif untuk jenis transaksi tertentu.
@@ -156,6 +160,10 @@ let akuns = [
 
 let jurnalEntries = []; // [{no,tanggal,ket,jenis,lines:[{akun,ket,debit,kredit}]}]
 let jurnalCounter = 1;
+// Kunci periode: semua jurnal bertanggal <= nilai ini (format YYYY-MM-DD) tidak boleh
+// dibuat, dibalik, atau dihapus. Kosong = tidak ada periode yang dikunci.
+// Disimpan lewat serializeData() (lokal) dan company_profiles.data._periode_kunci (cloud).
+let periodeKunciSampai = '';
 let produkList = []; // [{id,kode,nama,kat,satuan,hargaJual,hpp,stok,stokMin,akunPend,akunHpp,deskripsi}]
 
 // Seed sample data

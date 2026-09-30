@@ -24,6 +24,9 @@ function checkAndInputKalkulator(kode, jurnals, successMsg, onSuccess) {
     // Show duplicate warning
     if(!confirm(`<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Kode "${kode}" sudah pernah diinput sebelumnya!\n\nApakah kamu yakin ingin input ulang? (Bisa menyebabkan jurnal ganda)`)) return;
   }
+  // Cek kunci periode untuk SEMUA jurnal dulu supaya tidak ada yang terposting sebagian
+  const _terkunci = jurnals.find(j => isPeriodeTerkunci(j.tanggal));
+  if(_terkunci) { guardPeriode(_terkunci.tanggal, 'diposting'); return; }
   // Add all journals
   jurnals.forEach(j => {
     j.kodeRef = kode;
@@ -40,13 +43,16 @@ let lastKalkInput = null; // {kode, jurnalCount, timestamp}
 function undoLastKalkInput() {
   if(!lastKalkInput) { showAlert('Tidak ada input yang bisa di-undo'); return; }
   const { kode, jurnalIndices } = lastKalkInput;
-  if(!confirm(`Hapus jurnal dari "${kode}"?`)) return;
-  // Remove in reverse order
-  [...jurnalIndices].reverse().forEach(idx => jurnalEntries.splice(idx, 1));
+  if(!confirm(`Batalkan jurnal dari "${kode}"?\n\nJurnal asli tidak dihapus: sistem membuat jurnal pembalik bertanggal hari ini.`)) return;
+  const asal = jurnalIndices.map(i => jurnalEntries[i]).filter(Boolean);
+  let dibalik = 0;
+  try { asal.forEach(e => { if(buatJurnalPembalik(e, { alasan: 'Undo input kalkulator ' + kode })) dibalik++; }); }
+  catch(e) { if(!(e instanceof PeriodeTerkunciError)) throw e; }
+  if(!dibalik) return; // alasan penolakan sudah ditampilkan oleh buatJurnalPembalik
   lastKalkInput = null;
   renderDashboard();
   renderJurnalUmum();
-  showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Input "${kode}" berhasil di-undo`);
+  showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Input "${kode}" dibatalkan lewat ${dibalik} jurnal pembalik`);
   // Hide undo buttons
   document.querySelectorAll('.kalk-undo-btn').forEach(b => b.style.display='none');
 }
@@ -266,7 +272,7 @@ function inputPersediaanJurnal() {
 function inputPPNJurnal() {
   const nilai = parseFloat(document.getElementById('ppn-nilai').value)||0;
   const tarifSel = document.getElementById('ppn-tarif').value;
-  const tarif = tarifSel==='custom' ? (parseFloat(document.getElementById('ppn-custom')?.value)||12)/100 : parseFloat(tarifSel)/100;
+  const tarif = tarifSel==='custom' ? (parseFloat(document.getElementById('ppn-custom')?.value)||ppnTarifDefault())/100 : parseFloat(tarifSel)/100;
   const mode = document.getElementById('ppn-mode').value;
   if(!nilai) { showAlert('Hitung PPN dulu!'); return; }
 
@@ -1249,7 +1255,7 @@ document.getElementById('p23-jenis')?.addEventListener('change', function() {
 function hitungPPN() {
   const nilai = parseFloat(document.getElementById('ppn-nilai').value)||0;
   const tarifSel = document.getElementById('ppn-tarif').value;
-  const tarif = tarifSel==='custom' ? (parseFloat(document.getElementById('ppn-custom').value)||12)/100 : parseFloat(tarifSel)/100;
+  const tarif = tarifSel==='custom' ? (parseFloat(document.getElementById('ppn-custom').value)||ppnTarifDefault())/100 : parseFloat(tarifSel)/100;
   const mode = document.getElementById('ppn-mode').value;
   const el = document.getElementById('ppn-hasil');
   if(!nilai) return;

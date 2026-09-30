@@ -152,6 +152,7 @@ function renderAnalitik() {
   const allTgl = [...new Set(jurnalEntries.map(j=>j.tanggal))].sort();
 
   jurnalEntries.forEach(j => {
+    if(isJurnalPenutup(j)) return; // penutup bukan aktivitas usaha
     const d = new Date(j.tanggal);
     const mi = months.findIndex(m => m.year===d.getFullYear() && m.month===d.getMonth());
     j.lines.forEach(l => {
@@ -159,9 +160,9 @@ function renderAnalitik() {
       if(!a) return;
       const db = l.debit||0, kr = l.kredit||0;
       if(mi >= 0) {
-        if(a.tipe==='Pendapatan') months[mi].pendapatan += kr;
-        if(a.tipe==='HPP') months[mi].hpp += db;
-        if(a.tipe==='Beban') months[mi].beban += db;
+        if(a.tipe==='Pendapatan') months[mi].pendapatan += kr - db;
+        if(a.tipe==='HPP') months[mi].hpp += db - kr;
+        if(a.tipe==='Beban') months[mi].beban += db - kr;
         if(l.akun==='1101') { months[mi].kasIn += db; months[mi].kasOut += kr; }
       }
     });
@@ -946,7 +947,8 @@ function buatJurnalPPh21() {
         {akun:kasAkun.kode,debit:0,kredit:totalGaji-(pphReal||0)}
       ]
     };
-    jurnalEntries.push(entry); saveToStorage(false);
+    if(!postJurnalLegacy(entry)) { hideOpSpinner(); return; }
+    saveToStorage(false);
     showAlert(`✓ Jurnal PPh 21 dibuat! Gaji bersih: ${rp(totalGaji-(pphReal||0))}, PPh 21: ${rp(pphReal||0)}`);
     hideOpSpinner();
   }, 900);
@@ -974,7 +976,8 @@ function buatJurnalPPh23() {
         {akun:pendAkun.kode,debit:0,kredit:bruto}
       ]
     };
-    jurnalEntries.push(entry); saveToStorage(false);
+    if(!postJurnalLegacy(entry)) { hideOpSpinner(); return; }
+    saveToStorage(false);
     showAlert(`✓ Jurnal PPh 23 dibuat! Bruto: ${rp(bruto)}, PPh: ${rp(pph)}, Neto: ${rp(bruto-pph)}`);
     hideOpSpinner();
   }, 800);
@@ -1166,7 +1169,7 @@ function renderDashPiutangUtang() {
       jurnalEntries.filter(j => j.jenis==='Penjualan' && j.tanggal.startsWith(pfx)).forEach(j => {
         j.lines.forEach(l => {
           const a = akuns.find(x=>x.kode===l.akun);
-          if(a?.tipe==='Pendapatan') total += l.kredit||0;
+          if(a?.tipe==='Pendapatan') total += (l.kredit||0) - (l.debit||0);
         });
       });
       bulan6.push({ label: d.toLocaleDateString('id-ID',{month:'short'}), val: total });
@@ -1244,13 +1247,14 @@ function renderChart() {
     months.push({ label: d.toLocaleDateString('id-ID',{month:'short'}), year: d.getFullYear(), month: d.getMonth(), pend: 0, beban: 0 });
   }
   jurnalEntries.forEach(j => {
+    if(isJurnalPenutup(j)) return;
     const d = new Date(j.tanggal);
     const mi = months.findIndex(m => m.year===d.getFullYear() && m.month===d.getMonth());
     if(mi < 0) return;
     j.lines.forEach(l => {
       const a = akuns.find(x=>x.kode===l.akun);
-      if(a?.tipe==='Pendapatan') months[mi].pend += l.kredit||0;
-      if(['Beban','HPP'].includes(a?.tipe)) months[mi].beban += l.debit||0;
+      if(a?.tipe==='Pendapatan') months[mi].pend += (l.kredit||0) - (l.debit||0);
+      if(['Beban','HPP'].includes(a?.tipe)) months[mi].beban += (l.debit||0) - (l.kredit||0);
     });
   });
 
@@ -1342,14 +1346,13 @@ function renderDashboard() {
   const tAFinal = tA + atNilaiBuku;
   // Filtered pendapatan & beban
   const filtSaldoMap = {};
-  filtered.forEach(j => j.lines.forEach(l => {
+  filtered.filter(j => !isJurnalPenutup(j)).forEach(j => j.lines.forEach(l => {
     if(!filtSaldoMap[l.akun]) filtSaldoMap[l.akun] = {debit:0,kredit:0};
     filtSaldoMap[l.akun].debit += l.debit||0;
     filtSaldoMap[l.akun].kredit += l.kredit||0;
   }));
   akuns.forEach(a => {
-    const s = filtSaldoMap[a.kode]||{debit:0,kredit:0};
-    const b = a.normal==='D'?s.debit-s.kredit:s.kredit-s.debit;
+    const b = plNatural(a, filtSaldoMap[a.kode]);
     if(a.tipe==='Pendapatan') tP += b;
     if(['Beban','HPP'].includes(a.tipe)) tB += b;
   });
@@ -1414,7 +1417,7 @@ function renderDashboard() {
     const rows = highlight.map(k => {
       const a = akuns.find(x=>x.kode===k);
       if(!a) return '';
-      const s = computeSaldoBersih(k);
+      const s = ['Pendapatan','HPP','Beban'].includes(a.tipe) ? saldoBersihPL(k) : computeSaldoBersih(k);
       if(!s) return '';
       return `<tr><td><span style="font-size:10px;color:var(--muted);font-family:var(--mono)">${k}</span> ${a.nama}</td>
         <td class="num" style="text-align:right;color:${s>=0?'var(--accent)':'var(--red)'};">${fmtRp(Math.abs(s))}</td></tr>`;
@@ -1430,66 +1433,111 @@ function renderDashboard() {
   renderPajakPanel();
 }
 
-// JURNAL PENUTUP (CLOSING ENTRIES)
-function buatJurnalPenutup() {
-  let totalPend = 0, totalBeban = 0;
-  const pendLines = [], bebanLines = [];
+// JURNAL PENUTUP (CLOSING ENTRIES) — per tahun buku
+// Menutup pendapatan, HPP, dan beban SATU tahun buku ke Laba Ditahan (3201).
+//  - Rentang tahun buku mengikuti Profil Perusahaan (Jan-Des, Apr-Mar, Jul-Jun, Okt-Sep).
+//  - Saldo dihitung hanya dari jurnal dalam rentang itu (bukan seluruh waktu) dan tanpa
+//    jurnal penutup sebelumnya.
+//  - Jurnal bertanggal AKHIR tahun buku, bukan hari ini, dan berjenis 'Penutup' supaya
+//    Laba Rugi mengabaikannya (lihat isJurnalPenutup / getJurnalTanpaPenutup).
+//  - Akun kontra (mis. 4103 Retur Penjualan, saldo normal debit) ditutup ke sisi yang benar.
+//  - Setelah tutup buku, periode sampai akhir tahun buku itu otomatis dikunci.
+//  - Satu kali klik menutup satu tahun buku, mulai dari yang paling lama belum ditutup.
+function _cariTahunBukuBelumDitutup() {
+  const revMap = getReversedMap();
+  const sudahDitutup = new Set();
+  jurnalEntries.forEach(j => {
+    if(isJurnalPenutup(j) && !isJurnalPembalik(j) && !revMap.has(j.no)) sudahDitutup.add(String(j.tanggal).slice(0,10));
+  });
+  const kandidat = new Map();
+  jurnalEntries.forEach(j => {
+    if(isJurnalPenutup(j) || !j.tanggal) return;
+    const adaPL = (j.lines||[]).some(l => {
+      const a = akuns.find(x=>x.kode===l.akun) || akunsTrash.find(x=>x.kode===l.akun);
+      return a && ['Pendapatan','HPP','Beban'].includes(a.tipe);
+    });
+    if(!adaPL) return;
+    const r = getTahunBukuRange(String(j.tanggal).slice(0,10));
+    if(!sudahDitutup.has(r.to)) kandidat.set(r.from, r);
+  });
+  return [...kandidat.values()].sort((a,b) => a.from < b.from ? -1 : 1)[0] || null;
+}
 
-  akuns.forEach(a => {
-    const s = computeSaldoBersih(a.kode);
-    if(!s) return;
-    if(a.tipe === 'Pendapatan') {
-      totalPend += s;
-      pendLines.push({ akun: a.kode, ket: a.nama + ' (tutup)', debit: s, kredit: 0 });
-    }
-    if(['Beban','HPP'].includes(a.tipe)) {
-      totalBeban += s;
-      bebanLines.push({ akun: a.kode, ket: a.nama + ' (tutup)', debit: 0, kredit: s });
-    }
+function buatJurnalPenutup() {
+  if(!akuns.find(a=>a.kode==='3201')) {
+    showAlert('Akun 3201 Laba Ditahan tidak ditemukan di Chart of Accounts. Tambahkan atau pulihkan dulu sebelum tutup buku.');
+    return;
+  }
+  const rentang = _cariTahunBukuBelumDitutup();
+  if(!rentang) { showAlert('Tidak ada tahun buku dengan pendapatan/beban yang belum ditutup.'); return; }
+
+  const today = new Date().toISOString().split('T')[0];
+  const net = {}; // kode -> debit - kredit, hanya jurnal dalam rentang & bukan penutup
+  jurnalEntries.forEach(j => {
+    if(isJurnalPenutup(j)) return;
+    const t = String(j.tanggal||'').slice(0,10);
+    if(t < rentang.from || t > rentang.to) return;
+    (j.lines||[]).forEach(l => { net[l.akun] = (net[l.akun]||0) + (l.debit||0) - (l.kredit||0); });
   });
 
-  if(!totalPend && !totalBeban) { showAlert('Tidak ada akun pendapatan/beban yang perlu ditutup.'); return; }
+  const r2 = v => Math.round(v*100)/100;
+  const lines = [];
+  let totalPend = 0, totalBeban = 0, sumNet = 0;
+  Object.keys(net).forEach(kode => {
+    const a = akuns.find(x=>x.kode===kode) || akunsTrash.find(x=>x.kode===kode);
+    if(!a || !['Pendapatan','HPP','Beban'].includes(a.tipe)) return;
+    const n = r2(net[kode]);
+    if(!n) return;
+    sumNet += n;
+    if(a.tipe === 'Pendapatan') totalPend += -n; else totalBeban += n;
+    // Tutup dengan membalik saldo: saldo debit -> dikredit, saldo kredit -> didebit
+    lines.push(n > 0
+      ? { akun: kode, ket: a.nama + ' (tutup)', debit: 0, kredit: n }
+      : { akun: kode, ket: a.nama + ' (tutup)', debit: -n, kredit: 0 });
+  });
+  if(!lines.length) { showAlert('Tidak ada saldo pendapatan/beban pada tahun buku ' + rentang.label + ' yang perlu ditutup.'); return; }
 
-  const labaBersih = totalPend - totalBeban;
-  const today = new Date().toISOString().split('T')[0];
+  const laba = r2(-sumNet); // >0 laba, <0 rugi
+  const lineLaba = laba >= 0
+    ? { akun: '3201', ket: 'Laba Ditahan (laba tahun buku ' + rentang.label + ')', debit: 0, kredit: laba }
+    : { akun: '3201', ket: 'Laba Ditahan (rugi tahun buku ' + rentang.label + ')', debit: -laba, kredit: 0 };
+  const semuaLines = [...lines, lineLaba];
+  const td = semuaLines.reduce((s,l)=>s+l.debit,0), tk = semuaLines.reduce((s,l)=>s+l.kredit,0);
+  if(Math.abs(td-tk) > 0.5) { showAlert('Jurnal penutup tidak balance (selisih ' + fmtRp(Math.abs(td-tk)) + '), dibatalkan.'); return; }
 
-  // Gunakan custom confirm modal bertema
+  const belumBerakhir = today <= rentang.to;
   showCustomConfirmGeneral({
     icon: '<i class="ti ti-book-off" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i>',
     iconColor: 'rgba(245,158,11,0.15)',
     iconBorder: 'rgba(245,158,11,0.3)',
-    title: 'Buat Jurnal Penutup Akhir Periode?',
-    subtitle: 'Semua akun pendapatan & beban akan ditutup ke Laba Ditahan',
+    title: 'Tutup Buku ' + rentang.label + '?',
+    subtitle: 'Pendapatan, HPP & beban tahun buku ini ditutup ke Laba Ditahan',
     rows: [
+      { label: 'Tahun buku', value: fmtDate(rentang.from) + ' – ' + fmtDate(rentang.to), color: 'var(--muted)' },
       { label: 'Total Pendapatan ditutup', value: fmtRp(totalPend), color: 'var(--accent)' },
-      { label: 'Total Beban ditutup', value: fmtRp(totalBeban), color: 'var(--red)' },
-      { label: 'Laba/Rugi ke Laba Ditahan', value: fmtRp(labaBersih), color: labaBersih >= 0 ? 'var(--accent)' : 'var(--red)' },
-      { label: 'Total baris jurnal', value: (pendLines.length + bebanLines.length + 1) + ' baris', color: 'var(--muted)' },
+      { label: 'Total HPP & Beban ditutup', value: fmtRp(totalBeban), color: 'var(--red)' },
+      { label: laba >= 0 ? 'Laba ke Laba Ditahan' : 'Rugi ke Laba Ditahan', value: fmtRp(Math.abs(laba)), color: laba >= 0 ? 'var(--accent)' : 'var(--red)' },
+      { label: 'Tanggal jurnal penutup', value: fmtDate(rentang.to), color: 'var(--muted)' },
     ],
-    warning: '<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Aksi ini akan mereset semua akun pendapatan & beban ke nol.',
-    btnLabel: '<i class="ti ti-book-off" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Ya, Buat Jurnal Penutup',
+    warning: (belumBerakhir ? '<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tahun buku ini belum berakhir (sampai ' + fmtDate(rentang.to) + '). ' : '')
+      + '<i class="ti ti-lock" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Setelah ditutup, periode sampai ' + fmtDate(rentang.to) + ' dikunci: jurnal di periode itu tidak bisa ditambah, dan koreksi harus lewat jurnal pembalik bertanggal setelahnya. Laba Rugi tahun ini tetap terbaca utuh.',
+    btnLabel: '<i class="ti ti-book-off" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Ya, Tutup Buku',
     btnGradient: 'linear-gradient(135deg,#f59e0b,#f87171)',
   }).then(ok => {
     if(!ok) return;
-
     const kode = nextKode('CLO');
-
-    // Jurnal 1: Tutup semua pendapatan
-    if(pendLines.length) {
-      addJurnal({
-        tanggal: today, ket: `Jurnal Penutup — Pendapatan [${kode}]`, jenis: 'Manual', kodeRef: kode,
-        lines: [...pendLines, { akun: '3201', ket: 'Laba Ditahan (transfer pendapatan)', debit: 0, kredit: totalPend }]
-      });
-    }
-    // Jurnal 2: Tutup semua beban
-    if(bebanLines.length) {
-      addJurnal({
-        tanggal: today, ket: `Jurnal Penutup — Beban [${kode}]`, jenis: 'Manual', kodeRef: kode,
-        lines: [{ akun: '3201', ket: 'Laba Ditahan (transfer beban)', debit: totalBeban, kredit: 0 }, ...bebanLines]
-      });
+    addJurnal({
+      tanggal: rentang.to,
+      ket: 'Jurnal Penutup Tahun Buku ' + rentang.label + ' [' + kode + ']',
+      jenis: JENIS_PENUTUP, kodeRef: kode,
+      lines: semuaLines
+    }, { abaikanKunci: true });
+    if(!periodeKunciSampai || periodeKunciSampai < rentang.to) {
+      periodeKunciSampai = rentang.to;
+      savePeriodeKunciToCloud();
     }
     renderDashboard();
-    showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Jurnal Penutup ${kode} dibuat! Semua akun pendapatan & beban sudah direset ke nol.`);
+    showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tutup buku ' + rentang.label + ' selesai [' + kode + ']. Periode dikunci sampai ' + fmtDate(rentang.to) + '.');
     showPage('jurnal-umum');
   });
 }
@@ -1802,16 +1850,16 @@ function renderRekapSiapSetor() {
 
   const totalDPPKeluar = penjEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a?.tipe==='Pendapatan'?l.kredit:0);},0),0);
   const totalDPPMasuk  = beliEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(['HPP','Beban'].includes(a?.tipe)?l.debit:0);},0),0);
-  const ppnKeluar  = totalDPPKeluar * 0.12;
-  const ppnMasuk   = totalDPPMasuk  * 0.12;
+  const ppnKeluar  = hitungPpn(totalDPPKeluar);
+  const ppnMasuk   = hitungPpn(totalDPPMasuk);
   const kurangBayar = ppnKeluar - ppnMasuk;
 
   // Estimasi PPh Badan (25% dari laba bersih)
   let laba = 0;
-  jurnalEntries.filter(j=>j.tanggal>=fromStr&&j.tanggal<=toStr).forEach(j=>j.lines.forEach(l=>{
+  jurnalEntries.filter(j=>j.tanggal>=fromStr&&j.tanggal<=toStr&&!isJurnalPenutup(j)).forEach(j=>j.lines.forEach(l=>{
     const a=akuns.find(x=>x.kode===l.akun);
-    if(a?.tipe==='Pendapatan') laba += l.kredit||0;
-    if(['Beban','HPP'].includes(a?.tipe)) laba -= l.debit||0;
+    if(a?.tipe==='Pendapatan') laba += (l.kredit||0) - (l.debit||0);
+    if(['Beban','HPP'].includes(a?.tipe)) laba -= (l.debit||0) - (l.kredit||0);
   }));
   const pphBadan = Math.max(0, laba * 0.22);
 

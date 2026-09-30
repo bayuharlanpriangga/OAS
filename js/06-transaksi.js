@@ -107,6 +107,7 @@ function simpanKas() {
   const jumlah = parseFloat(document.getElementById('kas-jumlah').value)||0;
   const ket = document.getElementById('kas-ket').value || (jenis==='masuk'?'Penerimaan Kas':'Pengeluaran Kas');
   if(!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
+  if(!guardPeriode(tanggal,'diposting')) return;
   if(!jumlah) { showAlert('Isi jumlah transaksi terlebih dahulu!'); return; }
   if(!akunKode) { showAlert('Pilih akun lawan terlebih dahulu!'); return; }
   const lines = jenis==='masuk'
@@ -586,6 +587,7 @@ function simpanPenjualan() {
   const akunPendapatanNama = _jualOpt ? _jualOpt.label : 'Penjualan';
 
   if(!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
+  if(!guardPeriode(tanggal,'diposting')) return;
   // Jika jenis penjualan barang/manufaktur, produk wajib dipilih
   const _jualKsId = document.getElementById('jual-produk-id')?.value;
   const _jualAkunPend = document.getElementById('jual-akun-pendapatan')?.value || '4101';
@@ -708,6 +710,7 @@ function simpanPembelian() {
   const kontakId     = document.getElementById('beli-kontak-id')?.value || '';
 
   if(!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
+  if(!guardPeriode(tanggal,'diposting')) return;
 
   // ── MODE PRODUKSI: Barang Jadi dari penjumlahan HPP multi bahan baku ──
   if(akunKode === '1304' && _beliBahanBakuRows.length) {
@@ -919,6 +922,7 @@ function simpanManual() {
     if(d||k) lines.push({akun:sel.value,ket:inps[0].value,debit:d,kredit:k});
   });
   if(!tanggal){showAlert('Pilih tanggal terlebih dahulu!');return;}
+  if(!guardPeriode(tanggal,'diposting')) return;
   if(lines.length<2){showAlert('Lengkapi data jurnal!');return;}
   const td=lines.reduce((s,l)=>s+l.debit,0);
   const tk=lines.reduce((s,l)=>s+l.kredit,0);
@@ -1168,6 +1172,7 @@ function simpanSimpel() {
   const ket     = document.getElementById('simpel-ket')?.value.trim();
 
   if(!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
+  if(!guardPeriode(tanggal,'diposting')) return;
   if(!jumlah)  { showAlert('Isi jumlah terlebih dahulu!'); return; }
   if(!ket)     { showAlert('Isi keterangan!'); return; }
 
@@ -1266,8 +1271,8 @@ function renderDashBebanPajak() {
 
     const totalPenj = penjBln.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a?.tipe==='Pendapatan'?l.kredit:0);},0),0);
     const totalBeli = beliBln.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(['HPP','Beban'].includes(a?.tipe)?l.debit:0);},0),0);
-    const ppnKeluar = totalPenj * 0.12;
-    const ppnMasuk  = totalBeli * 0.12;
+    const ppnKeluar = hitungPpn(totalPenj);
+    const ppnMasuk  = hitungPpn(totalBeli);
     const kurangBayar = Math.max(0, ppnKeluar - ppnMasuk);
 
     if(pajakSub) pajakSub.textContent = `${now2.toLocaleDateString('id-ID',{month:'long',year:'numeric'})}`;
@@ -1275,8 +1280,8 @@ function renderDashBebanPajak() {
     pajakEl.innerHTML = `
       <div style="padding:10px 16px 12px;display:flex;flex-direction:column;gap:8px;">
         ${[
-          ['PPN Keluaran (12% × Penjualan)', ppnKeluar, 'var(--red)'],
-          ['PPN Masukan (12% × Pembelian)', ppnMasuk, 'var(--accent)'],
+          ['PPN Keluaran (est. ' + labelTarifPpn() + ' × Penjualan)', ppnKeluar, 'var(--red)'],
+          ['PPN Masukan (est. ' + labelTarifPpn() + ' × Pembelian)', ppnMasuk, 'var(--accent)'],
           ['PPN Kurang Bayar', kurangBayar, kurangBayar>0?'var(--accent3)':'var(--muted)'],
         ].map(([l,v,clr])=>`
           <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface2);border-radius:8px;">

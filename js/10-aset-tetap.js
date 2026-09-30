@@ -56,7 +56,7 @@ function atCheckAndRunAutoPenyusutan(force=false){
     if(akunBeban&&akunAkum){lines.push({akun:akunBeban.kode,ket:`Penyusutan ${aset.nama}`,debit:penyBulan,kredit:0});lines.push({akun:akunAkum.kode,ket:`Akum. Penyusutan ${aset.nama}`,debit:0,kredit:penyBulan});}
   });
   if(!lines.length){if(force)showAlert('Tidak ada akun penyusutan di CoA atau semua aset sudah habis disusutkan.');return;}
-  jurnalEntries.push({id:'JRN_PENY_'+Date.now(),tanggal:tgl,jenis:'Manual',keterangan:`Penyusutan Otomatis ${now.toLocaleDateString('id-ID',{month:'long',year:'numeric'})} — ${aktif.length} aset`,lines});
+  if(!postJurnalLegacy({id:'JRN_PENY_'+Date.now(),tanggal:tgl,jenis:'Manual',keterangan:`Penyusutan Otomatis ${now.toLocaleDateString('id-ID',{month:'long',year:'numeric'})} — ${aktif.length} aset`,lines})){if(force)showAlert('Jurnal penyusutan dilewati: periode sudah dikunci.');return;}
   saveToStorage(false);localStorage.setItem(AT_LAST_RUN_KEY,now.toISOString());atUpdateAutoUI();
   if(force){showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Jurnal penyusutan <b>${rp(total)}</b> dibuat untuk <b>${aktif.length} aset</b>!`);renderAsetTetap();renderAsetTetapKPI();if(typeof renderDashboard==='function')renderDashboard();}
 }

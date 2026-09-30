@@ -98,6 +98,7 @@ function loadFromStorage() {
     }
     if(Array.isArray(data.akunsTrash)) akunsTrash = data.akunsTrash;
     if(data.transaksiAkunSettings) transaksiAkunSettings = { ...transaksiAkunSettings, ...data.transaksiAkunSettings };
+    if(typeof data.periodeKunciSampai === 'string') periodeKunciSampai = data.periodeKunciSampai;
     if(typeof purgeExpiredAkunTrash === 'function') purgeExpiredAkunTrash();
     const meta = JSON.parse(localStorage.getItem(getMetaKey()) || localStorage.getItem(META_KEY_LEGACY) || '{}');
     lastSaveTime = meta.lastSave ? new Date(meta.lastSave) : null;
@@ -119,6 +120,7 @@ function serializeData() {
     akuns: akuns,
     akunsTrash: akunsTrash,
     transaksiAkunSettings: transaksiAkunSettings,
+    periodeKunciSampai: periodeKunciSampai,
     produkList: produkList,
     appName: 'Bayu Harlan Priangga'
   };
@@ -161,6 +163,7 @@ function loadFromSlot(slotId) {
     }
     if(Array.isArray(slot.data.akunsTrash)) akunsTrash = slot.data.akunsTrash;
     if(slot.data.transaksiAkunSettings) transaksiAkunSettings = { ...transaksiAkunSettings, ...slot.data.transaksiAkunSettings };
+    if(typeof slot.data.periodeKunciSampai === 'string') periodeKunciSampai = slot.data.periodeKunciSampai;
     saveToStorage(false);
     renderDashboard();
     renderStorageSlots();
@@ -341,6 +344,7 @@ function importBackupJSON(input) {
       if(data.akuns && data.akuns.length > 0) akuns = data.akuns;
       if(Array.isArray(data.akunsTrash)) akunsTrash = data.akunsTrash;
       if(data.transaksiAkunSettings) transaksiAkunSettings = { ...transaksiAkunSettings, ...data.transaksiAkunSettings };
+      if(typeof data.periodeKunciSampai === 'string') periodeKunciSampai = data.periodeKunciSampai;
       saveToStorage(false);
       renderDashboard();
       closeModal('modal-storage');
@@ -378,6 +382,10 @@ async function doResetAll() {
 
   jurnalEntries = [];
   jurnalCounter = 1;
+  // Semua jurnal sudah kosong, jadi kunci periode tidak punya arti lagi — lepas supaya
+  // pembukuan baru bisa mulai dari nol.
+  periodeKunciSampai = '';
+  if (typeof savePeriodeKunciToCloud === 'function') { try { savePeriodeKunciToCloud(); } catch(e) {} }
   // Also clear auto-save storage
   try { localStorage.removeItem(getStorageKey()); localStorage.removeItem(getMetaKey()); } catch(e) {}
   hasUnsavedChanges = false;

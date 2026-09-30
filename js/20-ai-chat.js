@@ -1023,8 +1023,8 @@ function getAppContext() {
   akuns.forEach(a => {
     const s = getSaldoAkun(a.kode);
     if(a.tipe==='Aset') totalAset += (a.normal==='D'?s:-s);
-    if(a.tipe==='Pendapatan') totalPend += s;
-    if(['Beban','HPP'].includes(a.tipe)) totalBeban += s;
+    if(a.tipe==='Pendapatan') totalPend += saldoBersihPL(a.kode);
+    if(['Beban','HPP'].includes(a.tipe)) totalBeban += saldoBersihPL(a.kode);
   });
   const recentJurnals = jurnalEntries.slice(-5).map(j =>
     `[${j.tanggal}] ${j.ket} (${j.jenis}): ` + j.lines.map(l => {
@@ -1138,7 +1138,7 @@ ppn opsional (null/kosongkan kalau non-PKP). Kalau produk belum ada di Kartu Sto
 
 15. BUAT INVOICE:
 {"type":"addInvoice","pelanggan":"PT Maju Jaya","tanggal":"2026-09-15","jatuhTempo":"2026-10-15","deskripsi":"Jasa konsultasi September","items":[{"nama":"Jasa Konsultasi","qty":1,"harga":5000000}],"ppn":true,"status":"terkirim","akunPiutang":"1201","akunPend":"4102"}
-status: "draft" (belum kirim, belum bikin jurnal) atau "terkirim" (langsung bikin jurnal piutang otomatis). ppn: true = kena PPN 12% dari subtotal.
+status: "draft" (belum kirim, belum bikin jurnal) atau "terkirim" (langsung bikin jurnal piutang otomatis). ppn: true = kena PPN dari subtotal dengan tarif efektif default aplikasi (11% untuk barang/jasa non-mewah, sesuai Settings); isi "ppnTarif":12 hanya untuk barang mewah kena PPnBM.
 
 16. TAMBAH ALERT/REMINDER NOTIFIKASI (pengingat tersimpan, beda dari toast showAlert):
 {"type":"addAlertNotifikasi","nama":"Saldo Kas Menipis","tipe":"saldo-minimum","batas":1000000,"akun":"1101"}
@@ -1183,7 +1183,7 @@ User: "beli mesin Rp500jt DP Rp100jt tunai sisanya utang bank, residu 50jt umur 
 
 KEMAMPUAN KALKULASI PENUH (tampilkan langkah-langkah):
 - Penyusutan: GL, DDB, SYD, Unit Produksi
-- Pajak: PPh 21 progresif 5 lapisan, PPh 23, PPh Badan, PPN 12%
+- Pajak: PPh 21 progresif 5 lapisan, PPh 23, PPh Badan, PPN (efektif 11% non-mewah, 12% barang mewah)
 - Keuangan: PV, FV, NPV, IRR, anuitas, bunga flat/efektif/majemuk
 - Analisis: semua rasio keuangan + interpretasi + benchmark
 - Persediaan: FIFO, LIFO, WA, MWA
@@ -1381,6 +1381,7 @@ function formatAIResponse(text) {
 
 function saveJurnalFromAI(parsed) {
   if(!parsed || !parsed.lines) return;
+  if(!guardPeriode(parsed.tanggal, 'diposting')) return;
   addJurnal(parsed);
   showAlert('✓ Jurnal dari AI berhasil disimpan!');
   showPage('jurnal-umum');
@@ -1701,10 +1702,10 @@ const TUT_MODULES = {
     title: 'Kalkulator Pajak', icon: '<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
     steps: [
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M5 21V3l2 2 2-2 2 2 2-2 2 2 2-2v18l-2-2-2 2-2-2-2 2-2-2-2 2zm4-11h6m-6 4h6"/></svg>', title:'Kalkulator PPN & PPh',
-        body:'Ada 4 jenis pajak yang bisa dihitung:\n\n<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>PPN</b> — Pajak Pertambahan Nilai 12%\n👤 <b>PPh 21</b> — Pajak karyawan dari gaji\n🏢 <b>PPh 23</b> — Pajak atas jasa/dividen/sewa\n🏛️ <b>PPh Badan</b> — Pajak penghasilan perusahaan',
+        body:'Ada 4 jenis pajak yang bisa dihitung:\n\n<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>PPN</b> — Pajak Pertambahan Nilai (efektif 11% non-mewah, 12% barang mewah)\n👤 <b>PPh 21</b> — Pajak karyawan dari gaji\n🏢 <b>PPh 23</b> — Pajak atas jasa/dividen/sewa\n🏛️ <b>PPh Badan</b> — Pajak penghasilan perusahaan',
         target: '.nav-item[onclick*="kalk-ppn"]', navTo: 'kalk-ppn' },
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M5 21V3l2 2 2-2 2 2 2-2 2 2 2-2v18l-2-2-2 2-2-2-2 2-2-2-2 2zm4-11h6m-6 4h6"/></svg>', title:'PPN — Eksklusif vs Inklusif',
-        body:'<b>Eksklusif (default)</b>\nHarga belum termasuk PPN.\nContoh: DPP Rp 10jt → PPN 12% = Rp 1,2jt → Total Rp 11,2jt\n\n<b>Inklusif</b>\nHarga sudah termasuk PPN.\nContoh: Total Rp 11,2jt → DPP = Rp 10jt → PPN = Rp 1,2jt\n\nPPN harus disetorkan ke DJP setiap bulan oleh PKP (Pengusaha Kena Pajak).',
+        body:'<b>Eksklusif (default)</b>\nHarga belum termasuk PPN.\nContoh: DPP Rp 10jt → PPN 11% = Rp 1,1jt → Total Rp 11,1jt\n\n<b>Inklusif</b>\nHarga sudah termasuk PPN.\nContoh: Total Rp 11,1jt → DPP = Rp 10jt → PPN = Rp 1,1jt\n\nPPN harus disetorkan ke DJP setiap bulan oleh PKP (Pengusaha Kena Pajak).',
         target: '#pajak-ppn', highlight: true },
       { icon:'👤', title:'PPh 21 — Pajak Karyawan',
         body:'PPh 21 dipotong dari gaji karyawan setiap bulan.\n\nSistem hitung otomatis:\n1. Penghasilan Bruto setahun\n2. Dikurangi Biaya Jabatan (max Rp 6jt)\n3. Dikurangi iuran BPJS/JHT\n4. Dikurangi PTKP sesuai status\n5. = PKP → dikenakan tarif progresif 5 lapisan\n\nTarif: 5% → 15% → 25% → 30% → 35%',
@@ -1820,7 +1821,7 @@ const TUT_MODULES = {
         body:'Fitur Invoice memungkinkan kamu:\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Buat invoice profesional untuk pelanggan\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Lacak status: Draft → Terkirim → Lunas\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Deteksi otomatis invoice yang sudah jatuh tempo\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Jurnal piutang dibuat otomatis saat invoice dikirim\n<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Jurnal penerimaan kas dibuat otomatis saat tandai lunas',
         navTo: 'invoice' },
       { icon:'+', title:'Cara Membuat Invoice',
-        body:'1. Buka menu <b>Invoice</b> → ketuk <b>+ Buat Invoice</b>\n2. No. Invoice otomatis terisi (bisa diubah)\n3. Isi nama pelanggan dan tanggal jatuh tempo\n4. Tambah item/jasa: nama, qty, harga\n5. Centang PPN 12% jika dikenakan pajak\n6. Pilih akun piutang dan akun pendapatan\n7. Ketuk <b>Simpan & Terkirim</b> → jurnal piutang otomatis dibuat!',
+        body:'1. Buka menu <b>Invoice</b> → ketuk <b>+ Buat Invoice</b>\n2. No. Invoice otomatis terisi (bisa diubah)\n3. Isi nama pelanggan dan tanggal jatuh tempo\n4. Tambah item/jasa: nama, qty, harga\n5. Centang PPN 11%/12% jika dikenakan pajak\n6. Pilih akun piutang dan akun pendapatan\n7. Ketuk <b>Simpan & Terkirim</b> → jurnal piutang otomatis dibuat!',
         target: null },
       { icon:'<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>', title:'Tandai Invoice Lunas',
         body:'Saat pelanggan membayar:\n1. Temukan invoice di daftar\n2. Ketuk tombol <b><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Lunas</b>\n3. Isi tanggal pembayaran dan nominal\n4. Pilih akun kas/bank penerima\n5. Ketuk <b>Konfirmasi Lunas & Buat Jurnal</b>\n\nJurnal: Kas (Debit) | Piutang Usaha (Kredit) — otomatis!',
@@ -1901,7 +1902,7 @@ const TUT_MODULES = {
     title: 'Pajak Otomatis', icon: '<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
     steps: [
       { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2)"><path d="M5 21V3l2 2 2-2 2 2 2-2 2 2 2-2v18l-2-2-2 2-2-2-2 2-2-2-2 2zm4-11h6m-6 4h6"/></svg>', title:'Pajak Otomatis di OAS',
-        body:'OAS otomatis menghitung pajak dari data jurnal kamu:\n\n💰 <b>PPN 12%</b> — dari transaksi penjualan & pembelian\n👤 <b>PPh 21</b> — pajak gaji karyawan (progresif)\n🏢 <b>PPh 23</b> — jasa, royalti, sewa, dividen, bunga\n\nHitung otomatis, buat jurnal pajak satu klik!',
+        body:'OAS otomatis menghitung pajak dari data jurnal kamu:\n\n💰 <b>PPN 11%/12%</b> — dari transaksi penjualan & pembelian\n👤 <b>PPh 21</b> — pajak gaji karyawan (progresif)\n🏢 <b>PPh 23</b> — jasa, royalti, sewa, dividen, bunga\n\nHitung otomatis, buat jurnal pajak satu klik!',
         navTo: 'pajak' },
       { icon:'💰', title:'PPN Keluaran & Masukan',
         body:'Sistem otomatis scan jurnal penjualan dan pembelian:\n\n<i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> <b>PPN Keluaran</b> = PPN dari penjualan (hutang ke negara)\n<i class="ti ti-download ti-inline"></i> <b>PPN Masukan</b> = PPN dari pembelian (kredit pajak)\n<i class="ti ti-scale ti-inline"></i> <b>Kurang/(Lebih) Bayar</b> = Keluaran minus Masukan\n\nKetuk <b><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Hitung Ulang</b> untuk perbarui kalkulasi.',

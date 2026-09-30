@@ -806,12 +806,12 @@ function pvMakeCover(nama,periode,proyek,sec,t,c1,c2,c3){
     +'</body></html>';
 }
 
-function pvSaldo(kode){let d=0,k=0;jurnalEntries.forEach(j=>j.lines.forEach(l=>{if(l.akun===kode){d+=l.debit||0;k+=l.kredit||0;}}));const a=akuns.find(x=>x.kode===kode);return a?.normal==='D'?d-k:k-d;}
+function pvSaldo(kode,plOnly){let d=0,k=0;(plOnly?getJurnalTanpaPenutup():jurnalEntries).forEach(j=>j.lines.forEach(l=>{if(l.akun===kode){d+=l.debit||0;k+=l.kredit||0;}}));const a=akuns.find(x=>x.kode===kode);if(plOnly&&a)return plNatural(a,{debit:d,kredit:k});return a?.normal==='D'?d-k:k-d;}
 
 function pvMakeDash(nama,periode,t,c1,c2,c3){
-  const tP=akuns.filter(a=>a.tipe==='Pendapatan').reduce((s,a)=>s+pvSaldo(a.kode),0);
-  const tH=akuns.filter(a=>a.tipe==='HPP').reduce((s,a)=>s+pvSaldo(a.kode),0);
-  const tB=akuns.filter(a=>a.tipe==='Beban').reduce((s,a)=>s+pvSaldo(a.kode),0);
+  const tP=akuns.filter(a=>a.tipe==='Pendapatan').reduce((s,a)=>s+pvSaldo(a.kode,true),0);
+  const tH=akuns.filter(a=>a.tipe==='HPP').reduce((s,a)=>s+pvSaldo(a.kode,true),0);
+  const tB=akuns.filter(a=>a.tipe==='Beban').reduce((s,a)=>s+pvSaldo(a.kode,true),0);
   const lk=tP-tH,lb=lk-tB;
   const kpis=[{l:'Total Pendapatan',v:rp(tP),c:c2},{l:'Laba Kotor',v:rp(lk),c:lk>=0?c2:'#ef4444'},{l:'Laba Bersih',v:rp(lb),c:lb>=0?c2:'#ef4444'},{l:'Total HPP',v:rp(tH),c:'#ef4444'},{l:'Total Beban',v:rp(tB),c:'#ef4444'},{l:'Margin',v:tP?((lb/tP)*100).toFixed(1)+'%':'—',c:c2}];
   const _jurnalAdaPpn=j=>j.lines.some(l=>(l.kredit>0&&(l.akun==='2301'||(akuns.find(a=>a.kode===l.akun)?.nama||'').toLowerCase().includes('ppn')))||(l.debit>0&&(l.akun==='1502'||(akuns.find(a=>a.kode===l.akun)?.nama||'').toLowerCase().includes('ppn'))));
@@ -833,8 +833,8 @@ function pvMakeJurnal(nama,periode,t,c1,c2,c3){
 
 function pvMakeLR(nama,periode,t,c1,c2,c3){
   const pL=akuns.filter(a=>a.tipe==='Pendapatan'),hL=akuns.filter(a=>a.tipe==='HPP'),bL=akuns.filter(a=>a.tipe==='Beban');
-  const tP=pL.reduce((s,a)=>s+pvSaldo(a.kode),0),tH=hL.reduce((s,a)=>s+pvSaldo(a.kode),0),tB=bL.reduce((s,a)=>s+pvSaldo(a.kode),0);
-  const mkR=(l)=>l.map(a=>{const s=pvSaldo(a.kode);return s?'<tr><td>'+a.kode+'</td><td>'+a.nama+'</td><td style="text-align:right;">'+rp(s)+'</td></tr>':''}).join('');
+  const tP=pL.reduce((s,a)=>s+pvSaldo(a.kode,true),0),tH=hL.reduce((s,a)=>s+pvSaldo(a.kode,true),0),tB=bL.reduce((s,a)=>s+pvSaldo(a.kode,true),0);
+  const mkR=(l)=>l.map(a=>{const s=pvSaldo(a.kode,true);return s?'<tr><td>'+a.kode+'</td><td>'+a.nama+'</td><td style="text-align:right;">'+rp(s)+'</td></tr>':''}).join('');
   const body='<div class="pv-sec">Laporan Laba Rugi</div><table><thead><tr><th>Kode</th><th>Akun</th><th style="text-align:right;">Saldo</th></tr></thead><tbody><tr><td colspan="3" style="font-weight:700;padding-top:8px;font-size:10px;">PENDAPATAN</td></tr>'+mkR(pL)+'<tr class="tot"><td colspan="2">Total Pendapatan</td><td style="text-align:right;">'+rp(tP)+'</td></tr><tr><td colspan="3" style="font-weight:700;padding-top:8px;font-size:10px;">HPP</td></tr>'+mkR(hL)+'<tr class="tot"><td colspan="2">Total HPP</td><td style="text-align:right;">'+rp(tH)+'</td></tr><tr><td colspan="3" style="font-weight:700;padding-top:8px;font-size:10px;">BEBAN</td></tr>'+mkR(bL)+'<tr class="tot"><td colspan="2">Total Beban</td><td style="text-align:right;">'+rp(tB)+'</td></tr><tr style="background:#dbeafe;"><td colspan="2" style="font-weight:800;">LABA BERSIH</td><td style="text-align:right;font-weight:800;">'+rp(tP-tH-tB)+'</td></tr></tbody></table>';
   return pvWrap(t,c1,c2,c3,nama,periode,body,'—');
 }
@@ -1272,8 +1272,8 @@ function exportExcelData(nama, periode) {
       if(a.tipe==='Aset') totalAset += bersih;
       else if(a.tipe==='Liabilitas') totalLiab += bersih;
       else if(a.tipe==='Ekuitas') totalEk += bersih;
-      else if(a.tipe==='Pendapatan') totalPend += bersih;
-      else if(['Beban','HPP'].includes(a.tipe)) totalBeban += bersih;
+      else if(a.tipe==='Pendapatan') totalPend += saldoBersihPL(a.kode);
+      else if(['Beban','HPP'].includes(a.tipe)) totalBeban += saldoBersihPL(a.kode);
     });
     const labaBersih = totalPend - totalBeban;
     const rows = [
@@ -1459,7 +1459,7 @@ function exportExcelData(nama, periode) {
     let totalPend=0, totalHPP=0, totalBeban=0;
     const pendRows=[], hppRows=[], bebanRows=[];
     akuns.forEach(a => {
-      const s = computeSaldoBersih(a.kode);
+      const s = saldoBersihPL(a.kode);
       if(!s) return;
       if(a.tipe==='Pendapatan') { totalPend+=s; pendRows.push([a.nama, s]); }
       if(a.tipe==='HPP') { totalHPP+=s; hppRows.push([a.nama, s]); }
@@ -1493,7 +1493,7 @@ function exportExcelData(nama, periode) {
     const asetRows=[], liabRows=[], ekRows=[];
     const labaBersih = (() => {
       let p=0,b=0;
-      akuns.forEach(a=>{const s=computeSaldoBersih(a.kode);if(a.tipe==='Pendapatan')p+=s;if(['Beban','HPP'].includes(a.tipe))b+=s;});
+      const _map=computeSaldoAll();akuns.forEach(a=>{const s=plNatural(a,_map[a.kode]);if(a.tipe==='Pendapatan')p+=s;if(['Beban','HPP'].includes(a.tipe))b+=s;});
       return p-b;
     })();
     akuns.forEach(a => {
@@ -1613,22 +1613,22 @@ function exportExcelData(nama, periode) {
     const pembelian = jurnalEntries.filter(j=>j.jenis==='Pembelian'||j.keterangan?.toLowerCase().includes('pembelian'));
     const totalPenj = penjualan.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&ac.tipe==='Pendapatan'?l.kredit:0)},0),0);
     const totalBeli = pembelian.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&(ac.tipe==='HPP'||ac.tipe==='Beban')?l.debit:0)},0),0);
-    const ppnKeluar = totalPenj*0.12; const ppnMasuk = totalBeli*0.12;
+    const ppnKeluar = hitungPpn(totalPenj); const ppnMasuk = hitungPpn(totalBeli);
     const rows = [
       ...headerBlock(nama, periode, 'LAPORAN PAJAK', today),
       [boldTxt('REKAPITULASI PAJAK')], [],
       [boldTxt('Uraian'), '', boldTxt('Nilai (Rp)')],
       [{v:'Dasar Pengenaan PPN Keluaran (Penjualan)',t:'s'},'',numFmt(totalPenj)],
-      [{v:'PPN Keluaran (12%)',t:'s',s:{font:{color:{rgb:'DC2626'}}}},'',boldNum(ppnKeluar)],
+      [{v:'PPN Keluaran (est. '+labelTarifPpn()+')',t:'s',s:{font:{color:{rgb:'DC2626'}}}},'',boldNum(ppnKeluar)],
       [{v:'Dasar Pengenaan PPN Masukan (Pembelian)',t:'s'},'',numFmt(totalBeli)],
-      [{v:'PPN Masukan (12%)',t:'s',s:{font:{color:{rgb:'16A34A'}}}},'',boldNum(ppnMasuk)],
+      [{v:'PPN Masukan (est. '+labelTarifPpn()+')',t:'s',s:{font:{color:{rgb:'16A34A'}}}},'',boldNum(ppnMasuk)],
       [], [{v:'PPN Kurang/(Lebih) Bayar',t:'s',s:{font:{bold:true}}},'',boldNum(ppnKeluar-ppnMasuk)],
       [], [boldTxt('RIWAYAT TRANSAKSI KENA PAJAK')], [],
       [hdr('Tanggal'), hdr('Keterangan'), hdr('DPP (Rp)'), hdr('Jenis Pajak'), hdr('Tarif'), hdr('Nilai Pajak (Rp)')],
     ];
-    [...penjualan.map(j=>({j,jenis:'PPN Keluaran',tarif:0.12})),...pembelian.map(j=>({j,jenis:'PPN Masukan',tarif:0.12}))].forEach(({j,jenis,tarif})=>{
+    [...penjualan.map(j=>({j,jenis:'PPN Keluaran',tarif:ppnTarifDefault()/100})),...pembelian.map(j=>({j,jenis:'PPN Masukan',tarif:ppnTarifDefault()/100}))].forEach(({j,jenis,tarif})=>{
       const dpp=j.lines.reduce((s,l)=>s+Math.max(l.debit,l.kredit),0);
-      rows.push([{v:j.tanggal,t:'s'},{v:j.keterangan||'—',t:'s'},numFmt(dpp),{v:jenis,t:'s'},{v:(tarif*100)+'%',t:'s'},numFmt(dpp*tarif)]);
+      rows.push([{v:j.tanggal,t:'s'},{v:j.keterangan||'—',t:'s'},numFmt(dpp),{v:jenis,t:'s'},{v:(Math.round(tarif*10000)/100)+'%',t:'s'},numFmt(Math.round(dpp*tarif))]);
     });
     addSheet(wb, 'Laporan Pajak', rows, [12,30,18,16,8,18]);
   }
@@ -1644,8 +1644,8 @@ function exportExcelData(nama, periode) {
     let prevPend = 0;
     months.forEach(mo => {
       const pfx = `${mo.y}-${String(mo.m+1).padStart(2,'0')}`;
-      const pend = jurnalEntries.filter(j=>j.tanggal.startsWith(pfx)).reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&ac.tipe==='Pendapatan'?l.kredit:0)},0),0);
-      const beban = jurnalEntries.filter(j=>j.tanggal.startsWith(pfx)).reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&(ac.tipe==='Beban'||ac.tipe==='HPP')?l.debit:0)},0),0);
+      const pend = jurnalEntries.filter(j=>j.tanggal.startsWith(pfx)).reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&ac.tipe==='Pendapatan'?(l.kredit||0)-(l.debit||0):0)},0),0);
+      const beban = jurnalEntries.filter(j=>j.tanggal.startsWith(pfx)).reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&(ac.tipe==='Beban'||ac.tipe==='HPP')?(l.debit||0)-(l.kredit||0):0)},0),0);
       const laba = pend - beban; const margin = pend ? laba/pend*100 : 0;
       const growth = prevPend ? ((pend-prevPend)/prevPend*100) : 0;
       rows.push([
@@ -1686,7 +1686,7 @@ function exportExcelData(nama, periode) {
     [{v:'Saldo Menurun',t:'s'}, {v:'=Nilai Buku × (2 / Umur)',t:'s',s:{font:{color:{rgb:'1D4ED8'}}}}, {v:'Beban besar di awal',t:'s',s:{font:{color:{rgb:'64748B'}}}}],
     [],
     [boldTxt('PAJAK'), '', ''],
-    [{v:'PPN',t:'s'}, {v:'=DPP × Tarif (12%)',t:'s',s:{font:{color:{rgb:'1D4ED8'}}}}, {v:'Pajak Pertambahan Nilai',t:'s',s:{font:{color:{rgb:'64748B'}}}}],
+    [{v:'PPN',t:'s'}, {v:'=DPP × Tarif (11% non-mewah / 12% mewah)',t:'s',s:{font:{color:{rgb:'1D4ED8'}}}}, {v:'Pajak Pertambahan Nilai',t:'s',s:{font:{color:{rgb:'64748B'}}}}],
     [{v:'PPh 21 Tarif',t:'s'}, {v:'5% / 15% / 25% / 30% / 35%',t:'s',s:{font:{color:{rgb:'1D4ED8'}}}}, {v:'Progresif berdasarkan PKP',t:'s',s:{font:{color:{rgb:'64748B'}}}}],
     [{v:'PPh Badan',t:'s'}, {v:'=PKP × 22%',t:'s',s:{font:{color:{rgb:'1D4ED8'}}}}, {v:'Tarif umum 2024',t:'s',s:{font:{color:{rgb:'64748B'}}}}],
     [{v:'BEP Unit',t:'s'}, {v:'=Biaya Tetap / (Harga − Biaya Variabel)',t:'s',s:{font:{color:{rgb:'1D4ED8'}}}}, {v:'Titik impas dalam unit',t:'s',s:{font:{color:{rgb:'64748B'}}}}],
@@ -1814,8 +1814,8 @@ function exportExcelFormula(nama, periode) {
     if(a.tipe==='Aset') totalAset+=b;
     else if(a.tipe==='Liabilitas') totalLiab+=b;
     else if(a.tipe==='Ekuitas') totalEk+=b;
-    else if(a.tipe==='Pendapatan') totalPend+=b;
-    else if(['Beban','HPP'].includes(a.tipe)) totalBeban+=b;
+    else if(a.tipe==='Pendapatan') totalPend+=saldoBersihPL(a.kode);
+    else if(['Beban','HPP'].includes(a.tipe)) totalBeban+=saldoBersihPL(a.kode);
   });
   const labaBersih = totalPend - totalBeban;
 
@@ -1903,7 +1903,7 @@ function exportExcelFormula(nama, periode) {
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const pendR=[], bebanR=[], hppR=[];
   akuns.forEach(a=>{
-    const s=computeSaldoBersih(a.kode);
+    const s=saldoBersihPL(a.kode);
     if(a.tipe==='Pendapatan') pendR.push([a.nama, s]);
     if(a.tipe==='HPP') hppR.push([a.nama, s]);
     if(a.tipe==='Beban') bebanR.push([a.nama, s]);
@@ -2501,7 +2501,7 @@ function exportPDF(nama, periode, proyek='') {
     sectionHeader('RINGKASAN KEUANGAN', 'Dashboard');
     const saldoMap = computeSaldoAll();
     let tA=0,tL=0,tE=0,tP=0,tB=0;
-    akuns.forEach(a=>{const s=saldoMap[a.kode]||{debit:0,kredit:0};const b=a.normal==='D'?s.debit-s.kredit:s.kredit-s.debit;if(a.tipe==='Aset')tA+=b;else if(a.tipe==='Liabilitas')tL+=b;else if(a.tipe==='Ekuitas')tE+=b;else if(a.tipe==='Pendapatan')tP+=b;else if(['Beban','HPP'].includes(a.tipe))tB+=b;});
+    akuns.forEach(a=>{const s=saldoMap[a.kode]||{debit:0,kredit:0};const b=a.normal==='D'?s.debit-s.kredit:s.kredit-s.debit;if(a.tipe==='Aset')tA+=b;else if(a.tipe==='Liabilitas')tL+=b;else if(a.tipe==='Ekuitas')tE+=b;else if(a.tipe==='Pendapatan')tP+=saldoBersihPL(a.kode);else if(['Beban','HPP'].includes(a.tipe))tB+=saldoBersihPL(a.kode);});
     const tLB = tP-tB;
     const cards = [['Total Aset',tA,GREEN],['Total Pendapatan',tP,BLUE],['Total Beban',tB,RED],['Laba Bersih',tLB,tLB>=0?GREEN:RED]];
     const cW = (W-margin*2)/2 - 2;
@@ -2623,7 +2623,7 @@ function exportPDF(nama, periode, proyek='') {
     sectionHeader('LAPORAN LABA RUGI');
     let tP=0,tH=0,tB=0;
     const pRows=[],hRows=[],bRows=[];
-    akuns.forEach(a=>{const s=computeSaldoBersih(a.kode);if(!s)return;if(a.tipe==='Pendapatan'){tP+=s;pRows.push([a.nama,s]);}if(a.tipe==='HPP'){tH+=s;hRows.push([a.nama,s]);}if(a.tipe==='Beban'){tB+=s;bRows.push([a.nama,s]);}});
+    akuns.forEach(a=>{const s=saldoBersihPL(a.kode);if(!s)return;if(a.tipe==='Pendapatan'){tP+=s;pRows.push([a.nama,s]);}if(a.tipe==='HPP'){tH+=s;hRows.push([a.nama,s]);}if(a.tipe==='Beban'){tB+=s;bRows.push([a.nama,s]);}});
     const labaK=tP-tH, labaB=labaK-tB;
     const sect = (title,rows,total,color) => {
       if(y>250){doc.addPage();y=margin;}
@@ -2654,8 +2654,9 @@ function exportPDF(nama, periode, proyek='') {
     // Compute laba bersih from P&L
     const labaBersih2 = (() => {
       let p=0, b=0;
+      const _map2 = computeSaldoAll();
       akuns.forEach(a => {
-        const s = computeSaldoBersih(a.kode);
+        const s = plNatural(a, _map2[a.kode]);
         if(a.tipe==='Pendapatan') p += s;
         if(['Beban','HPP'].includes(a.tipe)) b += s;
       });
@@ -2861,7 +2862,7 @@ function exportCSV(nama, periode) {
 
   if(document.getElementById('exp-laba-rugi')?.checked) {
     const rows=[]; let tP=0,tH=0,tB=0;
-    akuns.forEach(a=>{const s=computeSaldoBersih(a.kode);if(!s)return;if(a.tipe==='Pendapatan'){tP+=s;rows.push([a.nama,'Pendapatan',s,'','']);}if(a.tipe==='HPP'){tH+=s;rows.push([a.nama,'HPP','',s,'']);}if(a.tipe==='Beban'){tB+=s;rows.push([a.nama,'Beban','',s,'']);}});
+    akuns.forEach(a=>{const s=saldoBersihPL(a.kode);if(!s)return;if(a.tipe==='Pendapatan'){tP+=s;rows.push([a.nama,'Pendapatan',s,'','']);}if(a.tipe==='HPP'){tH+=s;rows.push([a.nama,'HPP','',s,'']);}if(a.tipe==='Beban'){tB+=s;rows.push([a.nama,'Beban','',s,'']);}});
     rows.push(['LABA BERSIH','',tP-tH-tB,'','']);
     sections.push('\n=== LAPORAN LABA RUGI ===');
     sections.push(makeCSV(['Nama Akun','Kategori','Pendapatan','Beban','Laba Bersih'],rows));
@@ -2906,6 +2907,7 @@ async function executeAIActions(actions) {
             results.push(`<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Jurnal "${entry.ket}" tidak balance (Dr:${rp(td)} ≠ Kr:${rp(tk)}) — dilewati`);
             break;
           }
+          if(!guardPeriode(entry.tanggal, 'diposting')) { results.push('Jurnal dilewati: periode terkunci'); break; }
           addJurnal(entry);
           renderDashboard();
           results.push(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Jurnal disimpan: <b>${entry.ket}</b> — ${entry.lines.length} baris (${rp(td)})`);
@@ -2993,7 +2995,7 @@ async function executeAIActions(actions) {
           if(action.tarif) setSelectVal('ppn-tarif', action.tarif);
           if(action.mode) setSelectVal('ppn-mode', action.mode);
           hitungPPN();
-          const ppn = (action.nilai||0) * (parseFloat(action.tarif)||12)/100;
+          const ppn = (action.nilai||0) * (parseFloat(action.tarif)||ppnTarifDefault())/100;
           results.push(`<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Kalkulator PPN diisi: DPP Rp ${(action.nilai||0).toLocaleString('id-ID')} → PPN = <b>Rp ${Math.round(ppn).toLocaleString('id-ID')}</b>`);
           break;
         }
@@ -3124,7 +3126,7 @@ async function executeAIActions(actions) {
           const items = action.items.map(it => ({ nama: it.nama || 'Item', qty: Number(it.qty)||1, harga: Number(it.harga)||0 }));
           const subtotal = items.reduce((s,it)=>s+it.qty*it.harga, 0);
           const ppnOn = !!action.ppn;
-          const ppnNom = ppnOn ? Math.round(subtotal*0.12) : 0;
+          const ppnNom = ppnOn ? hitungPpn(subtotal, action.ppnTarif) : 0;
           const total = subtotal + ppnNom;
           const status = action.status === 'terkirim' ? 'terkirim' : 'draft';
           const akunPiutang = action.akunPiutang || akuns.find(a=>a.nama.toLowerCase().includes('piutang'))?.kode || '';
@@ -3145,7 +3147,7 @@ async function executeAIActions(actions) {
                 ...(ppnNom>0?[{akun:akuns.find(a=>a.nama.toLowerCase().includes('ppn')&&a.tipe==='Liabilitas')?.kode||akunPend, debit:0, kredit:ppnNom}]:[])
               ].filter(l=>l.akun)
             };
-            jurnalEntries.push(entry);
+            if(!postJurnalLegacy(entry)) { results.push('Invoice dilewati: periode ' + fmtDate(inv.tanggal) + ' sudah dikunci'); break; }
             saveToStorage(false);
           }
           invoiceList.unshift(inv);
