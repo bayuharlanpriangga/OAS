@@ -191,6 +191,21 @@ CREATE POLICY "Anyone can read join code by code value"
   ON company_join_codes FOR SELECT USING (true);
 ```
 
+### 2.2b `company_records` — invoice, kontak, aset tetap, produk
+
+Migrasi: [`docs/migrations/001_company_records.sql`](./migrations/001_company_records.sql).
+Satu baris = satu record, dipisah per bisnis. Dipakai oleh `js/22-cloud-records.js`.
+
+| Kolom | Tipe | Isi |
+|---|---|---|
+| `company_id` | uuid, FK `companies` | Pemilik data (ON DELETE CASCADE) |
+| `kind` | text | `invoice` \| `kontak` \| `aset_tetap` \| `produk` |
+| `rec_id` | text | id record di app (`INV_..`, `KTK_..`, `AT_..`, atau `ksId` untuk produk) |
+| `data` | jsonb | isi record apa adanya |
+| `updated_at` | timestamptz | waktu sync terakhir |
+
+PK `(company_id, kind, rec_id)`. RLS: pemilik company, sama dengan tabel lain.
+
 ### 2.3 Row Level Security — model keamanan
 
 Semua tabel (kecuali `SELECT` di `company_join_codes`) dibatasi lewat
@@ -226,13 +241,15 @@ di akhir), sisanya global per-browser/device.
 | `oas_theme` | Global | `'dark'` \| `'light'` | Preferensi tema, dibaca sebelum render pertama (anti-flicker) |
 | `oas_jb` | Global | JSON array | `jurnalBerulangList` — template jurnal berulang (gaji, sewa, dst) |
 | `oas_jb_hist` | Global | JSON array | Riwayat eksekusi jurnal berulang |
-| `oas_invoices` | Global | JSON array | `invoiceList` |
-| `oas_kontak` | Global | JSON array | `kontakList` (pelanggan/supplier) |
-| `oas_aset_tetap` | Global | JSON array | `asetTetapList` |
+| `oas_invoices` | Global (hanya mode tamu) | JSON array | `invoiceList`. Saat login, data ada di `company_records`; key ini tidak ditulis lagi |
+| `oas_kontak` | Global (hanya mode tamu) | JSON array | `kontakList` (pelanggan/supplier). Saat login: `company_records` |
+| `oas_aset_tetap` | Global (hanya mode tamu) | JSON array | `asetTetapList`. Saat login: `company_records` |
 | `oas_kurs` | Global | JSON object | `{ USD, IDR, SGD, EUR, MYR, JPY, updatedAt }` — kurs multi mata uang |
 | `oas_alerts` | Global | JSON array | `notifAlerts` — aturan notifikasi (arus kas negatif, jatuh tempo, dst) |
 | `oas_notif_hist` | Global | JSON array | `notifHistory` — riwayat notifikasi yang sudah muncul |
 | `oas_anggaran` | Global | JSON array | `anggaranList` — anggaran vs aktual per periode |
+| `oas_rec_<kind>_<companyId>` | Per company | JSON array | Cache lokal invoice/kontak/aset_tetap/produk; dipakai bila cloud gagal dimuat atau ditulis |
+| `oas_rec_seen_<companyId>` / `oas_rec_legacy_claimed` | Per company / global | `'1'` / companyId | Penanda migrasi data lama: data global hanya boleh dipindah ke satu bisnis dan tidak ditawarkan ulang |
 | `oas_mks_<companyId>` / `oas_mks_guest` | Per company | JSON object | Fallback lokal untuk `multiKartuStock` bila gagal sync ke cloud |
 | `oas_profil` / `oas_profil_v1` | Global | JSON object | Profil perusahaan (nama, alamat, logo ref, dsb) — legacy key ganda |
 | `oas_company_logo` | Global | base64 string | Logo perusahaan (fallback lokal) |
@@ -437,22 +454,23 @@ Tidak semua state runtime disinkronkan ke Supabase. Berdasarkan pemetaan
 | `jurnalEntries`, `akuns` | ✅ Ya | `jurnal_entries`, `akuns` |
 | Profil perusahaan | ✅ Ya (sebagai JSON) | `company_profiles.data._profil` |
 | `multiKartuStock` | ✅ Ya (sebagai JSON) | `company_profiles.data._multi_kartu_stock` |
-| `produkList` | ❌ Tidak | hanya `oas_data_v2_<companyId>` (localStorage) |
-| `invoiceList` | ❌ Tidak | hanya `oas_invoices` (localStorage, global — tidak di-scope per company!) |
-| `kontakList` | ❌ Tidak | hanya `oas_kontak` (localStorage, global) |
-| `asetTetapList` | ❌ Tidak | hanya `oas_aset_tetap` (localStorage, global) |
+| `produkList` | ✅ Ya | `company_records` (`kind='produk'`). Sebelumnya tidak tersimpan sama sekali untuk bisnis login |
+| `invoiceList` | ✅ Ya | `company_records` (`kind='invoice'`) |
+| `kontakList` | ✅ Ya | `company_records` (`kind='kontak'`) |
+| `asetTetapList` | ✅ Ya | `company_records` (`kind='aset_tetap'`) |
 | `jurnalBerulangList`, `anggaranList`, `notifAlerts`, `kursData` | ❌ Tidak | localStorage, global |
 | `org_members`, `company_join_codes` | ✅ Ya | tabel sendiri |
 
-**Implikasi nyata**: invoice, kontak, aset tetap, jurnal berulang, dan
-anggaran **tidak berpindah antar perangkat** — jika user login dari
-browser/device lain, data-data ini tidak akan muncul meskipun jurnal dan
-akun (yang memang tersimpan di cloud) muncul normal. Beberapa key ini
-juga **tidak di-scope per company** (`oas_invoices`, `oas_kontak`, dst
-tidak punya suffix `_<companyId>`), jadi berpotensi bocor antar-bisnis
-dalam satu browser yang sama jika user berpindah company tanpa reload
-penuh. Ini adalah kandidat perbaikan prioritas tinggi jika multi-device
-atau multi-company yang benar-benar terisolasi jadi kebutuhan serius.
+**Status**: invoice, kontak, aset tetap, dan produk sudah disinkron per bisnis
+lewat `company_records` (`js/22-cloud-records.js`), jadi ikut berpindah antar
+perangkat dan tidak tercampur antar bisnis. Key global `oas_invoices`,
+`oas_kontak`, `oas_aset_tetap` hanya dipakai mode tamu.
+
+**Yang masih hanya di localStorage dan global** (belum di-scope per company,
+jadi masih berpotensi bocor antar bisnis di browser yang sama dan tidak
+berpindah perangkat): `jurnalBerulangList`, `anggaranList`, `notifAlerts`,
+`kursData`. Tabel `company_records` sengaja generik (kolom `kind`), jadi
+menambahkan mereka cukup menambah entri di `CLOUD_RECORD_KINDS`.
 
 ---
 

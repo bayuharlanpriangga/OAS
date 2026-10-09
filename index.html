@@ -76,6 +76,7 @@
 <script defer src="js/19-fitur-tambahan.js"></script>
 <script defer src="js/20-ai-chat.js"></script>
 <script defer src="js/21-settings.js"></script>
+<script defer src="js/22-cloud-records.js"></script>
 <script defer src="js/99-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- Tabler webfont CDN dihapus: semua ikon "ti-*" sudah self-hosted sebagai SVG mask di css/icons.css (lihat komentar di file itu). Menghapus dependency CDN ini supaya ikon tidak pernah gagal/putus saat CDN lambat atau diblokir jaringan/ad-blocker. -->
@@ -348,7 +349,6 @@
       <button class="btn btn-ghost btn-sm" onclick="openModalSaldoAwal()"><i class="ti ti-settings ti-btn"></i> Saldo Awal</button>
       <button class="btn btn-ghost btn-sm" onclick="openModal('modal-profil');loadProfil()"><i class="ti ti-building ti-btn"></i> Profil</button>
       <button class="btn btn-ghost btn-sm" onclick="openAccountSettings()"><i class="ti ti-user ti-btn"></i> Akun</button>
-      <button class="btn btn-danger btn-sm" onclick="confirmResetAll()"><i class="ti ti-trash ti-btn"></i> Reset</button>
     </div>
   </div>
 
@@ -825,7 +825,6 @@
     <div><div class="section-title">Jurnal Umum</div><div class="section-sub">Semua entri jurnal</div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="btn-setting-saldo-awal" class="btn btn-ghost btn-sm" onclick="openModalSaldoAwal()" data-tooltip="Hanya bisa diatur sebelum ada transaksi apapun"><i class="ti ti-settings ti-inline"></i> Setting Saldo Awal</button>
-      <button class="btn btn-danger btn-sm" onclick="confirmResetAll()"><i class="ti ti-trash ti-btn"></i> Reset Semua Data</button>
     </div>
   </div>
   <div class="filter-bar">
@@ -3298,6 +3297,15 @@
       <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:10px 12px;font-size:11.5px;color:var(--muted);line-height:1.7;">
         💡 <b style="color:var(--accent3)">Tips:</b> Data di slot tersimpan di browser ini. Untuk backup ke device lain atau sebagai keamanan, selalu <b>Download .oas</b> secara berkala. File .oas bisa di-upload kembali di browser manapun.
       </div>
+
+      <!-- Zona berbahaya: sengaja tersembunyi (tertutup) supaya tidak kepencet -->
+      <details style="margin-top:14px;">
+        <summary style="cursor:pointer;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;list-style:none;"><i class="ti ti-alert-triangle" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i> Lanjutan</summary>
+        <div style="margin-top:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div style="font-size:11.5px;color:var(--muted);line-height:1.6;flex:1;min-width:180px;"><b style="color:var(--red);">Reset Semua Data</b><br>Menghapus semua jurnal dan mengembalikan laporan ke nol. Tidak bisa dibatalkan.</div>
+          <button class="btn btn-danger btn-sm" onclick="closeModal('modal-storage');confirmResetAll()"><i class="ti ti-trash ti-btn"></i> Reset Semua Data</button>
+        </div>
+      </details>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-storage')">Tutup</button>

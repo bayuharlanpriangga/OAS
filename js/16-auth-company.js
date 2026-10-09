@@ -1254,6 +1254,9 @@ async function selectCompany(company) {
   // Reset semua data agar tidak bocor ke bisnis baru
   multiKartuStock = {};
   jurnalEntries = [];
+  // Invoice/kontak/aset/produk bisnis sebelumnya tidak boleh terbawa (produkList dulu
+  // tidak pernah di-reset di sini).
+  if (typeof cloudResetRecordsState === 'function') cloudResetRecordsState();
   periodeKunciSampai = ''; // kunci milik bisnis lain tidak boleh terbawa
   activeKartuStockId = null;
   activeKategoriId = null;
@@ -1390,6 +1393,11 @@ async function loadDataFromSupabase() {
     // Kunci periode disimpan di cloud supaya berlaku di semua perangkat/anggota tim
     periodeKunciSampai = (typeof cloudData._periode_kunci === 'string') ? cloudData._periode_kunci : '';
     if (typeof cloudData._ppn_tarif === 'number') transaksiAkunSettings.ppnTarif = cloudData._ppn_tarif;
+  }
+
+  // Invoice, kontak, aset tetap, produk (tabel company_records)
+  if (typeof cloudLoadRecords === 'function') {
+    await cloudLoadRecords();
   }
 
   updateSaveIndicator('saved');
@@ -1591,6 +1599,17 @@ window.saveToStorage = async function(showToast = true) {
       }
     }
     await saveAkunsToSupabase();
+    // produkList sebelumnya tidak ikut tersimpan sama sekali untuk bisnis cloud
+    // (cabang ini tidak memanggil saveToStorage lokal). Sync semua kind: diff-nya murah.
+    if (typeof cloudSyncRecords === 'function') {
+      const recOk = await cloudSyncRecords();
+      if (!recOk) {
+        if (!_spinnerAlreadyActive) hideOpSpinner();
+        updateSaveIndicator('error');
+        showAutoSaveToast('⚠️ Invoice/kontak/aset/produk belum tersimpan ke cloud', false);
+        return false;
+      }
+    }
     hasUnsavedChanges = false;
     lastSaveTime = new Date();
     updateSaveIndicator('saved');

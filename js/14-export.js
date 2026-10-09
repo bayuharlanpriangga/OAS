@@ -3061,7 +3061,7 @@ async function executeAIActions(actions) {
           if(!action.nama) { results.push(`❌ Nama kontak wajib diisi — dilewati`); break; }
           const existing = kontakList.find(k => k.nama.toLowerCase() === String(action.nama).toLowerCase());
           const kontak = {
-            id: existing?.id || 'KTK_' + Date.now(),
+            id: existing?.id || 'KTK_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
             nama: action.nama,
             tipe: action.tipe || 'pelanggan',
             telp: action.telp || '', email: action.email || '', alamat: action.alamat || '',
@@ -3079,7 +3079,7 @@ async function executeAIActions(actions) {
         case 'addAsetTetap': {
           if(!action.nama || !action.harga) { results.push(`❌ Nama aset dan harga perolehan wajib diisi — dilewati`); break; }
           const aset = {
-            id: 'AT_' + Date.now(),
+            id: 'AT_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
             nama: action.nama, hargaPerolehan: Number(action.harga) || 0,
             kategori: action.kategori || 'Peralatan', tglPerolehan: action.tglPerolehan || today,
             nilaiResidu: Number(action.residu) || 0, umurEkonomis: Number(action.umur) || 5,
@@ -3132,7 +3132,7 @@ async function executeAIActions(actions) {
           const akunPiutang = action.akunPiutang || akuns.find(a=>a.nama.toLowerCase().includes('piutang'))?.kode || '';
           const akunPend = action.akunPend || akuns.find(a=>a.kode==='4101')?.kode || '';
           const inv = {
-            id: 'INV_' + Date.now(), noInvoice: action.noInvoice || `INV-${new Date(action.tanggal||today).getFullYear()}-${String(invoiceList.length+1).padStart(3,'0')}`,
+            id: 'INV_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), noInvoice: action.noInvoice || `INV-${new Date(action.tanggal||today).getFullYear()}-${String(invoiceList.length+1).padStart(3,'0')}`,
             pelanggan: action.pelanggan, tanggal: action.tanggal || today,
             jatuhTempo: action.jatuhTempo || today, deskripsi: action.deskripsi || '',
             items, subtotal, ppn: ppnNom, total, sisaTagihan: total, status,

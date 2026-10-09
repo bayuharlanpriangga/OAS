@@ -881,13 +881,20 @@ document.addEventListener('DOMContentLoaded', function() {
 function saveFiturBaru() {
   localStorage.setItem('oas_jb', JSON.stringify(jurnalBerulangList));
   localStorage.setItem('oas_jb_hist', JSON.stringify(jurnalBerulangHistory));
-  localStorage.setItem('oas_invoices', JSON.stringify(invoiceList));
   localStorage.setItem('oas_kurs', JSON.stringify(kursData));
   localStorage.setItem('oas_alerts', JSON.stringify(notifAlerts));
   localStorage.setItem('oas_notif_hist', JSON.stringify(notifHistory));
   localStorage.setItem('oas_anggaran', JSON.stringify(anggaranList));
-  localStorage.setItem('oas_aset_tetap', JSON.stringify(asetTetapList));
-  localStorage.setItem('oas_kontak', JSON.stringify(kontakList));
+  // Invoice, kontak, dan aset tetap: bisnis login -> cloud (per company_id, lihat
+  // 22-cloud-records.js). Key global hanya untuk mode tamu; kalau login ikut menulis
+  // ke sana, data satu bisnis bocor ke tamu/bisnis lain di browser yang sama.
+  if (typeof currentCompany !== 'undefined' && currentCompany && typeof cloudSyncRecords === 'function') {
+    cloudSyncRecords(['invoice', 'kontak', 'aset_tetap']);
+  } else {
+    localStorage.setItem('oas_invoices', JSON.stringify(invoiceList));
+    localStorage.setItem('oas_aset_tetap', JSON.stringify(asetTetapList));
+    localStorage.setItem('oas_kontak', JSON.stringify(kontakList));
+  }
 }
 
 function hitungPPh21Otomatis() {
