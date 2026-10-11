@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════════════════════
-// CLOUD RECORDS — sinkron invoice, kontak, aset tetap, dan produk ke
-// Supabase (tabel company_records), terpisah per bisnis.
+// CLOUD RECORDS — sinkron invoice, kontak, aset tetap, produk, jurnal berulang,
+// dan anggaran ke Supabase (tabel company_records), terpisah per bisnis.
 //
-// Kenapa ada: sebelumnya keempat data ini hanya di localStorage dengan key
+// Kenapa ada: sebelumnya data ini hanya di localStorage dengan key
 // global, jadi tidak ikut ke perangkat lain, tercampur antar bisnis, dan
 // hilang kalau cache browser dibersihkan. Skema tabel: lihat
 // docs/migrations/001_company_records.sql.
@@ -25,6 +25,11 @@ const CLOUD_RECORD_KINDS = {
   kontak:     { get: () => kontakList,    set: v => { kontakList = v; },    idOf: r => r && r.id,    legacyKey: 'oas_kontak' },
   aset_tetap: { get: () => asetTetapList, set: v => { asetTetapList = v; }, idOf: r => r && r.id,    legacyKey: 'oas_aset_tetap' },
   produk:     { get: () => produkList,    set: v => { produkList = v; },    idOf: r => r && r.ksId,  legacyKey: null },
+  // legacyOnce: kind yang ditambah belakangan. Data lama di key global ditawarkan
+  // SEKALI per kind per bisnis (flag oas_rec_seen_<cid>_<kind>), walau bisnis itu
+  // sudah punya record kind lain di cloud. Tanpa ini data lama tampak hilang.
+  jurnal_berulang: { get: () => jurnalBerulangList, set: v => { jurnalBerulangList = v; }, idOf: r => r && r.id, legacyKey: 'oas_jb',       legacyOnce: true },
+  anggaran:        { get: () => anggaranList,       set: v => { anggaranList = v; },       idOf: r => r && r.id, legacyKey: 'oas_anggaran', legacyOnce: true },
 };
 
 const CLOUD_REC_PAGE  = 1000; // batas default Supabase per request
@@ -46,6 +51,20 @@ function _cloudReadCache(cid, kind) {
     const arr = JSON.parse(localStorage.getItem(_cloudCacheKey(cid, kind)) || '[]');
     return Array.isArray(arr) ? arr : [];
   } catch (e) { return []; }
+}
+
+function _cloudSeenKey(cid, kind) { return 'oas_rec_seen_' + cid + '_' + kind; }
+
+// Kind legacyOnce yang belum pernah diputuskan untuk bisnis ini.
+function _cloudPendingOnce(cid) {
+  return Object.keys(CLOUD_RECORD_KINDS).filter(k =>
+    CLOUD_RECORD_KINDS[k].legacyOnce && !localStorage.getItem(_cloudSeenKey(cid, k)));
+}
+
+// Boleh menawarkan data lama (key global) untuk kind ini ke bisnis ini?
+function _cloudLegacyAllowed(cid, kind, def, legacyOk) {
+  if (!def.legacyOnce) return legacyOk;
+  return !localStorage.getItem(_cloudSeenKey(cid, kind)) && !localStorage.getItem('oas_rec_legacy_claimed_' + kind);
 }
 
 // id -> { rec, json }. Record tanpa id dilewati; id ganda: yang terakhir menang.
@@ -106,7 +125,7 @@ async function cloudLoadRecords() {
     _cloudLoadFromCache(cid);
     if (!_cloudTableWarned) {
       _cloudTableWarned = true;
-      showAlert('⚠️ Data invoice/kontak/aset/produk belum bisa dimuat dari cloud. Pastikan migrasi SQL <b>001_company_records</b> sudah dijalankan di Supabase. Sementara ini data dibaca dari cache perangkat.');
+      showAlert('⚠️ Data invoice/kontak/aset/produk/jurnal berulang/anggaran belum bisa dimuat dari cloud. Pastikan migrasi SQL <b>001_company_records</b> sudah dijalankan di Supabase. Sementara ini data dibaca dari cache perangkat.');
     }
     return false;
   }
@@ -130,6 +149,10 @@ async function cloudLoadRecords() {
   else {
     localStorage.setItem('oas_rec_seen_' + cid, '1');
     Object.keys(CLOUD_RECORD_KINDS).forEach(k => _cloudCacheLocal(cid, k, CLOUD_RECORD_KINDS[k].get()));
+    // Kind legacyOnce yang sudah punya record di cloud dianggap beres; sisanya
+    // mungkin masih punya data lama di perangkat ini.
+    _cloudPendingOnce(cid).forEach(k => { if (byKind[k] && byKind[k].length) localStorage.setItem(_cloudSeenKey(cid, k), '1'); });
+    if (_cloudPendingOnce(cid).length) await cloudOfferLocalMigration(cid);
   }
   return true;
 }
@@ -141,6 +164,7 @@ async function cloudLoadRecords() {
 async function cloudOfferLocalMigration(cid) {
   const found = {};
   let usedLegacy = false;
+  const onceKinds = []; // kind legacyOnce yang datanya ikut diunggah
   // Data lama (key global / payload lokal) hanya ditawarkan kalau bisnis ini belum
   // pernah punya data di cloud dan data global belum dipindah ke bisnis lain.
   // Tanpa ini, record yang sengaja dihapus bisa muncul lagi dari data lama.
@@ -149,10 +173,13 @@ async function cloudOfferLocalMigration(cid) {
   Object.entries(CLOUD_RECORD_KINDS).forEach(([kind, def]) => {
     const cached = _cloudReadCache(cid, kind);
     if (cached.length) { found[kind] = cached; return; }
-    if (def.legacyKey && legacyOk) {
+    if (def.legacyKey && _cloudLegacyAllowed(cid, kind, def, legacyOk)) {
       try {
         const arr = JSON.parse(localStorage.getItem(def.legacyKey) || '[]');
-        if (Array.isArray(arr) && arr.length) { found[kind] = arr; usedLegacy = true; }
+        if (Array.isArray(arr) && arr.length) {
+          found[kind] = arr;
+          if (def.legacyOnce) onceKinds.push(kind); else usedLegacy = true;
+        }
       } catch (e) {}
     }
   });
@@ -163,10 +190,14 @@ async function cloudOfferLocalMigration(cid) {
       if (Array.isArray(p) && p.length) found.produk = p;
     } catch (e) {}
   }
-  if (!Object.keys(found).length) return;
+  if (!Object.keys(found).length) {
+    // Tidak ada yang perlu dipindah: tandai selesai agar data lama tidak muncul lagi nanti.
+    _cloudPendingOnce(cid).forEach(k => localStorage.setItem(_cloudSeenKey(cid, k), '1'));
+    return;
+  }
 
   if (typeof hideOpSpinner === 'function') hideOpSpinner(); // spinner jangan menutupi dialog
-  const label = { invoice: 'Invoice', kontak: 'Kontak', aset_tetap: 'Aset tetap', produk: 'Produk' };
+  const label = { invoice: 'Invoice', kontak: 'Kontak', aset_tetap: 'Aset tetap', produk: 'Produk', jurnal_berulang: 'Jurnal berulang', anggaran: 'Anggaran' };
   const ok = await showCustomConfirmGeneral({
     icon: '☁️', iconColor: 'rgba(34,211,238,0.12)', iconBorder: 'rgba(34,211,238,0.3)',
     title: 'Unggah Data Lokal ke Cloud?',
@@ -185,6 +216,8 @@ async function cloudOfferLocalMigration(cid) {
   const synced = await cloudSyncRecords();
   if (synced) {
     if (usedLegacy) localStorage.setItem('oas_rec_legacy_claimed', cid);
+    onceKinds.forEach(k => localStorage.setItem('oas_rec_legacy_claimed_' + k, cid));
+    _cloudPendingOnce(cid).forEach(k => localStorage.setItem(_cloudSeenKey(cid, k), '1'));
     localStorage.setItem('oas_rec_seen_' + cid, '1');
     showAlert('✓ Data lokal berhasil diunggah ke cloud.');
   } else {

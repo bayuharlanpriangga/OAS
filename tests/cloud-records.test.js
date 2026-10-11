@@ -49,7 +49,7 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } =
   };
   vm.createContext(ctx);
   // list global di 01-state.js adalah `let`; di sini disediakan lewat script yang sama
-  vm.runInContext('let invoiceList=[],kontakList=[],asetTetapList=[],produkList=[];', ctx);
+  vm.runInContext('let invoiceList=[],kontakList=[],asetTetapList=[],produkList=[],jurnalBerulangList=[],anggaranList=[];', ctx);
   vm.runInContext(src, ctx);
   const run = code => vm.runInContext(code, ctx);
   return { ctx, run, store, calls, ls, alerts };
@@ -124,6 +124,74 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } =
     await e.run('cloudSyncRecords()');
     await e.run('cloudResetRecordsState(); cloudLoadRecords()');
     ok(e.run('invoiceList.length') === 0, 'invoice yang sudah dihapus tidak hidup lagi dari data lama');
+  }
+
+  console.log('[4] jurnal berulang & anggaran');
+  {
+    const e = makeEnv();
+    e.store.push({ company_id: 'c1', kind: 'jurnal_berulang', rec_id: 'jb_1', data: { id: 'jb_1', createdAt: '2026-01-01' } });
+    e.store.push({ company_id: 'c1', kind: 'jurnal_berulang', rec_id: 'jb_2', data: { id: 'jb_2', createdAt: '2026-02-01' } });
+    e.store.push({ company_id: 'c1', kind: 'anggaran', rec_id: 'ang_1', data: { id: 'ang_1', akunKode: '6201', periode: '2026-10', nominal: 5 } });
+    e.store.push({ company_id: 'c2', kind: 'anggaran', rec_id: 'ang_X', data: { id: 'ang_X' } });
+    await e.run('cloudLoadRecords()');
+    ok(e.run('jurnalBerulangList.length') === 2 && e.run('anggaranList.length') === 1, 'jurnal berulang & anggaran dimuat per bisnis (c2 tidak bocor)');
+    ok(e.run('jurnalBerulangList[0].id') === 'jb_2', 'jurnal berulang: terbaru di atas');
+    e.run("jurnalBerulangList.unshift({id:'jb_3',createdAt:'2026-03-01'}); anggaranList[0].nominal = 9");
+    await e.run("cloudSyncRecords(['jurnal_berulang','anggaran'])");
+    ok(e.calls.upsert.flat().sort().join() === 'ang_1,jb_3', 'hanya yang baru/berubah di-upsert');
+    e.run("anggaranList = []; jurnalBerulangList = jurnalBerulangList.filter(j => j.id !== 'jb_1')");
+    await e.run("cloudSyncRecords(['jurnal_berulang','anggaran'])");
+    ok(e.calls.delete.flat().sort().join() === 'ang_1,jb_1', 'hapus di app ikut terhapus di cloud');
+    ok(e.store.some(r => r.company_id === 'c2' && r.rec_id === 'ang_X'), 'data bisnis lain tidak tersentuh');
+    ok(!!e.ls['oas_rec_anggaran_c1'] && !!e.ls['oas_rec_jurnal_berulang_c1'], 'cache lokal per bisnis ditulis');
+    ok(e.run("cloudResetRecordsState(), jurnalBerulangList.length + anggaranList.length") === 0, 'reset state ikut mengosongkan kedua list');
+  }
+  {
+    // cloud kosong + data lama di key global -> diunggah setelah konfirmasi
+    const e = makeEnv();
+    e.ls['oas_jb'] = JSON.stringify([{ id: 'jb_old' }]);
+    e.ls['oas_anggaran'] = JSON.stringify([{ id: 'ang_old' }]);
+    await e.run('cloudLoadRecords()');
+    ok(e.store.map(r => r.rec_id).sort().join() === 'ang_old,jb_old', 'data lama jurnal berulang & anggaran ikut dimigrasi');
+  }
+  {
+    // bisnis sudah punya invoice di cloud (sinkron lama), data lama jb/anggaran masih lokal
+    const e = makeEnv();
+    e.store.push({ company_id: 'c1', kind: 'invoice', rec_id: 'INV_1', data: { id: 'INV_1' } });
+    e.ls['oas_rec_seen_c1'] = '1';
+    e.ls['oas_jb'] = JSON.stringify([{ id: 'jb_old' }]);
+    await e.run('cloudLoadRecords()');
+    ok(e.store.some(r => r.kind === 'jurnal_berulang' && r.rec_id === 'jb_old'), 'bisnis lama yang sudah sinkron tetap ditawari data lama kind baru');
+    ok(e.run('jurnalBerulangList.length') === 1, 'data lama tidak "hilang" dari tampilan');
+    e.run('jurnalBerulangList = []');
+    await e.run('cloudSyncRecords()');
+    await e.run('cloudResetRecordsState(); cloudLoadRecords()');
+    ok(e.run('jurnalBerulangList.length') === 0, 'yang sudah dihapus tidak hidup lagi dari data lama');
+  }
+  {
+    // tidak ada data lama -> ditandai selesai, data lama yang muncul belakangan tidak dimigrasi
+    const e = makeEnv();
+    await e.run('cloudLoadRecords()');
+    ok(e.ls['oas_rec_seen_c1_anggaran'] === '1', 'tanpa data lama: kind ditandai selesai');
+    e.ls['oas_anggaran'] = JSON.stringify([{ id: 'ang_late' }]);
+    await e.run('cloudResetRecordsState(); cloudLoadRecords()');
+    ok(!e.store.some(r => r.rec_id === 'ang_late'), 'data lama yang muncul belakangan tidak dimigrasi');
+  }
+  {
+    // data lama hanya boleh pindah ke SATU bisnis
+    const e = makeEnv();
+    e.ls['oas_anggaran'] = JSON.stringify([{ id: 'ang_old' }]);
+    await e.run('cloudLoadRecords()');
+    e.run("currentCompany = { id: 'c2', name: 'Toko B' }");
+    await e.run('cloudResetRecordsState(); cloudLoadRecords()');
+    ok(!e.store.some(r => r.company_id === 'c2'), 'bisnis kedua tidak ditawari anggaran lama yang sama');
+  }
+  {
+    // dibatalkan -> tidak ada yang diunggah, data lama utuh
+    const e = makeEnv({ confirmAnswer: false });
+    e.ls['oas_jb'] = JSON.stringify([{ id: 'jb_old' }]);
+    await e.run('cloudLoadRecords()');
+    ok(e.store.length === 0 && !!e.ls['oas_jb'], 'dibatalkan: tidak ada yang diunggah, data lama utuh');
   }
 
   console.log('\nHasil: ' + pass + ' lulus, ' + fail + ' gagal');

@@ -976,21 +976,24 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 726-742 | `loadCachedPasswordDisplay` | function |
 | 744-756 | `copyCurrentPassword` | function |
 
-## js/22-cloud-records.js (246 baris, 10.6 KB)
+## js/22-cloud-records.js (279 baris, 12.7 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
-| 38 | `_cloudCacheKey` | function |
-| 40-42 | `_cloudCacheLocal` | function |
-| 44-49 | `_cloudReadCache` | function |
-| 52-63 | `_cloudIndex` | function |
-| 66-75 | `_cloudSortNewestFirst` | function |
-| 77-80 | `cloudResetRecordsState` | function |
-| 82-85 | `_cloudLoadFromCache` | function |
-| 87-135 | `cloudLoadRecords` | async function |
-| 141-193 | `cloudOfferLocalMigration` | async function |
-| 196-205 | `cloudSyncRecords` | function |
-| 207-245 | `_cloudSyncNow` | async function |
+| 43 | `_cloudCacheKey` | function |
+| 45-47 | `_cloudCacheLocal` | function |
+| 49-54 | `_cloudReadCache` | function |
+| 56 | `_cloudSeenKey` | function |
+| 59-62 | `_cloudPendingOnce` | function |
+| 65-68 | `_cloudLegacyAllowed` | function |
+| 71-82 | `_cloudIndex` | function |
+| 85-94 | `_cloudSortNewestFirst` | function |
+| 96-99 | `cloudResetRecordsState` | function |
+| 101-104 | `_cloudLoadFromCache` | function |
+| 106-158 | `cloudLoadRecords` | async function |
+| 164-226 | `cloudOfferLocalMigration` | async function |
+| 229-238 | `cloudSyncRecords` | function |
+| 240-278 | `_cloudSyncNow` | async function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 
