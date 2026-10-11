@@ -1027,3 +1027,18 @@ body.light-mode .pv-hex-row input, .pv-hex-row input { color:#e2e8f0 !important;
 .pv-page-nav { display:flex;align-items:center;gap:8px;padding:7px 14px;background:rgba(15,18,28,0.95);border-top:1px solid rgba(255,255,255,0.06);font-size:12px;color:rgba(255,255,255,0.45);flex-shrink:0; }
 .pv-page-nav button { background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px; }
 .pv-page-nav button:disabled { opacity:0.3;cursor:not-allowed; }
+
+/* ── Jurnal Umum: kartu tabel setinggi sisa layar, scroll berada di dalam kartu (desktop) ──
+   Halaman tidak ikut memanjang; header tabel tetap terlihat saat baris di-scroll.
+   Di mobile tetap scroll halaman biasa karena judul + filter sudah memakan banyak tinggi. */
+@media (min-width: 769px) {
+  /* !important: showPage() memberi inline style display:block pada halaman aktif */
+  #page-jurnal-umum.active { display: flex !important; flex-direction: column; flex: 1; min-height: 0; }
+  .content:has(#page-jurnal-umum.active) { overflow: hidden; }
+  #page-jurnal-umum .section-header,
+  #page-jurnal-umum .filter-bar { flex-shrink: 0; }
+  #page-jurnal-umum .table-card { flex: 1; min-height: 0; display: flex; flex-direction: column; margin-bottom: 0; }
+  #page-jurnal-umum .table-scroll { flex: 1; min-height: 0; overflow: auto; }
+  #page-jurnal-umum .table-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+  #page-jurnal-umum thead th { position: sticky; top: 0; z-index: 2; background: var(--surface2); }
+}
