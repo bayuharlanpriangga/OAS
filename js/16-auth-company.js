@@ -1333,6 +1333,7 @@ async function loadDataFromSupabase() {
 
   if (jurnalData && jurnalData.length > 0) {
     jurnalEntries = jurnalData.map(r => ({
+      ...((r.meta && typeof r.meta === 'object') ? r.meta : {}),   // sumber, _ppnTarif, _ksId
       no: r.no,
       tanggal: r.tanggal,
       ket: r.ket,
@@ -1409,6 +1410,20 @@ async function loadDataFromSupabase() {
 // company baru gagal mengembalikan COA lengkap yang benar.
 
 // SAVE JURNAL
+// Kolom tambahan jurnal yang ikut disimpan di cloud lewat kolom jsonb `meta` (lihat sql/002_jurnal_meta.sql).
+// Tanpa ini penanda sumber (Orias AI) dan _ppnTarif hilang saat data dimuat ulang dari cloud.
+const JURNAL_META_KEYS = ['sumber', '_ppnTarif', '_ksId'];
+let _jurnalMetaDidukung = true;   // jadi false kalau kolom `meta` belum ada di database
+
+function _jurnalMetaDari(entry) {
+  const m = {};
+  JURNAL_META_KEYS.forEach(k => { if (entry[k] !== undefined && entry[k] !== null && entry[k] !== '') m[k] = entry[k]; });
+  return m;
+}
+function _errKolomMeta(error) {
+  return !!error && /meta/i.test([error.message, error.details, error.hint].filter(Boolean).join(' '));
+}
+
 async function saveJurnalToSupabase(entry) {
   if (!currentCompany) return;
   const payload = {
@@ -1421,20 +1436,35 @@ async function saveJurnalToSupabase(entry) {
     attachments: entry.attachments || [],
     created_at: new Date().toISOString()
   };
-  const { data, error } = await DB.table('jurnal_entries').insert(payload).select().single();
+  const meta = _jurnalMetaDari(entry);
+  if (_jurnalMetaDidukung && Object.keys(meta).length) payload.meta = meta;
+  let { data, error } = await DB.table('jurnal_entries').insert(payload).select().single();
+  if (error && payload.meta && _errKolomMeta(error)) {   // kolom meta belum dibuat: simpan tanpa meta
+    _jurnalMetaDidukung = false;
+    delete payload.meta;
+    ({ data, error } = await DB.table('jurnal_entries').insert(payload).select().single());
+  }
   if (!error && data) entry._id = data.id;
   return !error;
 }
 
 async function updateJurnalInSupabase(entry) {
   if (!currentCompany || !entry._id) return;
-  await DB.table('jurnal_entries').update({
+  const payload = {
     tanggal: entry.tanggal,
     ket: entry.ket,
     jenis: entry.jenis,
     lines: entry.lines,
     attachments: entry.attachments || []
-  }).eq('id', entry._id);
+  };
+  const meta = _jurnalMetaDari(entry);
+  if (_jurnalMetaDidukung && Object.keys(meta).length) payload.meta = meta;
+  let { error } = await DB.table('jurnal_entries').update(payload).eq('id', entry._id);
+  if (error && payload.meta && _errKolomMeta(error)) {
+    _jurnalMetaDidukung = false;
+    delete payload.meta;
+    await DB.table('jurnal_entries').update(payload).eq('id', entry._id);
+  }
 }
 
 async function deleteJurnalFromSupabase(entry) {
@@ -1637,6 +1667,7 @@ function addJurnal(entry, opsi) {
     throw new PeriodeTerkunciError('Periode terkunci sampai ' + periodeKunciSampai + ': ' + entry.tanggal);
   }
   entry.no = 'JRN-' + String(jurnalCounter++).padStart(3,'0');
+  if (_jurnalSumberAktif && !entry.sumber) entry.sumber = _jurnalSumberAktif;   // mis. 'Orias AI' (badge tambahan)
   jurnalEntries.push(entry);
   if (currentCompany) {
     saveJurnalToSupabase(entry).catch(e => console.warn('Auto-save error:', e));

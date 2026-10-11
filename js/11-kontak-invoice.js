@@ -218,7 +218,7 @@ function simpanInvoice(status) {
     if(status === 'terkirim') {
       // Buat jurnal piutang otomatis
       const entry = {
-        id:'JRN_INV_'+Date.now(), tanggal:inv.tanggal, jenis:'Manual',
+        id:'JRN_INV_'+Date.now(), tanggal:inv.tanggal, jenis:JENIS_JURNAL.INVOICE,
         keterangan:`Invoice ${inv.noInvoice} — ${inv.pelanggan}`,
         _ppnTarif: ppn>0 ? ppnTarif : undefined,   // supaya terbaca di rekap pajak
         lines:[
@@ -315,7 +315,7 @@ function konfirmasiLunasInvoice() {
   showOpSpinner('Memproses Pembayaran...', 'Membuat jurnal penerimaan kas');
   setTimeout(()=>{
     const entry = {
-      id:'JRN_LNS_'+Date.now(), tanggal:tgl, jenis:'Manual',
+      id:'JRN_LNS_'+Date.now(), tanggal:tgl, jenis:JENIS_JURNAL.INVOICE,
       keterangan:`Pelunasan ${inv.noInvoice} — ${inv.pelanggan}`,
       lines:[{akun:akunKas,debit:nominal,kredit:0},{akun:inv.akunPiutang,debit:0,kredit:nominal}]
     };

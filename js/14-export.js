@@ -2882,7 +2882,16 @@ function exportCSV(nama, periode) {
 }
 
 // AI ACTION EXECUTOR
+// Semua jurnal yang dibuat selama aksi AI berjalan ditandai sumber "Orias AI" (badge tambahan,
+// jenis aslinya — Penjualan, Pembelian, Invoice & Piutang, dst — tidak diganti).
 async function executeAIActions(actions) {
+  const sebelumnya = _jurnalSumberAktif;
+  _jurnalSumberAktif = SUMBER_JURNAL.ORIAS_AI;
+  try { return await _executeAIActionsInner(actions); }
+  finally { _jurnalSumberAktif = sebelumnya; }
+}
+
+async function _executeAIActionsInner(actions) {
   const results = [];
   const today = new Date().toISOString().split('T')[0];
 
@@ -2894,7 +2903,7 @@ async function executeAIActions(actions) {
           const entry = {
             tanggal: action.tanggal || today,
             ket: action.ket || 'Dari AI',
-            jenis: action.jenis || 'Manual',
+            jenis: action.jenis || JENIS_JURNAL.MANUAL,
             lines: action.lines || []
           };
           // Validate balance
@@ -3137,7 +3146,7 @@ async function executeAIActions(actions) {
           };
           if(status === 'terkirim' && akunPiutang && akunPend) {
             const _tarifAi = (action.ppnTarif === undefined || action.ppnTarif === null || isNaN(action.ppnTarif)) ? PPN_TARIF_STANDAR : Number(action.ppnTarif);
-            const entry = { id:'JRN_INV_'+Date.now(), tanggal:inv.tanggal, jenis:'Manual',
+            const entry = { id:'JRN_INV_'+Date.now(), tanggal:inv.tanggal, jenis:JENIS_JURNAL.INVOICE,
               keterangan:`Invoice ${inv.noInvoice} — ${inv.pelanggan}`,
               _ppnTarif: ppnNom>0 ? _tarifAi : undefined,
               lines:[

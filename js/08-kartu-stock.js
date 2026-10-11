@@ -2220,7 +2220,7 @@ function konfirmasiInputJurnalKartu() {
     jurnals.push({
       tanggal: e.tgl || today,
       ket: `Pengakuan HPP ${metode.toUpperCase()} - ${e.ket||'keluar'} [${kode}]`,
-      jenis: 'Manual',
+      jenis: JENIS_JURNAL.KARTU_STOCK,
       lines: [
         { akun:'5101', ket:'HPP - Harga Pokok Penjualan', debit:e.kJml, kredit:0 },
         { akun:'1301', ket:'Persediaan Barang Dagangan', debit:0, kredit:e.kJml }

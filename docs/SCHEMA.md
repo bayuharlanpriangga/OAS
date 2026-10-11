@@ -111,6 +111,7 @@ CREATE TABLE jurnal_entries (
   jenis text,                    -- 'Manual' | 'Kas' | 'Penjualan' | 'Pembelian' | ...
   lines jsonb DEFAULT '[]',      -- [{akun, ket, debit, kredit}, ...]
   attachments jsonb DEFAULT '[]',-- [{nama, url/base64, tipe}, ...]
+  meta jsonb DEFAULT '{}',       -- {sumber:'Orias AI', _ppnTarif, _ksId} (sql/002_jurnal_meta.sql)
   created_at timestamptz DEFAULT now()
 );
 ALTER TABLE jurnal_entries ENABLE ROW LEVEL SECURITY;

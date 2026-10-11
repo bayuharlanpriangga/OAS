@@ -134,7 +134,7 @@ function inputPenyusutanJurnal() {
       const jurnal = {
         tanggal: today,
         ket: `Penyusutan ${nama} Tahun ke-${t} [${metode}]`,
-        jenis: 'Manual',
+        jenis: JENIS_JURNAL.PENYUSUTAN,
         kodeRef: kode,
         lines: [
           { akun: bebanKode, ket: bebanNama, debit: beban, kredit: 0 },
@@ -180,7 +180,7 @@ function inputBEPJurnal() {
   }
   if(hpp > 0) {
     jurnals.push({
-      tanggal: today, ket: `HPP periode BEP [${kode}]`, jenis: 'Manual',
+      tanggal: today, ket: `HPP periode BEP [${kode}]`, jenis: JENIS_JURNAL.BEP,
       lines: [
         { akun: '5101', ket: 'HPP', debit: hpp, kredit: 0 },
         { akun: '1301', ket: 'Persediaan Barang Dagangan', debit: 0, kredit: hpp }
@@ -189,7 +189,7 @@ function inputBEPJurnal() {
   }
   if(bt > 0) {
     jurnals.push({
-      tanggal: today, ket: `Beban tetap periode BEP [${kode}]`, jenis: 'Manual',
+      tanggal: today, ket: `Beban tetap periode BEP [${kode}]`, jenis: JENIS_JURNAL.BEP,
       lines: [
         { akun: '6701', ket: 'Beban Lain-lain (Biaya Tetap)', debit: bt, kredit: 0 },
         { akun: '1101', ket: 'Kas', debit: 0, kredit: bt }
@@ -230,7 +230,7 @@ function inputAnuitasJurnal() {
   const jurnals = [];
   // Jurnal pencairan pinjaman
   jurnals.push({
-    tanggal: today, ket: `Pencairan pinjaman/kredit [${kode}]`, jenis: 'Manual',
+    tanggal: today, ket: `Pencairan pinjaman/kredit [${kode}]`, jenis: JENIS_JURNAL.PINJAMAN,
     lines: [
       { akun: '1101', ket: 'Kas - penerimaan pinjaman', debit: pinjaman, kredit: 0 },
       { akun: '2801', ket: 'Utang Bank Jangka Panjang', debit: 0, kredit: pinjaman }
@@ -238,7 +238,7 @@ function inputAnuitasJurnal() {
   });
   // Jurnal angsuran pertama
   jurnals.push({
-    tanggal: today, ket: `Angsuran ke-1 pinjaman [${kode}]`, jenis: 'Manual',
+    tanggal: today, ket: `Angsuran ke-1 pinjaman [${kode}]`, jenis: JENIS_JURNAL.PINJAMAN,
     lines: [
       { akun: '2801', ket: 'Angsuran pokok', debit: Math.round(pokok1), kredit: 0 },
       { akun: '6601', ket: 'Beban Bunga Pinjaman', debit: Math.round(bunga1), kredit: 0 },
@@ -283,7 +283,7 @@ function inputPPNJurnal() {
 
   // Jurnal PPN Keluaran (penjualan)
   const jurnal = {
-    tanggal: today, ket: `PPN Keluaran ${(tarif*100).toFixed(0)}% [${kode}]`, jenis: 'Manual',
+    tanggal: today, ket: `PPN Keluaran ${(tarif*100).toFixed(0)}% [${kode}]`, jenis: JENIS_JURNAL.PPN_PPH,
     lines: [
       { akun: '1101', ket: 'Kas / Piutang (termasuk PPN)', debit: Math.round(dpp+ppn), kredit: 0 },
       { akun: '4101', ket: 'Penjualan (DPP)', debit: 0, kredit: Math.round(dpp) },
@@ -326,7 +326,7 @@ function inputPPH21Jurnal() {
   const today = new Date().toISOString().split('T')[0];
 
   const jurnal = {
-    tanggal: today, ket: `${beban.nama} & PPh 21 [${kode}]`, jenis: 'Manual',
+    tanggal: today, ket: `${beban.nama} & PPh 21 [${kode}]`, jenis: JENIS_JURNAL.GAJI_PPH21,
     lines: [
       { akun: beban.akun, ket: beban.nama, debit: gaji, kredit: 0 },
       { akun: '2302', ket: 'Utang PPh 21 (Karyawan)', debit: 0, kredit: pph21 },

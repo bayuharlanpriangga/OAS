@@ -166,7 +166,7 @@ let produkList = []; // [{id,kode,nama,kat,satuan,hargaJual,hpp,stok,stokMin,aku
 function seedData() {
   const today = new Date().toISOString().split('T')[0];
   const [y,m] = today.split('-');
-  addJurnal({tanggal:`${y}-${m}-01`,ket:'Modal awal pemilik',jenis:'Manual',lines:[
+  addJurnal({tanggal:`${y}-${m}-01`,ket:'Modal awal pemilik',jenis:JENIS_JURNAL.SALDO_AWAL,lines:[
     {akun:'1101',ket:'Kas masuk',debit:50000000,kredit:0},
     {akun:'3101',ket:'Modal pemilik',debit:0,kredit:50000000},
   ]});

@@ -947,7 +947,7 @@ function buatJurnalPPh21() {
     if(!bebanAkun||!kasAkun){hideOpSpinner();showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Akun beban gaji / kas tidak ditemukan');return;}
     const entry={
       id:'JRN_PPH21_'+Date.now(), tanggal:new Date().toISOString().split('T')[0],
-      jenis:'Manual', keterangan:`Gaji & PPh 21 — ${jmlKaryawan} karyawan`,
+      jenis:JENIS_JURNAL.GAJI_PPH21, keterangan:`Gaji & PPh 21 — ${jmlKaryawan} karyawan`,
       lines:[
         {akun:bebanAkun.kode,debit:totalGaji,kredit:0},
         ...(hutangAkun&&pphReal?[{akun:hutangAkun.kode,debit:0,kredit:pphReal}]:[]),
@@ -976,7 +976,7 @@ function buatJurnalPPh23() {
     if(!kasAkun||!pendAkun){hideOpSpinner();showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Akun tidak ditemukan');return;}
     const entry={
       id:'JRN_PPH23_'+Date.now(), tanggal:new Date().toISOString().split('T')[0],
-      jenis:'Manual', keterangan:`PPh 23 — ${jenis} (${(tarif*100).toFixed(0)}%)`,
+      jenis:JENIS_JURNAL.PPH23, keterangan:`PPh 23 — ${jenis} (${(tarif*100).toFixed(0)}%)`,
       lines:[
         {akun:kasAkun.kode,debit:bruto-pph,kredit:0},
         ...(hutangAkun?[{akun:hutangAkun.kode,debit:pph,kredit:0}]:[]),
@@ -1409,7 +1409,7 @@ function renderDashboard() {
           return `<tr style="cursor:pointer" onclick="showPage('jurnal-umum')">
             <td style="font-size:11px">${fmtDate(j.tanggal)}</td>
             <td>${j.ket}</td>
-            <td><span class="badge ${jeninsBadge(j.jenis)}" style="font-size:10px">${j.jenis}</span></td>
+            <td><span class="badge ${jeninsBadge(j.jenis)}" style="font-size:10px">${j.jenis}</span>${j.sumber?` <span class="badge badge-blue" style="font-size:9px">${escapeHtml(j.sumber)}</span>`:''}</td>
             <td class="num" style="text-align:right">${fmtRp(tot)}</td>
           </tr>`;
         }).join('')}
@@ -1604,7 +1604,7 @@ function cekRekonsiliasi() {
       addJurnal({
         tanggal: new Date().toISOString().split('T')[0],
         ket: 'Koreksi Rekonsiliasi Kas',
-        jenis: 'Manual',
+        jenis: JENIS_JURNAL.REKONSILIASI,
         lines: selisih > 0
           ? [{ akun:'6701', ket:'Selisih kas', debit:Math.abs(selisih), kredit:0 }, { akun:'1101', ket:'Koreksi kas', debit:0, kredit:Math.abs(selisih) }]
           : [{ akun:'1101', ket:'Koreksi kas', debit:Math.abs(selisih), kredit:0 }, { akun:'4203', ket:'Pendapatan Bunga/Koreksi', debit:0, kredit:Math.abs(selisih) }]

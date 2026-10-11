@@ -135,7 +135,7 @@ function jalankanJurnalBerulang(id) {
   setTimeout(()=>{
     const tgl = new Date().toISOString().split('T')[0];
     const entry = {
-      id:'JRN_'+Date.now(), tanggal:tgl, jenis:'Manual',
+      id:'JRN_'+Date.now(), tanggal:tgl, jenis:JENIS_JURNAL.JURNAL_BERULANG,
       keterangan:`[Auto] ${j.nama}`,
       lines:[{akun:j.akunDebit,debit:j.nominal,kredit:0},{akun:j.akunKredit,debit:0,kredit:j.nominal}]
     };
@@ -165,7 +165,7 @@ function jalankanSemuaJurnalBerulang() {
     const j = tertunda[i++];
     const tgl = new Date().toISOString().split('T')[0];
     const entry = {
-      id:'JRN_'+Date.now()+'_'+i, tanggal:tgl, jenis:'Manual',
+      id:'JRN_'+Date.now()+'_'+i, tanggal:tgl, jenis:JENIS_JURNAL.JURNAL_BERULANG,
       keterangan:`[Auto] ${j.nama}`,
       lines:[{akun:j.akunDebit,debit:j.nominal,kredit:0},{akun:j.akunKredit,debit:0,kredit:j.nominal}]
     };
@@ -313,7 +313,7 @@ function importSatuRekon(idx) {
     const oth = akuns.find(a=>a.tipe==='Pendapatan');
     if(!kas||!oth) { hideOpSpinner(); showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Akun kas/pendapatan tidak ditemukan'); return; }
     const entry = {
-      id:'JRN_REKON_'+Date.now(), tanggal:b.tgl, jenis:'Manual',
+      id:'JRN_REKON_'+Date.now(), tanggal:b.tgl, jenis:JENIS_JURNAL.REKONSILIASI,
       keterangan:`[Rekon] ${b.ket}`,
       lines: masuk
         ? [{akun:kas.kode,debit:Math.abs(b.nominal),kredit:0},{akun:oth.kode,debit:0,kredit:Math.abs(b.nominal)}]
@@ -344,7 +344,7 @@ function importRekonSebagaiJurnal() {
   function importSatuRekonDirect(b) {
     const kas=akuns.find(a=>a.kode==='1101'); const oth=akuns.find(a=>a.tipe==='Pendapatan');
     if(!kas||!oth) return;
-    const entry={id:'JRN_REKON_'+Date.now()+'_'+i,tanggal:b.tgl,jenis:'Manual',keterangan:`[Rekon] ${b.ket}`,
+    const entry={id:'JRN_REKON_'+Date.now()+'_'+i,tanggal:b.tgl,jenis:JENIS_JURNAL.REKONSILIASI,keterangan:`[Rekon] ${b.ket}`,
       lines:b.nominal>0?[{akun:kas.kode,debit:Math.abs(b.nominal),kredit:0},{akun:oth.kode,debit:0,kredit:Math.abs(b.nominal)}]
         :[{akun:oth.kode,debit:Math.abs(b.nominal),kredit:0},{akun:kas.kode,debit:0,kredit:Math.abs(b.nominal)}]};
     if(!postJurnalLegacy(entry)) return;

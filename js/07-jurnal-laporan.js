@@ -6,6 +6,7 @@ function jeninsBadge(j){
   if(j==='Kas') return 'badge-blue';
   if(j==='Penjualan') return 'badge-green';
   if(j==='Pembelian') return 'badge-yellow';
+  if(j===JENIS_JURNAL.INVOICE) return 'badge-green';
   return 'badge-gray';
 }
 
@@ -39,9 +40,33 @@ function updateSaldoAwalBtnVisibility() {
   if (btn) btn.style.display = (typeof jurnalEntries !== 'undefined' && jurnalEntries.length) ? 'none' : '';
 }
 
+// Pilihan filter jenis: daftar dasar + jenis lain yang benar-benar ada di jurnal (mis. Invoice & Piutang),
+// supaya jenis baru dari fitur apa pun otomatis bisa difilter tanpa mengubah index.html.
+function syncJurnalTypeFilter() {
+  const sel = document.getElementById('filter-ju-type');
+  if (!sel) return;
+  const dasar = ['Kas', 'Penjualan', 'Pembelian', 'Manual'];
+  const lain = [...new Set(jurnalEntries.map(j => j.jenis).filter(Boolean))]
+    .filter(x => !dasar.includes(x) && x !== JENIS_PENUTUP)
+    .sort((a, b) => a.localeCompare(b, 'id'));
+  const daftar = [...dasar, ...lain, JENIS_PENUTUP];
+  const sig = daftar.join('|');
+  if (sel.dataset.sig === sig) return;
+  sel.dataset.sig = sig;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Semua Jenis</option>' +
+    daftar.map(v => '<option value="' + escapeHtml(v) + '">' + escapeHtml(v) + '</option>').join('');
+  sel.value = daftar.includes(cur) ? cur : '';
+  if (sel.value !== cur) {   // pilihan lama sudah tidak ada: samakan label picker
+    const lbl = sel.parentElement && sel.parentElement.querySelector('.opt-picker-label');
+    if (lbl) lbl.textContent = 'Semua Jenis';
+  }
+}
+
 // RENDER JURNAL UMUM
 function renderJurnalUmum() {
   updateSaldoAwalBtnVisibility();
+  syncJurnalTypeFilter();
   const search = document.getElementById('filter-ju')?.value?.toLowerCase()||'';
   const type = document.getElementById('filter-ju-type')?.value||'';
   const body = document.getElementById('jurnal-umum-body');
@@ -69,6 +94,7 @@ function renderJurnalUmum() {
     const badgeCell = `<div style="display:flex;flex-direction:column;gap:3px;align-items:flex-start;">
         <span class="badge ${jeninsBadge(j.jenis)}">${escapeHtml(j.jenis)}</span>
         ${ppnSubBadge ? `<span class="badge badge-yellow" style="font-size:9px;">${ppnSubBadge}</span>` : ''}
+        ${j.sumber ? `<span class="badge badge-blue" style="font-size:9px;">${escapeHtml(j.sumber)}</span>` : ''}
       </div>`;
     j.lines.forEach((l,i)=>{
       rows.push(`<tr>

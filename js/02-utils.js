@@ -32,6 +32,31 @@ function getAkunNama(kode) {
 //    tahun yang sudah ditutup ikut menjadi nol. Neraca justru harus MEMASUKKANNYA.
 //  - Periode yang sudah dikunci tidak menerima jurnal baru maupun pembalikan.
 const JENIS_PENUTUP = 'Penutup';
+
+// Jenis jurnal = badge di Jurnal Umum. Jurnal yang dibuat otomatis dari sebuah fitur memakai nama
+// fitur/aksinya; 'Manual' hanya untuk jurnal yang memang diketik sendiri lewat form Jurnal Manual.
+// Tidak ada logika laporan yang bergantung pada nilai-nilai ini kecuali Penjualan, Pembelian,
+// PPN, Penyesuaian, dan Penutup — jangan dipakai ulang untuk jurnal fitur lain.
+const JENIS_JURNAL = {
+  MANUAL:          'Manual',
+  INVOICE:         'Invoice & Piutang',   // kirim invoice + pelunasan invoice
+  PENYUSUTAN:      'Penyusutan',          // Aset Tetap otomatis & kalkulator penyusutan
+  JURNAL_BERULANG: 'Jurnal Berulang',
+  REKONSILIASI:    'Rekonsiliasi',        // impor baris bank & koreksi rekonsiliasi kas
+  SALDO_AWAL:      'Saldo Awal',
+  KARTU_STOCK:     'Kartu Stock',
+  BEP:             'BEP & Margin',
+  PINJAMAN:        'Pinjaman',
+  PPN_PPH:         'PPN & PPh',           // jurnal dari kalkulator PPN & PPh
+  GAJI_PPH21:      'Gaji & PPh 21',
+  PPH23:           'PPh 23',
+};
+
+// Sumber jurnal = badge TAMBAHAN di samping jenis (bukan pengganti jenis). Mis. penjualan yang dibuat
+// lewat Orias AI tetap berjenis Penjualan, plus badge "Orias AI". Disimpan di entry.sumber.
+const SUMBER_JURNAL = { ORIAS_AI: 'Orias AI' };
+// Diisi sementara selama aksi sebuah sumber berjalan; addJurnal() menempelkannya ke tiap jurnal baru.
+let _jurnalSumberAktif = '';
 // Tabel jurnal_entries tidak punya kolom khusus untuk relasi pembalik, jadi relasinya
 // dititipkan di awal keterangan: "[Pembalik JRN-005] keterangan asli". Field reversalOf
 // dipakai kalau ada (entry yang baru dibuat di sesi ini); sisanya dibaca dari teks.
@@ -170,14 +195,26 @@ function akunPpnKeluaranKode() {
   return (akuns.find(a => a.nama.toLowerCase().includes('ppn') && a.tipe === 'Liabilitas') || {}).kode || '2301';
 }
 
-// Baca PPN aktual dari satu jurnal. Hanya jurnal yang diberi _ppnTarif (penjualan/pembelian
-// produk ber-PPN dan invoice ber-PPN) yang dihitung. Return null kalau bukan jurnal PPN.
+// Tarif PPN sebuah jurnal: _ppnTarif bila ada, kalau tidak dibaca dari "NN%" di keterangan baris PPN
+// (mis. "Utang PPN Keluaran 11%") supaya tetap terbaca untuk jurnal yang dimuat dari cloud.
+function _tarifPpnJurnal(j, barisPpn) {
+  if (j._ppnTarif > 0) return Number(j._ppnTarif);
+  for (const l of barisPpn) {
+    const m = /(\d+(?:[.,]\d+)?)\s*%/.exec(l.ket || '');
+    if (m) { const t = parseFloat(m[1].replace(',', '.')); if (t > 0) return t; }
+  }
+  return 0;
+}
+
+// Baca PPN aktual dari satu jurnal (penjualan/pembelian produk ber-PPN, invoice ber-PPN).
+// Return null kalau bukan jurnal PPN.
 function ppnDariJurnal(j) {
-  if (!j || !Array.isArray(j.lines) || !(j._ppnTarif > 0)) return null;
-  const tarif = Number(j._ppnTarif);
+  if (!j || !Array.isArray(j.lines)) return null;
   const jum = (arr, f) => arr.reduce((sum, l) => sum + (l[f] || 0), 0);
   const keluaran = j.lines.filter(l => (l.kredit || 0) > 0 && (l.akun === '2301' || /ppn keluaran/i.test(l.ket || '')));
   if (keluaran.length) {
+    const tarif = _tarifPpnJurnal(j, keluaran);
+    if (!(tarif > 0)) return null;
     const ppn = jum(keluaran, 'kredit');
     const pendapatan = j.lines.filter(l => (l.kredit || 0) > 0 && (akuns.find(a => a.kode === l.akun) || {}).tipe === 'Pendapatan');
     const dpp = jum(pendapatan, 'kredit') || Math.round(ppn / (tarif / 100));
@@ -185,6 +222,8 @@ function ppnDariJurnal(j) {
   }
   const masukan = j.lines.filter(l => (l.debit || 0) > 0 && (l.akun === '1502' || /ppn masukan/i.test(l.ket || '')));
   if (masukan.length) {
+    const tarif = _tarifPpnJurnal(j, masukan);
+    if (!(tarif > 0)) return null;
     const ppn = jum(masukan, 'debit');
     return { tipe: 'masukan', ppn, dpp: Math.round(ppn / (tarif / 100)), tarif };
   }
@@ -194,9 +233,11 @@ function ppnDariJurnal(j) {
 // Rekap PPN dari jurnal dalam rentang tanggal (YYYY-MM-DD, keduanya opsional).
 function rekapPpnJurnal(fromStr, toStr) {
   const r = { keluaran: 0, masukan: 0, dppKeluaran: 0, dppMasukan: 0, rowsKeluaran: [], rowsMasukan: [], kurangBayar: 0 };
+  const dibalik = getReversedMap();   // nomor jurnal asal -> nomor pembaliknya
   jurnalEntries.forEach(j => {
     if (fromStr && (j.tanggal || '') < fromStr) return;
     if (toStr && (j.tanggal || '') > toStr) return;
+    if (isJurnalPembalik(j) || dibalik.has(j.no)) return;   // jurnal yang dibalik + pembaliknya saling meniadakan
     const p = ppnDariJurnal(j);
     if (!p) return;
     const row = { j, ppnVal: p.ppn, dpp: p.dpp, tarifPct: p.tarif };

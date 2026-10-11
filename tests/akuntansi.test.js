@@ -188,6 +188,36 @@ setTimeout(() => {
     const rk2 = run('rekapPpnJurnal("2026-10-06","2026-10-06")');
     ok(rk2.keluaran === 240 && rk2.masukan === 0, 'filter rentang tanggal bekerja');
 
+    // Tarif dibaca dari "%" di keterangan baris PPN bila _ppnTarif tidak ada (jurnal dari cloud)
+    reset();
+    post(J('2026-10-05', 'Jual A (dari cloud)', 'Penjualan', [
+      { akun: '1101', debit: 1110, kredit: 0 }, { akun: '4101', debit: 0, kredit: 1000 },
+      { akun: '2301', ket: 'Utang PPN Keluaran 11%', debit: 0, kredit: 110 }]));
+    const rkc = run('rekapPpnJurnal()');
+    ok(rkc.keluaran === 110 && rkc.dppKeluaran === 1000 && rkc.rowsKeluaran[0].tarifPct === 11, 'tanpa _ppnTarif: tarif 11% dibaca dari keterangan baris PPN');
+    // Jurnal yang dibalik + pembaliknya tidak dihitung dobel
+    run('buatJurnalPembalik')(run('jurnalEntries[0]'), { tanggal: '2026-10-06', alasan: 'batal' });
+    const rkb = run('rekapPpnJurnal()');
+    ok(rkb.keluaran === 0 && rkb.rowsKeluaran.length === 0, 'penjualan ber-PPN yang dibalik tidak lagi masuk rekap PPN');
+
+    console.log('\n[5c] Sumber jurnal (Orias AI = badge tambahan)');
+    reset();
+    run('_jurnalSumberAktif = SUMBER_JURNAL.ORIAS_AI');
+    post(J('2026-10-07', 'Penjualan via AI', 'Penjualan', [{ akun: '1101', debit: 100, kredit: 0 }, { akun: '4101', debit: 0, kredit: 100 }]));
+    run('_jurnalSumberAktif = ""');
+    post(J('2026-10-07', 'Penjualan biasa', 'Penjualan', [{ akun: '1101', debit: 50, kredit: 0 }, { akun: '4101', debit: 0, kredit: 50 }]));
+    const jA = run('jurnalEntries[0]'), jB = run('jurnalEntries[1]');
+    ok(jA.jenis === 'Penjualan' && jA.sumber === 'Orias AI', 'jurnal AI: jenis tetap Penjualan, sumber = Orias AI');
+    ok(jB.jenis === 'Penjualan' && !jB.sumber, 'jurnal biasa tidak diberi sumber');
+    ok(!/ORIAS_AI/.test(read('js/07-jurnal-laporan.js')) && /j\.sumber/.test(read('js/07-jurnal-laporan.js')), 'badge Orias AI tampil dari entry.sumber, bukan dari jenis');
+
+    console.log('\n[5b] Jenis jurnal per fitur');
+    ok(run('JENIS_JURNAL.INVOICE') === 'Invoice & Piutang', 'JENIS_JURNAL.INVOICE = "Invoice & Piutang"');
+    const inv11 = read('js/11-kontak-invoice.js');
+    ok((inv11.match(/jenis:JENIS_JURNAL\.INVOICE/g) || []).length === 2, 'kirim invoice & pelunasan invoice sama-sama berjenis Invoice & Piutang');
+    ok(!/jenis:\s*'Manual'/.test(inv11 + read('js/19-fitur-tambahan.js') + read('js/10-aset-tetap.js') + read('js/12-kalkulator.js') + read('js/13-analitik-dashboard.js')), 'jurnal otomatis fitur tidak lagi berjenis Manual');
+    ok(/id="filter-ju-type"/.test(read('index.html')) && /function syncJurnalTypeFilter/.test(read('js/07-jurnal-laporan.js')), 'filter jenis Jurnal Umum disinkronkan dari data');
+
     console.log('\n[6] LIFO');
     const ks = read('js/08-kartu-stock.js');
     ok(/const KS_METODE_DIAKUI = \['fifo','wa','mwa'\]/.test(ks), 'daftar metode diakui tidak memuat LIFO');
