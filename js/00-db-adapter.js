@@ -1,17 +1,3 @@
-// ══════════════════════════════════════════════════════════════════════════
-// DB ADAPTER — satu-satunya pintu masuk ke database.
-//
-// TUJUAN: kalau nanti mau ganti provider (Supabase → Firebase, backend
-// sendiri, dll), yang diubah CUKUP isi file ini. Semua file lain manggil
-// lewat `DB.auth.*` dan `DB.table(...)`, bukan langsung ke library Supabase.
-//
-// Wajib dimuat PALING PERTAMA di index.html, sebelum 01-state.js dkk:
-//   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-//   <script src="js/00-db-adapter.js"></script>
-//   <script src="js/01-state.js"></script>
-//   ...
-// ══════════════════════════════════════════════════════════════════════════
-
 // SUPABASE CONFIG 
 const SUPABASE_URL = 'https://bcaxdjlyijyfzskbshcz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjYXhkamx5aWp5Znpza2JzaGN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MTY5MjYsImV4cCI6MjA5MzI5MjkyNn0.9vJCqtnE9k33BD6oe0AwZW_xvvZa2Dak1BzA-P9FfzE';
