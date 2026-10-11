@@ -191,7 +191,7 @@ CREATE POLICY "Anyone can read join code by code value"
   ON company_join_codes FOR SELECT USING (true);
 ```
 
-### 2.2b `company_records` — invoice, kontak, aset tetap, produk, jurnal berulang, anggaran
+### 2.2b `company_records` — invoice, kontak, aset tetap, produk, jurnal berulang, anggaran, alert, kurs
 
 Migrasi: [`docs/migrations/001_company_records.sql`](./migrations/001_company_records.sql).
 Satu baris = satu record, dipisah per bisnis. Dipakai oleh `js/22-cloud-records.js`.
@@ -199,8 +199,8 @@ Satu baris = satu record, dipisah per bisnis. Dipakai oleh `js/22-cloud-records.
 | Kolom | Tipe | Isi |
 |---|---|---|
 | `company_id` | uuid, FK `companies` | Pemilik data (ON DELETE CASCADE) |
-| `kind` | text | `invoice` \| `kontak` \| `aset_tetap` \| `produk` \| `jurnal_berulang` \| `anggaran` |
-| `rec_id` | text | id record di app (`INV_..`, `KTK_..`, `AT_..`, `jb_..`, `ang_..`, atau `ksId` untuk produk) |
+| `kind` | text | `invoice` \| `kontak` \| `aset_tetap` \| `produk` \| `jurnal_berulang` \| `anggaran` \| `alert` \| `kurs` |
+| `rec_id` | text | id record di app (`INV_..`, `KTK_..`, `AT_..`, `jb_..`, `ang_..`, `alert_..`, `kurs` (satu record), atau `ksId` untuk produk) |
 | `data` | jsonb | isi record apa adanya |
 | `updated_at` | timestamptz | waktu sync terakhir |
 
@@ -248,7 +248,7 @@ di akhir), sisanya global per-browser/device.
 | `oas_alerts` | Global | JSON array | `notifAlerts` — aturan notifikasi (arus kas negatif, jatuh tempo, dst) |
 | `oas_notif_hist` | Global | JSON array | `notifHistory` — riwayat notifikasi yang sudah muncul |
 | `oas_anggaran` | Global | JSON array | `anggaranList` — anggaran vs aktual per periode |
-| `oas_rec_<kind>_<companyId>` | Per company | JSON array | Cache lokal invoice/kontak/aset_tetap/produk/jurnal_berulang/anggaran; dipakai bila cloud gagal dimuat atau ditulis |
+| `oas_rec_<kind>_<companyId>` | Per company | JSON array | Cache lokal invoice/kontak/aset_tetap/produk/jurnal_berulang/anggaran/alert/kurs; dipakai bila cloud gagal dimuat atau ditulis |
 | `oas_rec_seen_<companyId>` / `oas_rec_legacy_claimed` | Per company / global | `'1'` / companyId | Penanda migrasi data lama: data global hanya boleh dipindah ke satu bisnis dan tidak ditawarkan ulang |
 | `oas_mks_<companyId>` / `oas_mks_guest` | Per company | JSON object | Fallback lokal untuk `multiKartuStock` bila gagal sync ke cloud |
 | `oas_profil` / `oas_profil_v1` | Global | JSON object | Profil perusahaan (nama, alamat, logo ref, dsb) — legacy key ganda |
@@ -460,21 +460,22 @@ Tidak semua state runtime disinkronkan ke Supabase. Berdasarkan pemetaan
 | `asetTetapList` | ✅ Ya | `company_records` (`kind='aset_tetap'`) |
 | `jurnalBerulangList` | ✅ Ya | `company_records` (`kind='jurnal_berulang'`) |
 | `anggaranList` | ✅ Ya | `company_records` (`kind='anggaran'`) |
-| `jurnalBerulangHistory`, `notifAlerts`, `notifHistory`, `kursData` | ❌ Tidak | localStorage, global |
+| `notifAlerts` | ✅ Ya | `company_records` (`kind='alert'`) |
+| `kursData` | ✅ Ya | `company_records` (`kind='kurs'`, satu record `id='kurs'`; hanya ditulis bila `updatedAt` terisi) |
+| `jurnalBerulangHistory`, `notifHistory` | ❌ Tidak | localStorage, global |
 | `org_members`, `company_join_codes` | ✅ Ya | tabel sendiri |
 
-**Status**: invoice, kontak, aset tetap, produk, jurnal berulang, dan anggaran sudah disinkron per bisnis
+**Status**: invoice, kontak, aset tetap, produk, jurnal berulang, anggaran, alert, dan kurs sudah disinkron per bisnis
 lewat `company_records` (`js/22-cloud-records.js`), jadi ikut berpindah antar
 perangkat dan tidak tercampur antar bisnis. Key global `oas_invoices`,
-`oas_kontak`, `oas_aset_tetap`, `oas_jb`, `oas_anggaran` hanya dipakai mode tamu.
+`oas_kontak`, `oas_aset_tetap`, `oas_jb`, `oas_anggaran`, `oas_alerts`, `oas_kurs` hanya dipakai mode tamu.
 Data lama di key global ditawarkan untuk diunggah sekali per kind per bisnis
 (flag `oas_rec_seen_<companyId>_<kind>`), dan hanya ke satu bisnis
 (`oas_rec_legacy_claimed_<kind>`).
 
 **Yang masih hanya di localStorage dan global** (belum di-scope per company,
 jadi masih berpotensi bocor antar bisnis di browser yang sama dan tidak
-berpindah perangkat): `jurnalBerulangHistory`, `notifAlerts`, `notifHistory`,
-`kursData`. Tabel `company_records` sengaja generik (kolom `kind`), jadi
+berpindah perangkat): `jurnalBerulangHistory` dan `notifHistory`. Tabel `company_records` sengaja generik (kolom `kind`), jadi
 menambahkan mereka cukup menambah entri di `CLOUD_RECORD_KINDS`.
 
 ---

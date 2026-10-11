@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════
 // CLOUD RECORDS — sinkron invoice, kontak, aset tetap, produk, jurnal berulang,
-// dan anggaran ke Supabase (tabel company_records), terpisah per bisnis.
+// anggaran, alert notifikasi, dan kurs ke Supabase (tabel company_records), terpisah per bisnis.
 //
 // Kenapa ada: sebelumnya data ini hanya di localStorage dengan key
 // global, jadi tidak ikut ke perangkat lain, tercampur antar bisnis, dan
@@ -20,6 +20,19 @@
 // Dimuat setelah 16-auth-company.js dan 19-fitur-tambahan.js.
 // ═══════════════════════════════════════════════════════════
 
+// Nilai awal sama dengan kursData di 01-state.js.
+function _cloudKursDefault() { return { USD:1, IDR:16200, SGD:12100, EUR:18300, MYR:3500, JPY:107, updatedAt:null }; }
+function _cloudKursFromList(list) {
+  const r = Array.isArray(list) && list[0];
+  if (!r || typeof r !== 'object') return _cloudKursDefault();
+  const { id, ...rest } = r;
+  return rest;
+}
+// Data lama hanya dianggap ada kalau kurs pernah disimpan user (updatedAt terisi).
+function _cloudKursLegacy(raw) {
+  return (raw && typeof raw === 'object' && !Array.isArray(raw) && raw.updatedAt) ? [{ id: 'kurs', ...raw }] : [];
+}
+
 const CLOUD_RECORD_KINDS = {
   invoice:    { get: () => invoiceList,   set: v => { invoiceList = v; },   idOf: r => r && r.id,    legacyKey: 'oas_invoices' },
   kontak:     { get: () => kontakList,    set: v => { kontakList = v; },    idOf: r => r && r.id,    legacyKey: 'oas_kontak' },
@@ -30,6 +43,12 @@ const CLOUD_RECORD_KINDS = {
   // sudah punya record kind lain di cloud. Tanpa ini data lama tampak hilang.
   jurnal_berulang: { get: () => jurnalBerulangList, set: v => { jurnalBerulangList = v; }, idOf: r => r && r.id, legacyKey: 'oas_jb',       legacyOnce: true },
   anggaran:        { get: () => anggaranList,       set: v => { anggaranList = v; },       idOf: r => r && r.id, legacyKey: 'oas_anggaran', legacyOnce: true },
+  alert:           { get: () => notifAlerts,        set: v => { notifAlerts = v; },        idOf: r => r && r.id, legacyKey: 'oas_alerts',   legacyOnce: true },
+  // kurs: kursData adalah SATU objek ({USD:1, IDR:..., updatedAt}), bukan array.
+  // Disimpan sebagai satu record ber-id 'kurs', hanya kalau pernah disimpan user
+  // (updatedAt terisi). Tanpa record = default, dan default tidak ikut ditulis ke cloud.
+  kurs:            { get: () => (kursData && kursData.updatedAt ? [{ id: 'kurs', ...kursData }] : []), set: v => { kursData = _cloudKursFromList(v); },
+                     idOf: r => r && r.id, legacyKey: 'oas_kurs', legacyOnce: true, fromLegacy: _cloudKursLegacy },
 };
 
 const CLOUD_REC_PAGE  = 1000; // batas default Supabase per request
@@ -125,7 +144,7 @@ async function cloudLoadRecords() {
     _cloudLoadFromCache(cid);
     if (!_cloudTableWarned) {
       _cloudTableWarned = true;
-      showAlert('⚠️ Data invoice/kontak/aset/produk/jurnal berulang/anggaran belum bisa dimuat dari cloud. Pastikan migrasi SQL <b>001_company_records</b> sudah dijalankan di Supabase. Sementara ini data dibaca dari cache perangkat.');
+      showAlert('⚠️ Data invoice/kontak/aset/produk/jurnal berulang/anggaran/alert/kurs belum bisa dimuat dari cloud. Pastikan migrasi SQL <b>001_company_records</b> sudah dijalankan di Supabase. Sementara ini data dibaca dari cache perangkat.');
     }
     return false;
   }
@@ -175,7 +194,8 @@ async function cloudOfferLocalMigration(cid) {
     if (cached.length) { found[kind] = cached; return; }
     if (def.legacyKey && _cloudLegacyAllowed(cid, kind, def, legacyOk)) {
       try {
-        const arr = JSON.parse(localStorage.getItem(def.legacyKey) || '[]');
+        let arr = JSON.parse(localStorage.getItem(def.legacyKey) || '[]');
+        if (def.fromLegacy) arr = def.fromLegacy(arr);
         if (Array.isArray(arr) && arr.length) {
           found[kind] = arr;
           if (def.legacyOnce) onceKinds.push(kind); else usedLegacy = true;
@@ -197,7 +217,7 @@ async function cloudOfferLocalMigration(cid) {
   }
 
   if (typeof hideOpSpinner === 'function') hideOpSpinner(); // spinner jangan menutupi dialog
-  const label = { invoice: 'Invoice', kontak: 'Kontak', aset_tetap: 'Aset tetap', produk: 'Produk', jurnal_berulang: 'Jurnal berulang', anggaran: 'Anggaran' };
+  const label = { invoice: 'Invoice', kontak: 'Kontak', aset_tetap: 'Aset tetap', produk: 'Produk', jurnal_berulang: 'Jurnal berulang', anggaran: 'Anggaran', alert: 'Alert notifikasi', kurs: 'Kurs' };
   const ok = await showCustomConfirmGeneral({
     icon: '☁️', iconColor: 'rgba(34,211,238,0.12)', iconBorder: 'rgba(34,211,238,0.3)',
     title: 'Unggah Data Lokal ke Cloud?',

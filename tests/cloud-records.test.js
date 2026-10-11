@@ -49,7 +49,7 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } =
   };
   vm.createContext(ctx);
   // list global di 01-state.js adalah `let`; di sini disediakan lewat script yang sama
-  vm.runInContext('let invoiceList=[],kontakList=[],asetTetapList=[],produkList=[],jurnalBerulangList=[],anggaranList=[];', ctx);
+  vm.runInContext('let invoiceList=[],kontakList=[],asetTetapList=[],produkList=[],jurnalBerulangList=[],anggaranList=[],notifAlerts=[],kursData={USD:1,IDR:16200,SGD:12100,EUR:18300,MYR:3500,JPY:107,updatedAt:null};', ctx);
   vm.runInContext(src, ctx);
   const run = code => vm.runInContext(code, ctx);
   return { ctx, run, store, calls, ls, alerts };
@@ -192,6 +192,53 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } =
     e.ls['oas_jb'] = JSON.stringify([{ id: 'jb_old' }]);
     await e.run('cloudLoadRecords()');
     ok(e.store.length === 0 && !!e.ls['oas_jb'], 'dibatalkan: tidak ada yang diunggah, data lama utuh');
+  }
+
+  console.log('[5] alert & kurs');
+  {
+    const e = makeEnv();
+    e.store.push({ company_id: 'c1', kind: 'alert', rec_id: 'alert_1', data: { id: 'alert_1', nama: 'Kas', createdAt: '2026-01-01' } });
+    e.store.push({ company_id: 'c2', kind: 'alert', rec_id: 'alert_X', data: { id: 'alert_X' } });
+    e.store.push({ company_id: 'c1', kind: 'kurs', rec_id: 'kurs', data: { id: 'kurs', USD: 1, IDR: 15000, updatedAt: '2026-10-01' } });
+    await e.run('cloudLoadRecords()');
+    ok(e.run('notifAlerts.length') === 1, 'alert dimuat per bisnis (c2 tidak bocor)');
+    ok(e.run('kursData.IDR') === 15000 && e.run("'id' in kursData") === false, 'kurs dimuat sebagai objek, tanpa field id');
+    e.run("notifAlerts.push({id:'alert_2'}); kursData.IDR = 15500");
+    await e.run("cloudSyncRecords(['alert','kurs'])");
+    ok(e.calls.upsert.flat().sort().join() === 'alert_2,kurs', 'alert baru dan kurs yang berubah di-upsert');
+    e.calls.upsert.length = 0;
+    await e.run("cloudSyncRecords(['alert','kurs'])");
+    ok(e.calls.upsert.length === 0, 'kurs tidak berubah = tanpa tulis');
+    ok(e.store.find(r => r.kind === 'kurs').data.IDR === 15500, 'nilai kurs terbaru tersimpan di cloud');
+    e.run("notifAlerts = notifAlerts.filter(a => a.id !== 'alert_1')");
+    await e.run("cloudSyncRecords(['alert'])");
+    ok(e.calls.delete.flat().join() === 'alert_1', 'hapus alert ikut terhapus di cloud');
+    e.run('cloudResetRecordsState()');
+    ok(e.run('kursData.IDR') === 16200 && e.run('kursData.updatedAt') === null && e.run('notifAlerts.length') === 0, 'reset state: kurs kembali default, alert kosong');
+  }
+  {
+    // bisnis tanpa record kurs -> pakai default, bukan objek kosong
+    const e = makeEnv();
+    e.store.push({ company_id: 'c1', kind: 'invoice', rec_id: 'INV_1', data: { id: 'INV_1' } });
+    e.ls['oas_rec_seen_c1'] = '1';
+    await e.run('cloudLoadRecords()');
+    ok(e.run('kursData.IDR') === 16200 && e.run('kursData.USD') === 1, 'tanpa record kurs di cloud -> default dipakai');
+  }
+  {
+    // migrasi data lama: kurs yang pernah disimpan + alert
+    const e = makeEnv();
+    e.ls['oas_kurs'] = JSON.stringify({ USD: 1, IDR: 14000, updatedAt: '2026-09-01' });
+    e.ls['oas_alerts'] = JSON.stringify([{ id: 'alert_old' }]);
+    await e.run('cloudLoadRecords()');
+    ok(e.store.map(r => r.rec_id).sort().join() === 'alert_old,kurs', 'kurs & alert lama ikut dimigrasi');
+    ok(e.run('kursData.IDR') === 14000, 'kurs lama tampil setelah migrasi');
+  }
+  {
+    // kurs lama yang tidak pernah diubah user (updatedAt null) tidak perlu diunggah
+    const e = makeEnv();
+    e.ls['oas_kurs'] = JSON.stringify({ USD: 1, IDR: 16200, updatedAt: null });
+    await e.run('cloudLoadRecords()');
+    ok(e.store.length === 0, 'kurs default tidak ditawarkan untuk diunggah');
   }
 
   console.log('\nHasil: ' + pass + ' lulus, ' + fail + ' gagal');

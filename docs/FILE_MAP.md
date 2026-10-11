@@ -476,7 +476,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 2189-2205 | `hitungPPh23` | function |
 | 2207-2244 | `hitungBadan` | function |
 
-## js/13-analitik-dashboard.js (1994 baris, 96.0 KB)
+## js/13-analitik-dashboard.js (1994 baris, 96.1 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -976,24 +976,27 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 726-742 | `loadCachedPasswordDisplay` | function |
 | 744-756 | `copyCurrentPassword` | function |
 
-## js/22-cloud-records.js (279 baris, 12.7 KB)
+## js/22-cloud-records.js (299 baris, 14.1 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
-| 43 | `_cloudCacheKey` | function |
-| 45-47 | `_cloudCacheLocal` | function |
-| 49-54 | `_cloudReadCache` | function |
-| 56 | `_cloudSeenKey` | function |
-| 59-62 | `_cloudPendingOnce` | function |
-| 65-68 | `_cloudLegacyAllowed` | function |
-| 71-82 | `_cloudIndex` | function |
-| 85-94 | `_cloudSortNewestFirst` | function |
-| 96-99 | `cloudResetRecordsState` | function |
-| 101-104 | `_cloudLoadFromCache` | function |
-| 106-158 | `cloudLoadRecords` | async function |
-| 164-226 | `cloudOfferLocalMigration` | async function |
-| 229-238 | `cloudSyncRecords` | function |
-| 240-278 | `_cloudSyncNow` | async function |
+| 24 | `_cloudKursDefault` | function |
+| 25-30 | `_cloudKursFromList` | function |
+| 32-34 | `_cloudKursLegacy` | function |
+| 62 | `_cloudCacheKey` | function |
+| 64-66 | `_cloudCacheLocal` | function |
+| 68-73 | `_cloudReadCache` | function |
+| 75 | `_cloudSeenKey` | function |
+| 78-81 | `_cloudPendingOnce` | function |
+| 84-87 | `_cloudLegacyAllowed` | function |
+| 90-101 | `_cloudIndex` | function |
+| 104-113 | `_cloudSortNewestFirst` | function |
+| 115-118 | `cloudResetRecordsState` | function |
+| 120-123 | `_cloudLoadFromCache` | function |
+| 125-177 | `cloudLoadRecords` | async function |
+| 183-246 | `cloudOfferLocalMigration` | async function |
+| 249-258 | `cloudSyncRecords` | function |
+| 260-298 | `_cloudSyncNow` | async function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 
