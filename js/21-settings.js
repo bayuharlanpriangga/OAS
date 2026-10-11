@@ -172,18 +172,36 @@ function renderSettingsKunci() {
     ? `Periode sampai <b>${fmtDate(periodeKunciSampai)}</b> dikunci.`
     : 'Belum ada periode yang dikunci.';
   box.innerHTML = `
-    <div style="font-size:13px;margin-bottom:12px;">${status}</div>
-    ${admin ? `
-    <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Kunci semua jurnal sampai tanggal</label>
-    <input type="date" id="kunci-periode-tgl" value="${escapeHtml(periodeKunciSampai || '')}" style="width:100%;margin-bottom:10px;">
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-ghost" onclick="simpanKunciPeriode()"><i class="ti ti-lock" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Simpan Kunci</button>
-      ${periodeKunciSampai ? `<button class="btn btn-ghost" onclick="bukaKunciPeriode()">Buka Kunci</button>` : ''}
-    </div>` : `<div style="font-size:12px;color:var(--muted);">Hanya admin yang bisa mengubah kunci periode.</div>`}
-    <div style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;">
+      <div style="font-size:13px;">${status}</div>
+      <button type="button" id="kunci-info-btn" onclick="toggleKunciInfo()" aria-expanded="false" aria-controls="kunci-info-box" title="Penjelasan kunci periode"
+        style="flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">
+        <i class="ti ti-info-circle" style="font-size:17px;"></i>
+      </button>
+    </div>
+    <div id="kunci-info-box" style="display:none;font-size:12px;color:var(--muted);line-height:1.65;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
       Jurnal bertanggal pada atau sebelum tanggal kunci tidak bisa ditambah. Untuk mengoreksi jurnal di periode terkunci, buat jurnal pembalik bertanggal setelah tanggal kunci.
       Tutup Buku (Jurnal Penutup) otomatis mengunci sampai akhir tahun bukunya. Kunci ini ditegakkan oleh aplikasi; untuk perlindungan penuh terhadap akses langsung ke database, perlu aturan tambahan di Supabase.
-    </div>`;
+    </div>
+    ${admin ? `
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <label for="kunci-periode-tgl" style="font-size:12px;color:var(--muted);">Kunci semua jurnal sampai tanggal</label>
+      <input type="date" id="kunci-periode-tgl" value="${escapeHtml(periodeKunciSampai || '')}" style="width:100%;margin:0;">
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;">
+      <button class="btn btn-ghost" onclick="simpanKunciPeriode()"><i class="ti ti-lock" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Simpan Kunci</button>
+      ${periodeKunciSampai ? `<button class="btn btn-ghost" onclick="bukaKunciPeriode()">Buka Kunci</button>` : ''}
+    </div>` : `<div style="font-size:12px;color:var(--muted);">Hanya admin yang bisa mengubah kunci periode.</div>`}`;
+}
+function toggleKunciInfo() {
+  const box = document.getElementById('kunci-info-box');
+  const btn = document.getElementById('kunci-info-btn');
+  if (!box || !btn) return;
+  const open = box.style.display === 'none';
+  box.style.display = open ? 'block' : 'none';
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  btn.style.color = open ? 'var(--accent)' : 'var(--muted)';
+  btn.style.borderColor = open ? 'var(--accent)' : 'var(--border)';
 }
 async function simpanKunciPeriode() {
   if (typeof isAdmin === 'function' && !isAdmin()) { showAlert('Hanya admin yang bisa mengubah kunci periode.'); return; }

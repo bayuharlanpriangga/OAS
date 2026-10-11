@@ -924,7 +924,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1382-1388 | `saveJurnalFromAI` | function |
 | 2025-2040 | `startTutorialById` | function |
 
-## js/21-settings.js (782 baris, 42.7 KB)
+## js/21-settings.js (800 baris, 43.1 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -943,38 +943,39 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 139-143 | `_resetSettingsAkun` | function |
 | 147-158 | `renderSettingsPajak` | function |
 | 159-164 | `setPpnTarifDefault` | async function |
-| 167-187 | `renderSettingsKunci` | function |
-| 188-197 | `simpanKunciPeriode` | async function |
-| 198-205 | `bukaKunciPeriode` | async function |
-| 207-231 | `_renderSettingsHppPersediaan` | function |
-| 243-245 | `_getSavedAccounts` | function |
-| 246-248 | `_setSavedAccounts` | function |
-| 251-273 | `saveCurrentAccountToSwitcher` | function |
-| 275-282 | `toggleAccountSwitcher` | function |
-| 283-286 | `closeAccountSwitcher` | function |
-| 287-291 | `_accSwitcherOutsideClick` | function |
-| 293-320 | `renderAccountSwitcher` | function |
-| 322-338 | `switchToAccount` | async function |
-| 340-345 | `addAccountFlow` | async function |
-| 347-350 | `removeAccountFromSwitcher` | function |
-| 369-374 | `openAccountSettings` | async function |
-| 376-401 | `accsLoadUserInfo` | async function |
-| 403-424 | `handleProfilePhotoUpload` | function |
-| 426-536 | `accsLoadProviders` | async function |
-| 538-551 | `accsLinkProvider` | async function |
-| 553-567 | `accsUnlinkProvider` | async function |
-| 569-597 | `accsUpdateProfile` | async function |
-| 603-611 | `accsHasEmailLogin` | function |
-| 613-633 | `openAccsPasswordModal` | function |
-| 635-689 | `accsUpdatePassword` | async function |
-| 694-703 | `accsForgotPassword` | async function |
-| 705-709 | `accsLogoutAll` | async function |
-| 711-715 | `accsShowMsg` | function |
-| 717 | `toggleAccsPw` | function |
-| 720 | `_pwCacheKey` | function |
-| 722-724 | `cachePasswordLocally` | function |
-| 726-742 | `loadCachedPasswordDisplay` | function |
-| 744-756 | `copyCurrentPassword` | function |
+| 167-195 | `renderSettingsKunci` | function |
+| 196-205 | `toggleKunciInfo` | function |
+| 206-215 | `simpanKunciPeriode` | async function |
+| 216-223 | `bukaKunciPeriode` | async function |
+| 225-249 | `_renderSettingsHppPersediaan` | function |
+| 261-263 | `_getSavedAccounts` | function |
+| 264-266 | `_setSavedAccounts` | function |
+| 269-291 | `saveCurrentAccountToSwitcher` | function |
+| 293-300 | `toggleAccountSwitcher` | function |
+| 301-304 | `closeAccountSwitcher` | function |
+| 305-309 | `_accSwitcherOutsideClick` | function |
+| 311-338 | `renderAccountSwitcher` | function |
+| 340-356 | `switchToAccount` | async function |
+| 358-363 | `addAccountFlow` | async function |
+| 365-368 | `removeAccountFromSwitcher` | function |
+| 387-392 | `openAccountSettings` | async function |
+| 394-419 | `accsLoadUserInfo` | async function |
+| 421-442 | `handleProfilePhotoUpload` | function |
+| 444-554 | `accsLoadProviders` | async function |
+| 556-569 | `accsLinkProvider` | async function |
+| 571-585 | `accsUnlinkProvider` | async function |
+| 587-615 | `accsUpdateProfile` | async function |
+| 621-629 | `accsHasEmailLogin` | function |
+| 631-651 | `openAccsPasswordModal` | function |
+| 653-707 | `accsUpdatePassword` | async function |
+| 712-721 | `accsForgotPassword` | async function |
+| 723-727 | `accsLogoutAll` | async function |
+| 729-733 | `accsShowMsg` | function |
+| 735 | `toggleAccsPw` | function |
+| 738 | `_pwCacheKey` | function |
+| 740-742 | `cachePasswordLocally` | function |
+| 744-760 | `loadCachedPasswordDisplay` | function |
+| 762-774 | `copyCurrentPassword` | function |
 
 ## js/22-cloud-records.js (299 baris, 14.1 KB)
 
