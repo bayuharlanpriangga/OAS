@@ -52,7 +52,7 @@ run("var showCustomConfirmGeneral = () => Promise.resolve(true); var escapeHtml 
 
 let pass = 0, fail = 0;
 const ok = (cond, msg) => { if (cond) { pass++; console.log('  ok   ' + msg); } else { fail++; console.log('  GAGAL ' + msg); } };
-const reset = () => { run('jurnalEntries = []; jurnalCounter = 1; periodeKunciSampai = ""; transaksiAkunSettings.ppnTarif = 11;'); alerts.length = 0; };
+const reset = () => { run('jurnalEntries = []; jurnalCounter = 1; periodeKunciSampai = "";'); alerts.length = 0; };
 const J = (tanggal, ket, jenis, lines) => ({ tanggal, ket, jenis, lines });
 const post = e => run('addJurnal')(JSON.parse(JSON.stringify(e)));
 // Laba menurut sisi alami tipe akun (pendapatan = kredit - debit; HPP/beban = debit - kredit),
@@ -164,12 +164,29 @@ setTimeout(() => {
 
     console.log('\n[5] PPN');
     reset();
-    ok(run('hitungPpn(1000000)') === 110000, 'default 11%: 1.000.000 -> 110.000');
+    ok(run('hitungPpn(1000000, 11)') === 110000, 'tarif 11%: 1.000.000 -> 110.000');
     ok(run('hitungPpn(1000000, 12)') === 120000, 'tarif 12% (barang mewah): 120.000');
-    run('transaksiAkunSettings.ppnTarif = 12');
-    ok(run('hitungPpn(1000000)') === 120000, 'default bisa diubah ke 12%');
+    ok(run('hitungPpn(1000000)') === 110000, 'tanpa tarif -> standar 11% (bukan setting)');
     ok(run('hitungPpn(1000000, 0)') === 0, 'tarif 0% -> 0');
-    ok(run('labelTarifPpn()') === '12%', 'label tarif mengikuti default');
+    ok(run('typeof ppnTarifDefault') === 'undefined' && run('transaksiAkunSettings.ppnTarif') === undefined, 'setting tarif PPN default sudah dihapus');
+
+    // Rekap PPN dibaca dari jurnal (penjualan produk, invoice, pembelian), bukan estimasi
+    reset();
+    post(Object.assign(J('2026-10-05', 'Jual A', 'Penjualan', [
+      { akun: '1101', debit: 1110, kredit: 0 }, { akun: '4101', debit: 0, kredit: 1000 },
+      { akun: '2301', ket: 'Utang PPN Keluaran 11%', debit: 0, kredit: 110 }]), { _ppnTarif: 11 }));
+    post(Object.assign(J('2026-10-06', 'Invoice 1', 'Manual', [
+      { akun: '1201', debit: 2240, kredit: 0 }, { akun: '4101', debit: 0, kredit: 2000 },
+      { akun: '2301', ket: 'Utang PPN Keluaran 12%', debit: 0, kredit: 240 }]), { _ppnTarif: 12 }));
+    post(J('2026-10-07', 'Jual tanpa PPN', 'Penjualan', [{ akun: '1101', debit: 5000, kredit: 0 }, { akun: '4101', debit: 0, kredit: 5000 }]));
+    post(Object.assign(J('2026-10-08', 'PPN Masukan 11% — Beli', 'PPN', [
+      { akun: '1502', ket: 'PPN Masukan 11%', debit: 55, kredit: 0 }, { akun: '1101', ket: 'Kas/Utang PPN Masukan', debit: 0, kredit: 55 }]), { _ppnTarif: 11 }));
+    const rk = run('rekapPpnJurnal()');
+    ok(rk.keluaran === 350 && rk.dppKeluaran === 3000, 'PPN keluaran = 110 + 240 (penjualan tanpa PPN tidak ikut), DPP 3.000');
+    ok(rk.masukan === 55 && rk.dppMasukan === 500, 'PPN masukan = 55, DPP 500');
+    ok(rk.kurangBayar === 295 && rk.rowsKeluaran.length === 2 && rk.rowsMasukan.length === 1, 'kurang bayar 295; 2 faktur keluaran, 1 masukan');
+    const rk2 = run('rekapPpnJurnal("2026-10-06","2026-10-06")');
+    ok(rk2.keluaran === 240 && rk2.masukan === 0, 'filter rentang tanggal bekerja');
 
     console.log('\n[6] LIFO');
     const ks = read('js/08-kartu-stock.js');

@@ -19,7 +19,6 @@ const SETTINGS_TITLES = {
   'transaksi':       ['Transaksi', 'Pengaturan akun default per jenis transaksi'],
   'transaksi-jual':  ['Penjualan', 'Akun default untuk tiap jenis penjualan'],
   'transaksi-beli':  ['Pembelian', 'Akun default untuk tiap jenis pembelian'],
-  'transaksi-pajak': ['Pajak', 'Tarif PPN default untuk invoice & rekap pajak'],
   'transaksi-kunci': ['Kunci Periode', 'Cegah perubahan jurnal pada periode yang sudah ditutup'],
 };
 
@@ -68,7 +67,6 @@ function renderSettingsView() {
   if (current === 'transaksi' || current === 'transaksi-jual' || current === 'transaksi-beli') {
     renderSettingsTransaksi();
   }
-  if (current === 'transaksi-pajak') renderSettingsPajak();
   if (current === 'transaksi-kunci') renderSettingsKunci();
 }
 
@@ -140,27 +138,6 @@ function _resetSettingsAkun(kategori, jenis) {
   if (transaksiAkunSettings[kategori]) transaksiAkunSettings[kategori][jenis] = jenis;
   markDirty();
   renderSettingsTransaksi();
-}
-
-// Dulu diset per-produk di Master Produk (akunHpp/akunPers) — sekarang default global di sini.
-// PAJAK — tarif PPN default
-function renderSettingsPajak() {
-  const box = document.getElementById('settings-pajak-list');
-  if (!box) return;
-  const aktif = ppnTarifDefault();
-  box.innerHTML = PPN_TARIF_OPSI.map(o => `
-    <div class="settings-list-item" onclick="setPpnTarifDefault(${o.value})" style="cursor:pointer;${o.value === aktif ? 'border-color:var(--accent);' : ''}">
-      <div class="sli-body">
-        <div class="sli-label">${escapeHtml(o.label)}${o.value === aktif ? ' <span style="font-size:10px;color:var(--accent);">● dipakai</span>' : ''}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${escapeHtml(o.sub)}</div>
-      </div>
-    </div>`).join('');
-}
-async function setPpnTarifDefault(v) {
-  transaksiAkunSettings.ppnTarif = Number(v);
-  renderSettingsPajak();
-  const ok = await savePeriodeKunciToCloud(); // menyimpan kunci periode + tarif PPN sekaligus
-  showAlert(ok === false ? 'Tarif PPN tersimpan di perangkat ini, tapi gagal sinkron ke cloud.' : 'Tarif PPN default diubah ke ' + labelTarifPpn() + '.');
 }
 
 // KUNCI PERIODE

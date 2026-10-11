@@ -9,14 +9,14 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | --- | --- | --- |
 | 7-26 | `_authStorage` | arrow |
 
-## js/01-state.js (232 baris, 15.3 KB)
+## js/01-state.js (228 baris, 15.0 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
-| 27-31 | `resolveAkunSetting` | function |
-| 170-201 | `seedData` | function |
+| 23-27 | `resolveAkunSetting` | function |
+| 166-197 | `seedData` | function |
 
-## js/02-utils.js (322 baris, 15.3 KB)
+## js/02-utils.js (359 baris, 17.2 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -43,21 +43,22 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 122 | `getJurnalTanpaPenutup` | function |
 | 126-135 | `computeSaldoAll` | function |
 | 137-143 | `computeSaldoBersih` | function |
-| 159-162 | `ppnTarifDefault` | function |
-| 164-167 | `hitungPpn` | function |
-| 168-171 | `labelTarifPpn` | function |
-| 173-176 | `setVal` | function |
-| 178-181 | `setSelectVal` | function |
-| 183 | `sleep` | function |
-| 191-199 | `_buildInfoPopover` | function |
-| 202-214 | `toggleInfoPopover` | function |
-| 215-222 | `closeInfoPopover` | function |
-| 223-229 | `_onDocClickCloseInfoPopover` | function |
-| 251-260 | `_positionInfoPopover` | function |
-| 262-265 | `emptyState` | function |
-| 267-275 | `escapeHtml` | function |
-| 285-288 | `escapeForJsAttr` | function |
-| 290-321 | `parseJurnalFromAI` | function |
+| 162-165 | `hitungPpn` | function |
+| 168-171 | `akunPpnKeluaranKode` | function |
+| 175-192 | `ppnDariJurnal` | function |
+| 195-208 | `rekapPpnJurnal` | function |
+| 210-213 | `setVal` | function |
+| 215-218 | `setSelectVal` | function |
+| 220 | `sleep` | function |
+| 228-236 | `_buildInfoPopover` | function |
+| 239-251 | `toggleInfoPopover` | function |
+| 252-259 | `closeInfoPopover` | function |
+| 260-266 | `_onDocClickCloseInfoPopover` | function |
+| 288-297 | `_positionInfoPopover` | function |
+| 299-302 | `emptyState` | function |
+| 304-312 | `escapeHtml` | function |
+| 322-325 | `escapeForJsAttr` | function |
+| 327-358 | `parseJurnalFromAI` | function |
 
 ## js/03-widgets.js (2718 baris, 154.2 KB)
 
@@ -172,7 +173,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 379-397 | `openExportModal` | function |
 | 399-518 | `getDefaultAkuns` | function |
 
-## js/06-transaksi.js (1297 baris, 66.0 KB)
+## js/06-transaksi.js (1294 baris, 65.5 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -219,7 +220,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1130-1148 | `getSimpelJurnalLines` | function |
 | 1150-1167 | `previewSimpel` | function |
 | 1169-1192 | `simpanSimpel` | function |
-| 1198-1296 | `renderDashBebanPajak` | function |
+| 1198-1293 | `renderDashBebanPajak` | function |
 
 ## js/07-jurnal-laporan.js (465 baris, 31.0 KB)
 
@@ -381,7 +382,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 194-246 | `atRenderCard` | function |
 | 253 | `filterKontak` | function |
 
-## js/11-kontak-invoice.js (367 baris, 28.2 KB)
+## js/11-kontak-invoice.js (368 baris, 28.2 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -404,13 +405,13 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 177 | `tambahItemInvoice` | function |
 | 180-183 | `_invPpnTarif` | function |
 | 185-193 | `hitungTotalInvoice` | function |
-| 195-240 | `simpanInvoice` | function |
-| 242-260 | `renderInvoiceKPI` | function |
-| 262-290 | `renderInvoiceList` | function |
-| 292-306 | `openModalLunasInvoice` | function |
-| 308-332 | `konfirmasiLunasInvoice` | function |
-| 334-342 | `hapusInvoice` | function |
-| 347-366 | `handleRekonCSV` | function |
+| 195-241 | `simpanInvoice` | function |
+| 243-261 | `renderInvoiceKPI` | function |
+| 263-291 | `renderInvoiceList` | function |
+| 293-307 | `openModalLunasInvoice` | function |
+| 309-333 | `konfirmasiLunasInvoice` | function |
+| 335-343 | `hapusInvoice` | function |
+| 348-367 | `handleRekonCSV` | function |
 
 ## js/12-kalkulator.js (2268 baris, 113.0 KB)
 
@@ -476,7 +477,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 2189-2205 | `hitungPPh23` | function |
 | 2207-2244 | `hitungBadan` | function |
 
-## js/13-analitik-dashboard.js (1994 baris, 96.1 KB)
+## js/13-analitik-dashboard.js (1996 baris, 96.2 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -527,10 +528,10 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1778-1800 | `addPeriodFilterToReports` | function |
 | 1806-1826 | `initRekapPajakBulanSelect` | function |
 | 1828-1843 | `openPajakBulanPicker` | function |
-| 1845-1946 | `renderRekapSiapSetor` | function |
-| 1948-1950 | `exportRekapPajakPDF` | function |
+| 1845-1948 | `renderRekapSiapSetor` | function |
+| 1950-1952 | `exportRekapPajakPDF` | function |
 
-## js/14-export.js (3190 baris, 184.4 KB)
+## js/14-export.js (3189 baris, 183.7 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -601,11 +602,11 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1213-1217 | `pvRenderRecent` | function |
 | 1218 | `pvPickRecentColor` | function |
 | 1222-1229 | `exportExcel` | function |
-| 1231-1702 | `exportExcelData` | function |
-| 1707-2319 | `exportExcelFormula` | function |
-| 2321-2819 | `exportPDF` | function |
-| 2822-2885 | `exportCSV` | function |
-| 2888-3189 | `executeAIActions` | async function |
+| 1231-1699 | `exportExcelData` | function |
+| 1704-2316 | `exportExcelFormula` | function |
+| 2318-2816 | `exportPDF` | function |
+| 2819-2882 | `exportCSV` | function |
+| 2885-3188 | `executeAIActions` | async function |
 
 ## js/15-storage.js (448 baris, 18.1 KB)
 
@@ -635,7 +636,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 325-358 | `importBackupJSON` | function |
 | 362-396 | `doResetAll` | async function |
 
-## js/16-auth-company.js (1855 baris, 82.1 KB)
+## js/16-auth-company.js (1854 baris, 81.9 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -692,21 +693,21 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1191-1247 | `createCompany` | async function |
 | 1249-1276 | `selectCompany` | async function |
 | 1278-1317 | `updateUserChip` | function |
-| 1322-1405 | `loadDataFromSupabase` | async function |
-| 1413-1428 | `saveJurnalToSupabase` | async function |
-| 1430-1439 | `updateJurnalInSupabase` | async function |
-| 1441-1451 | `deleteJurnalFromSupabase` | async function |
-| 1454-1463 | `saveAkunsToSupabase` | async function |
-| 1466-1482 | `saveProfilToSupabase` | async function |
-| 1485-1501 | `savePeriodeKunciToCloud` | async function |
-| 1504-1526 | `saveKartuStockToCloud` | async function |
-| 1528-1574 | `loadKartuStockFromData` | function |
-| 1577-1580 | `saveAttachmentToSupabase` | async function |
-| 1631-1653 | `addJurnal` | function |
-| 1659-1667 | `postJurnalLegacy` | function |
-| 1714-1743 | `handleAttachFile` | function |
-| 1747-1775 | `diagnosSupabase` | async function |
-| 1777-1854 | `showSupabaseSetup` | function |
+| 1322-1404 | `loadDataFromSupabase` | async function |
+| 1412-1427 | `saveJurnalToSupabase` | async function |
+| 1429-1438 | `updateJurnalInSupabase` | async function |
+| 1440-1450 | `deleteJurnalFromSupabase` | async function |
+| 1453-1462 | `saveAkunsToSupabase` | async function |
+| 1465-1481 | `saveProfilToSupabase` | async function |
+| 1484-1500 | `savePeriodeKunciToCloud` | async function |
+| 1503-1525 | `saveKartuStockToCloud` | async function |
+| 1527-1573 | `loadKartuStockFromData` | function |
+| 1576-1579 | `saveAttachmentToSupabase` | async function |
+| 1630-1652 | `addJurnal` | function |
+| 1658-1666 | `postJurnalLegacy` | function |
+| 1713-1742 | `handleAttachFile` | function |
+| 1746-1774 | `diagnosSupabase` | async function |
+| 1776-1853 | `showSupabaseSetup` | function |
 
 ## js/17-profil-perusahaan.js (490 baris, 23.5 KB)
 
@@ -788,7 +789,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1104-1119 | `auditOpenAktPicker` | function |
 | 1122-1156 | `auditOpenBizPicker` | function |
 
-## js/19-fitur-tambahan.js (1862 baris, 100.9 KB)
+## js/19-fitur-tambahan.js (1842 baris, 99.9 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -825,40 +826,40 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 572-585 | `simpanAnggaran` | function |
 | 587-670 | `renderAnggaranPage` | function |
 | 672-674 | `hapusAnggaran` | function |
-| 677-781 | `renderPajakOtomatis` | function |
-| 783-812 | `parseBankStatement` | function |
-| 814-819 | `parseBankStatementFromDrop` | function |
-| 821-844 | `parseBankCSV` | function |
-| 846-868 | `parseBankExcel` | function |
-| 870-887 | `parseFlexDate` | function |
-| 889-910 | `parseRp` | function |
-| 912-930 | `processBankRows` | function |
-| 932-952 | `showBankResults` | function |
-| 954-976 | `renderBankTable` | function |
-| 978 | `filterBankRows` | function |
-| 980-995 | `buatJurnalDariBankRow` | async function |
-| 1000-1002 | `getAttachments` | function |
-| 1004-1017 | `openAttachModal` | function |
-| 1019-1049 | `renderAttachList` | function |
-| 1051-1053 | `addAttachment` | function |
-| 1058-1100 | `viewAttachment` | function |
-| 1102-1123 | `deleteAttachment` | function |
-| 1126-1135 | `downloadAttachment` | function |
-| 1138-1170 | `downloadAllAttachments` | async function |
-| 1175-1228 | `getPajakNotifications` | function |
-| 1230-1235 | `dismissPajakNotif` | function |
-| 1240-1257 | `renderPajakPanel` | function |
-| 1265-1318 | `buatJurnalPembalik` | function |
-| 1320-1369 | `konfirmasiBalikJurnal` | function |
-| 1373 | `konfirmasiHapusJurnal` | function |
-| 1375-1379 | `confirmResetAll` | function |
-| 1384-1416 | `openModalSaldoAwal` | function |
-| 1418-1433 | `updateSaldoAwalBalance` | function |
-| 1435-1470 | `simpanSaldoAwal` | function |
-| 1473-1476 | `autoNo` | function |
-| 1478-1584 | `handlePwaInstall` | function |
-| 1586-1603 | `showPwaGuideModal` | function |
-| 1809-1857 | `showOrgMembersSQL` | function |
+| 677-761 | `renderPajakOtomatis` | function |
+| 763-792 | `parseBankStatement` | function |
+| 794-799 | `parseBankStatementFromDrop` | function |
+| 801-824 | `parseBankCSV` | function |
+| 826-848 | `parseBankExcel` | function |
+| 850-867 | `parseFlexDate` | function |
+| 869-890 | `parseRp` | function |
+| 892-910 | `processBankRows` | function |
+| 912-932 | `showBankResults` | function |
+| 934-956 | `renderBankTable` | function |
+| 958 | `filterBankRows` | function |
+| 960-975 | `buatJurnalDariBankRow` | async function |
+| 980-982 | `getAttachments` | function |
+| 984-997 | `openAttachModal` | function |
+| 999-1029 | `renderAttachList` | function |
+| 1031-1033 | `addAttachment` | function |
+| 1038-1080 | `viewAttachment` | function |
+| 1082-1103 | `deleteAttachment` | function |
+| 1106-1115 | `downloadAttachment` | function |
+| 1118-1150 | `downloadAllAttachments` | async function |
+| 1155-1208 | `getPajakNotifications` | function |
+| 1210-1215 | `dismissPajakNotif` | function |
+| 1220-1237 | `renderPajakPanel` | function |
+| 1245-1298 | `buatJurnalPembalik` | function |
+| 1300-1349 | `konfirmasiBalikJurnal` | function |
+| 1353 | `konfirmasiHapusJurnal` | function |
+| 1355-1359 | `confirmResetAll` | function |
+| 1364-1396 | `openModalSaldoAwal` | function |
+| 1398-1413 | `updateSaldoAwalBalance` | function |
+| 1415-1450 | `simpanSaldoAwal` | function |
+| 1453-1456 | `autoNo` | function |
+| 1458-1564 | `handlePwaInstall` | function |
+| 1566-1583 | `showPwaGuideModal` | function |
+| 1789-1837 | `showOrgMembersSQL` | function |
 
 ## js/20-ai-chat.js (2041 baris, 162.0 KB)
 
@@ -924,58 +925,56 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1382-1388 | `saveJurnalFromAI` | function |
 | 2025-2040 | `startTutorialById` | function |
 
-## js/21-settings.js (800 baris, 43.1 KB)
+## js/21-settings.js (777 baris, 41.8 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
-| 28-32 | `settingsNavigate` | function |
-| 34-38 | `settingsGoBack` | function |
-| 42-45 | `settingsResetTo` | function |
-| 47-73 | `renderSettingsView` | function |
-| 77-79 | `switchSettingsTab` | function |
-| 80-82 | `switchSettingsTransTab` | function |
-| 83-87 | `switchAccsTab` | function |
-| 92-94 | `_settingsJualJenisList` | function |
-| 95-97 | `_settingsBeliJenisList` | function |
-| 99-103 | `renderSettingsTransaksi` | function |
-| 105-127 | `_renderSettingsAkunList` | function |
-| 129-137 | `_updateSettingsAkun` | function |
-| 139-143 | `_resetSettingsAkun` | function |
-| 147-158 | `renderSettingsPajak` | function |
-| 159-164 | `setPpnTarifDefault` | async function |
-| 167-195 | `renderSettingsKunci` | function |
-| 196-205 | `toggleKunciInfo` | function |
-| 206-215 | `simpanKunciPeriode` | async function |
-| 216-223 | `bukaKunciPeriode` | async function |
-| 225-249 | `_renderSettingsHppPersediaan` | function |
-| 261-263 | `_getSavedAccounts` | function |
-| 264-266 | `_setSavedAccounts` | function |
-| 269-291 | `saveCurrentAccountToSwitcher` | function |
-| 293-300 | `toggleAccountSwitcher` | function |
-| 301-304 | `closeAccountSwitcher` | function |
-| 305-309 | `_accSwitcherOutsideClick` | function |
-| 311-338 | `renderAccountSwitcher` | function |
-| 340-356 | `switchToAccount` | async function |
-| 358-363 | `addAccountFlow` | async function |
-| 365-368 | `removeAccountFromSwitcher` | function |
-| 387-392 | `openAccountSettings` | async function |
-| 394-419 | `accsLoadUserInfo` | async function |
-| 421-442 | `handleProfilePhotoUpload` | function |
-| 444-554 | `accsLoadProviders` | async function |
-| 556-569 | `accsLinkProvider` | async function |
-| 571-585 | `accsUnlinkProvider` | async function |
-| 587-615 | `accsUpdateProfile` | async function |
-| 621-629 | `accsHasEmailLogin` | function |
-| 631-651 | `openAccsPasswordModal` | function |
-| 653-707 | `accsUpdatePassword` | async function |
-| 712-721 | `accsForgotPassword` | async function |
-| 723-727 | `accsLogoutAll` | async function |
-| 729-733 | `accsShowMsg` | function |
-| 735 | `toggleAccsPw` | function |
-| 738 | `_pwCacheKey` | function |
-| 740-742 | `cachePasswordLocally` | function |
-| 744-760 | `loadCachedPasswordDisplay` | function |
-| 762-774 | `copyCurrentPassword` | function |
+| 27-31 | `settingsNavigate` | function |
+| 33-37 | `settingsGoBack` | function |
+| 41-44 | `settingsResetTo` | function |
+| 46-71 | `renderSettingsView` | function |
+| 75-77 | `switchSettingsTab` | function |
+| 78-80 | `switchSettingsTransTab` | function |
+| 81-85 | `switchAccsTab` | function |
+| 90-92 | `_settingsJualJenisList` | function |
+| 93-95 | `_settingsBeliJenisList` | function |
+| 97-101 | `renderSettingsTransaksi` | function |
+| 103-125 | `_renderSettingsAkunList` | function |
+| 127-135 | `_updateSettingsAkun` | function |
+| 137-141 | `_resetSettingsAkun` | function |
+| 144-172 | `renderSettingsKunci` | function |
+| 173-182 | `toggleKunciInfo` | function |
+| 183-192 | `simpanKunciPeriode` | async function |
+| 193-200 | `bukaKunciPeriode` | async function |
+| 202-226 | `_renderSettingsHppPersediaan` | function |
+| 238-240 | `_getSavedAccounts` | function |
+| 241-243 | `_setSavedAccounts` | function |
+| 246-268 | `saveCurrentAccountToSwitcher` | function |
+| 270-277 | `toggleAccountSwitcher` | function |
+| 278-281 | `closeAccountSwitcher` | function |
+| 282-286 | `_accSwitcherOutsideClick` | function |
+| 288-315 | `renderAccountSwitcher` | function |
+| 317-333 | `switchToAccount` | async function |
+| 335-340 | `addAccountFlow` | async function |
+| 342-345 | `removeAccountFromSwitcher` | function |
+| 364-369 | `openAccountSettings` | async function |
+| 371-396 | `accsLoadUserInfo` | async function |
+| 398-419 | `handleProfilePhotoUpload` | function |
+| 421-531 | `accsLoadProviders` | async function |
+| 533-546 | `accsLinkProvider` | async function |
+| 548-562 | `accsUnlinkProvider` | async function |
+| 564-592 | `accsUpdateProfile` | async function |
+| 598-606 | `accsHasEmailLogin` | function |
+| 608-628 | `openAccsPasswordModal` | function |
+| 630-684 | `accsUpdatePassword` | async function |
+| 689-698 | `accsForgotPassword` | async function |
+| 700-704 | `accsLogoutAll` | async function |
+| 706-710 | `accsShowMsg` | function |
+| 712 | `toggleAccsPw` | function |
+| 715 | `_pwCacheKey` | function |
+| 717-719 | `cachePasswordLocally` | function |
+| 721-737 | `loadCachedPasswordDisplay` | function |
+| 739-751 | `copyCurrentPassword` | function |
 
 ## js/22-cloud-records.js (299 baris, 14.1 KB)
 

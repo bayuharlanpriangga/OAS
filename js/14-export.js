@@ -854,9 +854,9 @@ function pvMakeSaldo(nama,periode,t,c1,c2,c3){
 }
 
 function pvMakePajak(nama,periode,t,c1,c2,c3){
-  const ppnJ=jurnalEntries.filter(j=>j.jenis==='PPN'||j.jenis==='Penjualan');let total=0;
-  const rows=ppnJ.map(j=>{const krd=j.lines.find(l=>l.kredit>0&&(l.akun==='2301'||l.akun?.startsWith('23')));const ppn=krd?krd.kredit:0;total+=ppn;const dpp=j._ppnTarif?Math.round(ppn/(j._ppnTarif/100)):0;return ppn?'<tr><td style="font-size:9.5px;">'+j.tanggal+'</td><td>'+j.keterangan+'</td><td style="text-align:right;">'+rp(dpp)+'</td><td style="text-align:center;">'+(j._ppnTarif||'—')+'%</td><td style="text-align:right;">'+rp(ppn)+'</td></tr>':''}).join('');
-  const body='<div class="pv-sec">Laporan PPN</div><table><thead><tr><th>Tanggal</th><th>Keterangan</th><th style="text-align:right;">DPP</th><th style="text-align:center;">Tarif</th><th style="text-align:right;">PPN</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5" style="text-align:center;padding:18px;color:#9ca3af;">Belum ada transaksi kena PPN</td></tr>')+(total?'<tr class="tot"><td colspan="4">Total PPN</td><td style="text-align:right;">'+rp(total)+'</td></tr>':'')+'</tbody></table>';
+  const rk=rekapPpnJurnal();
+  const rows=rk.rowsKeluaran.map(({j,ppnVal,dpp,tarifPct})=>'<tr><td style="font-size:9.5px;">'+j.tanggal+'</td><td>'+(j.keterangan||j.ket||'—')+'</td><td style="text-align:right;">'+rp(dpp)+'</td><td style="text-align:center;">'+tarifPct+'%</td><td style="text-align:right;">'+rp(ppnVal)+'</td></tr>').join('');
+  const body='<div class="pv-sec">Laporan PPN</div><table><thead><tr><th>Tanggal</th><th>Keterangan</th><th style="text-align:right;">DPP</th><th style="text-align:center;">Tarif</th><th style="text-align:right;">PPN</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5" style="text-align:center;padding:18px;color:#9ca3af;">Belum ada transaksi kena PPN</td></tr>')+(rk.keluaran?'<tr class="tot"><td colspan="4">Total PPN</td><td style="text-align:right;">'+rp(rk.keluaran)+'</td></tr>':'')+'</tbody></table>';
   return pvWrap(t,c1,c2,c3,nama,periode,body,'—');
 }
 
@@ -1609,27 +1609,24 @@ function exportExcelData(nama, periode) {
 
   // SHEET: LAPORAN PAJAK
   if(document.getElementById('exp-pajak')?.checked) {
-    const penjualan = jurnalEntries.filter(j=>j.jenis==='Penjualan'||j.keterangan?.toLowerCase().includes('penjualan'));
-    const pembelian = jurnalEntries.filter(j=>j.jenis==='Pembelian'||j.keterangan?.toLowerCase().includes('pembelian'));
-    const totalPenj = penjualan.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&ac.tipe==='Pendapatan'?l.kredit:0)},0),0);
-    const totalBeli = pembelian.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const ac=akuns.find(x=>x.kode===l.akun);return ss+(ac&&(ac.tipe==='HPP'||ac.tipe==='Beban')?l.debit:0)},0),0);
-    const ppnKeluar = hitungPpn(totalPenj); const ppnMasuk = hitungPpn(totalBeli);
+    const rekapPpn = rekapPpnJurnal();   // PPN aktual dari jurnal, bukan estimasi
     const rows = [
       ...headerBlock(nama, periode, 'LAPORAN PAJAK', today),
       [boldTxt('REKAPITULASI PAJAK')], [],
       [boldTxt('Uraian'), '', boldTxt('Nilai (Rp)')],
-      [{v:'Dasar Pengenaan PPN Keluaran (Penjualan)',t:'s'},'',numFmt(totalPenj)],
-      [{v:'PPN Keluaran (est. '+labelTarifPpn()+')',t:'s',s:{font:{color:{rgb:'DC2626'}}}},'',boldNum(ppnKeluar)],
-      [{v:'Dasar Pengenaan PPN Masukan (Pembelian)',t:'s'},'',numFmt(totalBeli)],
-      [{v:'PPN Masukan (est. '+labelTarifPpn()+')',t:'s',s:{font:{color:{rgb:'16A34A'}}}},'',boldNum(ppnMasuk)],
-      [], [{v:'PPN Kurang/(Lebih) Bayar',t:'s',s:{font:{bold:true}}},'',boldNum(ppnKeluar-ppnMasuk)],
+      [{v:'Dasar Pengenaan PPN Keluaran (Penjualan)',t:'s'},'',numFmt(rekapPpn.dppKeluaran)],
+      [{v:'PPN Keluaran',t:'s',s:{font:{color:{rgb:'DC2626'}}}},'',boldNum(rekapPpn.keluaran)],
+      [{v:'Dasar Pengenaan PPN Masukan (Pembelian)',t:'s'},'',numFmt(rekapPpn.dppMasukan)],
+      [{v:'PPN Masukan',t:'s',s:{font:{color:{rgb:'16A34A'}}}},'',boldNum(rekapPpn.masukan)],
+      [], [{v:'PPN Kurang/(Lebih) Bayar',t:'s',s:{font:{bold:true}}},'',boldNum(rekapPpn.kurangBayar)],
       [], [boldTxt('RIWAYAT TRANSAKSI KENA PAJAK')], [],
       [hdr('Tanggal'), hdr('Keterangan'), hdr('DPP (Rp)'), hdr('Jenis Pajak'), hdr('Tarif'), hdr('Nilai Pajak (Rp)')],
     ];
-    [...penjualan.map(j=>({j,jenis:'PPN Keluaran',tarif:ppnTarifDefault()/100})),...pembelian.map(j=>({j,jenis:'PPN Masukan',tarif:ppnTarifDefault()/100}))].forEach(({j,jenis,tarif})=>{
-      const dpp=j.lines.reduce((s,l)=>s+Math.max(l.debit,l.kredit),0);
-      rows.push([{v:j.tanggal,t:'s'},{v:j.keterangan||'—',t:'s'},numFmt(dpp),{v:jenis,t:'s'},{v:(Math.round(tarif*10000)/100)+'%',t:'s'},numFmt(Math.round(dpp*tarif))]);
-    });
+    [...rekapPpn.rowsKeluaran.map(r=>({...r,jenis:'PPN Keluaran'})), ...rekapPpn.rowsMasukan.map(r=>({...r,jenis:'PPN Masukan'}))]
+      .sort((x,y)=>(x.j.tanggal||'').localeCompare(y.j.tanggal||''))
+      .forEach(({j,ppnVal,dpp,tarifPct,jenis})=>{
+        rows.push([{v:j.tanggal,t:'s'},{v:j.keterangan||j.ket||'—',t:'s'},numFmt(dpp),{v:jenis,t:'s'},{v:tarifPct+'%',t:'s'},numFmt(ppnVal)]);
+      });
     addSheet(wb, 'Laporan Pajak', rows, [12,30,18,16,8,18]);
   }
 
@@ -2995,7 +2992,7 @@ async function executeAIActions(actions) {
           if(action.tarif) setSelectVal('ppn-tarif', action.tarif);
           if(action.mode) setSelectVal('ppn-mode', action.mode);
           hitungPPN();
-          const ppn = (action.nilai||0) * (parseFloat(action.tarif)||ppnTarifDefault())/100;
+          const ppn = (action.nilai||0) * (parseFloat(action.tarif)||PPN_TARIF_STANDAR)/100;
           results.push(`<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Kalkulator PPN diisi: DPP Rp ${(action.nilai||0).toLocaleString('id-ID')} → PPN = <b>Rp ${Math.round(ppn).toLocaleString('id-ID')}</b>`);
           break;
         }
@@ -3139,12 +3136,14 @@ async function executeAIActions(actions) {
             akunPiutang, akunPend, createdAt: new Date().toISOString()
           };
           if(status === 'terkirim' && akunPiutang && akunPend) {
+            const _tarifAi = (action.ppnTarif === undefined || action.ppnTarif === null || isNaN(action.ppnTarif)) ? PPN_TARIF_STANDAR : Number(action.ppnTarif);
             const entry = { id:'JRN_INV_'+Date.now(), tanggal:inv.tanggal, jenis:'Manual',
               keterangan:`Invoice ${inv.noInvoice} — ${inv.pelanggan}`,
+              _ppnTarif: ppnNom>0 ? _tarifAi : undefined,
               lines:[
                 {akun:akunPiutang, debit:total, kredit:0},
                 {akun:akunPend, debit:0, kredit:subtotal},
-                ...(ppnNom>0?[{akun:akuns.find(a=>a.nama.toLowerCase().includes('ppn')&&a.tipe==='Liabilitas')?.kode||akunPend, debit:0, kredit:ppnNom}]:[])
+                ...(ppnNom>0?[{akun:akunPpnKeluaranKode(), ket:`Utang PPN Keluaran ${_tarifAi}%`, debit:0, kredit:ppnNom}]:[])
               ].filter(l=>l.akun)
             };
             if(!postJurnalLegacy(entry)) { results.push('Invoice dilewati: periode ' + fmtDate(inv.tanggal) + ' sudah dikunci'); break; }

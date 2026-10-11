@@ -615,7 +615,7 @@ function simpanPenjualan() {
   if(_adaPpn) {
     if(_ppnProduk.ppnInclusive) {
       // Harga jual di Master Produk sudah termasuk PPN → pecah dari harga total
-      _ppnNominal = Math.round(jumlah * _ppnProduk.ppn / 100);
+      _ppnNominal = Math.round(jumlah * _ppnProduk.ppn / (100 + _ppnProduk.ppn));
       _baseAmount = jumlah - _ppnNominal;
       _kasTotal   = jumlah;
     } else {
@@ -1266,13 +1266,10 @@ function renderDashBebanPajak() {
     const fromStr2 = `${y2}-${String(m2+1).padStart(2,'0')}-01`;
     const toStr2   = new Date(y2, m2+1, 0).toISOString().split('T')[0];
 
-    const penjBln = jurnalEntries.filter(j => j.jenis==='Penjualan' && j.tanggal>=fromStr2 && j.tanggal<=toStr2);
-    const beliBln = jurnalEntries.filter(j => j.jenis==='Pembelian' && j.tanggal>=fromStr2 && j.tanggal<=toStr2);
-
-    const totalPenj = penjBln.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a?.tipe==='Pendapatan'?l.kredit:0);},0),0);
-    const totalBeli = beliBln.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(['HPP','Beban'].includes(a?.tipe)?l.debit:0);},0),0);
-    const ppnKeluar = hitungPpn(totalPenj);
-    const ppnMasuk  = hitungPpn(totalBeli);
+    // PPN aktual dari jurnal bulan ini (bukan estimasi tarif x penjualan)
+    const rekapPpn  = rekapPpnJurnal(fromStr2, toStr2);
+    const ppnKeluar = rekapPpn.keluaran;
+    const ppnMasuk  = rekapPpn.masukan;
     const kurangBayar = Math.max(0, ppnKeluar - ppnMasuk);
 
     if(pajakSub) pajakSub.textContent = `${now2.toLocaleDateString('id-ID',{month:'long',year:'numeric'})}`;
@@ -1280,8 +1277,8 @@ function renderDashBebanPajak() {
     pajakEl.innerHTML = `
       <div style="padding:10px 16px 12px;display:flex;flex-direction:column;gap:8px;">
         ${[
-          ['PPN Keluaran (est. ' + labelTarifPpn() + ' × Penjualan)', ppnKeluar, 'var(--red)'],
-          ['PPN Masukan (est. ' + labelTarifPpn() + ' × Pembelian)', ppnMasuk, 'var(--accent)'],
+          ['PPN Keluaran', ppnKeluar, 'var(--red)'],
+          ['PPN Masukan', ppnMasuk, 'var(--accent)'],
           ['PPN Kurang Bayar', kurangBayar, kurangBayar>0?'var(--accent3)':'var(--muted)'],
         ].map(([l,v,clr])=>`
           <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface2);border-radius:8px;">

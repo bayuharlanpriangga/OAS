@@ -272,7 +272,7 @@ function inputPersediaanJurnal() {
 function inputPPNJurnal() {
   const nilai = parseFloat(document.getElementById('ppn-nilai').value)||0;
   const tarifSel = document.getElementById('ppn-tarif').value;
-  const tarif = tarifSel==='custom' ? (parseFloat(document.getElementById('ppn-custom')?.value)||ppnTarifDefault())/100 : parseFloat(tarifSel)/100;
+  const tarif = tarifSel==='custom' ? (parseFloat(document.getElementById('ppn-custom')?.value)||PPN_TARIF_STANDAR)/100 : parseFloat(tarifSel)/100;
   const mode = document.getElementById('ppn-mode').value;
   if(!nilai) { showAlert('Hitung PPN dulu!'); return; }
 
@@ -1255,7 +1255,7 @@ document.getElementById('p23-jenis')?.addEventListener('change', function() {
 function hitungPPN() {
   const nilai = parseFloat(document.getElementById('ppn-nilai').value)||0;
   const tarifSel = document.getElementById('ppn-tarif').value;
-  const tarif = tarifSel==='custom' ? (parseFloat(document.getElementById('ppn-custom').value)||ppnTarifDefault())/100 : parseFloat(tarifSel)/100;
+  const tarif = tarifSel==='custom' ? (parseFloat(document.getElementById('ppn-custom').value)||PPN_TARIF_STANDAR)/100 : parseFloat(tarifSel)/100;
   const mode = document.getElementById('ppn-mode').value;
   const el = document.getElementById('ppn-hasil');
   if(!nilai) return;

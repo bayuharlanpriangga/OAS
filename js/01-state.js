@@ -16,10 +16,6 @@ let transaksiAkunSettings = {
   // Kosong = pakai default otomatis (5101 utk HPP, tebak otomatis utk persediaan).
   jualHpp: '',
   jualPersediaan: '',
-  // Tarif PPN efektif default (persen) untuk invoice, ringkasan pajak & kalkulator.
-  // 11 = BKP/JKP non-mewah (12% x DPP nilai lain 11/12, PMK 131/2024 Pasal 3).
-  // 12 = BKP mewah yang kena PPnBM (12% x harga jual penuh, PMK 131/2024 Pasal 2).
-  ppnTarif: 11
 };
 
 // Resolve kode akun aktif untuk jenis transaksi tertentu.

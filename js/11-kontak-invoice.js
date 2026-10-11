@@ -176,10 +176,10 @@ function renderInvoiceItems() {
 
 function tambahItemInvoice() { _invItems.push({nama:'',qty:1,harga:0}); renderInvoiceItems(); }
 
-// Tarif PPN yang dipilih di form invoice (persen). Default dari Settings > Transaksi > Pajak.
+// Tarif PPN yang dipilih di form invoice (persen). Awalnya PPN_TARIF_STANDAR.
 function _invPpnTarif() {
   const v = parseFloat(document.getElementById('inv-ppn-tarif')?.value);
-  return isNaN(v) ? ppnTarifDefault() : v;
+  return isNaN(v) ? PPN_TARIF_STANDAR : v;
 }
 
 function hitungTotalInvoice() {
@@ -220,10 +220,11 @@ function simpanInvoice(status) {
       const entry = {
         id:'JRN_INV_'+Date.now(), tanggal:inv.tanggal, jenis:'Manual',
         keterangan:`Invoice ${inv.noInvoice} — ${inv.pelanggan}`,
+        _ppnTarif: ppn>0 ? ppnTarif : undefined,   // supaya terbaca di rekap pajak
         lines:[
           {akun:inv.akunPiutang, debit:total, kredit:0},
           {akun:inv.akunPend, debit:0, kredit:nominal},
-          ...(ppn>0?[{akun:akuns.find(a=>a.nama.toLowerCase().includes('ppn')&&a.tipe==='Liabilitas')?.kode||inv.akunPend, debit:0, kredit:ppn}]:[])
+          ...(ppn>0?[{akun:akunPpnKeluaranKode(), ket:`Utang PPN Keluaran ${ppnTarif}%`, debit:0, kredit:ppn}]:[])
         ].filter(l=>l.akun)
       };
       if(!postJurnalLegacy(entry)) { hideOpSpinner(); return; }
@@ -247,13 +248,12 @@ function renderInvoiceKPI() {
   const totalBelum = semua.filter(i=>i.status!=='lunas').reduce((s,i)=>s+i.sisaTagihan,0);
   const jatuhTempo = semua.filter(i=>i.status!=='lunas'&&i.jatuhTempo<new Date().toISOString().split('T')[0]).length;
   const kpis = [
-    {label:'Total Invoice',val:rp(totalTagihan),icon:'<i class="ti ti-file-invoice" style="font-size:14px;"></i>',clr:'var(--accent2)'},
-    {label:'Sudah Lunas',val:rp(totalLunas),icon:'<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>',clr:'var(--accent)'},
-    {label:'Belum Lunas',val:rp(totalBelum),icon:'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent3);vertical-align:-2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>',clr:'var(--accent3)'},
-    {label:'Jatuh Tempo',val:jatuhTempo+' invoice',icon:'<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>',clr:jatuhTempo?'var(--red)':'var(--muted)'},
+    {label:'Total Invoice',val:rp(totalTagihan),clr:'var(--accent2)'},
+    {label:'Sudah Lunas',val:rp(totalLunas),clr:'var(--accent)'},
+    {label:'Belum Lunas',val:rp(totalBelum),clr:'var(--accent3)'},
+    {label:'Jatuh Tempo',val:jatuhTempo+' invoice',clr:jatuhTempo?'var(--red)':'var(--muted)'},
   ];
   el.innerHTML = kpis.map(k=>`<div class="stat-card" style="padding:14px 16px;">
-    <div style="font-size:22px;margin-bottom:4px;">${k.icon}</div>
     <div class="stat-label">${escapeHtml(k.label)}</div>
     <div style="font-size:16px;font-weight:700;color:${k.clr};font-family:var(--mono);margin-top:4px;">${k.val}</div>
   </div>`).join('');
@@ -271,7 +271,7 @@ function renderInvoiceList() {
   tbody.innerHTML = list.map(i=>{
     const jt = i.jatuhTempo < today && i.status!=='lunas';
     const statusMap = {draft:'var(--muted)',terkirim:'var(--accent2)',lunas:'var(--accent)','jatuh-tempo':'var(--red)'};
-    const s = jt?'jatuh-tempo':i.status;
+    const s = jt?'jatuh-tempo':(i.status||'draft');
     const badge = `<span style="background:${statusMap[s]}22;color:${statusMap[s]};padding:2px 8px;border-radius:6px;font-size:11px;text-transform:capitalize;">${s==='jatuh-tempo'?'<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Jatuh Tempo':s}</span>`;
     return `<tr>
       <td style="font-family:var(--mono);font-size:12px;font-weight:600">${i.noInvoice}</td>

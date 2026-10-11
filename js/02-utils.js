@@ -143,31 +143,68 @@ function computeSaldoBersih(kode, opts) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// PPN — tarif efektif
+// PPN — tarif & rekap
 // ══════════════════════════════════════════════════════════════
+// Tarif TIDAK lagi berupa setting global. Tarif ditentukan per transaksi:
+//  - Penjualan/pembelian barang: dari Master Produk (produk.ppn)
+//  - Invoice: dipilih di form invoice (select #inv-ppn-tarif)
+// Rekap pajak (dashboard, Pajak Otomatis, Rekap Siap Setor, export) membaca PPN aktual
+// dari jurnal lewat rekapPpnJurnal() — bukan estimasi tarif x total penjualan.
+//
 // Sejak 1 Jan 2025 tarif PPN menurut UU HPP adalah 12%, tetapi PMK 131/2024:
 //  - BKP/JKP non-mewah: 12% x DPP nilai lain (11/12 x harga) = tarif efektif 11%
 //  - BKP mewah (kena PPnBM): 12% x harga jual penuh = tarif efektif 12%
-// Nilai default dipilih di Settings > Transaksi > Pajak (transaksiAkunSettings.ppnTarif).
 // Ada juga pengecualian "besaran tertentu" (PMK 11/2025) yang tidak dicakup helper ini —
 // konfirmasikan ke konsultan pajak untuk jenis usaha yang kena ketentuan khusus.
-const PPN_TARIF_OPSI = [
-  { value: 11, label: '11%', sub: 'Barang/jasa non-mewah (12% × DPP nilai lain 11/12)' },
-  { value: 12, label: '12%', sub: 'Barang mewah kena PPnBM (12% × harga jual penuh)' },
-  { value: 0,  label: '0%',  sub: 'Ekspor / fasilitas / tidak dipungut' },
-];
-function ppnTarifDefault() {
-  const t = transaksiAkunSettings && transaksiAkunSettings.ppnTarif;
-  return (typeof t === 'number' && isFinite(t) && t >= 0 && t <= 100) ? t : 11;
-}
-// PPN = DPP x tarif efektif (dibulatkan ke rupiah). tarifPct opsional; default dari Settings.
+const PPN_TARIF_STANDAR = 11;   // hanya nilai awal pilihan di form/kalkulator, bukan setting
+
+// PPN = DPP x tarif efektif (dibulatkan ke rupiah). Tarif kosong/tidak valid -> PPN_TARIF_STANDAR.
 function hitungPpn(dpp, tarifPct) {
-  const t = (tarifPct === undefined || tarifPct === null || isNaN(tarifPct)) ? ppnTarifDefault() : Number(tarifPct);
+  const t = (tarifPct === undefined || tarifPct === null || tarifPct === '' || isNaN(tarifPct)) ? PPN_TARIF_STANDAR : Number(tarifPct);
   return Math.round((dpp || 0) * t / 100);
 }
-function labelTarifPpn(tarifPct) {
-  const t = (tarifPct === undefined || tarifPct === null) ? ppnTarifDefault() : tarifPct;
-  return (Math.round(t * 100) / 100) + '%';
+
+// Kode akun Utang PPN Keluaran (2301 bila ada, kalau tidak akun Liabilitas yang namanya memuat 'ppn').
+function akunPpnKeluaranKode() {
+  if (akuns.find(a => a.kode === '2301')) return '2301';
+  return (akuns.find(a => a.nama.toLowerCase().includes('ppn') && a.tipe === 'Liabilitas') || {}).kode || '2301';
+}
+
+// Baca PPN aktual dari satu jurnal. Hanya jurnal yang diberi _ppnTarif (penjualan/pembelian
+// produk ber-PPN dan invoice ber-PPN) yang dihitung. Return null kalau bukan jurnal PPN.
+function ppnDariJurnal(j) {
+  if (!j || !Array.isArray(j.lines) || !(j._ppnTarif > 0)) return null;
+  const tarif = Number(j._ppnTarif);
+  const jum = (arr, f) => arr.reduce((sum, l) => sum + (l[f] || 0), 0);
+  const keluaran = j.lines.filter(l => (l.kredit || 0) > 0 && (l.akun === '2301' || /ppn keluaran/i.test(l.ket || '')));
+  if (keluaran.length) {
+    const ppn = jum(keluaran, 'kredit');
+    const pendapatan = j.lines.filter(l => (l.kredit || 0) > 0 && (akuns.find(a => a.kode === l.akun) || {}).tipe === 'Pendapatan');
+    const dpp = jum(pendapatan, 'kredit') || Math.round(ppn / (tarif / 100));
+    return { tipe: 'keluaran', ppn, dpp, tarif };
+  }
+  const masukan = j.lines.filter(l => (l.debit || 0) > 0 && (l.akun === '1502' || /ppn masukan/i.test(l.ket || '')));
+  if (masukan.length) {
+    const ppn = jum(masukan, 'debit');
+    return { tipe: 'masukan', ppn, dpp: Math.round(ppn / (tarif / 100)), tarif };
+  }
+  return null;
+}
+
+// Rekap PPN dari jurnal dalam rentang tanggal (YYYY-MM-DD, keduanya opsional).
+function rekapPpnJurnal(fromStr, toStr) {
+  const r = { keluaran: 0, masukan: 0, dppKeluaran: 0, dppMasukan: 0, rowsKeluaran: [], rowsMasukan: [], kurangBayar: 0 };
+  jurnalEntries.forEach(j => {
+    if (fromStr && (j.tanggal || '') < fromStr) return;
+    if (toStr && (j.tanggal || '') > toStr) return;
+    const p = ppnDariJurnal(j);
+    if (!p) return;
+    const row = { j, ppnVal: p.ppn, dpp: p.dpp, tarifPct: p.tarif };
+    if (p.tipe === 'keluaran') { r.keluaran += p.ppn; r.dppKeluaran += p.dpp; r.rowsKeluaran.push(row); }
+    else { r.masukan += p.ppn; r.dppMasukan += p.dpp; r.rowsMasukan.push(row); }
+  });
+  r.kurangBayar = r.keluaran - r.masukan;
+  return r;
 }
 
 function setVal(id, val) {

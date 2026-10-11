@@ -1857,8 +1857,10 @@ function renderRekapSiapSetor() {
 
   const totalDPPKeluar = penjEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a?.tipe==='Pendapatan'?l.kredit:0);},0),0);
   const totalDPPMasuk  = beliEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(['HPP','Beban'].includes(a?.tipe)?l.debit:0);},0),0);
-  const ppnKeluar  = hitungPpn(totalDPPKeluar);
-  const ppnMasuk   = hitungPpn(totalDPPMasuk);
+  // PPN aktual dari jurnal (bukan estimasi tarif x total penjualan/pembelian)
+  const rekapPpn   = rekapPpnJurnal(fromStr, toStr);
+  const ppnKeluar  = rekapPpn.keluaran;
+  const ppnMasuk   = rekapPpn.masukan;
   const kurangBayar = ppnKeluar - ppnMasuk;
 
   // Estimasi PPh Badan (25% dari laba bersih)
@@ -1883,11 +1885,11 @@ function renderRekapSiapSetor() {
             <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;">
               <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
                 <span style="font-size:12px;color:var(--muted);">Jumlah Transaksi</span>
-                <span style="font-weight:600;">${penjEntries.length} faktur</span>
+                <span style="font-weight:600;">${rekapPpn.rowsKeluaran.length} faktur</span>
               </div>
               <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
                 <span style="font-size:12px;color:var(--muted);">DPP</span>
-                <span style="font-family:var(--mono);font-size:13px;">${fmtRp(totalDPPKeluar)}</span>
+                <span style="font-family:var(--mono);font-size:13px;">${fmtRp(rekapPpn.dppKeluaran)}</span>
               </div>
               <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--border);">
                 <span style="font-size:12px;font-weight:700;">PPN Keluaran</span>
@@ -1900,11 +1902,11 @@ function renderRekapSiapSetor() {
             <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;">
               <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
                 <span style="font-size:12px;color:var(--muted);">Jumlah Transaksi</span>
-                <span style="font-weight:600;">${beliEntries.length} faktur</span>
+                <span style="font-weight:600;">${rekapPpn.rowsMasukan.length} faktur</span>
               </div>
               <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
                 <span style="font-size:12px;color:var(--muted);">DPP</span>
-                <span style="font-family:var(--mono);font-size:13px;">${fmtRp(totalDPPMasuk)}</span>
+                <span style="font-family:var(--mono);font-size:13px;">${fmtRp(rekapPpn.dppMasukan)}</span>
               </div>
               <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--border);">
                 <span style="font-size:12px;font-weight:700;">PPN Masukan</span>

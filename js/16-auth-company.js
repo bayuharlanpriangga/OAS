@@ -1392,7 +1392,6 @@ async function loadDataFromSupabase() {
     loadKartuStockFromData(cloudData);
     // Kunci periode disimpan di cloud supaya berlaku di semua perangkat/anggota tim
     periodeKunciSampai = (typeof cloudData._periode_kunci === 'string') ? cloudData._periode_kunci : '';
-    if (typeof cloudData._ppn_tarif === 'number') transaksiAkunSettings.ppnTarif = cloudData._ppn_tarif;
   }
 
   // Invoice, kontak, aset tetap, produk (tabel company_records)
@@ -1490,7 +1489,7 @@ async function savePeriodeKunciToCloud() {
     const existingData = (existing && existing.data) ? existing.data : {};
     const { error } = await DB.table('company_profiles').upsert({
       company_id: currentCompany.id,
-      data: { ...existingData, _periode_kunci: periodeKunciSampai || '', _ppn_tarif: ppnTarifDefault() },
+      data: { ...existingData, _periode_kunci: periodeKunciSampai || '' },
       updated_at: new Date().toISOString()
     }, { onConflict: 'company_id' });
     return !error;
