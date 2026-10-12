@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════
 // CLOUD RECORDS — sinkron invoice, kontak, aset tetap, produk, jurnal berulang,
-// anggaran, alert notifikasi, dan kurs ke Supabase (tabel company_records), terpisah per bisnis.
+// anggaran, alert notifikasi, kurs, dan counter penomoran ke Supabase (tabel company_records), terpisah per bisnis.
 //
 // Kenapa ada: sebelumnya data ini hanya di localStorage dengan key
 // global, jadi tidak ikut ke perangkat lain, tercampur antar bisnis, dan
@@ -49,6 +49,9 @@ const CLOUD_RECORD_KINDS = {
   // (updatedAt terisi). Tanpa record = default, dan default tidak ikut ditulis ke cloud.
   kurs:            { get: () => (kursData && kursData.updatedAt ? [{ id: 'kurs', ...kursData }] : []), set: v => { kursData = _cloudKursFromList(v); },
                      idOf: r => r && r.id, legacyKey: 'oas_kurs', legacyOnce: true, fromLegacy: _cloudKursLegacy },
+  // counter: nomor tertinggi yang pernah dipakai per jenis+tahun ({ id:'INV-2026', terakhir:7 }).
+  // State-nya (counterList) dan logikanya ada di 23-penomoran.js.
+  counter:         { get: () => counterList,        set: v => { counterList = v; },        idOf: r => r && r.id, legacyKey: 'oas_counter', legacyOnce: true },
 };
 
 const CLOUD_REC_PAGE  = 1000; // batas default Supabase per request
@@ -182,7 +185,7 @@ async function cloudLoadRecords() {
     _cloudLoadFromCache(cid);
     if (!_cloudTableWarned) {
       _cloudTableWarned = true;
-      showAlert('⚠️ Data invoice/kontak/aset/produk/jurnal berulang/anggaran/alert/kurs belum bisa dimuat dari cloud. Pastikan migrasi SQL <b>001_company_records</b> sudah dijalankan di Supabase. Sementara ini data dibaca dari cache perangkat.');
+      showAlert('⚠️ Data invoice/kontak/aset/produk/jurnal berulang/anggaran/alert/kurs/penomoran belum bisa dimuat dari cloud. Pastikan migrasi SQL <b>001_company_records</b> sudah dijalankan di Supabase. Sementara ini data dibaca dari cache perangkat.');
     }
     return false;
   }
@@ -255,7 +258,7 @@ async function cloudOfferLocalMigration(cid) {
   }
 
   if (typeof hideOpSpinner === 'function') hideOpSpinner(); // spinner jangan menutupi dialog
-  const label = { invoice: 'Invoice', kontak: 'Kontak', aset_tetap: 'Aset tetap', produk: 'Produk', jurnal_berulang: 'Jurnal berulang', anggaran: 'Anggaran', alert: 'Alert notifikasi', kurs: 'Kurs' };
+  const label = { invoice: 'Invoice', kontak: 'Kontak', aset_tetap: 'Aset tetap', produk: 'Produk', jurnal_berulang: 'Jurnal berulang', anggaran: 'Anggaran', alert: 'Alert notifikasi', kurs: 'Kurs', counter: 'Penomoran dokumen' };
   const ok = await showCustomConfirmGeneral({
     icon: '☁️', iconColor: 'rgba(34,211,238,0.12)', iconBorder: 'rgba(34,211,238,0.3)',
     title: 'Unggah Data Lokal ke Cloud?',

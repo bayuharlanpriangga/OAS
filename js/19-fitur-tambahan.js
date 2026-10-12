@@ -201,7 +201,7 @@ function openModalInvoice(editId) {
   const due = new Date(Date.now()+30*86400000).toISOString().split('T')[0];
   document.getElementById('inv-tgl').value = tgl;
   document.getElementById('inv-jatuh-tempo').value = due;
-  document.getElementById('inv-no').value = 'INV-'+new Date().getFullYear()+'-'+String(invoiceList.length+1).padStart(3,'0');
+  document.getElementById('inv-no').value = nomorInvoiceBerikut(); // 23-penomoran.js
   document.getElementById('inv-pelanggan').value = '';
   document.getElementById('inv-deskripsi').value = '';
 

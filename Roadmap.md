@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 135 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 5/135 task selesai.**
+**Progres: 7/135 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -66,7 +66,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 
 | Fase | Nama | Selesai |
 | --- | --- | --- |
-| 1 | Fondasi data | 5/8 |
+| 1 | Fondasi data | 7/8 |
 | 2 | Umur piutang | 0/4 |
 | 3 | Akses anggota tim | 0/5 |
 | 4 | Tagihan pembelian (bill) | 0/7 |
@@ -104,8 +104,8 @@ Dikerjakan paling awal. 1.1 dan 1.7-1.8 dipakai fase lain.
 | ☑ | 1.4 | Tambah kind `alert` dan `kurs` (cek dulu bentuknya: array atau objek) | CR, potongan deklarasi di 01-state.js |
 | ☑ | 1.5 | Reset Data dengan pilihan jenis data (jurnal, invoice, kontak, aset, produk, dll); yang dipilih ikut terhapus dari cloud | CR, potongan doResetAll di 15-storage.js |
 | ☑ | 1.6 | Pastikan `js/db-adapter.js` tidak dipakai (grep), lalu hapus duplikatnya | hasil grep |
-| ☐ | 1.7 | `js/23-penomoran.js`: fungsi murni nomorBerikut(jenis, tahun, daftarNomor) + tes | TES |
-| ☐ | 1.8 | Simpan counter ke cloud (kind `counter`) dan pakai untuk nomor invoice, menggantikan length+1 | 23-penomoran.js, CR, potongan nomor invoice di 19-fitur-tambahan.js |
+| ☑ | 1.7 | `js/23-penomoran.js`: fungsi murni nomorBerikut(jenis, tahun, daftarNomor) + tes | TES |
+| ☑ | 1.8 | Simpan counter ke cloud (kind `counter`) dan pakai untuk nomor invoice, menggantikan length+1 | 23-penomoran.js, CR, potongan nomor invoice di 19-fitur-tambahan.js |
 
 ## Fase 2 — Umur piutang (4 task)
 

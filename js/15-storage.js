@@ -400,8 +400,10 @@ async function doResetAll() {
       } else gagal.push(label.jurnal);
     }
     if (kinds.length) {
-      const failedKinds = await cloudDeleteRecords(kinds);
-      failedKinds.forEach(k => gagal.push(label[k]));
+      // Counter penomoran ikut dihapus bersama Invoice, supaya nomor mulai lagi dari 001.
+      const hapus = kinds.includes('invoice') ? kinds.concat('counter') : kinds;
+      const failedKinds = await cloudDeleteRecords(hapus);
+      failedKinds.forEach(k => { const l = label[k] || label.invoice; if (!gagal.includes(l)) gagal.push(l); });
     }
   } finally { hideOpSpinner(); }
 

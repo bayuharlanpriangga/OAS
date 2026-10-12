@@ -200,6 +200,9 @@ function simpanInvoice(status) {
   const ppn = ppnCheck ? hitungPpn(nominal, ppnTarif) : 0;
   const total = nominal + ppn;
   if(!pelanggan || !nominal) { showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Lengkapi pelanggan dan minimal 1 item'); return; }
+  // Nomor invoice tidak boleh kembar (bisa terjadi kalau nomor diketik manual).
+  const _noBaru = document.getElementById('inv-no').value.trim().toUpperCase();
+  if(_noBaru && invoiceList.some(i => String(i.noInvoice||'').trim().toUpperCase() === _noBaru)) { showAlert('Nomor invoice <b>' + escapeHtml(_noBaru) + '</b> sudah dipakai. Ganti nomornya, atau tutup lalu buka form baru untuk nomor otomatis.'); return; }
   if(status === 'terkirim' && !guardPeriode(document.getElementById('inv-tgl').value, 'diposting')) return;
   showOpSpinner('Menyimpan Invoice...', 'Membuat jurnal piutang');
   setTimeout(()=>{
@@ -231,6 +234,7 @@ function simpanInvoice(status) {
       saveToStorage(false);
     }
     invoiceList.unshift(inv);
+    catatNomorInvoice(inv.noInvoice); // naikkan counter penomoran (23-penomoran.js)
     saveFiturBaru();
     closeModal('modal-invoice');
     renderInvoiceList(); renderInvoiceKPI();

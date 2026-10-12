@@ -49,7 +49,7 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } =
   };
   vm.createContext(ctx);
   // list global di 01-state.js adalah `let`; di sini disediakan lewat script yang sama
-  vm.runInContext('let invoiceList=[],kontakList=[],asetTetapList=[],produkList=[],jurnalBerulangList=[],anggaranList=[],notifAlerts=[],kursData={USD:1,IDR:16200,SGD:12100,EUR:18300,MYR:3500,JPY:107,updatedAt:null};', ctx);
+  vm.runInContext('let invoiceList=[],kontakList=[],asetTetapList=[],produkList=[],jurnalBerulangList=[],anggaranList=[],notifAlerts=[],counterList=[],kursData={USD:1,IDR:16200,SGD:12100,EUR:18300,MYR:3500,JPY:107,updatedAt:null};', ctx);
   vm.runInContext(src, ctx);
   const run = code => vm.runInContext(code, ctx);
   return { ctx, run, store, calls, ls, alerts };
@@ -308,6 +308,28 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } =
     const e = makeEnv();
     ok((await e.run('cloudDeleteRecords([])')).length === 0 && (await e.run('cloudDeleteRecords(["ngawur"])')).length === 0, 'daftar kosong / kind tidak dikenal diabaikan');
     ok(e.calls.delete.length === 0, 'tidak ada panggilan hapus untuk input kosong');
+  }
+
+  console.log('[counter] kind counter penomoran (task 1.8)');
+  {
+    const e = makeEnv();
+    e.store.push({ company_id: 'c1', kind: 'counter', rec_id: 'INV-2026', data: { id: 'INV-2026', jenis: 'INV', tahun: 2026, terakhir: 7 } });
+    e.ls['oas_rec_seen_c1'] = '1';
+    await e.run('cloudLoadRecords()');
+    ok(e.run('counterList.length') === 1 && e.run('counterList[0].terakhir') === 7, 'counter dimuat dari cloud');
+    e.run('counterList = [{ id: "INV-2026", jenis: "INV", tahun: 2026, terakhir: 9 }]');
+    await e.run('cloudSyncRecords(["counter"])');
+    ok(e.store.find(r => r.kind === 'counter').data.terakhir === 9, 'counter yang naik tersimpan ke cloud (upsert)');
+    ok(JSON.parse(e.ls['oas_rec_counter_c1'])[0].terakhir === 9, 'cache lokal counter ikut ditulis');
+    await e.run('cloudDeleteRecords(["counter"])');
+    ok(!e.store.some(r => r.kind === 'counter') && e.run('counterList.length') === 0, 'reset counter menghapus di cloud dan state');
+  }
+  {
+    // data lama (mode tamu) ikut ditawarkan sekali, seperti kind legacyOnce lain
+    const e = makeEnv();
+    e.ls['oas_counter'] = JSON.stringify([{ id: 'INV-2026', jenis: 'INV', tahun: 2026, terakhir: 4 }]);
+    await e.run('cloudLoadRecords()');
+    ok(e.store.some(r => r.kind === 'counter' && r.rec_id === 'INV-2026'), 'counter lama diunggah lewat migrasi');
   }
 
   console.log('\nHasil: ' + pass + ' lulus, ' + fail + ' gagal');

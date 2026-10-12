@@ -3138,7 +3138,7 @@ async function _executeAIActionsInner(actions) {
           const akunPiutang = action.akunPiutang || akuns.find(a=>a.nama.toLowerCase().includes('piutang'))?.kode || '';
           const akunPend = action.akunPend || akuns.find(a=>a.kode==='4101')?.kode || '';
           const inv = {
-            id: 'INV_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), noInvoice: action.noInvoice || `INV-${new Date(action.tanggal||today).getFullYear()}-${String(invoiceList.length+1).padStart(3,'0')}`,
+            id: 'INV_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), noInvoice: action.noInvoice || nomorInvoiceBerikut(new Date(action.tanggal||today).getFullYear()),
             pelanggan: action.pelanggan, tanggal: action.tanggal || today,
             jatuhTempo: action.jatuhTempo || today, deskripsi: action.deskripsi || '',
             items, subtotal, ppn: ppnNom, total, sisaTagihan: total, status,
@@ -3159,6 +3159,7 @@ async function _executeAIActionsInner(actions) {
             saveToStorage(false);
           }
           invoiceList.unshift(inv);
+          catatNomorInvoice(inv.noInvoice); // naikkan counter penomoran (23-penomoran.js)
           saveFiturBaru();
           if(document.getElementById('page-invoice')?.classList.contains('active')) { renderInvoiceList(); renderInvoiceKPI(); }
           if(typeof cekNotifikasi === 'function') cekNotifikasi();

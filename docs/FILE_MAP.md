@@ -384,7 +384,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 194-246 | `atRenderCard` | function |
 | 253 | `filterKontak` | function |
 
-## js/11-kontak-invoice.js (367 baris, 27.6 KB)
+## js/11-kontak-invoice.js (371 baris, 28.1 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -407,13 +407,13 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 177 | `tambahItemInvoice` | function |
 | 180-183 | `_invPpnTarif` | function |
 | 185-193 | `hitungTotalInvoice` | function |
-| 195-241 | `simpanInvoice` | function |
-| 243-260 | `renderInvoiceKPI` | function |
-| 262-290 | `renderInvoiceList` | function |
-| 292-306 | `openModalLunasInvoice` | function |
-| 308-332 | `konfirmasiLunasInvoice` | function |
-| 334-342 | `hapusInvoice` | function |
-| 347-366 | `handleRekonCSV` | function |
+| 195-245 | `simpanInvoice` | function |
+| 247-264 | `renderInvoiceKPI` | function |
+| 266-294 | `renderInvoiceList` | function |
+| 296-310 | `openModalLunasInvoice` | function |
+| 312-336 | `konfirmasiLunasInvoice` | function |
+| 338-346 | `hapusInvoice` | function |
+| 351-370 | `handleRekonCSV` | function |
 
 ## js/12-kalkulator.js (2268 baris, 113.1 KB)
 
@@ -533,7 +533,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1845-1948 | `renderRekapSiapSetor` | function |
 | 1950-1952 | `exportRekapPajakPDF` | function |
 
-## js/14-export.js (3198 baris, 184.2 KB)
+## js/14-export.js (3199 baris, 184.2 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -609,9 +609,9 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 2318-2816 | `exportPDF` | function |
 | 2819-2882 | `exportCSV` | function |
 | 2887-2892 | `executeAIActions` | async function |
-| 2894-3197 | `_executeAIActionsInner` | async function |
+| 2894-3198 | `_executeAIActionsInner` | async function |
 
-## js/15-storage.js (475 baris, 20.1 KB)
+## js/15-storage.js (477 baris, 20.3 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -638,7 +638,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 311-323 | `exportBackupJSON` | function |
 | 325-358 | `importBackupJSON` | function |
 | 362-364 | `resetPilihSemua` | function |
-| 366-423 | `doResetAll` | async function |
+| 366-425 | `doResetAll` | async function |
 
 ## js/16-auth-company.js (1885 baris, 83.5 KB)
 
@@ -982,28 +982,39 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 721-737 | `loadCachedPasswordDisplay` | function |
 | 739-751 | `copyCurrentPassword` | function |
 
-## js/22-cloud-records.js (337 baris, 16.1 KB)
+## js/22-cloud-records.js (340 baris, 16.4 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 24 | `_cloudKursDefault` | function |
 | 25-30 | `_cloudKursFromList` | function |
 | 32-34 | `_cloudKursLegacy` | function |
-| 62 | `_cloudCacheKey` | function |
-| 64-66 | `_cloudCacheLocal` | function |
-| 68-73 | `_cloudReadCache` | function |
-| 75 | `_cloudSeenKey` | function |
-| 78-81 | `_cloudPendingOnce` | function |
-| 84-87 | `_cloudLegacyAllowed` | function |
-| 90-101 | `_cloudIndex` | function |
-| 104-113 | `_cloudSortNewestFirst` | function |
-| 115-118 | `cloudResetRecordsState` | function |
-| 127-156 | `cloudDeleteRecords` | function |
-| 158-161 | `_cloudLoadFromCache` | function |
-| 163-215 | `cloudLoadRecords` | async function |
-| 221-284 | `cloudOfferLocalMigration` | async function |
-| 287-296 | `cloudSyncRecords` | function |
-| 298-336 | `_cloudSyncNow` | async function |
+| 65 | `_cloudCacheKey` | function |
+| 67-69 | `_cloudCacheLocal` | function |
+| 71-76 | `_cloudReadCache` | function |
+| 78 | `_cloudSeenKey` | function |
+| 81-84 | `_cloudPendingOnce` | function |
+| 87-90 | `_cloudLegacyAllowed` | function |
+| 93-104 | `_cloudIndex` | function |
+| 107-116 | `_cloudSortNewestFirst` | function |
+| 118-121 | `cloudResetRecordsState` | function |
+| 130-159 | `cloudDeleteRecords` | function |
+| 161-164 | `_cloudLoadFromCache` | function |
+| 166-218 | `cloudLoadRecords` | async function |
+| 224-287 | `cloudOfferLocalMigration` | async function |
+| 290-299 | `cloudSyncRecords` | function |
+| 301-339 | `_cloudSyncNow` | async function |
+
+## js/23-penomoran.js (99 baris, 5.1 KB)
+
+| Baris | Nama | Jenis |
+| --- | --- | --- |
+| 23-26 | `parseNomor` | function |
+| 35-53 | `nomorBerikut` | function |
+| 58-69 | `counterSetelahPakai` | function |
+| 75-78 | `counterList` | arrow |
+| 81-84 | `nomorInvoiceBerikut` | function |
+| 88-98 | `catatNomorInvoice` | function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 
