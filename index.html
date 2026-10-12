@@ -101,7 +101,9 @@
 
   <!-- CHIP AKUN / BISNIS di dalam sidebar -->
   <div id="sidebar-account-area" style="padding:10px 12px 6px;border-bottom:1px solid var(--border);position:relative;">
-    <!-- CHIP ATAS: Info Akun → buka Account Switcher -->
+    <!-- CHIP ATAS + DROPDOWN: dibungkus supaya dropdown menempel tepat di bawah chip akun
+         (menutupi field Bisnis aktif), bukan di bawah seluruh area akun -->
+    <div id="acc-switch-wrap" class="acc-switch-wrap">
     <div id="user-company-chip" onclick="toggleAccountSwitcher()" title="Ganti akun / riwayat login" style="width:100%;border-radius:10px;padding:8px 12px;justify-content:flex-start;gap:10px;max-width:100%;cursor:pointer;">
       <div class="chip-avatar" id="chip-avatar" style="width:36px;height:36px;font-size:14px;overflow:hidden;flex-shrink:0;">?</div>
       <div style="flex:1;min-width:0;">
@@ -112,6 +114,7 @@
     </div>
     <!-- DROPDOWN ACCOUNT SWITCHER -->
     <div id="account-switcher-panel" class="acc-switch-panel"></div>
+    </div>
     <!-- BISNIS AKTIF + TOMBOL SWITCH -->
     <button onclick="handleChipClick()" id="sidebar-accs-btn"
       style="width:100%;margin-top:6px;padding:7px 12px;background:transparent;border:1px solid var(--border);

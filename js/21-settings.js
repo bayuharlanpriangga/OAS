@@ -273,10 +273,12 @@ function toggleAccountSwitcher() {
   if (panel.classList.contains('open')) { closeAccountSwitcher(); return; }
   renderAccountSwitcher();
   panel.classList.add('open');
+  document.getElementById('acc-switch-wrap')?.classList.add('open');
   setTimeout(() => document.addEventListener('click', _accSwitcherOutsideClick), 0);
 }
 function closeAccountSwitcher() {
   document.getElementById('account-switcher-panel')?.classList.remove('open');
+  document.getElementById('acc-switch-wrap')?.classList.remove('open');
   document.removeEventListener('click', _accSwitcherOutsideClick);
 }
 function _accSwitcherOutsideClick(e) {

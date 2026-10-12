@@ -924,12 +924,10 @@ function showCompanyPickerScreen(companies) {
 function renderCompanyList(companies) {
   const list = document.getElementById('cp-list');
   if (companies.length === 0) {
-    list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Belum ada bisnis.<br>Buat bisnis pertama kamu di bawah!</div>
-    <div style="text-align:center;margin-bottom:8px;">
-      <button onclick="diagnosSupabase()" style="font-size:11px;color:var(--muted);background:none;border:1px dashed var(--border);border-radius:8px;padding:6px 14px;cursor:pointer;">
-        🔍 Diagnosa koneksi Supabase
-      </button>
-    </div>`;
+    // Daftar kosong = query berhasil dan akun ini memang belum punya bisnis. Kegagalan query
+    // (tabel belum dibuat / RLS) melempar error dan ditampilkan lewat showAlert, jadi tombol
+    // diagnosa tidak diperlukan di sini. diagnosSupabase() tetap bisa dipanggil dari Console.
+    list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Belum ada bisnis.<br>Buat bisnis pertama kamu di bawah!</div>`;
     return;
   }
   const icons = {
@@ -1779,7 +1777,7 @@ async function diagnosSupabase() {
   try {
     // 1. Cek session
     const { data: { session }, error: sessErr } = await DB.auth.getSession();
-    result += session ? `<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Session aktif (${session.user?.email})\n` : `❌ Tidak ada session\n`;
+    result += session ? `<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Session aktif (${escapeHtml(session.user?.email)})\n` : `❌ Tidak ada session\n`;
     if (sessErr) result += `<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Session error: ${sessErr.message}\n`;
 
     // 2. Cek tabel companies
@@ -1799,9 +1797,9 @@ async function diagnosSupabase() {
     result += `❌ Exception: ${e.message}\n`;
   }
 
-  result += `\nURL: ${SUPABASE_URL}\n`;
+  result += `\nURL: <span style="word-break:break-all;">${escapeHtml(SUPABASE_URL)}</span>\n`;
   result += `\nJika ada ❌, buka <i class="ti ti-settings ti-inline"></i> Setup Supabase untuk panduan lengkap.`;
-  showAlert(result);
+  showAlert(result.replace(/\n/g, '<br>')); // showAlert memakai innerHTML: \n biasa tidak jadi baris baru
 }
 
 function showSupabaseSetup() {

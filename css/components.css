@@ -1045,21 +1045,33 @@ body.light-mode .oas-cal-day.selected { color: #fff; }
 }
 
 /* ── ACCOUNT SWITCHER DROPDOWN (sidebar) ── */
+.acc-switch-wrap { position: relative; }
 .acc-switch-panel {
   display: none;
   position: absolute;
-  top: calc(100% - 4px);
-  left: 12px;
-  right: 12px;
+  top: 100%;            /* tepat di bawah chip akun, lebarnya sama dengan chip */
+  left: 0;
+  right: 0;
+  margin-top: -1px;     /* menimpa garis bawah chip supaya keduanya tampak menyatu */
   z-index: 500;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  border: 1px solid var(--accent);
+  border-top-color: var(--border);
+  border-radius: 0 0 10px 10px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.35);
   padding: 6px;
   max-height: 340px;
   overflow-y: auto;
 }
+/* Saat terbuka: chip akun ikut "membuka" (sudut bawah rata, border aksen) */
+.acc-switch-wrap.open #user-company-chip {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-color: var(--accent);
+  background: var(--surface);
+}
+.acc-switch-wrap #user-company-chip .ti-chevron-down { transition: transform 0.15s ease; }
+.acc-switch-wrap.open #user-company-chip .ti-chevron-down { transform: rotate(180deg); }
 .acc-switch-panel.open { display: block; animation: oasPickerIn 0.15s ease; }
 .acc-switch-menuitem {
   display: flex; align-items: center; padding: 9px 10px; border-radius: 8px;
