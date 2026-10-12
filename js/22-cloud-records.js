@@ -51,7 +51,9 @@ const CLOUD_RECORD_KINDS = {
                      idOf: r => r && r.id, legacyKey: 'oas_kurs', legacyOnce: true, fromLegacy: _cloudKursLegacy },
   // counter: nomor tertinggi yang pernah dipakai per jenis+tahun ({ id:'INV-2026', terakhir:7 }).
   // State-nya (counterList) dan logikanya ada di 23-penomoran.js.
-  counter:         { get: () => counterList,        set: v => { counterList = v; },        idOf: r => r && r.id, legacyKey: 'oas_counter', legacyOnce: true },
+  counter:         { get: () => counterList,        set: v => { counterList = v; },        idOf: r => r && r.id, legacyKey: 'oas_counter', legacyOnce: true,
+                     // Counter hanya boleh naik: saat bentrok dengan versi cloud, ambil yang lebih tinggi.
+                     mergeRec: (c, l) => (c && l && c.terakhir > l.terakhir) ? c : l },
 };
 
 const CLOUD_REC_PAGE  = 1000; // batas default Supabase per request
@@ -103,6 +105,77 @@ function _cloudIndex(def, list) {
   return idx;
 }
 
+// ── Pengaman perubahan yang belum tersinkron ───────────────
+// Cache lokal (oas_rec_<kind>_<cid>) ditulis setiap ada perubahan, tapi cloud baru
+// menerimanya setelah sync sukses. Kalau halaman dimuat ulang sebelum itu (mis. saat
+// offline), memuat dari cloud dulu menimpa cache dan perubahan hilang.
+// Solusinya: tiap kali cloud terkonfirmasi (selesai dimuat / sync sukses) kita simpan
+// hash per record di oas_rec_snaph_<cid>. Saat memuat, record di cache yang hash-nya
+// beda (baru/berubah) atau yang ada di snapshot tapi tak ada di cache (dihapus) dianggap
+// belum tersinkron: diterapkan di atas data cloud, lalu dikirim ulang.
+function _cloudHash(str) { // FNV-1a 32 bit
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(36);
+}
+function _cloudSnapHashKey(cid) { return 'oas_rec_snaph_' + cid; }
+function _cloudSnapHashRead(cid) {
+  try { const o = JSON.parse(localStorage.getItem(_cloudSnapHashKey(cid)) || '{}'); return (o && typeof o === 'object') ? o : {}; }
+  catch (e) { return {}; }
+}
+function _cloudSnapHashSave(cid, kind) {
+  const snap = (_cloudSnap[cid] && _cloudSnap[cid][kind]) || {};
+  const h = {};
+  Object.keys(snap).forEach(id => { h[id] = _cloudHash(snap[id]); });
+  const all = _cloudSnapHashRead(cid);
+  all[kind] = h;
+  try { localStorage.setItem(_cloudSnapHashKey(cid), JSON.stringify(all)); } catch (e) {}
+}
+// { kind: { up: { id: rec }, del: [id] } } untuk kind yang punya perubahan belum tersinkron.
+function _cloudUnsynced(cid) {
+  const hashes = _cloudSnapHashRead(cid), out = {};
+  Object.entries(CLOUD_RECORD_KINDS).forEach(([kind, def]) => {
+    const h = hashes[kind];
+    if (!h) return; // belum pernah terkonfirmasi di perangkat ini: tidak bisa dibandingkan
+    const cache = _cloudIndex(def, _cloudReadCache(cid, kind));
+    const up = {}, del = []; let n = 0;
+    cache.forEach((v, id) => { if (h[id] !== _cloudHash(v.json)) { up[id] = v.rec; n++; } });
+    Object.keys(h).forEach(id => { if (!cache.has(id)) { del.push(id); n++; } });
+    if (n) out[kind] = { up, del };
+  });
+  return out;
+}
+// Data cloud + perubahan lokal yang belum terkirim (lokal menang untuk id yang sama).
+function _cloudApplyUnsynced(def, cloudList, u) {
+  const map = new Map();
+  _cloudIndex(def, cloudList).forEach((v, id) => map.set(id, v.rec));
+  u.del.forEach(id => map.delete(id));
+  Object.keys(u.up).forEach(id => {
+    map.set(id, (map.has(id) && def.mergeRec) ? def.mergeRec(map.get(id), u.up[id]) : u.up[id]);
+  });
+  return _cloudSortNewestFirst(Array.from(map.values()));
+}
+
+// Request yang menggantung (koneksi putus tanpa error) jangan memblokir antrean sync.
+let CLOUD_REQ_TIMEOUT = 20000; // let: tes memperpendek
+function _cloudWithTimeout(p) {
+  return new Promise(resolve => {
+    const t = setTimeout(() => resolve({ error: new Error('timeout') }), CLOUD_REQ_TIMEOUT);
+    Promise.resolve(p).then(r => { clearTimeout(t); resolve(r); }, e => { clearTimeout(t); resolve({ error: e }); });
+  });
+}
+
+// Beri tahu user (sekali per rentetan gagal) kalau perubahan belum sampai ke cloud.
+let _cloudSyncErr = false, _cloudFailNotified = false;
+function _cloudAfterSync(ok) {
+  if (_cloudSyncErr) {
+    if (!_cloudFailNotified) {
+      _cloudFailNotified = true;
+      if (typeof showAlert === 'function') showAlert('⚠️ Perubahan belum tersimpan ke cloud (koneksi bermasalah). Data aman di perangkat ini dan dikirim otomatis saat aplikasi dibuka lagi dengan koneksi, atau saat kamu menyimpan berikutnya.');
+    }
+  } else if (ok) _cloudFailNotified = false;
+}
+
 // Urutan tampil: terbaru di atas bila ada createdAt (sama seperti unshift di app).
 function _cloudSortNewestFirst(list) {
   return list
@@ -136,6 +209,7 @@ function cloudDeleteRecords(kinds) {
     if (!cid) { if (def.legacyKey) { try { localStorage.removeItem(def.legacyKey); } catch (e) {} } return; }
     _cloudCacheLocal(cid, kind, []);
     if (_cloudSnap[cid]) _cloudSnap[cid][kind] = {};
+    _cloudSnapHashSave(cid, kind);
     // Data lama di key global jangan ditawarkan lagi sebagai "data lokal belum terunggah".
     try {
       localStorage.setItem('oas_rec_seen_' + cid, '1');
@@ -148,7 +222,7 @@ function cloudDeleteRecords(kinds) {
     const failed = [];
     for (const kind of ks) {
       if (!currentCompany || currentCompany.id !== cid) { failed.push(kind); continue; }
-      const { error } = await DB.table('company_records').delete().eq('company_id', cid).eq('kind', kind);
+      const { error } = await _cloudWithTimeout(DB.table('company_records').delete().eq('company_id', cid).eq('kind', kind));
       if (error) { console.warn('[cloud-records] hapus semua gagal:', kind, error); failed.push(kind); continue; }
       clearLocal(cid, kind);
     }
@@ -193,14 +267,17 @@ async function cloudLoadRecords() {
 
   const byKind = {};
   rows.forEach(r => { (byKind[r.kind] = byKind[r.kind] || []).push(r.data); });
+  // Hitung SEBELUM cache ditimpa data cloud di bawah.
+  const unsynced = _cloudUnsynced(cid);
 
   _cloudSnap[cid] = {};
   Object.entries(CLOUD_RECORD_KINDS).forEach(([kind, def]) => {
     const list = _cloudSortNewestFirst(byKind[kind] || []);
-    def.set(list);
     const snap = {};
     _cloudIndex(def, list).forEach((v, id) => { snap[id] = v.json; });
-    _cloudSnap[cid][kind] = snap;
+    _cloudSnap[cid][kind] = snap; // snapshot = isi cloud; selisih dengan state akan dikirim ulang
+    def.set(unsynced[kind] ? _cloudApplyUnsynced(def, list, unsynced[kind]) : list);
+    _cloudSnapHashSave(cid, kind);
   });
   _cloudReadyFor = cid;
 
@@ -213,6 +290,13 @@ async function cloudLoadRecords() {
     // mungkin masih punya data lama di perangkat ini.
     _cloudPendingOnce(cid).forEach(k => { if (byKind[k] && byKind[k].length) localStorage.setItem(_cloudSeenKey(cid, k), '1'); });
     if (_cloudPendingOnce(cid).length) await cloudOfferLocalMigration(cid);
+    // Perubahan dari sesi sebelumnya yang belum sempat terkirim (offline / halaman ditutup).
+    const kU = Object.keys(unsynced);
+    if (kU.length) {
+      const n = kU.reduce((a, k) => a + Object.keys(unsynced[k].up).length + unsynced[k].del.length, 0);
+      const okU = await cloudSyncRecords(kU);
+      if (okU && typeof showAlert === 'function') showAlert('✓ ' + n + ' perubahan dari sesi sebelumnya yang belum tersinkron sudah dikirim ke cloud.');
+    }
   }
   return true;
 }
@@ -232,7 +316,15 @@ async function cloudOfferLocalMigration(cid) {
 
   Object.entries(CLOUD_RECORD_KINDS).forEach(([kind, def]) => {
     const cached = _cloudReadCache(cid, kind);
-    if (cached.length) { found[kind] = cached; return; }
+    if (cached.length) {
+      // Cache bisnis ini baru saja ditulis dari data cloud, jadi sebagian besar identik dengan
+      // cloud. Tawarkan hanya yang baru/berbeda dari snapshot cloud; kalau tidak, dialog
+      // "unggah data lokal" muncul untuk data yang sebenarnya sudah ada di cloud.
+      const snap = (_cloudSnap[cid] && _cloudSnap[cid][kind]) || {};
+      const fresh = cached.filter(r => { const id = def.idOf(r); return id == null || snap[String(id)] !== JSON.stringify(r); });
+      if (fresh.length) found[kind] = fresh;
+      return;
+    }
     if (def.legacyKey && _cloudLegacyAllowed(cid, kind, def, legacyOk)) {
       try {
         let arr = JSON.parse(localStorage.getItem(def.legacyKey) || '[]');
@@ -294,7 +386,8 @@ function cloudSyncRecords(kinds) {
   ks.forEach(k => { if (CLOUD_RECORD_KINDS[k]) _cloudCacheLocal(cid, k, CLOUD_RECORD_KINDS[k].get()); });
   _cloudQueue = _cloudQueue
     .then(() => _cloudSyncNow(cid, ks))
-    .catch(e => { console.warn('[cloud-records] sync error:', e); return false; });
+    .catch(e => { console.warn('[cloud-records] sync error:', e); _cloudSyncErr = true; return false; })
+    .then(ok => { _cloudAfterSync(ok); return ok; });
   return _cloudQueue;
 }
 
@@ -306,6 +399,7 @@ async function _cloudSyncNow(cid, kinds) {
   const snapAll = _cloudSnap[cid] || (_cloudSnap[cid] = {});
   const now = new Date().toISOString();
   let allOk = true;
+  _cloudSyncErr = false;
 
   for (const kind of kinds) {
     const def = CLOUD_RECORD_KINDS[kind];
@@ -316,24 +410,28 @@ async function _cloudSyncNow(cid, kinds) {
     const toUpsert = [];
     cur.forEach((v, id) => { if (prev[id] !== v.json) toUpsert.push(id); });
     const toDelete = Object.keys(prev).filter(id => !cur.has(id));
+    let changed = false;
 
     for (let i = 0; i < toUpsert.length; i += CLOUD_REC_CHUNK) {
       const part = toUpsert.slice(i, i + CLOUD_REC_CHUNK);
       const rows = part.map(id => ({
         company_id: cid, kind, rec_id: id, data: cur.get(id).rec, updated_at: now
       }));
-      const { error } = await DB.table('company_records').upsert(rows, { onConflict: 'company_id,kind,rec_id' });
-      if (error) { console.warn('[cloud-records] upsert gagal:', kind, error); allOk = false; break; }
+      const { error } = await _cloudWithTimeout(DB.table('company_records').upsert(rows, { onConflict: 'company_id,kind,rec_id' }));
+      if (error) { console.warn('[cloud-records] upsert gagal:', kind, error); allOk = false; _cloudSyncErr = true; break; }
       part.forEach(id => { prev[id] = cur.get(id).json; });
+      changed = true;
     }
 
     for (let i = 0; i < toDelete.length; i += CLOUD_REC_CHUNK) {
       const part = toDelete.slice(i, i + CLOUD_REC_CHUNK);
-      const { error } = await DB.table('company_records')
-        .delete().eq('company_id', cid).eq('kind', kind).in('rec_id', part);
-      if (error) { console.warn('[cloud-records] delete gagal:', kind, error); allOk = false; break; }
+      const { error } = await _cloudWithTimeout(DB.table('company_records')
+        .delete().eq('company_id', cid).eq('kind', kind).in('rec_id', part));
+      if (error) { console.warn('[cloud-records] delete gagal:', kind, error); allOk = false; _cloudSyncErr = true; break; }
       part.forEach(id => { delete prev[id]; });
+      changed = true;
     }
+    if (changed) _cloudSnapHashSave(cid, kind); // simpan keadaan cloud terakhir yang terkonfirmasi
   }
   return allOk;
 }

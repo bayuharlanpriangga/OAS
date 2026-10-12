@@ -117,7 +117,7 @@ function _renderSettingsAkunList(kategori, jenisList, containerId) {
           onchange="_updateSettingsAkun(this)"
           style="width:80px;text-align:center;font-family:var(--mono);padding:7px 6px;border:1px solid ${notFound ? 'var(--red)' : 'var(--border)'};border-radius:6px;background:var(--surface);color:var(--text);font-size:12.5px;">
         ${isCustom
-          ? `<button type="button" onclick="_resetSettingsAkun('${kategori}','${escJsAttr(j.kodeDefault)}')" title="Reset ke default" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;flex-shrink:0;"><i class="ti ti-refresh" style="font-size:15px;"></i></button>`
+          ? `<button type="button" onclick="_resetSettingsAkun('${kategori}','${escapeForJsAttr(j.kodeDefault)}')" title="Reset ke default" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;flex-shrink:0;"><i class="ti ti-refresh" style="font-size:15px;"></i></button>`
           : `<span style="width:23px;display:inline-block;flex-shrink:0;"></span>`}
       </div>
       ${notFound ? `<div style="font-size:11px;color:var(--red);margin:-2px 0 8px 2px;"><i class="ti ti-alert-triangle" style="font-size:11px;vertical-align:-1px;"></i> Akun ${escapeHtml(efektif)} tidak ditemukan di COA — cek Sampah COA atau isi kode akun lain.</div>` : ''}`;
@@ -293,14 +293,14 @@ function renderAccountSwitcher() {
   const rows = list.map(a => {
     const active  = a.uid === currentUid;
     const initial = (a.nama || '?').charAt(0).toUpperCase();
-    return `<div class="acc-switch-row ${active ? 'active' : ''}" ${active ? '' : `onclick="switchToAccount('${escJsAttr(a.uid)}')"`}>
+    return `<div class="acc-switch-row ${active ? 'active' : ''}" ${active ? '' : `onclick="switchToAccount('${escapeForJsAttr(a.uid)}')"`}>
       <div class="acc-switch-avatar">${a.avatarUrl ? `<img src="${escapeHtml(a.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : initial}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(a.nama)}</div>
         <div style="font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(a.email)}</div>
       </div>
       ${active ? '<i class="ti ti-check" style="font-size:15px;color:var(--accent);flex-shrink:0;"></i>' :
-        `<button type="button" onclick="event.stopPropagation();removeAccountFromSwitcher('${escJsAttr(a.uid)}')" title="Hapus dari daftar" class="acc-switch-remove"><i class="ti ti-x" style="font-size:12px;"></i></button>`}
+        `<button type="button" onclick="event.stopPropagation();removeAccountFromSwitcher('${escapeForJsAttr(a.uid)}')" title="Hapus dari daftar" class="acc-switch-remove"><i class="ti ti-x" style="font-size:12px;"></i></button>`}
     </div>`;
   }).join('') || `<div style="padding:14px;text-align:center;font-size:12px;color:var(--muted);">Belum ada akun tersimpan</div>`;
 

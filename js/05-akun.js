@@ -237,7 +237,7 @@ function renderAkunTrashList() {
         background:${urgent?'rgba(248,113,113,0.12)':'rgba(148,163,184,0.12)'};color:${urgent?'var(--red)':'var(--muted)'};">
         ${sisaHari} hari lagi
       </span>
-      <button onclick="restoreAkunTrash('${escJsAttr(a.kode)}')" title="Kembalikan akun ini"
+      <button onclick="restoreAkunTrash('${escapeForJsAttr(a.kode)}')" title="Kembalikan akun ini"
         style="background:rgba(34,211,238,0.1);border:1px solid rgba(34,211,238,0.25);color:var(--accent2);cursor:pointer;font-size:11px;font-weight:600;padding:6px 10px;border-radius:6px;white-space:nowrap;">
         <i class="ti ti-arrow-back-up" style="font-size:12px;vertical-align:-2px;margin-right:3px;"></i> Restore
       </button>

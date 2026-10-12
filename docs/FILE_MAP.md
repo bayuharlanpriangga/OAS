@@ -982,28 +982,36 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 721-737 | `loadCachedPasswordDisplay` | function |
 | 739-751 | `copyCurrentPassword` | function |
 
-## js/22-cloud-records.js (340 baris, 16.4 KB)
+## js/22-cloud-records.js (438 baris, 21.8 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 24 | `_cloudKursDefault` | function |
 | 25-30 | `_cloudKursFromList` | function |
 | 32-34 | `_cloudKursLegacy` | function |
-| 65 | `_cloudCacheKey` | function |
-| 67-69 | `_cloudCacheLocal` | function |
-| 71-76 | `_cloudReadCache` | function |
-| 78 | `_cloudSeenKey` | function |
-| 81-84 | `_cloudPendingOnce` | function |
-| 87-90 | `_cloudLegacyAllowed` | function |
-| 93-104 | `_cloudIndex` | function |
-| 107-116 | `_cloudSortNewestFirst` | function |
-| 118-121 | `cloudResetRecordsState` | function |
-| 130-159 | `cloudDeleteRecords` | function |
-| 161-164 | `_cloudLoadFromCache` | function |
-| 166-218 | `cloudLoadRecords` | async function |
-| 224-287 | `cloudOfferLocalMigration` | async function |
-| 290-299 | `cloudSyncRecords` | function |
-| 301-339 | `_cloudSyncNow` | async function |
+| 67 | `_cloudCacheKey` | function |
+| 69-71 | `_cloudCacheLocal` | function |
+| 73-78 | `_cloudReadCache` | function |
+| 80 | `_cloudSeenKey` | function |
+| 83-86 | `_cloudPendingOnce` | function |
+| 89-92 | `_cloudLegacyAllowed` | function |
+| 95-106 | `_cloudIndex` | function |
+| 116-120 | `_cloudHash` | function |
+| 121 | `_cloudSnapHashKey` | function |
+| 122-125 | `_cloudSnapHashRead` | function |
+| 126-133 | `_cloudSnapHashSave` | function |
+| 135-147 | `_cloudUnsynced` | function |
+| 149-157 | `_cloudApplyUnsynced` | function |
+| 161-166 | `_cloudWithTimeout` | function |
+| 170-177 | `_cloudAfterSync` | function |
+| 180-189 | `_cloudSortNewestFirst` | function |
+| 191-194 | `cloudResetRecordsState` | function |
+| 203-233 | `cloudDeleteRecords` | function |
+| 235-238 | `_cloudLoadFromCache` | function |
+| 240-302 | `cloudLoadRecords` | async function |
+| 308-379 | `cloudOfferLocalMigration` | async function |
+| 382-392 | `cloudSyncRecords` | function |
+| 394-437 | `_cloudSyncNow` | async function |
 
 ## js/23-penomoran.js (99 baris, 5.1 KB)
 

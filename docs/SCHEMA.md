@@ -251,6 +251,7 @@ di akhir), sisanya global per-browser/device.
 | `oas_notif_hist` | Global | JSON array | `notifHistory` — riwayat notifikasi yang sudah muncul |
 | `oas_anggaran` | Global | JSON array | `anggaranList` — anggaran vs aktual per periode |
 | `oas_rec_<kind>_<companyId>` | Per company | JSON array | Cache lokal invoice/kontak/aset_tetap/produk/jurnal_berulang/anggaran/alert/kurs/counter; dipakai bila cloud gagal dimuat atau ditulis |
+| `oas_rec_snaph_<companyId>` | Per company | JSON object | `{ kind: { recId: hash } }` — hash tiap record pada keadaan cloud terakhir yang terkonfirmasi (selesai dimuat / sync sukses). Saat memuat, selisihnya dengan cache = perubahan yang belum tersinkron; diterapkan di atas data cloud lalu dikirim ulang, jadi tidak hilang walau halaman di-refresh saat offline |
 | `oas_rec_seen_<companyId>` / `oas_rec_legacy_claimed` | Per company / global | `'1'` / companyId | Penanda migrasi data lama: data global hanya boleh dipindah ke satu bisnis dan tidak ditawarkan ulang |
 | `oas_mks_<companyId>` / `oas_mks_guest` | Per company | JSON object | Fallback lokal untuk `multiKartuStock` bila gagal sync ke cloud |
 | `oas_profil` / `oas_profil_v1` | Global | JSON object | Profil perusahaan (nama, alamat, logo ref, dsb) — legacy key ganda |

@@ -107,6 +107,13 @@ Dikerjakan paling awal. 1.1 dan 1.7-1.8 dipakai fase lain.
 | ☑ | 1.7 | `js/23-penomoran.js`: fungsi murni nomorBerikut(jenis, tahun, daftarNomor) + tes | TES |
 | ☑ | 1.8 | Simpan counter ke cloud (kind `counter`) dan pakai untuk nomor invoice, menggantikan length+1 | 23-penomoran.js, CR, potongan nomor invoice di 19-fitur-tambahan.js |
 
+**Temuan uji 1.2 (sudah diperbaiki di `22-cloud-records.js`, tes di `tests/cloud-records.test.js`):**
+- Invoice yang dibuat saat offline hilang kalau halaman di-refresh setelah online (cache ditimpa data cloud). Sekarang perubahan yang belum tersinkron dideteksi lewat snapshot hash (`oas_rec_snaph_<cid>`), diterapkan di atas data cloud, lalu dikirim ulang.
+- Gagal sinkron hanya tercatat di Console. Sekarang user diberi peringatan (sekali per rentetan gagal), dan request yang menggantung diberi batas waktu 20 detik supaya tidak memblokir antrean.
+- Dialog "Unggah Data Lokal ke Cloud?" muncul di browser kedua untuk data yang sebenarnya sudah ada di cloud. Sekarang hanya data yang baru/berbeda dari cloud yang ditawarkan.
+- Dropdown pindah akun mati begitu akun kedua ditambahkan: `escJsAttr` dipanggil di `21-settings.js` (switcher) dan `05-akun.js` (tombol Restore akun terhapus) tetapi tidak pernah didefinisikan. Diganti `escapeForJsAttr`; tes `tests/akun-switcher.test.js` ikut memeriksa semua helper `esc*` terdefinisi.
+- Langkah 1.2 yang belum diuji: 8c (reload saat offline), 9 (reset data), 10 (penomoran lintas browser).
+
 ## Fase 2 — Umur piutang (4 task)
 
 Kemenangan cepat. Selesai fase ini = Rilis A.

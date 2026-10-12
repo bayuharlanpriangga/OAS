@@ -7,6 +7,7 @@ let pass = 0, fail = 0;
 const ok = (c, m) => { c ? pass++ : fail++; console.log((c ? '  ok   ' : '  GAGAL ') + m); };
 
 function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } = {}) {
+  const net = { failLoad, failWrite, hang: false }; // bisa diubah di tengah tes untuk simulasi offline
   const store = [];            // baris company_records
   const calls = { upsert: [], delete: [] };
   const ls = {}; const localStorage = {
@@ -24,11 +25,12 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } =
       then(res) {
         const match = r => q.f.every(([k, v]) => r[k] === v) && (!q.inIds || q.inIds.includes(r.rec_id));
         if (q.op === 'select') {
-          if (failLoad) return res({ data: null, error: new Error('relation does not exist') });
+          if (net.failLoad) return res({ data: null, error: new Error('relation does not exist') });
           let rows = store.filter(match); if (q.range) rows = rows.slice(q.range[0], q.range[1] + 1);
           return res({ data: rows, error: null });
         }
-        if (failWrite) return res({ data: null, error: new Error('boom') });
+        if (net.hang) return; // koneksi menggantung: tidak pernah selesai
+        if (net.failWrite) return res({ data: null, error: new Error('boom') });
         if (q.op === 'upsert') {
           calls.upsert.push(q.rows.map(r => r.rec_id));
           q.rows.forEach(r => { const i = store.findIndex(x => x.company_id === r.company_id && x.kind === r.kind && x.rec_id === r.rec_id); if (i >= 0) store[i] = r; else store.push(r); });
@@ -41,10 +43,10 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } =
     };
     return b;
   };
-  const alerts = [];
+  const alerts = [], confirms = [];
   const ctx = {
-    console, localStorage, DB: { table },
-    showAlert: m => alerts.push(m), showCustomConfirmGeneral: async () => confirmAnswer,
+    console, localStorage, DB: { table }, setTimeout, clearTimeout,
+    showAlert: m => alerts.push(m), showCustomConfirmGeneral: async o => { confirms.push(o); return confirmAnswer; },
     hideOpSpinner() {}, currentCompany: { id: 'c1', name: 'Toko A' },
   };
   vm.createContext(ctx);
@@ -52,7 +54,7 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } =
   vm.runInContext('let invoiceList=[],kontakList=[],asetTetapList=[],produkList=[],jurnalBerulangList=[],anggaranList=[],notifAlerts=[],counterList=[],kursData={USD:1,IDR:16200,SGD:12100,EUR:18300,MYR:3500,JPY:107,updatedAt:null};', ctx);
   vm.runInContext(src, ctx);
   const run = code => vm.runInContext(code, ctx);
-  return { ctx, run, store, calls, ls, alerts };
+  return { ctx, run, store, calls, ls, alerts, net, confirms };
 }
 
 (async () => {
@@ -330,6 +332,139 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } =
     e.ls['oas_counter'] = JSON.stringify([{ id: 'INV-2026', jenis: 'INV', tahun: 2026, terakhir: 4 }]);
     await e.run('cloudLoadRecords()');
     ok(e.store.some(r => r.kind === 'counter' && r.rec_id === 'INV-2026'), 'counter lama diunggah lewat migrasi');
+  }
+
+  console.log('[offline] perubahan yang belum tersinkron tidak hilang saat dimuat ulang (temuan uji 1.2)');
+  // "Muat ulang halaman": state di memori hilang, localStorage tetap, lalu muat dari cloud lagi.
+  const reload = e => e.run('invoiceList=[]; kontakList=[]; counterList=[]; _cloudSnap={}; _cloudReadyFor=null; _cloudSyncErr=false; _cloudFailNotified=false');
+  const seedOnline = async () => {
+    const e = makeEnv();
+    e.store.push({ company_id: 'c1', kind: 'invoice', rec_id: 'I1', data: { id: 'I1', createdAt: '2026-01-01', total: 10 } });
+    e.store.push({ company_id: 'c1', kind: 'invoice', rec_id: 'I2', data: { id: 'I2', createdAt: '2026-01-02', total: 20 } });
+    await e.run('cloudLoadRecords()');
+    return e;
+  };
+  {
+    // skenario persis dari uji: invoice dibuat saat offline, lalu halaman di-refresh setelah online
+    const e = await seedOnline();
+    e.net.failWrite = true;
+    e.run("invoiceList.unshift({ id: 'I3', createdAt: '2026-01-03', total: 30 })");
+    ok((await e.run('cloudSyncRecords(["invoice"])')) === false, 'offline: sync gagal');
+    ok(e.alerts.length === 1 && /belum tersimpan ke cloud/.test(e.alerts[0]), 'offline: user diberi tahu perubahan belum tersimpan');
+    await e.run('cloudSyncRecords(["invoice"])');
+    ok(e.alerts.length === 1, 'gagal berulang: peringatan hanya sekali');
+    e.net.failWrite = false;
+    reload(e); e.alerts.length = 0;
+    await e.run('cloudLoadRecords()');
+    ok(e.run('invoiceList.map(i => i.id).join()') === 'I3,I2,I1', 'refresh online: invoice offline TIDAK hilang');
+    ok(e.store.some(r => r.kind === 'invoice' && r.rec_id === 'I3'), 'invoice offline terkirim ke cloud saat dimuat');
+    ok(e.alerts.length === 1 && /1 perubahan/.test(e.alerts[0]), 'user diberi tahu 1 perubahan terkirim');
+    reload(e); e.alerts.length = 0; e.calls.upsert.length = 0; e.calls.delete.length = 0;
+    await e.run('cloudLoadRecords()');
+    ok(e.run('invoiceList.length') === 3 && e.calls.upsert.length === 0 && e.alerts.length === 0, 'muat ulang berikutnya: tidak ada kiriman/peringatan lagi');
+  }
+  {
+    // hapus + ubah saat offline
+    const e = await seedOnline();
+    e.net.failWrite = true;
+    e.run("invoiceList = invoiceList.filter(i => i.id !== 'I1'); invoiceList.find(i => i.id === 'I2').total = 99");
+    await e.run('cloudSyncRecords(["invoice"])');
+    e.net.failWrite = false; reload(e);
+    await e.run('cloudLoadRecords()');
+    ok(e.run('invoiceList.map(i => i.id).join()') === 'I2' && e.run('invoiceList[0].total') === 99, 'hapus & ubah offline dipertahankan setelah refresh');
+    ok(!e.store.some(r => r.rec_id === 'I1') && e.store.find(r => r.rec_id === 'I2').data.total === 99, 'cloud ikut terhapus/terubah');
+  }
+  {
+    // aplikasi di-reload saat offline (cloud gagal dimuat), user menambah data, baru online
+    const e = await seedOnline();
+    e.net.failLoad = true; e.net.failWrite = true; reload(e);
+    await e.run('cloudLoadRecords()');
+    e.run("invoiceList.unshift({ id: 'I4', createdAt: '2026-01-04', total: 40 })");
+    await e.run('cloudSyncRecords(["invoice"])'); // ditolak: cloud belum termuat, tapi cache tetap ditulis
+    e.net.failLoad = false; e.net.failWrite = false; reload(e);
+    await e.run('cloudLoadRecords()');
+    ok(e.run('invoiceList.map(i => i.id).join()') === 'I4,I2,I1' && e.store.some(r => r.rec_id === 'I4'), 'data yang dibuat saat app dibuka offline juga selamat');
+  }
+  {
+    // perangkat lain menambah record sementara perangkat ini menyimpan offline: dua-duanya ada
+    const e = await seedOnline();
+    e.net.failWrite = true;
+    e.run("invoiceList.unshift({ id: 'I5', createdAt: '2026-01-05' })");
+    await e.run('cloudSyncRecords(["invoice"])');
+    e.net.failWrite = false;
+    e.store.push({ company_id: 'c1', kind: 'invoice', rec_id: 'I6', data: { id: 'I6', createdAt: '2026-01-06' } }); // dari perangkat lain
+    reload(e);
+    await e.run('cloudLoadRecords()');
+    ok(['I1', 'I2', 'I5', 'I6'].every(id => e.run('invoiceList').some(i => i.id === id)), 'record perangkat lain tidak ditimpa, perubahan lokal tetap ada');
+    ok(e.store.filter(r => r.kind === 'invoice').length === 4, 'cloud berisi gabungan keduanya');
+  }
+  {
+    // counter hanya naik: nilai cloud lebih tinggi menang atas catatan lokal yang tertinggal
+    const e = makeEnv();
+    e.store.push({ company_id: 'c1', kind: 'counter', rec_id: 'INV-2026', data: { id: 'INV-2026', jenis: 'INV', tahun: 2026, terakhir: 3 } });
+    await e.run('cloudLoadRecords()');
+    e.net.failWrite = true;
+    e.run('counterList = [{ id: "INV-2026", jenis: "INV", tahun: 2026, terakhir: 4 }]');
+    await e.run('cloudSyncRecords(["counter"])');
+    e.net.failWrite = false;
+    e.store.find(r => r.kind === 'counter').data.terakhir = 9; // perangkat lain sudah sampai 9
+    reload(e);
+    await e.run('cloudLoadRecords()');
+    ok(e.run('counterList[0].terakhir') === 9 && e.store.find(r => r.kind === 'counter').data.terakhir === 9, 'counter: nilai cloud yang lebih tinggi tidak diturunkan');
+  }
+  {
+    // tidak ada false positive: tanpa perubahan, muat ulang berkali-kali tidak mengirim apa pun
+    const e = await seedOnline();
+    for (let i = 0; i < 3; i++) { reload(e); e.alerts.length = 0; e.calls.upsert.length = 0; await e.run('cloudLoadRecords()'); }
+    ok(e.calls.upsert.length === 0 && e.calls.delete.length === 0 && e.alerts.length === 0, 'tanpa perubahan: tidak ada kiriman maupun peringatan');
+    // dan setelah sync sukses, tidak dianggap belum tersinkron
+    e.run("invoiceList.unshift({ id: 'I7', createdAt: '2026-02-01' })");
+    await e.run('cloudSyncRecords(["invoice"])');
+    reload(e); e.alerts.length = 0; e.calls.upsert.length = 0;
+    await e.run('cloudLoadRecords()');
+    ok(e.calls.upsert.length === 0 && e.alerts.length === 0 && e.run('invoiceList.length') === 3, 'sync sukses lalu refresh: bersih');
+  }
+  {
+    // request menggantung (koneksi putus tanpa error) tidak memblokir antrean selamanya
+    const e = await seedOnline();
+    e.run('CLOUD_REQ_TIMEOUT = 40');
+    e.net.hang = true;
+    e.run("invoiceList.unshift({ id: 'I8', createdAt: '2026-03-01' })");
+    const t0 = Date.now();
+    const res = await e.run('cloudSyncRecords(["invoice"])');
+    ok(res === false && Date.now() - t0 < 2000, 'request menggantung dianggap gagal setelah timeout');
+    e.net.hang = false;
+    ok((await e.run('cloudSyncRecords(["invoice"])')) === true && e.store.some(r => r.rec_id === 'I8'), 'antrean lanjut: sync berikutnya berhasil mengirim');
+  }
+  {
+    // reset data (task 1.5) tidak meninggalkan "perubahan belum tersinkron" palsu
+    const e = await seedOnline();
+    await e.run('cloudDeleteRecords(["invoice"])');
+    reload(e); e.alerts.length = 0;
+    await e.run('cloudLoadRecords()');
+    ok(e.run('invoiceList.length') === 0 && e.alerts.length === 0 && e.store.filter(r => r.kind === 'invoice').length === 0, 'setelah reset invoice + refresh: tetap kosong, tanpa peringatan');
+  }
+
+  console.log('[dialog] dialog "Unggah Data Lokal" tidak muncul untuk data yang sudah ada di cloud (temuan uji 1.2, no. 5)');
+  {
+    // browser kedua: cloud sudah berisi invoice, tapi kind lain (alert, anggaran, dst.) belum pernah ada di cloud
+    const e = makeEnv();
+    e.store.push({ company_id: 'c1', kind: 'invoice', rec_id: 'I1', data: { id: 'I1', total: 1 } });
+    e.store.push({ company_id: 'c1', kind: 'kontak', rec_id: 'K1', data: { id: 'K1' } });
+    await e.run('cloudLoadRecords()');
+    ok(e.confirms.length === 0 && e.alerts.length === 0, 'browser baru login ke bisnis yang datanya sudah di cloud: tidak ada dialog unggah');
+    e.run("invoiceList = []; kontakList = []; _cloudSnap = {}; _cloudReadyFor = null");
+    await e.run('cloudLoadRecords()');
+    ok(e.confirms.length === 0, 'muat ulang: tetap tidak ada dialog');
+  }
+  {
+    // data lokal yang BENAR-BENAR baru (dari cache sesi gagal / key lama) tetap ditawarkan
+    const e = makeEnv();
+    e.store.push({ company_id: 'c1', kind: 'invoice', rec_id: 'I1', data: { id: 'I1', total: 1 } });
+    e.ls['oas_alerts'] = JSON.stringify([{ id: 'alert_old' }]);
+    await e.run('cloudLoadRecords()');
+    ok(e.confirms.length === 1 && e.confirms[0].rows.some(r => r.label === 'Alert notifikasi'), 'data lama yang benar-benar belum di cloud tetap ditawarkan');
+    ok(!e.confirms[0].rows.some(r => r.label === 'Invoice'), 'invoice yang sudah di cloud tidak ikut terdaftar di dialog');
   }
 
   console.log('\nHasil: ' + pass + ' lulus, ' + fail + ' gagal');
