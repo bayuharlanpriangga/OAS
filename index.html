@@ -3013,16 +3013,34 @@
 
 <!-- MODAL: RESET SEMUA DATA -->
 <div class="modal-backdrop" id="modal-reset-all">
-  <div class="modal" style="max-width:400px;">
+  <div class="modal" style="max-width:440px;">
     <div class="modal-head">
-      <div class="modal-title"><i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Reset Semua Data</div>
+      <div class="modal-title"><i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Reset Data</div>
       <button class="modal-close" onclick="closeModal('modal-reset-all')">✕</button>
     </div>
     <div class="modal-body">
       <div style="text-align:center;padding:8px 0 16px;">
         <div style="font-size:40px;margin-bottom:12px;"><i class="ti ti-trash ti-btn"></i></div>
-        <div style="font-weight:700;font-size:15px;margin-bottom:10px;color:var(--red);">Hapus semua jurnal & data?</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.7;">Ini akan menghapus <b>semua jurnal</b> yang sudah diinput. Laporan keuangan akan kembali ke nol.<br><br>Chart of Accounts <b>tidak</b> akan dihapus.</div>
+        <div style="font-weight:700;font-size:15px;margin-bottom:6px;color:var(--red);">Pilih data yang mau dihapus</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6;text-align:left;">Hanya yang dicentang yang dihapus permanen, termasuk dari cloud. Chart of Accounts dan pengaturan <b>tidak</b> ikut dihapus.</div>
+        <div style="margin-top:12px;background:var(--surface2);border-radius:8px;padding:12px;text-align:left;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px 12px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="jurnal" data-label="Jurnal Umum" checked style="accent-color:var(--red);width:15px;height:15px;"> Jurnal Umum</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="invoice" data-label="Invoice" style="accent-color:var(--red);width:15px;height:15px;"> Invoice</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="kontak" data-label="Kontak" style="accent-color:var(--red);width:15px;height:15px;"> Kontak</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="aset_tetap" data-label="Aset Tetap" style="accent-color:var(--red);width:15px;height:15px;"> Aset Tetap</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="produk" data-label="Produk" style="accent-color:var(--red);width:15px;height:15px;"> Produk</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="jurnal_berulang" data-label="Jurnal Berulang" style="accent-color:var(--red);width:15px;height:15px;"> Jurnal Berulang</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="anggaran" data-label="Anggaran" style="accent-color:var(--red);width:15px;height:15px;"> Anggaran</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="alert" data-label="Alert Notifikasi" style="accent-color:var(--red);width:15px;height:15px;"> Alert Notifikasi</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="kurs" data-label="Kurs" style="accent-color:var(--red);width:15px;height:15px;"> Kurs</label>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:12px;font-size:11.5px;">
+            <a href="javascript:void(0)" onclick="resetPilihSemua(true)" style="color:var(--accent2);">Pilih semua</a>
+            <a href="javascript:void(0)" onclick="resetPilihSemua(false)" style="color:var(--accent2);">Kosongkan</a>
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.6;">Catatan: menghapus Invoice atau Produk tidak membatalkan jurnal yang sudah tercatat. Kalau mau laporan kembali ke nol, centang Jurnal Umum juga.</div>
+        </div>
         <div style="margin-top:14px;background:var(--surface2);border-radius:8px;padding:12px;">
           <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Ketik <b>RESET</b> untuk konfirmasi:</div>
           <input type="text" id="reset-confirm-input" placeholder="Ketik RESET di sini"
@@ -3032,7 +3050,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-reset-all')">Batal</button>
-      <button class="btn btn-danger" onclick="doResetAll()"><i class="ti ti-trash ti-btn"></i> Reset Semua</button>
+      <button class="btn btn-danger" onclick="doResetAll()"><i class="ti ti-trash ti-btn"></i> Reset yang Dipilih</button>
     </div>
   </div>
 </div>
@@ -3302,8 +3320,8 @@
       <details style="margin-top:14px;">
         <summary style="cursor:pointer;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;list-style:none;"><i class="ti ti-alert-triangle" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i> Lanjutan</summary>
         <div style="margin-top:10px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-          <div style="font-size:11.5px;color:var(--muted);line-height:1.6;flex:1;min-width:180px;"><b style="color:var(--red);">Reset Semua Data</b><br>Menghapus semua jurnal dan mengembalikan laporan ke nol. Tidak bisa dibatalkan.</div>
-          <button class="btn btn-danger btn-sm" onclick="closeModal('modal-storage');confirmResetAll()"><i class="ti ti-trash ti-btn"></i> Reset Semua Data</button>
+          <div style="font-size:11.5px;color:var(--muted);line-height:1.6;flex:1;min-width:180px;"><b style="color:var(--red);">Reset Data</b><br>Pilih sendiri data yang dihapus: jurnal, invoice, kontak, aset, produk, dan lainnya. Tidak bisa dibatalkan.</div>
+          <button class="btn btn-danger btn-sm" onclick="closeModal('modal-storage');confirmResetAll()"><i class="ti ti-trash ti-btn"></i> Reset Data</button>
         </div>
       </details>
     </div>

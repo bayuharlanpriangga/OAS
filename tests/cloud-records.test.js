@@ -241,6 +241,75 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } =
     ok(e.store.length === 0, 'kurs default tidak ditawarkan untuk diunggah');
   }
 
+  console.log('[reset] hapus semua record per kind (task 1.5)');
+  const seed = e => {
+    e.store.push(
+      { company_id: 'c1', kind: 'invoice', rec_id: 'I1', data: { id: 'I1' } },
+      { company_id: 'c1', kind: 'invoice', rec_id: 'I2', data: { id: 'I2' } },
+      { company_id: 'c1', kind: 'kontak',  rec_id: 'K1', data: { id: 'K1' } },
+      { company_id: 'c1', kind: 'produk',  rec_id: 'P1', data: { ksId: 'P1' } },
+      { company_id: 'c1', kind: 'kurs',    rec_id: 'kurs', data: { id: 'kurs', USD: 1, IDR: 15000, updatedAt: '2026-10-01' } },
+      { company_id: 'c2', kind: 'invoice', rec_id: 'X1', data: { id: 'X1' } }   // bisnis lain
+    );
+    e.ls['oas_rec_seen_c1'] = '1';
+  };
+  {
+    const e = makeEnv(); seed(e);
+    await e.run('cloudLoadRecords()');
+    const failed = await e.run('cloudDeleteRecords(["invoice","kontak"])');
+    ok(failed.length === 0, 'reset sukses: tidak ada kind gagal');
+    ok(e.store.filter(r => r.company_id === 'c1').map(r => r.kind).sort().join() === 'kurs,produk', 'hanya kind terpilih terhapus di cloud');
+    ok(e.store.some(r => r.company_id === 'c2' && r.rec_id === 'X1'), 'bisnis lain tidak tersentuh');
+    ok(e.run('invoiceList.length') === 0 && e.run('kontakList.length') === 0 && e.run('produkList.length') === 1, 'state kind terpilih kosong, kind lain utuh');
+    ok(JSON.parse(e.ls['oas_rec_invoice_c1']).length === 0, 'cache lokal kind terpilih dikosongkan');
+    const before = e.calls.delete.length;
+    await e.run('cloudSyncRecords()');
+    ok(e.calls.delete.length === before && e.calls.upsert.length === 0, 'sync sesudah reset tidak mengirim hapus/upsert ulang (snapshot ikut bersih)');
+    await e.run('cloudLoadRecords()');
+    ok(e.run('invoiceList.length') === 0, 'muat ulang dari cloud: invoice tetap kosong');
+  }
+  {
+    // kurs kembali ke default, bukan objek kosong
+    const e = makeEnv(); seed(e);
+    await e.run('cloudLoadRecords()');
+    ok(e.run('kursData.IDR') === 15000, 'kurs tersimpan dimuat');
+    await e.run('cloudDeleteRecords(["kurs"])');
+    ok(e.run('kursData.IDR') === 16200 && e.run('kursData.updatedAt') === null, 'reset kurs -> default');
+  }
+  {
+    // cloud gagal: data tetap ada di state, kind gagal dilaporkan
+    const e2 = makeEnv({ failWrite: true }); seed(e2);
+    await e2.run('cloudLoadRecords()');
+    const failed = await e2.run('cloudDeleteRecords(["invoice","kontak"])');
+    ok(failed.join() === 'invoice,kontak', 'cloud gagal: semua kind dilaporkan gagal');
+    ok(e2.run('invoiceList.length') === 2 && e2.run('kontakList.length') === 1, 'cloud gagal: state tidak dikosongkan');
+    ok(e2.store.filter(r => r.company_id === 'c1').length === 5, 'cloud gagal: baris di cloud tetap');
+  }
+  {
+    // data lama di key global tidak boleh muncul lagi sebagai "data lokal belum terunggah"
+    const e = makeEnv(); seed(e);
+    e.ls['oas_invoices'] = JSON.stringify([{ id: 'OLD' }]);
+    e.ls['oas_alerts'] = JSON.stringify([{ id: 'alert_old' }]);
+    await e.run('cloudLoadRecords()');
+    await e.run('cloudDeleteRecords(["invoice","alert"])');
+    await e.run('cloudLoadRecords()');
+    ok(!e.store.some(r => r.rec_id === 'OLD' || r.rec_id === 'alert_old'), 'data lama tidak ikut terunggah ulang setelah reset');
+  }
+  {
+    // mode tamu: state + key localStorage lama dibersihkan
+    const e = makeEnv();
+    e.run('currentCompany = null');
+    e.ls['oas_invoices'] = JSON.stringify([{ id: 'G1' }]);
+    e.run('invoiceList = [{ id: "G1" }]');
+    const failed = await e.run('cloudDeleteRecords(["invoice"])');
+    ok(failed.length === 0 && e.run('invoiceList.length') === 0 && !('oas_invoices' in e.ls), 'mode tamu: state dan key lama dibersihkan');
+  }
+  {
+    const e = makeEnv();
+    ok((await e.run('cloudDeleteRecords([])')).length === 0 && (await e.run('cloudDeleteRecords(["ngawur"])')).length === 0, 'daftar kosong / kind tidak dikenal diabaikan');
+    ok(e.calls.delete.length === 0, 'tidak ada panggilan hapus untuk input kosong');
+  }
+
   console.log('\nHasil: ' + pass + ' lulus, ' + fail + ' gagal');
   process.exit(fail ? 1 : 0);
 })();

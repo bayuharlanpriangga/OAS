@@ -3080,7 +3080,8 @@ function _installAuditHooks() {
   window.doResetAll = async function() {
     try {
       const cn = (typeof currentCompany !== 'undefined' && currentCompany?.name) || '—';
-      _al('reset', 'system', `⚠️ RESET SEMUA DATA bisnis "${cn}" dieksekusi`, 'RESET-ALL');
+      const dipilih = Array.from(document.querySelectorAll('#modal-reset-all input[data-reset]:checked')).map(c => c.getAttribute('data-label') || c.getAttribute('data-reset')).join(', ') || '—';
+      _al('reset', 'system', `⚠️ RESET DATA bisnis "${cn}" dieksekusi: ${dipilih}`, 'RESET-ALL');
     } catch(e) {}
     return _origDoResetAll ? await _origDoResetAll.apply(this, arguments) : undefined;
   };

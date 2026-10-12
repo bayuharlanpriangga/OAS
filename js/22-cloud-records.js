@@ -117,6 +117,44 @@ function cloudResetRecordsState() {
   _cloudReadyFor = null;
 }
 
+// Hapus SEMUA record dari kind yang dipilih (dipakai Reset Data, task 1.5).
+// Urutan per kind: hapus di cloud dulu; state, snapshot, dan cache lokal baru
+// dikosongkan kalau cloud berhasil. Jadi kalau jaringan putus, data tidak tampak
+// hilang padahal masih ada di cloud. Antre di _cloudQueue supaya sync yang sedang
+// jalan tidak menulis ulang record yang baru dihapus.
+// Mode tamu: kosongkan state + key localStorage lama saja.
+// Mengembalikan Promise<string[]> berisi kind yang GAGAL dihapus (kosong = semua sukses).
+function cloudDeleteRecords(kinds) {
+  const ks = (kinds || []).filter(k => CLOUD_RECORD_KINDS[k]);
+  if (!ks.length) return Promise.resolve([]);
+  const clearLocal = (cid, kind) => {
+    const def = CLOUD_RECORD_KINDS[kind];
+    def.set([]);
+    if (!cid) { if (def.legacyKey) { try { localStorage.removeItem(def.legacyKey); } catch (e) {} } return; }
+    _cloudCacheLocal(cid, kind, []);
+    if (_cloudSnap[cid]) _cloudSnap[cid][kind] = {};
+    // Data lama di key global jangan ditawarkan lagi sebagai "data lokal belum terunggah".
+    try {
+      localStorage.setItem('oas_rec_seen_' + cid, '1');
+      if (def.legacyOnce) localStorage.setItem(_cloudSeenKey(cid, kind), '1');
+    } catch (e) {}
+  };
+  if (!currentCompany) { ks.forEach(k => clearLocal(null, k)); return Promise.resolve([]); }
+  const cid = currentCompany.id;
+  const job = _cloudQueue.then(async () => {
+    const failed = [];
+    for (const kind of ks) {
+      if (!currentCompany || currentCompany.id !== cid) { failed.push(kind); continue; }
+      const { error } = await DB.table('company_records').delete().eq('company_id', cid).eq('kind', kind);
+      if (error) { console.warn('[cloud-records] hapus semua gagal:', kind, error); failed.push(kind); continue; }
+      clearLocal(cid, kind);
+    }
+    return failed;
+  }).catch(e => { console.warn('[cloud-records] reset error:', e); return ks; });
+  _cloudQueue = job.then(() => true); // antrean sync berikutnya tetap jalan apa pun hasilnya
+  return job;
+}
+
 function _cloudLoadFromCache(cid) {
   Object.entries(CLOUD_RECORD_KINDS).forEach(([kind, def]) => def.set(_cloudReadCache(cid, kind)));
   _cloudReadyFor = null; // belum aman menulis ke cloud: data lokal bisa lebih lama dari cloud

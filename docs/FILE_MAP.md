@@ -251,7 +251,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 436 | `renderNeracaSaldo` | function |
 | 439-490 | `showAIConfirm` | function |
 
-## js/08-kartu-stock.js (3398 baris, 162.5 KB)
+## js/08-kartu-stock.js (3399 baris, 162.7 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -340,7 +340,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 2619-2629 | `onJualQtyChange` | function |
 | 2633-2640 | `toggleKartuStockLock` | function |
 | 2642-2657 | `_updateLockHeaderBtn` | function |
-| 2664-3379 | `_installAuditHooks` | function |
+| 2664-3380 | `_installAuditHooks` | function |
 
 ## js/09-produk.js (347 baris, 16.9 KB)
 
@@ -611,7 +611,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 2887-2892 | `executeAIActions` | async function |
 | 2894-3197 | `_executeAIActionsInner` | async function |
 
-## js/15-storage.js (448 baris, 18.1 KB)
+## js/15-storage.js (475 baris, 20.1 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -637,7 +637,8 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 295-308 | `showAutoSaveToast` | function |
 | 311-323 | `exportBackupJSON` | function |
 | 325-358 | `importBackupJSON` | function |
-| 362-396 | `doResetAll` | async function |
+| 362-364 | `resetPilihSemua` | function |
+| 366-423 | `doResetAll` | async function |
 
 ## js/16-auth-company.js (1885 baris, 83.5 KB)
 
@@ -794,7 +795,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1104-1119 | `auditOpenAktPicker` | function |
 | 1122-1156 | `auditOpenBizPicker` | function |
 
-## js/19-fitur-tambahan.js (1842 baris, 99.5 KB)
+## js/19-fitur-tambahan.js (1844 baris, 99.7 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -857,14 +858,14 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1245-1298 | `buatJurnalPembalik` | function |
 | 1300-1349 | `konfirmasiBalikJurnal` | function |
 | 1353 | `konfirmasiHapusJurnal` | function |
-| 1355-1359 | `confirmResetAll` | function |
-| 1364-1396 | `openModalSaldoAwal` | function |
-| 1398-1413 | `updateSaldoAwalBalance` | function |
-| 1415-1450 | `simpanSaldoAwal` | function |
-| 1453-1456 | `autoNo` | function |
-| 1458-1564 | `handlePwaInstall` | function |
-| 1566-1583 | `showPwaGuideModal` | function |
-| 1789-1837 | `showOrgMembersSQL` | function |
+| 1355-1361 | `confirmResetAll` | function |
+| 1366-1398 | `openModalSaldoAwal` | function |
+| 1400-1415 | `updateSaldoAwalBalance` | function |
+| 1417-1452 | `simpanSaldoAwal` | function |
+| 1455-1458 | `autoNo` | function |
+| 1460-1566 | `handlePwaInstall` | function |
+| 1568-1585 | `showPwaGuideModal` | function |
+| 1791-1839 | `showOrgMembersSQL` | function |
 
 ## js/20-ai-chat.js (2041 baris, 162.0 KB)
 
@@ -981,7 +982,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 721-737 | `loadCachedPasswordDisplay` | function |
 | 739-751 | `copyCurrentPassword` | function |
 
-## js/22-cloud-records.js (299 baris, 14.1 KB)
+## js/22-cloud-records.js (337 baris, 16.1 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -997,11 +998,12 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 90-101 | `_cloudIndex` | function |
 | 104-113 | `_cloudSortNewestFirst` | function |
 | 115-118 | `cloudResetRecordsState` | function |
-| 120-123 | `_cloudLoadFromCache` | function |
-| 125-177 | `cloudLoadRecords` | async function |
-| 183-246 | `cloudOfferLocalMigration` | async function |
-| 249-258 | `cloudSyncRecords` | function |
-| 260-298 | `_cloudSyncNow` | async function |
+| 127-156 | `cloudDeleteRecords` | function |
+| 158-161 | `_cloudLoadFromCache` | function |
+| 163-215 | `cloudLoadRecords` | async function |
+| 221-284 | `cloudOfferLocalMigration` | async function |
+| 287-296 | `cloudSyncRecords` | function |
+| 298-336 | `_cloudSyncNow` | async function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 

@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 135 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 3/135 task selesai.**
+**Progres: 4/135 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -66,7 +66,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 
 | Fase | Nama | Selesai |
 | --- | --- | --- |
-| 1 | Fondasi data | 3/8 |
+| 1 | Fondasi data | 4/8 |
 | 2 | Umur piutang | 0/4 |
 | 3 | Akses anggota tim | 0/5 |
 | 4 | Tagihan pembelian (bill) | 0/7 |
@@ -102,7 +102,7 @@ Dikerjakan paling awal. 1.1 dan 1.7-1.8 dipakai fase lain.
 | ☐ | 1.2 | Uji manual sinkron di Supabase asli: jalankan SQL, login, unggah data lama, buat invoice, buka di browser lain, hapus invoice, ganti bisnis, putus internet saat simpan. Catat yang gagal (tanpa AI) | checklist ini |
 | ☑ | 1.3 | Tambah kind `jurnal_berulang` dan `anggaran` ke CLOUD_RECORD_KINDS + tes | CR, TES, potongan saveFiturBaru |
 | ☑ | 1.4 | Tambah kind `alert` dan `kurs` (cek dulu bentuknya: array atau objek) | CR, potongan deklarasi di 01-state.js |
-| ☐ | 1.5 | Reset Semua Data ikut menghapus semua record cloud (setelah cakupan reset diputuskan) | CR, potongan doResetAll di 15-storage.js |
+| ☑ | 1.5 | Reset Data dengan pilihan jenis data (jurnal, invoice, kontak, aset, produk, dll); yang dipilih ikut terhapus dari cloud | CR, potongan doResetAll di 15-storage.js |
 | ☐ | 1.6 | Pastikan `js/db-adapter.js` tidak dipakai (grep), lalu hapus duplikatnya | hasil grep |
 | ☐ | 1.7 | `js/23-penomoran.js`: fungsi murni nomorBerikut(jenis, tahun, daftarNomor) + tes | TES |
 | ☐ | 1.8 | Simpan counter ke cloud (kind `counter`) dan pakai untuk nomor invoice, menggantikan length+1 | 23-penomoran.js, CR, potongan nomor invoice di 19-fitur-tambahan.js |
@@ -374,7 +374,7 @@ Selesai fase 21-25 = Rilis E.
 
 ## Keputusan yang masih terbuka
 
-1. **Cakupan Reset Semua Data** (menentukan 1.5): jurnal saja, atau juga invoice, kontak, aset, dan produk. Usulan: semua, dengan teks konfirmasi yang menyebut satu per satu.
+1. ~~**Cakupan Reset Semua Data**~~ — diputuskan: custom. Modal Reset Data punya checklist jenis data; yang dicentang saja yang dihapus (task 1.5 selesai).
 2. **Akses anggota tim** (3.1): anggota boleh baca/tulis apa saja per peran? Sekarang RLS hanya untuk pemilik.
 3. **Target pengguna**: dagang, jasa, atau keduanya. Ini menentukan apakah Fase 14-20 (gudang, batch, dst.) dan POS (Fase 25) perlu dikerjakan.
 4. **Aturan pajak dan payroll** harus dicek ulang dari sumber resmi saat 11.1 dan 18.2 dikerjakan; jangan memakai angka dari ingatan model.

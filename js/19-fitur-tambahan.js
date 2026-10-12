@@ -1354,11 +1354,13 @@ function konfirmasiHapusJurnal(idx) { return konfirmasiBalikJurnal(idx); }
 
 function confirmResetAll() {
   document.getElementById('reset-confirm-input').value = '';
+  // Default aman: hanya Jurnal Umum yang tercentang (perilaku reset sebelumnya).
+  document.querySelectorAll('#modal-reset-all input[data-reset]').forEach(c => { c.checked = c.getAttribute('data-reset') === 'jurnal'; });
   document.getElementById('modal-reset-all').classList.add('open');
   setTimeout(() => document.getElementById('reset-confirm-input').focus(), 200);
 }
 
-// doResetAll moved to storage system above
+// doResetAll ada di 15-storage.js
 
 // SALDO AWAL
 function openModalSaldoAwal() {

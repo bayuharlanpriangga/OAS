@@ -357,42 +357,69 @@ function importBackupJSON(input) {
   reader.readAsText(file);
 }
 
-// PATCH doResetAll to also clear storage
-// doResetAll handled by storage system
+// RESET DATA (task 1.5). Yang dihapus dipilih user lewat checkbox [data-reset] di
+// #modal-reset-all: 'jurnal' + nama kind di CLOUD_RECORD_KINDS (22-cloud-records.js).
+function resetPilihSemua(on) {
+  document.querySelectorAll('#modal-reset-all input[data-reset]').forEach(c => { c.checked = !!on; });
+}
+
 async function doResetAll() {
-  const val = document.getElementById('reset-confirm-input')?.value?.trim()?.toUpperCase();
-  if(val !== 'RESET') {
-    document.getElementById('reset-confirm-input').style.borderColor = 'var(--red)';
-    setTimeout(() => { document.getElementById('reset-confirm-input').style.borderColor = 'var(--border)'; }, 1500);
+  const input = document.getElementById('reset-confirm-input');
+  const boxes = Array.from(document.querySelectorAll('#modal-reset-all input[data-reset]:checked'));
+  if (!boxes.length) { showAlert('Pilih minimal satu jenis data yang mau dihapus.'); return; }
+  if ((input?.value || '').trim().toUpperCase() !== 'RESET') {
+    if (input) { input.style.borderColor = 'var(--red)'; setTimeout(() => { input.style.borderColor = 'var(--border)'; }, 1500); }
     return;
   }
+  const label = {};
+  boxes.forEach(c => { label[c.getAttribute('data-reset')] = c.getAttribute('data-label') || c.getAttribute('data-reset'); });
+  const resetJurnal = 'jurnal' in label;
+  const kinds = Object.keys(label).filter(k => k !== 'jurnal');
   closeModal('modal-reset-all');
 
-  // Hapus dari Supabase jika ada company aktif
-  if (typeof currentCompany !== 'undefined' && currentCompany && typeof _supa !== 'undefined' && _supa) {
-    try {
-      showOpSpinner('Menghapus semua data...', 'Membersihkan cloud & lokal');
-      await DB.table('jurnal_entries').delete().eq('company_id', currentCompany.id);
-      hideOpSpinner();
-    } catch(e) {
-      hideOpSpinner();
-      console.error('Reset Supabase error:', e);
+  const gagal = []; // label data yang gagal dihapus di cloud
+  showOpSpinner('Menghapus data terpilih...', 'Membersihkan cloud & lokal');
+  try {
+    if (resetJurnal) {
+      let ok = true;
+      if (typeof currentCompany !== 'undefined' && currentCompany && typeof _supa !== 'undefined' && _supa) {
+        try {
+          // Supabase mengembalikan { error }, bukan melempar: wajib dicek, kalau tidak
+          // gagal hapus tampak sukses lalu jurnal muncul lagi setelah reload.
+          const { error } = await DB.table('jurnal_entries').delete().eq('company_id', currentCompany.id);
+          if (error) throw error;
+        } catch (e) { ok = false; console.error('Reset jurnal Supabase error:', e); }
+      }
+      if (ok) {
+        jurnalEntries = [];
+        jurnalCounter = 1;
+        // Semua jurnal sudah kosong, jadi kunci periode tidak punya arti lagi — lepas supaya
+        // pembukuan baru bisa mulai dari nol.
+        periodeKunciSampai = '';
+        if (typeof savePeriodeKunciToCloud === 'function') { try { savePeriodeKunciToCloud(); } catch (e) {} }
+      } else gagal.push(label.jurnal);
     }
-  }
+    if (kinds.length) {
+      const failedKinds = await cloudDeleteRecords(kinds);
+      failedKinds.forEach(k => gagal.push(label[k]));
+    }
+  } finally { hideOpSpinner(); }
 
-  jurnalEntries = [];
-  jurnalCounter = 1;
-  // Semua jurnal sudah kosong, jadi kunci periode tidak punya arti lagi — lepas supaya
-  // pembukuan baru bisa mulai dari nol.
-  periodeKunciSampai = '';
-  if (typeof savePeriodeKunciToCloud === 'function') { try { savePeriodeKunciToCloud(); } catch(e) {} }
-  // Also clear auto-save storage
-  try { localStorage.removeItem(getStorageKey()); localStorage.removeItem(getMetaKey()); } catch(e) {}
+  // Tulis ulang penyimpanan lokal dengan kondisi terbaru. Dulu key-nya dihapus, sehingga
+  // Chart of Accounts dan pengaturan hilang dari cache lokal kalau halaman di-reload sebelum simpan berikutnya.
+  saveToStorage(false);
+  if (typeof saveFiturBaru === 'function') { try { saveFiturBaru(); } catch (e) {} }
   hasUnsavedChanges = false;
   updateSaveIndicator('saved');
   renderDashboard();
   renderJurnalUmum();
-  showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Semua data berhasil direset');
+  ['renderInvoiceList', 'renderInvoiceKPI', 'renderKontak', 'renderKontakKPI', 'renderAsetTetap', 'renderAsetTetapKPI', 'renderProduk', 'renderJurnalBerulang']
+    .forEach(fn => { try { if (typeof window[fn] === 'function') window[fn](); } catch (e) {} });
+
+  const berhasil = Object.keys(label).map(k => label[k]).filter(l => !gagal.includes(l));
+  const ico = '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ';
+  if (!gagal.length) showAlert(ico + 'Data berhasil direset: ' + berhasil.join(', ') + '.');
+  else showAlert('⚠️ Gagal menghapus dari cloud: <b>' + gagal.join(', ') + '</b>. Data itu masih ada; cek koneksi lalu coba lagi.' + (berhasil.length ? '<br>Berhasil direset: ' + berhasil.join(', ') + '.' : ''));
 }
 
 // markDirty is called directly inside addJurnal()
