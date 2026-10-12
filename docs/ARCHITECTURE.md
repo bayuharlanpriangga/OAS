@@ -72,13 +72,10 @@ OAS/
     ├── 18-audit-permission.js # Audit trail, role & permission, join code
     ├── 19-fitur-tambahan.js # Kumpulan fitur pendukung (lihat §5.19)
     ├── 20-ai-chat.js        # Orias Assisten (integrasi Groq API)
-    ├── 99-init.js           # Micro-patch DOM setelah semua modul dimuat
-    └── db-adapter.js        # ⚠️ Duplikat lama `00-db-adapter.js`, TIDAK
-                              #   di-load oleh index.html — kandidat dihapus
+    └── 99-init.js           # Micro-patch DOM setelah semua modul dimuat
 ```
 
-**Total:** 21 file JS aktif, ~24.750 baris kode (di luar `db-adapter.js` yang
-sudah tidak terpakai).
+**Total:** 21 file JS aktif, ~24.750 baris kode.
 
 ---
 
@@ -308,28 +305,23 @@ Bagian ini mencatat kondisi nyata source code saat ini untuk jadi acuan
 pengembangan lanjutan (hasil audit sebelumnya + temuan tambahan saat
 menyusun dokumen ini):
 
-1. **`js/db-adapter.js` (tanpa prefix nomor) adalah file mati** — isinya
-   identik dengan `00-db-adapter.js` tapi tidak di-load oleh
-   `index.html`. Aman dihapus, atau jika sengaja dipertahankan sebagai
-   referensi, sebaiknya diberi catatan eksplisit di README agar tidak
-   dikira bug oleh kontributor lain.
-2. **Global scope tanpa modul = risiko tabrakan nama tetap ada** meski
+1. **Global scope tanpa modul = risiko tabrakan nama tetap ada** meski
    sudah dipecah jadi 21 file. Memecah file secara fisik tidak memberi
    isolasi namespace seperti ES Modules — audit ulang penamaan fungsi
    secara berkala (`grep -oE "^function [a-zA-Z0-9_]+" js/*.js | sort |
    uniq -d`) tetap perlu dilakukan setiap kali menambah fitur besar.
-3. **Urutan `<script defer>` di `index.html` adalah dependency yang tidak
+2. **Urutan `<script defer>` di `index.html` adalah dependency yang tidak
    dieksplisitkan di kode** — tidak ada `import` yang memaksa urutan benar.
    Kalau suatu saat migrasi ke ES Modules asli (`type="module"` +
    `import`/`export`), urutan ini otomatis jadi eksplisit dan lebih aman.
-4. **`DB.table()` masih bocor query-builder Supabase ke seluruh call
+3. **`DB.table()` masih bocor query-builder Supabase ke seluruh call
    site** (`.eq()`, `.upsert()`, `.select().single()`, dst dipanggil
    langsung dari `16-auth-company.js` & `18-audit-permission.js`). Migrasi
    provider di masa depan tetap butuh menyentuh ~20 titik pemanggilan,
    bukan hanya adapter — kalau ingin adapter benar-benar provider-agnostic,
    pertimbangkan membungkus method generik (`DB.insert(table, data)`,
    `DB.select(table, filters)`, dst) alih-alih pass-through query builder.
-5. **`company_profiles.data` sebagai JSONB "catch-all"** dipakai untuk
+4. **`company_profiles.data` sebagai JSONB "catch-all"** dipakai untuk
    menyimpan profil bisnis (`_profil`) DAN seluruh kartu stock
    (`_multi_kartu_stock`) dalam satu baris JSON. Ini praktis untuk
    iterasi cepat tanpa migrasi skema, tapi berisiko row size besar dan
@@ -337,13 +329,13 @@ menyusun dokumen ini):
    read-modify-write yang terlihat di `saveProfilToSupabase` dan
    `saveKartuStockToCloud`) — pertimbangkan tabel terpisah
    (`kartu_stock`) jika data persediaan terus tumbuh.
-6. **Permission enforcement client-side tanpa RLS granular per modul** —
+5. **Permission enforcement client-side tanpa RLS granular per modul** —
    lihat §7. Selama RLS Postgres hanya membatasi per `company_id` (bukan
    per modul/aksi), seorang `member` dengan akses network tools bisa
    secara teknis melewati batasan `permissions` JSON via panggilan
    Supabase langsung. Untuk data sensitif, ini layak ditingkatkan jadi RLS
    policy per tabel yang membaca `org_members.permissions`.
-7. **Tidak ada automated test.** Validasi saat ini murni manual +
+6. **Tidak ada automated test.** Validasi saat ini murni manual +
    `node --check` untuk syntax. Mengingat ukuran modul kalkulator pajak
    (`12-kalkulator.js`, 2.261 baris, termasuk logika PPh 21 TER yang
    kompleks), modul ini adalah kandidat prioritas tertinggi untuk unit

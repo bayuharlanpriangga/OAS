@@ -1,0 +1,1 @@
+HAPUS: js/db-adapter.js

@@ -1008,9 +1008,3 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 ## js/99-init.js (15 baris, 0.6 KB)
 
 _tidak ada deklarasi top-level_
-
-## js/db-adapter.js (85 baris, 4.5 KB)
-
-| Baris | Nama | Jenis |
-| --- | --- | --- |
-| 21-40 | `_authStorage` | arrow |
