@@ -346,6 +346,7 @@ function enforcePermissions() {
     // Sembunyikan nav card di sidebar
     const navEl = document.querySelector(`[data-page="${mod}"]`);
     if (navEl) navEl.style.display = hasPerm(mod, 'read') ? '' : 'none';
+    if (mod === 'invoice') { const nu = document.querySelector('[data-page="umur-piutang"]'); if (nu) nu.style.display = hasPerm('invoice', 'read') ? '' : 'none'; } // umur piutang mengikuti izin Invoice
     // Sembunyikan tombol Aksi Cepat di dashboard (onclick="showPage('mod')")
     document.querySelectorAll(`.quick-action-btn[onclick*="showPage('${mod}')"]`).forEach(btn => {
       btn.style.display = hasPerm(mod, 'read') ? '' : 'none';

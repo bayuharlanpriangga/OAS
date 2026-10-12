@@ -107,44 +107,44 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1792-1802 | `_applyCompanyLogo` | function |
 | 2694-2717 | `updatePwaBtn` | function |
 
-## js/04-navigasi-tema.js (704 baris, 32.4 KB)
+## js/04-navigasi-tema.js (706 baris, 32.6 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 3-6 | `toggleSidebar` | function |
 | 7-10 | `closeSidebar` | function |
 | 19-21 | `inIframe` | arrow |
-| 63-158 | `showPage` | function |
-| 160-162 | `handleAddBtn` | function |
-| 165-175 | `switchTab` | function |
-| 178-189 | `populateAkunSelect` | function |
-| 192-195 | `safeHistoryPush` | function |
-| 196-199 | `safeHistoryReplace` | function |
-| 242-251 | `initTheme` | function |
-| 253-281 | `applyTheme` | function |
-| 294-303 | `syncPwaThemeChrome` | function |
-| 305-309 | `toggleTheme` | function |
-| 311-383 | `initTutDrag` | function |
-| 385-397 | `tutMinimize` | function |
-| 399-406 | `tutRestore` | function |
-| 415-419 | `dismissAndOpenPenyesuaian` | function |
-| 421-423 | `openJurnalPenyesuaian` | function |
-| 425 | `openInlineTemplatePenyesuaian` | function |
-| 426 | `toggleTemplatePenyesuaian` | function |
-| 427 | `fillPenyesuaianInline` | function |
-| 428 | `openModalPenyesuaian` | function |
-| 433-466 | `renderArusKas` | function |
-| 468-477 | `runSequential` | function |
-| 479-487 | `exitTutorial` | function |
-| 489-496 | `clearTutHighlight` | function |
-| 498-589 | `renderTutStep` | function |
-| 591-606 | `tutNext` | function |
-| 608-610 | `tutSkipSection` | function |
-| 612-634 | `positionTutTooltip` | function |
-| 636-647 | `positionTutTooltipCenter` | function |
-| 649-651 | `showTutComplete` | function |
-| 654 | `startTutorial` | function |
-| 673-698 | `openOptPicker` | function |
+| 64-160 | `showPage` | function |
+| 162-164 | `handleAddBtn` | function |
+| 167-177 | `switchTab` | function |
+| 180-191 | `populateAkunSelect` | function |
+| 194-197 | `safeHistoryPush` | function |
+| 198-201 | `safeHistoryReplace` | function |
+| 244-253 | `initTheme` | function |
+| 255-283 | `applyTheme` | function |
+| 296-305 | `syncPwaThemeChrome` | function |
+| 307-311 | `toggleTheme` | function |
+| 313-385 | `initTutDrag` | function |
+| 387-399 | `tutMinimize` | function |
+| 401-408 | `tutRestore` | function |
+| 417-421 | `dismissAndOpenPenyesuaian` | function |
+| 423-425 | `openJurnalPenyesuaian` | function |
+| 427 | `openInlineTemplatePenyesuaian` | function |
+| 428 | `toggleTemplatePenyesuaian` | function |
+| 429 | `fillPenyesuaianInline` | function |
+| 430 | `openModalPenyesuaian` | function |
+| 435-468 | `renderArusKas` | function |
+| 470-479 | `runSequential` | function |
+| 481-489 | `exitTutorial` | function |
+| 491-498 | `clearTutHighlight` | function |
+| 500-591 | `renderTutStep` | function |
+| 593-608 | `tutNext` | function |
+| 610-612 | `tutSkipSection` | function |
+| 614-636 | `positionTutTooltip` | function |
+| 638-649 | `positionTutTooltipCenter` | function |
+| 651-653 | `showTutComplete` | function |
+| 656 | `startTutorial` | function |
+| 675-700 | `openOptPicker` | function |
 
 ## js/05-akun.js (522 baris, 29.9 KB)
 
@@ -746,7 +746,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 446-450 | `closeMataUangPicker` | function |
 | 479-489 | `openPhotoViewer` | function |
 
-## js/18-audit-permission.js (1238 baris, 65.8 KB)
+## js/18-audit-permission.js (1239 baris, 64.8 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -771,30 +771,30 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 275-314 | `loadOrgMembers` | async function |
 | 316-319 | `isAdmin` | function |
 | 321-332 | `hasPerm` | function |
-| 334-368 | `enforcePermissions` | function |
-| 372-387 | `getOrCreateJoinCode` | async function |
-| 389-404 | `showJoinCodeModal` | async function |
-| 406-412 | `regenerateJoinCode` | async function |
-| 414-421 | `copyJoinLink` | function |
-| 424-441 | `checkJoinCodeInURL` | async function |
-| 444-489 | `_processJoinCode` | async function |
-| 492-496 | `openUserMgmtModal` | function |
-| 498-556 | `renderUserMgmtList` | async function |
-| 558-564 | `removeMember` | async function |
-| 568-593 | `openInviteModal` | function |
-| 595-617 | `kirimInvite` | async function |
-| 620-646 | `openEditMember` | async function |
-| 648-664 | `simpanEditMember` | async function |
-| 669-709 | `renderPermTable` | function |
-| 712-714 | `toggleRowAll` | function |
-| 717-722 | `syncRowAll` | function |
-| 725-735 | `readPermTableValues` | function |
-| 789-802 | `openJoinWithCodeModal` | function |
-| 804-831 | `prosesJoinCode` | async function |
-| 844-929 | `getKsSaldo` | function |
-| 1128-1146 | `auditOpenKatPicker` | function |
-| 1149-1164 | `auditOpenAktPicker` | function |
-| 1167-1201 | `auditOpenBizPicker` | function |
+| 334-369 | `enforcePermissions` | function |
+| 373-388 | `getOrCreateJoinCode` | async function |
+| 390-405 | `showJoinCodeModal` | async function |
+| 407-413 | `regenerateJoinCode` | async function |
+| 415-422 | `copyJoinLink` | function |
+| 425-442 | `checkJoinCodeInURL` | async function |
+| 445-490 | `_processJoinCode` | async function |
+| 493-497 | `openUserMgmtModal` | function |
+| 499-557 | `renderUserMgmtList` | async function |
+| 559-565 | `removeMember` | async function |
+| 569-594 | `openInviteModal` | function |
+| 596-618 | `kirimInvite` | async function |
+| 621-647 | `openEditMember` | async function |
+| 649-665 | `simpanEditMember` | async function |
+| 670-710 | `renderPermTable` | function |
+| 713-715 | `toggleRowAll` | function |
+| 718-723 | `syncRowAll` | function |
+| 726-736 | `readPermTableValues` | function |
+| 790-803 | `openJoinWithCodeModal` | function |
+| 805-832 | `prosesJoinCode` | async function |
+| 845-930 | `getKsSaldo` | function |
+| 1129-1147 | `auditOpenKatPicker` | function |
+| 1150-1165 | `auditOpenAktPicker` | function |
+| 1168-1202 | `auditOpenBizPicker` | function |
 
 ## js/19-fitur-tambahan.js (1848 baris, 99.7 KB)
 
@@ -1027,6 +1027,31 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 153-156 | `nomorInvoiceBerikut` | function |
 | 160-170 | `catatNomorInvoice` | function |
 | 173-221 | `periksaDanSelesaikanBentrokInvoice` | async function |
+
+## js/24-aging.js (74 baris, 3.6 KB)
+
+| Baris | Nama | Jenis |
+| --- | --- | --- |
+| 20-28 | `_agingHari` | function |
+| 31-37 | `bucketAging` | function |
+| 39 | `_agingKosong` | function |
+| 48-73 | `hitungAging` | function |
+
+## js/25-aging-ui.js (157 baris, 10.6 KB)
+
+| Baris | Nama | Jenis |
+| --- | --- | --- |
+| 12-16 | `agingHariIni` | function |
+| 27-64 | `agingPiutangHtml` | function |
+| 66-72 | `toggleAgingDetail` | function |
+| 75-81 | `_agingHasilSaatIni` | function |
+| 83-87 | `renderAgingPiutang` | function |
+| 92-96 | `_agingSel` | function |
+| 99-110 | `agingCsv` | function |
+| 112 | `_agingTgl` | function |
+| 115-134 | `agingCetakHtml` | function |
+| 136-145 | `exportAgingPiutangCSV` | function |
+| 147-156 | `cetakAgingPiutang` | function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 

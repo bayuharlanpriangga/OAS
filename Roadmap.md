@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 135 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 8/135 task selesai.**
+**Progres: 12/135 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -67,7 +67,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | Fase | Nama | Selesai |
 | --- | --- | --- |
 | 1 | Fondasi data | 8/8 |
-| 2 | Umur piutang | 0/4 |
+| 2 | Umur piutang | 4/4 |
 | 3 | Akses anggota tim | 0/5 |
 | 4 | Tagihan pembelian (bill) | 0/7 |
 | 5 | Pembayaran | 0/7 |
@@ -123,10 +123,10 @@ Kemenangan cepat. Selesai fase ini = Rilis A.
 
 | ✓ | ID | Tugas | Lampirkan |
 | :---: | --- | --- | --- |
-| ☐ | 2.1 | Fungsi murni hitungAging(daftar, tanggalAcuan) dengan bucket 0-30, 31-60, 61-90, >90 hari + tes | INV (bentuk objek invoice) |
-| ☐ | 2.2 | Halaman 'Umur Piutang' kosong + item navigasi | IDX |
-| ☐ | 2.3 | Isi tabel umur piutang per kontak memakai 2.1 | 2.1, potongan render tabel invoice |
-| ☐ | 2.4 | Ekspor umur piutang ke CSV dan cetak | 2.3 |
+| ☑ | 2.1 | Fungsi murni hitungAging(daftar, tanggalAcuan) dengan bucket 0-30, 31-60, 61-90, >90 hari + tes | INV (bentuk objek invoice) |
+| ☑ | 2.2 | Halaman 'Umur Piutang' kosong + item navigasi | IDX |
+| ☑ | 2.3 | Isi tabel umur piutang per kontak memakai 2.1 | 2.1, potongan render tabel invoice |
+| ☑ | 2.4 | Ekspor umur piutang ke CSV dan cetak | 2.3 |
 
 ## Fase 3 — Akses anggota tim (5 task)
 

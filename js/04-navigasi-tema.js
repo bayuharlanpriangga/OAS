@@ -46,6 +46,7 @@ const pageTitles = {
   // Fitur Baru
   'jurnal-berulang':['Jurnal Berulang','Otomasi transaksi rutin · Gaji · Sewa · Cicilan'],
   'invoice':['Invoice & Piutang','Buat invoice · Lacak pembayaran · Jurnal otomatis'],
+  'umur-piutang':['Umur Piutang','Piutang belum lunas per pelanggan · Bucket 0-30, 31-60, 61-90, >90 hari'],
   'rekonsiliasi':['Rekonsiliasi Bank','Cocokkan mutasi bank dengan jurnal · Upload CSV'],
   'kurs':['Multi Mata Uang','Kurs otomatis · Konversi transaksi · History kurs'],
   'notifikasi':['Notifikasi & Alert','Peringatan otomatis · Batas anggaran · Jatuh tempo'],
@@ -63,7 +64,7 @@ const pageTitles = {
 function showPage(id) {
   // Cek permission sebelum buka halaman (kecuali dashboard & settings — settings itu personal, bukan data bisnis)
   if (id !== 'dashboard' && id !== 'settings' && !isAdmin() && typeof hasPerm === 'function') {
-    if (!hasPerm(id, 'read')) {
+    if (!hasPerm(id === 'umur-piutang' ? 'invoice' : id, 'read')) { // umur piutang mengikuti izin Invoice
       showAlert('⛔ Akses ditolak.\n\nKamu tidak punya izin untuk membuka modul ini.\nHubungi admin untuk mengatur ulang hak akses.');
       return;
     }
@@ -150,6 +151,7 @@ function showPage(id) {
   // Fitur Baru
   if(id==='jurnal-berulang') setTimeout(()=>{ renderJurnalBerulang(); upgradeFormPickers(); }, 80);
   if(id==='invoice') setTimeout(()=>{ renderInvoiceList(); renderInvoiceKPI(); upgradeFormPickers(); }, 80);
+  if(id==='umur-piutang') renderAgingPiutang();
   if(id==='rekonsiliasi') setTimeout(upgradeFormPickers, 80);
   if(id==='kurs') setTimeout(()=>{ renderKursPage(); upgradeFormPickers(); }, 80);
   if(id==='notifikasi') setTimeout(()=>{ renderNotifikasiPage(); upgradeFormPickers(); }, 80);
