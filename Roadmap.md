@@ -1,12 +1,12 @@
 # Roadmap OAS menuju setara Accurate
 
-Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 135 task kecil (semua ukuran S) · dirancang untuk Claude free tier
+Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 136 task kecil (semua ukuran S) · dirancang untuk Claude free tier
 
 ## 1. Cara pakai dokumen ini
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 12/135 task selesai.**
+**Progres: 15/136 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -68,7 +68,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | --- | --- | --- |
 | 1 | Fondasi data | 8/8 |
 | 2 | Umur piutang | 4/4 |
-| 3 | Akses anggota tim | 0/5 |
+| 3 | Akses anggota tim | 2/6 |
 | 4 | Tagihan pembelian (bill) | 0/7 |
 | 5 | Pembayaran | 0/7 |
 | 6 | Kartu piutang/hutang dan model dokumen | 0/3 |
@@ -128,14 +128,15 @@ Kemenangan cepat. Selesai fase ini = Rilis A.
 | ☑ | 2.3 | Isi tabel umur piutang per kontak memakai 2.1 | 2.1, potongan render tabel invoice |
 | ☑ | 2.4 | Ekspor umur piutang ke CSV dan cetak | 2.3 |
 
-## Fase 3 — Akses anggota tim (5 task)
+## Fase 3 — Akses anggota tim (6 task)
 
 Independen: boleh dikerjakan kapan saja setelah Fase 1.
 
 | ✓ | ID | Tugas | Lampirkan |
 | :---: | --- | --- | --- |
-| ☐ | 3.1 | Desain akses anggota tim: baca RLS dan alur gabung bisnis, hasilkan keputusan desain 1 halaman (tanpa kode) | SCH bagian RLS, potongan daftar bisnis di 16 |
-| ☐ | 3.2 | SQL policy `company_records` untuk anggota sesuai peran dari 3.1 | SQL 001, hasil 3.1 |
+| ☑ | 3.1 | Desain akses anggota tim: baca RLS dan alur gabung bisnis, hasilkan keputusan desain 1 halaman (tanpa kode) | SCH bagian RLS, potongan daftar bisnis di 16 |
+| ☑ | 3.2a | SQL: fungsi bantu peran + policy `companies`, `org_members`, `company_join_codes` + fungsi `gabung`, `klaim_undangan`, `buat_kode_gabung` (`docs/migrations/002_akses_tim_inti.sql`, tes `002_akses_tim_inti.test.sql`). Lulus tes T1-T6 di Supabase pada 13 Oktober 2026; dua policy lama `companies` ("Anyone can read company with active join code", "Members can read joined companies") di-drop manual | 3.1 |
+| ☑ | 3.2b | SQL policy `company_records`, `jurnal_entries`, `akuns`, `company_profiles` sesuai matriks D2 pada 3.1 | 3.2a, SQL 001, hasil 3.1 |
 | ☐ | 3.3 | Client: tampilkan bisnis tempat user menjadi anggota di daftar bisnis | potongan selectCompany + daftar bisnis di 16 |
 | ☐ | 3.4 | Client: muat `company_records` bisnis anggota ke state | CR, 3.3 |
 | ☐ | 3.5 | Peran viewer = hanya baca: blok tulis di cloudSyncRecords dan tombol simpan | CR, potongan izin peran |
@@ -385,6 +386,6 @@ Selesai fase 21-25 = Rilis E.
 ## Keputusan yang masih terbuka
 
 1. ~~**Cakupan Reset Semua Data**~~ — diputuskan: custom. Modal Reset Data punya checklist jenis data; yang dicentang saja yang dihapus (task 1.5 selesai).
-2. **Akses anggota tim** (3.1): anggota boleh baca/tulis apa saja per peran? Sekarang RLS hanya untuk pemilik.
+2. **Akses anggota tim** (3.1): desain selesai di `docs/DESAIN_AKSES_TIM.md` (peran owner/admin/member/viewer, penegakan per tingkat peran, masuk lewat fungsi server). 3.2 dipecah jadi 3.2a/3.2b dan peran awal join code = viewer (dikerjakan di 3.2a; ubah bila tidak setuju). Setelah 3.2a dijalankan, client `_processJoinCode`, `getOrCreateJoinCode`, dan `loadOrgMembers` harus pindah ke rpc (`gabung`, `buat_kode_gabung`, `klaim_undangan`) — catatan ada di akhir file SQL; usul dijadikan task kecil sebelum 3.3.
 3. **Target pengguna**: dagang, jasa, atau keduanya. Ini menentukan apakah Fase 14-20 (gudang, batch, dst.) dan POS (Fase 25) perlu dikerjakan.
 4. **Aturan pajak dan payroll** harus dicek ulang dari sumber resmi saat 11.1 dan 18.2 dikerjakan; jangan memakai angka dari ingatan model.

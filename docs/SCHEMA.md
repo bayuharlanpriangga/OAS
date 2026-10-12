@@ -209,6 +209,9 @@ PK `(company_id, kind, rec_id)`. RLS: pemilik company, sama dengan tabel lain.
 
 ### 2.3 Row Level Security — model keamanan
 
+> **Pembaruan 12 Okt 2026 (task 3.2a):** `docs/migrations/002_akses_tim_inti.sql` menggantikan policy `companies`, `org_members`, dan `company_join_codes` di atas: anggota `active` dapat membaca bisnisnya; `org_members` hanya bisa diubah owner/admin (insert diri sendiri ditolak); `SELECT USING (true)` pada `company_join_codes` dihapus; masuk hanya lewat fungsi `gabung(kode)` (peran awal `viewer`), `klaim_undangan()`, dan `buat_kode_gabung(cid)`. Peran valid: `admin | member | viewer` (owner = `companies.user_id`). Fungsi bantu: `peran_saya(cid)`, `pemilik_bisnis(cid)`. Policy `jurnal_entries`, `akuns`, `company_profiles`, `company_records` diperbarui di `docs/migrations/003_akses_tim_data.sql` (task 3.2b): viewer=SELECT, member=SELECT/INSERT/UPDATE/DELETE (akuns & company_profiles tanpa DELETE), admin=semua, owner=semua. Blok DDL di atas adalah kondisi awal, bukan kondisi terkini.
+
+
 Semua tabel (kecuali `SELECT` di `company_join_codes`) dibatasi lewat
 `company_id IN (SELECT id FROM companies WHERE user_id = auth.uid())`.
 Artinya: **isolasi data ditegakkan berdasarkan siapa pemilik company**
