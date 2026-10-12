@@ -1055,8 +1055,7 @@ body.light-mode .oas-cal-day.selected { color: #fff; }
   margin-top: -1px;     /* menimpa garis bawah chip supaya keduanya tampak menyatu */
   z-index: 500;
   background: var(--surface);
-  border: 1px solid var(--accent);
-  border-top-color: var(--border);
+  border: 1px solid var(--border);
   border-radius: 0 0 10px 10px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.35);
   padding: 6px;
@@ -1067,7 +1066,7 @@ body.light-mode .oas-cal-day.selected { color: #fff; }
 .acc-switch-wrap.open #user-company-chip {
   border-bottom-left-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
-  border-color: var(--accent);
+  border-color: var(--border);
   background: var(--surface);
 }
 .acc-switch-wrap #user-company-chip .ti-chevron-down { transition: transform 0.15s ease; }

@@ -906,6 +906,8 @@ function showCompanyPickerScreen(companies) {
 
   // Reset form
   document.getElementById('cp-add-form').style.display = 'none';
+  const _addBtn = document.getElementById('cp-add-btn');
+  if (_addBtn) _addBtn.style.display = '';
   document.getElementById('cp-new-name').value = '';
 
   // Update chip sementara HANYA jika belum ada bisnis aktif

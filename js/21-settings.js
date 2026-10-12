@@ -448,6 +448,7 @@ async function accsLoadProviders() {
     container.innerHTML = html;
     const pwSection = document.getElementById('accs-current-pw-section');
     if (pwSection) pwSection.style.display = 'none';
+    accsUpdatePasswordButtonLabel(false);
     return;
   }
 
@@ -516,10 +517,8 @@ async function accsLoadProviders() {
       </div>`;
     }
 
-    html += `<div style="text-align:center;font-size:11px;color:var(--muted);margin-top:12px;padding:8px;background:var(--surface2);border-radius:8px;font-family:var(--mono);">
-      ${identities.length} metode login aktif · Semua mengarah ke 1 akun yang sama
-    </div>`;
     container.innerHTML = html;
+    accsUpdatePasswordButtonLabel(hasEmail);
 
     // Tampilkan/sembunyikan blok "Password Saat Ini" tergantung status email+password
     const pwSection = document.getElementById('accs-current-pw-section');
@@ -607,6 +606,16 @@ function accsHasEmailLogin() {
     !!window._accsHasEmailPw;
 }
 
+// Label tombol & judul modal: "Tambahkan Password" selama metode login email & password
+// belum ada, berubah jadi "Ubah Password" begitu sudah terdeteksi.
+function accsUpdatePasswordButtonLabel(hasEmailPw) {
+  const text = hasEmailPw ? 'Ubah Password' : 'Tambahkan Password';
+  const lbl = document.getElementById('accs-pw-action-label');
+  if (lbl) lbl.textContent = text;
+  const ttl = document.getElementById('accs-pw-modal-title');
+  if (ttl) ttl.textContent = text;
+}
+
 function openAccsPasswordModal() {
   // Mode Tamu (belum login) tidak punya akun/password sama sekali — jangan buka modal.
   if (!currentUser) { showAlert('❌ Belum memiliki password.'); return; }
@@ -625,6 +634,7 @@ function openAccsPasswordModal() {
   const hasEmailPw = accsHasEmailLogin();
   const fieldOld = document.getElementById('accs-field-pw-old');
   if (fieldOld) fieldOld.style.display = hasEmailPw ? 'block' : 'none';
+  accsUpdatePasswordButtonLabel(hasEmailPw);
 
   document.getElementById('modal-ubah-password').classList.add('open');
 }

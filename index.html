@@ -3887,10 +3887,10 @@
           <button class="auth-btn-primary" onclick="createCompany()" style="flex:1;" id="btn-create-co">
             <span id="btn-create-co-text">Buat Bisnis</span>
           </button>
-          <button onclick="document.getElementById('cp-add-form').style.display='none'" class="auth-btn-sm-ghost" style="flex:0;padding:0 16px;">Batal</button>
+          <button onclick="document.getElementById('cp-add-form').style.display='none';document.getElementById('cp-add-btn').style.display='';" class="auth-btn-sm-ghost" style="flex:0;padding:0 16px;">Batal</button>
         </div>
       </div>
-      <button onclick="document.getElementById('cp-add-form').style.display='block';document.getElementById('cp-new-name').focus();" class="cp-add-btn" id="cp-add-btn">
+      <button onclick="document.getElementById('cp-add-form').style.display='block';this.style.display='none';document.getElementById('cp-new-name').focus();" class="cp-add-btn" id="cp-add-btn">
         + Tambah Bisnis Baru
       </button>
     </div>
@@ -4381,9 +4381,9 @@
         </div>
       </div>
 
-      <div class="settings-list">
+      <div class="settings-list" id="accs-pw-action-list">
         <div class="settings-list-item" onclick="openAccsPasswordModal()">
-          <div class="sli-body"><div class="sli-label">Ubah Password</div></div>
+          <div class="sli-body"><div class="sli-label" id="accs-pw-action-label">Tambahkan Password</div></div>
           <span class="sli-chevron"><i class="ti ti-chevron-right"></i></span>
         </div>
       </div>
@@ -4449,7 +4449,7 @@
 <div class="modal-backdrop" id="modal-ubah-password">
   <div class="modal" style="max-width:420px;">
     <div class="modal-head">
-      <div class="modal-title"><i class="ti ti-lock ti-inline"></i> Ubah Password</div>
+      <div class="modal-title"><i class="ti ti-lock ti-inline"></i> <span id="accs-pw-modal-title">Tambahkan Password</span></div>
       <button class="modal-close" onclick="closeModal('modal-ubah-password')">✕</button>
     </div>
     <div class="modal-body">
