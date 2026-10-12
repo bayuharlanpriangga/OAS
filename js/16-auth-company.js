@@ -1319,17 +1319,30 @@ function updateUserChip() {
 // SUPABASE DATA LAYER — menggantikan localStorage
 
 // LOAD DATA
+// Pemuatan data bisnis gagal di tengah jalan (mis. koneksi putus). Tidak ada yang ditulis ke
+// cloud; data invoice/kontak/dll dibaca dari cache perangkat dan sync ke cloud tetap terkunci
+// (_cloudReadyFor = null) sampai halaman dimuat ulang dengan koneksi.
+function _loadCloudGagal(err, companyId) {
+  console.warn('[loadDataFromSupabase] gagal, data cloud tidak dimuat:', err);
+  if (typeof _cloudLoadFromCache === 'function' && currentCompany && currentCompany.id === companyId) _cloudLoadFromCache(companyId);
+  hideOpSpinner();
+  showAlert('⚠️ Gagal memuat data bisnis dari cloud (koneksi bermasalah). Muat ulang halaman saat koneksi sudah ada. Tidak ada data yang diubah.');
+}
+
 async function loadDataFromSupabase() {
   if (!currentCompany) return;
   showOpSpinner('Memuat data bisnis...', 'Mengambil dari cloud');
   const companyId = currentCompany.id;
 
   // Load jurnal entries
-  const { data: jurnalData } = await _supa
+  const { data: jurnalData, error: jurnalErr } = await _supa
     .from('jurnal_entries')
     .select('*')
     .eq('company_id', companyId)
     .order('created_at');
+  // Koneksi putus/gagal: jangan lanjut. Dulu error diabaikan, jurnal dianggap kosong dan
+  // akun di bawah bisa "di-seed" ulang ke default, menimpa COA yang sudah diubah user.
+  if (jurnalErr) return _loadCloudGagal(jurnalErr, companyId);
 
   if (jurnalData && jurnalData.length > 0) {
     jurnalEntries = jurnalData.map(r => ({
@@ -1351,11 +1364,12 @@ async function loadDataFromSupabase() {
   }
 
   // Load akuns
-  const { data: akunData } = await _supa
+  const { data: akunData, error: akunErr } = await _supa
     .from('akuns')
     .select('*')
     .eq('company_id', companyId)
     .order('kode');
+  if (akunErr) return _loadCloudGagal(akunErr, companyId);
 
   if (akunData && akunData.length > 0) {
     // `kat` (sub-kategori: Lancar/Tetap/Kontra/dst) dipakai laporan arus kas, neraca,

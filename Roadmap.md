@@ -113,7 +113,9 @@ Dikerjakan paling awal. 1.1 dan 1.7-1.8 dipakai fase lain.
 - Dialog "Unggah Data Lokal ke Cloud?" muncul di browser kedua untuk data yang sebenarnya sudah ada di cloud. Sekarang hanya data yang baru/berbeda dari cloud yang ditawarkan.
 - Dropdown pindah akun mati begitu akun kedua ditambahkan: `escJsAttr` dipanggil di `21-settings.js` (switcher) dan `05-akun.js` (tombol Restore akun terhapus) tetapi tidak pernah didefinisikan. Diganti `escapeForJsAttr`; tes `tests/akun-switcher.test.js` ikut memeriksa semua helper `esc*` terdefinisi.
 - Dropdown akun muncul di bawah field Bisnis (bukan menempel di bawah chip akun): chip + panel dibungkus `#acc-switch-wrap`, panel `top:100%` dan chip ikut "terbuka". Tombol Diagnosa Supabase dihapus dari layar bisnis kosong (akun baru bukan error); dialog diagnosa diperbaiki (baris baru, URL tidak meluber, email di-escape).
-- Langkah 1.2 yang belum diuji: 8c (reload saat offline), 9 (reset data), 10 (penomoran lintas browser).
+- 8c (reload saat offline), hasil tinjauan kode: data AMAN (cache `oas_rec_*` dan hash snapshot tidak disentuh), tetapi `afterLogin` gagal memuat daftar bisnis lalu masuk Mode Tamu, jadi bisnis tidak terbuka selama offline. Invoice yang dibuat di Mode Tamu itu masuk key lama `oas_invoices` dan tidak ditawarkan ke cloud nanti. Celah ini belum ditutup (perlu "ingat bisnis terakhir" agar bisa dibuka dari cache). Diperbaiki: `loadDataFromSupabase` mengabaikan error query jurnal/akun, sehingga koneksi putus di tengah pemuatan bisa menulis ulang COA default ke cloud; sekarang berhenti dan membaca cache. Belum diuji di browser.
+- Tombol Reset Data dipindah dari bagian "Lanjutan" (tertutup, di dasar modal) ke pojok kanan status bar Kelola Data Tersimpan, dan disembunyikan untuk non-admin (selector izin lama tidak pernah cocok).
+- Langkah 1.2 yang belum diuji: 9 (reset data), 10 (penomoran lintas browser).
 
 ## Fase 2 — Umur piutang (4 task)
 

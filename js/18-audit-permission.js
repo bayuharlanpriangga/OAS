@@ -308,8 +308,10 @@ function enforcePermissions() {
     });
   });
   // Sembunyikan tombol reset
-  const resetBtn = document.querySelector('[onclick*="resetData"]');
-  if (resetBtn && !hasPerm('reset', 'delete')) resetBtn.style.display = 'none';
+  // (selector lama hanya mencari "resetData" yang tidak ada; tombol sebenarnya memanggil confirmResetAll)
+  if (!hasPerm('reset', 'delete')) {
+    document.querySelectorAll('[onclick*="resetData"], [onclick*="confirmResetAll"]').forEach(b => { b.style.display = 'none'; });
+  }
   // Sembunyikan tombol create/edit/delete di halaman jika tidak punya akses
   const currentMod = typeof currentPage !== 'undefined' ? currentPage : null;
   if (currentMod) {
