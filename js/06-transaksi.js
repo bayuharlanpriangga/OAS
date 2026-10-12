@@ -38,7 +38,7 @@ function selectSimplePicker(kode, nama) {
       btn.classList.add('has-value');
       // Buku besar picker has different inner HTML (opt-picker style)
       if(_simplePickerHiddenId === 'bb-akun-filter-val') {
-        btn.innerHTML = `<span class="picker-kode-badge" style="font-family:var(--mono);font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;margin-right:6px;">${escapeHtml(kode)}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(nama)}</span><span class="opt-picker-arrow">▾</span>`;
+        btn.innerHTML = `<span class="picker-kode-badge" style="font-family:var(--mono);font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;margin-right:6px;">${escapeHtml(kode)}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(nama)}</span>`;
       } else {
         btn.classList.add('has-value');
         btn.innerHTML = `<span class="picker-kode-badge">${escapeHtml(kode)}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(nama)}</span>`;

@@ -303,7 +303,7 @@ function openModalLunasInvoice(id) {
   if(kasDefault) {
     const h=document.getElementById('inv-lunas-akun'); if(h) h.value=kasDefault.kode;
     const btn=document.getElementById('inv-lunas-akun-btn');
-    if(btn){btn.innerHTML=`<span class="picker-kode-badge">${escapeHtml(kasDefault.kode)}</span> ${escapeHtml(kasDefault.nama)} <span style="margin-left:auto;color:var(--muted);font-size:10px;">▾</span>`;btn.classList.add('has-value');}
+    if(btn){btn.innerHTML=`<span class="picker-kode-badge">${escapeHtml(kasDefault.kode)}</span> ${escapeHtml(kasDefault.nama)}`;btn.classList.add('has-value');}
   }
   openModal('modal-inv-lunas');
   setTimeout(upgradeFormPickers, 80);

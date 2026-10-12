@@ -17,7 +17,7 @@ function openModalJurnalBerulang(editId) {
         const hidden = document.getElementById(id); if(hidden) hidden.value = kode;
         const akun = akuns.find(a=>a.kode===kode);
         const btn = document.getElementById(id+'-btn');
-        if(btn && akun) { btn.innerHTML = `<span class="picker-kode-badge">${escapeHtml(akun.kode)}</span> ${escapeHtml(akun.nama)} <span style="margin-left:auto;color:var(--muted);font-size:10px;">▾</span>`; btn.classList.add('has-value'); }
+        if(btn && akun) { btn.innerHTML = `<span class="picker-kode-badge">${escapeHtml(akun.kode)}</span> ${escapeHtml(akun.nama)}`; btn.classList.add('has-value'); }
       };
       setAkunBtn('jb-akun-debit', item.akunDebit);
       setAkunBtn('jb-akun-kredit', item.akunKredit);
@@ -210,7 +210,7 @@ function openModalInvoice(editId) {
     const h=document.getElementById(hiddenId); if(h) h.value=kode;
     const akun=akuns.find(a=>a.kode===kode);
     const btn=document.getElementById(btnId);
-    if(btn&&akun){btn.innerHTML=`<span class="picker-kode-badge">${escapeHtml(akun.kode)}</span> ${escapeHtml(akun.nama)} <span style="margin-left:auto;color:var(--muted);font-size:10px;">▾</span>`;btn.classList.add('has-value');}
+    if(btn&&akun){btn.innerHTML=`<span class="picker-kode-badge">${escapeHtml(akun.kode)}</span> ${escapeHtml(akun.nama)}`;btn.classList.add('has-value');}
   };
   const piutangDefault = akuns.find(a=>a.tipe==='Aset'&&a.nama.toLowerCase().includes('piutang'));
   const pendDefault = akuns.find(a=>a.tipe==='Pendapatan');

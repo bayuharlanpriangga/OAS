@@ -1709,7 +1709,7 @@ function doGlobalSearch(q) {
         items.push({
           icon: ic('list'), title: `${a.kode} — ${a.nama}`, sub: `${a.tipe} · ${a.kat}`,
           type: 'akun',
-          action: () => { showPage('buku-besar'); closeGlobalSearch(); setTimeout(() => { const h=document.getElementById('bb-akun-filter-val'); const b=document.getElementById('bb-akun-filter-btn'); if(h){h.value=a.kode; if(b){b.innerHTML=`<span class="picker-kode-badge" style="font-family:var(--mono);font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;margin-right:6px;">${escapeHtml(a.kode)}</span><span style="flex:1;">${escapeHtml(a.nama)}</span><span class="opt-picker-arrow">▾</span>`;} renderBukuBesar();} }, 100); }
+          action: () => { showPage('buku-besar'); closeGlobalSearch(); setTimeout(() => { const h=document.getElementById('bb-akun-filter-val'); const b=document.getElementById('bb-akun-filter-btn'); if(h){h.value=a.kode; if(b){b.innerHTML=`<span class="picker-kode-badge" style="font-family:var(--mono);font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;margin-right:6px;">${escapeHtml(a.kode)}</span><span style="flex:1;">${escapeHtml(a.nama)}</span>`;} renderBukuBesar();} }, 100); }
         });
       });
   }
