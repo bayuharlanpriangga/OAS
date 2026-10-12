@@ -68,6 +68,78 @@ function counterSetelahPakai(counterList, nomor) {
   return hasil;
 }
 
+// Memeriksa dan menyelesaikan bentrok nomor invoice kembar (misal akibat transaksi
+// offline bersamaan di HP & laptop). Murni: tidak mengubah input asli.
+// Mengembalikan { invoices, bentrok, counterList }
+function selesaikanBentrokNomorInvoice(invoices, counters) {
+  if (!Array.isArray(invoices) || invoices.length <= 1) {
+    return { invoices: Array.isArray(invoices) ? invoices : [], bentrok: [], counterList: Array.isArray(counters) ? counters : [] };
+  }
+  // Kelompokkan invoice berdasarkan nomor (hanya nomor valid yang punya format)
+  const byNo = new Map();
+  invoices.forEach(inv => {
+    const no = (inv && inv.noInvoice && String(inv.noInvoice).trim().toUpperCase()) || '';
+    if (!no) return;
+    if (!byNo.has(no)) byNo.set(no, []);
+    byNo.get(no).push(inv);
+  });
+
+  let adaBentrok = false;
+  byNo.forEach(list => { if (list.length > 1) adaBentrok = true; });
+  if (!adaBentrok) {
+    return { invoices, bentrok: [], counterList: Array.isArray(counters) ? counters : [] };
+  }
+
+  let curCounters = Array.isArray(counters) ? counters.slice() : [];
+  const hasilInvoices = invoices.map(inv => ({ ...inv }));
+
+  const semuaNomor = new Set(
+    hasilInvoices.map(i => i && i.noInvoice && String(i.noInvoice).trim().toUpperCase()).filter(Boolean)
+  );
+
+  const daftarBentrok = [];
+
+  byNo.forEach((list, no) => {
+    if (list.length <= 1) return;
+    const p = parseNomor(no);
+    if (!p) return; // format bebas tidak disentuh otomatis
+
+    // Dokumen diurutkan: yang dibuat lebih awal (createdAt) atau id terkecil tetap memakai nomor aslinya.
+    const sorted = list.slice().sort((a, b) => {
+      const ta = (a && a.createdAt) || '', tb = (b && b.createdAt) || '';
+      if (ta !== tb) return ta < tb ? -1 : 1;
+      const ida = (a && a.id) || '', idb = (b && b.id) || '';
+      return ida < idb ? -1 : 1;
+    });
+
+    for (let k = 1; k < sorted.length; k++) {
+      const targetInv = sorted[k];
+      const targetId = targetInv.id;
+      const targetIdx = hasilInvoices.findIndex(i => i.id === targetId);
+      if (targetIdx < 0) continue;
+
+      const noBaru = nomorBerikut(p.jenis, p.tahun, Array.from(semuaNomor), curCounters);
+      semuaNomor.add(noBaru);
+      curCounters = counterSetelahPakai(curCounters, noBaru);
+
+      daftarBentrok.push({
+        id: targetId,
+        noLama: targetInv.noInvoice,
+        noBaru,
+        pelanggan: targetInv.pelanggan || '-'
+      });
+
+      hasilInvoices[targetIdx].noInvoice = noBaru;
+    }
+  });
+
+  return {
+    invoices: hasilInvoices,
+    bentrok: daftarBentrok,
+    counterList: curCounters
+  };
+}
+
 // ── 2. Pemasangan ke state aplikasi ────────────────────────
 
 // State counter. Bisnis login: dimuat/disimpan lewat cloud-records (kind `counter`).
@@ -95,4 +167,55 @@ function catatNomorInvoice(nomor) {
     try { localStorage.setItem('oas_counter', JSON.stringify(counterList)); } catch (e) {}
   }
   return true;
+}
+
+// Periksa dan atasi bentrok invoice di state aplikasi, lalu perbarui jurnal & cloud.
+async function periksaDanSelesaikanBentrokInvoice() {
+  if (typeof invoiceList === 'undefined' || !Array.isArray(invoiceList) || invoiceList.length <= 1) return [];
+  const res = selesaikanBentrokNomorInvoice(invoiceList, counterList);
+  if (!res.bentrok || !res.bentrok.length) return [];
+
+  invoiceList = res.invoices;
+  counterList = res.counterList;
+
+  // Sesuaikan nomor invoice pada jurnal terkait (jika ada)
+  let jurnalBerubah = false;
+  if (typeof jurnalEntries !== 'undefined' && Array.isArray(jurnalEntries)) {
+    res.bentrok.forEach(b => {
+      jurnalEntries.forEach(j => {
+        if (!j) return;
+        const ketStr = j.ket || j.keterangan || '';
+        const matchPel = !b.pelanggan || b.pelanggan === '-' || ketStr.includes(b.pelanggan);
+        if (matchPel && ketStr.includes(b.noLama)) {
+          if (j.ket) j.ket = j.ket.split(b.noLama).join(b.noBaru);
+          if (j.keterangan) j.keterangan = j.keterangan.split(b.noLama).join(b.noBaru);
+          jurnalBerubah = true;
+        }
+      });
+    });
+  }
+
+  // Simpan hasil ke cloud atau localStorage
+  if (typeof currentCompany !== 'undefined' && currentCompany && typeof cloudSyncRecords === 'function') {
+    await cloudSyncRecords(['invoice', 'counter']);
+    if (jurnalBerubah && typeof saveToStorage === 'function') {
+      saveToStorage(false);
+    }
+  } else {
+    try {
+      localStorage.setItem('oas_invoices', JSON.stringify(invoiceList));
+      localStorage.setItem('oas_counter', JSON.stringify(counterList));
+    } catch (e) {}
+  }
+
+  const rincian = res.bentrok.map(b =>
+    `Invoice "${escapeHtml(b.pelanggan)}" disesuaikan: <b>${escapeHtml(b.noLama)}</b> ➔ <b>${escapeHtml(b.noBaru)}</b>`
+  ).join('<br>');
+  if (typeof showAlert === 'function') {
+    showAlert(`⚠️ Terdeteksi ${res.bentrok.length} nomor invoice kembar saat offline:<br>${rincian}`);
+  }
+
+  if (typeof renderInvoiceList === 'function') renderInvoiceList();
+  if (typeof renderInvoiceKPI === 'function') renderInvoiceKPI();
+  return res.bentrok;
 }

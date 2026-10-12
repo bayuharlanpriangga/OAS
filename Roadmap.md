@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 135 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 7/135 task selesai.**
+**Progres: 8/135 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -66,7 +66,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 
 | Fase | Nama | Selesai |
 | --- | --- | --- |
-| 1 | Fondasi data | 7/8 |
+| 1 | Fondasi data | 8/8 |
 | 2 | Umur piutang | 0/4 |
 | 3 | Akses anggota tim | 0/5 |
 | 4 | Tagihan pembelian (bill) | 0/7 |
@@ -99,7 +99,7 @@ Dikerjakan paling awal. 1.1 dan 1.7-1.8 dipakai fase lain.
 | ✓ | ID | Tugas | Lampirkan |
 | :---: | --- | --- | --- |
 | ☑ | 1.1 | Skrip `tools/gen-file-map.js` (dijalankan lokal, tanpa AI) yang menulis `docs/FILE_MAP.md`: daftar fungsi + rentang baris tiap file js/ | tidak ada |
-| ☐ | 1.2 | Uji manual sinkron di Supabase asli: jalankan SQL, login, unggah data lama, buat invoice, buka di browser lain, hapus invoice, ganti bisnis, putus internet saat simpan. Catat yang gagal (tanpa AI) | checklist ini |
+| ☑ | 1.2 | Uji manual sinkron di Supabase asli: jalankan SQL, login, unggah data lama, buat invoice, buka di browser lain, hapus invoice, ganti bisnis, putus internet saat simpan. Catat yang gagal (tanpa AI) | checklist ini |
 | ☑ | 1.3 | Tambah kind `jurnal_berulang` dan `anggaran` ke CLOUD_RECORD_KINDS + tes | CR, TES, potongan saveFiturBaru |
 | ☑ | 1.4 | Tambah kind `alert` dan `kurs` (cek dulu bentuknya: array atau objek) | CR, potongan deklarasi di 01-state.js |
 | ☑ | 1.5 | Reset Data dengan pilihan jenis data (jurnal, invoice, kontak, aset, produk, dll); yang dipilih ikut terhapus dari cloud | CR, potongan doResetAll di 15-storage.js |
@@ -107,15 +107,15 @@ Dikerjakan paling awal. 1.1 dan 1.7-1.8 dipakai fase lain.
 | ☑ | 1.7 | `js/23-penomoran.js`: fungsi murni nomorBerikut(jenis, tahun, daftarNomor) + tes | TES |
 | ☑ | 1.8 | Simpan counter ke cloud (kind `counter`) dan pakai untuk nomor invoice, menggantikan length+1 | 23-penomoran.js, CR, potongan nomor invoice di 19-fitur-tambahan.js |
 
-**Temuan uji 1.2 (sudah diperbaiki di `22-cloud-records.js`, tes di `tests/cloud-records.test.js`):**
+**Temuan uji 1.2 (sudah diperbaiki di `22-cloud-records.js`, `23-penomoran.js`, `18-audit-permission.js`, dll.; tes di `tests/cloud-records.test.js`, `tests/penomoran.test.js`):**
 - Invoice yang dibuat saat offline hilang kalau halaman di-refresh setelah online (cache ditimpa data cloud). Sekarang perubahan yang belum tersinkron dideteksi lewat snapshot hash (`oas_rec_snaph_<cid>`), diterapkan di atas data cloud, lalu dikirim ulang.
 - Gagal sinkron hanya tercatat di Console. Sekarang user diberi peringatan (sekali per rentetan gagal), dan request yang menggantung diberi batas waktu 20 detik supaya tidak memblokir antrean.
 - Dialog "Unggah Data Lokal ke Cloud?" muncul di browser kedua untuk data yang sebenarnya sudah ada di cloud. Sekarang hanya data yang baru/berbeda dari cloud yang ditawarkan.
 - Dropdown pindah akun mati begitu akun kedua ditambahkan: `escJsAttr` dipanggil di `21-settings.js` (switcher) dan `05-akun.js` (tombol Restore akun terhapus) tetapi tidak pernah didefinisikan. Diganti `escapeForJsAttr`; tes `tests/akun-switcher.test.js` ikut memeriksa semua helper `esc*` terdefinisi.
 - Dropdown akun muncul di bawah field Bisnis (bukan menempel di bawah chip akun): chip + panel dibungkus `#acc-switch-wrap`, panel `top:100%` dan chip ikut "terbuka". Tombol Diagnosa Supabase dihapus dari layar bisnis kosong (akun baru bukan error); dialog diagnosa diperbaiki (baris baru, URL tidak meluber, email di-escape).
 - 8c (reload saat offline), hasil tinjauan kode: data AMAN (cache `oas_rec_*` dan hash snapshot tidak disentuh), tetapi `afterLogin` gagal memuat daftar bisnis lalu masuk Mode Tamu, jadi bisnis tidak terbuka selama offline. Invoice yang dibuat di Mode Tamu itu masuk key lama `oas_invoices` dan tidak ditawarkan ke cloud nanti. Celah ini belum ditutup (perlu "ingat bisnis terakhir" agar bisa dibuka dari cache). Diperbaiki: `loadDataFromSupabase` mengabaikan error query jurnal/akun, sehingga koneksi putus di tengah pemuatan bisa menulis ulang COA default ke cloud; sekarang berhenti dan membaca cache. Belum diuji di browser.
-- Tombol Reset Data dipindah dari bagian "Lanjutan" (tertutup, di dasar modal) ke pojok kanan status bar Kelola Data Tersimpan, dan disembunyikan untuk non-admin (selector izin lama tidak pernah cocok).
-- Langkah 1.2 yang belum diuji: 9 (reset data), 10 (penomoran lintas browser).
+- 9 (reset data & role anggota join code): Tombol Reset Data di modal Kelola Data Tersimpan (`#storage-reset-btn`) sekarang disembunyikan untuk member/non-admin; `confirmResetAll()` dan `doResetAll()` diproteksi guard `isAdmin()`. Bug badge label audit trail dan role anggota join code yang melompat jadi Admin disebabkan oleh tidak dipanggilnya `loadOrgMembers()` dan `enforcePermissions()` saat beralih bisnis di `selectCompany()`, fallback `_getActorRole()` yang mengasumsikan owner, dan setting `_currentMemberRole = 'admin'` di `loadOrgMembers()` untuk owner yang bocor ke bisnis berikutnya. Sekarang diperbaiki: `selectCompany()` mereset state peran lalu memuat peran bisnis baru; `_getActorRole()` fallback ke `member` saat di bisnis orang lain; kecocokan anggota di `org_members` memeriksa user_id dan email.
+- 10 (bentrok penomoran offline HP & laptop bersamaan): Transaksi offline di dua perangkat bersamaan menghasilkan nomor invoice kembar (mis. keduanya mendapat `INV-2026-002`). Ditambahkan fungsi murni `selesaikanBentrokNomorInvoice()` dan integrasi `periksaDanSelesaikanBentrokInvoice()` di `23-penomoran.js`: invoice dengan waktu pembuatan lebih lama mempertahankan nomor, invoice kedua otomatis disesuaikan ke nomor urut berikutnya yang unik (`INV-2026-003`), keterangan jurnal terkait disinkronkan, counter dinaikkan, cloud diperbarui, dan pengguna diberi notifikasi ramah. Diuji di `tests/penomoran.test.js` (skenario 2 kembar, 3 kembar, jurnal, dan counter).
 
 ## Fase 2 — Umur piutang (4 task)
 

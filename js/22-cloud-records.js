@@ -281,6 +281,11 @@ async function cloudLoadRecords() {
   });
   _cloudReadyFor = cid;
 
+  // Selesaikan bentrok nomor invoice bila ada transaksi offline bersamaan yang memakai nomor kembar
+  if (typeof periksaDanSelesaikanBentrokInvoice === 'function') {
+    await periksaDanSelesaikanBentrokInvoice();
+  }
+
   // Cloud kosong: mungkin bisnis baru, atau data lama masih di perangkat ini.
   if (!rows.length) await cloudOfferLocalMigration(cid);
   else {

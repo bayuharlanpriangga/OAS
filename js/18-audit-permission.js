@@ -273,31 +273,75 @@ let _orgMembers = [];
 let _currentMemberRole = null;
 
 async function loadOrgMembers() {
-  if (!currentCompany || !_supa) return [];
+  if (!currentCompany || !_supa) {
+    _orgMembers = [];
+    _currentMemberRole = null;
+    return [];
+  }
   try {
     const { data, error } = await DB.table('org_members').select('*').eq('company_id', currentCompany.id);
-    if (error) { console.error('loadOrgMembers:', error); return []; }
+    if (error) {
+      console.error('loadOrgMembers:', error);
+      _currentMemberRole = (currentCompany?.user_id && currentUser?.id && currentCompany.user_id === currentUser.id) ? 'owner' : 'member';
+      return [];
+    }
     _orgMembers = data || [];
-    const me = _orgMembers.find(m => m.user_id === currentUser?.id);
-    _currentMemberRole = me?.role || (currentCompany?.user_id === currentUser?.id ? 'admin' : 'member');
+    const myId = currentUser?.id;
+    const myEmail = (currentUser?.email || '').trim().toLowerCase();
+    const me = _orgMembers.find(m =>
+      (myId && m.user_id === myId) ||
+      (myEmail && m.email && m.email.trim().toLowerCase() === myEmail)
+    );
+    // Jika member diundang via email dan user_id belum terkait, kaitkan user_id ke Supabase
+    if (me && !me.user_id && myId) {
+      DB.table('org_members').update({ user_id: myId }).eq('id', me.id).then(()=>{}, ()=>{});
+      me.user_id = myId;
+    }
+    // Tentukan peran aktif untuk bisnis ini
+    if (currentCompany?.user_id && myId && currentCompany.user_id === myId) {
+      _currentMemberRole = 'owner';
+    } else if (me) {
+      _currentMemberRole = me.role || 'member';
+    } else {
+      _currentMemberRole = 'member';
+    }
     return _orgMembers;
-  } catch(e) { console.error('loadOrgMembers:', e); return []; }
+  } catch(e) {
+    console.error('loadOrgMembers:', e);
+    _currentMemberRole = (currentCompany?.user_id && currentUser?.id && currentCompany.user_id === currentUser.id) ? 'owner' : 'member';
+    return [];
+  }
 }
 
 function isAdmin() {
-  return _currentMemberRole === 'admin' || currentCompany?.user_id === currentUser?.id;
+  if (currentCompany?.user_id && currentUser?.id && currentCompany.user_id === currentUser.id) return true;
+  return _currentMemberRole === 'admin' || _currentMemberRole === 'owner';
 }
 
 function hasPerm(mod, act) {
   if (isAdmin()) return true;
-  const me = _orgMembers.find(m => m.user_id === currentUser?.id);
+  const myId = currentUser?.id;
+  const myEmail = (currentUser?.email || '').trim().toLowerCase();
+  const me = _orgMembers.find(m =>
+    (myId && m.user_id === myId) ||
+    (myEmail && m.email && m.email.trim().toLowerCase() === myEmail)
+  );
   if (!me) return false;
   const p = me.permissions || {};
   return p[mod]?.[act] !== false;
 }
 
 function enforcePermissions() {
-  if (isAdmin()) return;
+  const isAdm = isAdmin();
+  const navUserMgmt = document.getElementById('nav-user-mgmt');
+  if (navUserMgmt) navUserMgmt.style.display = isAdm ? '' : 'none';
+
+  if (isAdm) {
+    // Admin / Owner: pastikan kontrol yang sebelumnya disembunyikan ditampilkan kembali
+    document.querySelectorAll('#storage-reset-btn, [onclick*="resetData"], [onclick*="confirmResetAll"]').forEach(b => { b.style.display = ''; });
+    return;
+  }
+
   Object.keys(MODULES_CRUD).forEach(mod => {
     // Sembunyikan nav card di sidebar
     const navEl = document.querySelector(`[data-page="${mod}"]`);
@@ -307,10 +351,9 @@ function enforcePermissions() {
       btn.style.display = hasPerm(mod, 'read') ? '' : 'none';
     });
   });
-  // Sembunyikan tombol reset
-  // (selector lama hanya mencari "resetData" yang tidak ada; tombol sebenarnya memanggil confirmResetAll)
+  // Sembunyikan tombol reset untuk non-admin
   if (!hasPerm('reset', 'delete')) {
-    document.querySelectorAll('[onclick*="resetData"], [onclick*="confirmResetAll"]').forEach(b => { b.style.display = 'none'; });
+    document.querySelectorAll('#storage-reset-btn, [onclick*="resetData"], [onclick*="confirmResetAll"]').forEach(b => { b.style.display = 'none'; });
   }
   // Sembunyikan tombol create/edit/delete di halaman jika tidak punya akses
   const currentMod = typeof currentPage !== 'undefined' ? currentPage : null;

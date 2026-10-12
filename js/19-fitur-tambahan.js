@@ -1353,6 +1353,10 @@ function konfirmasiBalikJurnal(idx) {
 function konfirmasiHapusJurnal(idx) { return konfirmasiBalikJurnal(idx); }
 
 function confirmResetAll() {
+  if (typeof isAdmin === 'function' && !isAdmin()) {
+    showAlert('❌ Hanya Admin atau Pemilik bisnis yang memiliki izin untuk mereset data.');
+    return;
+  }
   document.getElementById('reset-confirm-input').value = '';
   // Default aman: hanya Jurnal Umum yang tercentang (perilaku reset sebelumnya).
   document.querySelectorAll('#modal-reset-all input[data-reset]').forEach(c => { c.checked = c.getAttribute('data-reset') === 'jurnal'; });

@@ -5,12 +5,15 @@ const ctx = { localStorage: { getItem: () => null, setItem() {} } }; vm.createCo
 const nb = (...a) => vm.runInContext('nomorBerikut', ctx)(...a);
 const csp = (...a) => vm.runInContext('counterSetelahPakai', ctx)(...a);
 const pn = (...a) => vm.runInContext('parseNomor', ctx)(...a);
+const sbn = (...a) => vm.runInContext('selesaikanBentrokNomorInvoice', ctx)(...a);
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { c ? pass++ : fail++; console.log((c ? '  ok   ' : '  GAGAL ') + m); };
 const eq = (a, b, m) => ok(a === b, m + (a === b ? '' : ' (dapat ' + JSON.stringify(a) + ', mau ' + JSON.stringify(b) + ')'));
 // Error dari konteks vm berbeda realm, jadi instanceof tidak bisa dipakai: cek namanya.
 const melempar = (fn, m) => { let t = false; try { fn(); } catch (e) { t = !!e && e.name === 'TypeError'; } ok(t, m); };
+
+(async () => {
 
 console.log('[1] dasar');
 eq(nb('INV', 2026, []), 'INV-2026-001', 'daftar kosong -> 001');
@@ -115,5 +118,76 @@ console.log('[11] pembungkus invoice');
   eq(c2.localStorage._s['oas_counter'] && JSON.parse(c2.localStorage._s['oas_counter'])[0].terakhir, 2, 'bisnis login: key global tidak ikut ditulis');
 }
 
+console.log('[12] selesaikanBentrokNomorInvoice (bentrok offline HP & laptop)');
+{
+  // Tanpa invoice kembar
+  const unik = [
+    { id: '1', noInvoice: 'INV-2026-001', createdAt: '2026-10-12T08:00:00Z' },
+    { id: '2', noInvoice: 'INV-2026-002', createdAt: '2026-10-12T08:05:00Z' }
+  ];
+  const rUnik = sbn(unik, []);
+  ok(rUnik.bentrok.length === 0, 'tanpa kembar: tidak ada bentrok');
+  eq(rUnik.invoices, unik, 'tanpa kembar: referensi array dipertahankan');
+
+  // Skenario 10: HP dan laptop offline membuat invoice dengan nomor sama (INV-2026-002)
+  const bentrok2 = [
+    { id: 'inv_hp', noInvoice: 'INV-2026-002', pelanggan: 'Pelanggan HP', createdAt: '2026-10-12T08:00:00Z' },
+    { id: 'inv_lap', noInvoice: 'INV-2026-002', pelanggan: 'Pelanggan Laptop', createdAt: '2026-10-12T08:01:00Z' }
+  ];
+  const r2 = sbn(bentrok2, [{ id: 'INV-2026', jenis: 'INV', tahun: 2026, terakhir: 2 }]);
+  ok(r2.bentrok.length === 1, 'terdeteksi 1 invoice bentrok');
+  eq(r2.bentrok[0].id, 'inv_lap', 'invoice yang lebih baru (laptop) yang disesuaikan');
+  eq(r2.bentrok[0].noLama, 'INV-2026-002', 'catat nomor lama 002');
+  eq(r2.bentrok[0].noBaru, 'INV-2026-003', 'nomor baru otomatis 003');
+  eq(r2.invoices[0].noInvoice, 'INV-2026-002', 'invoice pertama (HP) tetap 002');
+  eq(r2.invoices[1].noInvoice, 'INV-2026-003', 'invoice kedua (Laptop) berubah ke 003');
+  eq(r2.counterList.find(c => c.id === 'INV-2026').terakhir, 3, 'counter naik ke 3');
+
+  // Tiga invoice kembar sekaligus
+  const bentrok3 = [
+    { id: 'a', noInvoice: 'INV-2026-005', createdAt: '2026-10-12T08:00:00Z' },
+    { id: 'b', noInvoice: 'INV-2026-005', createdAt: '2026-10-12T08:02:00Z' },
+    { id: 'c', noInvoice: 'INV-2026-005', createdAt: '2026-10-12T08:03:00Z' }
+  ];
+  const r3 = sbn(bentrok3, [{ id: 'INV-2026', jenis: 'INV', tahun: 2026, terakhir: 5 }]);
+  ok(r3.bentrok.length === 2, 'tiga kembar: 2 disesuaikan');
+  eq(r3.invoices[0].noInvoice, 'INV-2026-005', 'pertama tetap 005');
+  eq(r3.invoices[1].noInvoice, 'INV-2026-006', 'kedua jadi 006');
+  eq(r3.invoices[2].noInvoice, 'INV-2026-007', 'ketiga jadi 007');
+  eq(r3.counterList.find(c => c.id === 'INV-2026').terakhir, 7, 'counter naik ke 7');
+}
+
+console.log('[13] integrasi periksaDanSelesaikanBentrokInvoice');
+{
+  const c3 = {
+    localStorage: { _s: {}, getItem(k) { return k in this._s ? this._s[k] : null; }, setItem(k, v) { this._s[k] = String(v); } },
+    escapeHtml: s => s,
+    invoiceList: [
+      { id: 'i1', noInvoice: 'INV-2026-001', pelanggan: 'Klien A', createdAt: '2026-10-12T07:00:00Z' },
+      { id: 'i2', noInvoice: 'INV-2026-001', pelanggan: 'Klien B', createdAt: '2026-10-12T07:10:00Z' }
+    ],
+    counterList: [{ id: 'INV-2026', jenis: 'INV', tahun: 2026, terakhir: 1 }],
+    jurnalEntries: [
+      { id: 'j1', ket: 'Invoice INV-2026-001 — Klien A' },
+      { id: 'j2', ket: 'Invoice INV-2026-001 — Klien B' }
+    ],
+    showAlert: () => {}
+  };
+  vm.createContext(c3);
+  vm.runInContext(src, c3);
+  const syncCalls = [];
+  c3.currentCompany = { id: 'c1' };
+  c3.cloudSyncRecords = k => { syncCalls.push(k.join()); return Promise.resolve(true); };
+
+  // Jalankan periksaDanSelesaikanBentrokInvoice
+  await vm.runInContext('periksaDanSelesaikanBentrokInvoice()', c3);
+  ok(c3.invoiceList[0].noInvoice === 'INV-2026-001', 'integrasi: invoice 1 tetap 001');
+  ok(c3.invoiceList[1].noInvoice === 'INV-2026-002', 'integrasi: invoice 2 disesuaikan jadi 002');
+  ok(c3.jurnalEntries[1].ket.includes('INV-2026-002'), 'integrasi: jurnal invoice 2 ikut diperbarui ke 002');
+  ok(c3.jurnalEntries[0].ket.includes('INV-2026-001'), 'integrasi: jurnal invoice 1 tetap 001');
+  ok(syncCalls.includes('invoice,counter'), 'integrasi: sync ke cloud dipanggil untuk invoice dan counter');
+}
+
 console.log('\nHasil: ' + pass + ' lulus, ' + fail + ' gagal');
 process.exit(fail ? 1 : 0);
+})();

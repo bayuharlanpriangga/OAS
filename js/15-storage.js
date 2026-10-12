@@ -257,6 +257,10 @@ function getSizeKB() {
 
 function openStorageModal() {
   renderStorageSlots();
+  const resetBtn = document.getElementById('storage-reset-btn');
+  if (resetBtn) {
+    resetBtn.style.display = (typeof isAdmin === 'function' && !isAdmin()) ? 'none' : '';
+  }
   document.getElementById('modal-storage').classList.add('open');
 }
 
@@ -364,6 +368,11 @@ function resetPilihSemua(on) {
 }
 
 async function doResetAll() {
+  if (typeof isAdmin === 'function' && !isAdmin()) {
+    showAlert('❌ Hanya Admin atau Pemilik bisnis yang memiliki izin untuk mereset data.');
+    closeModal('modal-reset-all');
+    return;
+  }
   const input = document.getElementById('reset-confirm-input');
   const boxes = Array.from(document.querySelectorAll('#modal-reset-all input[data-reset]:checked'));
   if (!boxes.length) { showAlert('Pilih minimal satu jenis data yang mau dihapus.'); return; }

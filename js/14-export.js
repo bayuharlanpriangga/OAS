@@ -219,15 +219,17 @@ function _getActorRole() {
   if (typeof isGuestMode !== 'undefined' && isGuestMode) return 'guest';
   if (typeof currentUser === 'undefined' || !currentUser)  return 'guest';
   // Owner: company creator
-  if (typeof currentCompany !== 'undefined' && currentCompany
-      && currentCompany.user_id === currentUser.id) return 'owner';
-  // Admin (member yang diberi role admin oleh owner)
-  if (typeof _currentMemberRole !== 'undefined' && _currentMemberRole === 'admin') return 'admin';
-  // Member biasa
-  if (typeof _currentMemberRole !== 'undefined' && _currentMemberRole === 'member') return 'member';
-  // Fallback: user sudah login, company belum terisi (masih loading) → tandai owner sementara
-  // agar saat company sudah siap kita bisa re-evaluate; tapi jangan return 'admin' (menyesatkan)
-  if (currentUser?.id) return 'owner'; // default ke owner sampai company info siap
+  if (typeof currentCompany !== 'undefined' && currentCompany) {
+    if (currentCompany.user_id === currentUser.id) return 'owner';
+    // Peran anggota di bisnis ini
+    if (typeof _currentMemberRole !== 'undefined' && _currentMemberRole === 'admin') return 'admin';
+    if (typeof _currentMemberRole !== 'undefined' && _currentMemberRole === 'member') return 'member';
+    if (typeof _currentMemberRole !== 'undefined' && _currentMemberRole === 'owner') return 'owner';
+    // Fallback saat berada di bisnis orang lain: default ke member (bukan owner/admin)
+    return 'member';
+  }
+  // Fallback: user sudah login tapi company belum dipilih/terisi (masih loading)
+  if (currentUser?.id) return 'owner';
   return 'guest';
 }
 

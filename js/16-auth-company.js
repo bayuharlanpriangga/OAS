@@ -1261,11 +1261,21 @@ async function selectCompany(company) {
   activeKartuStockId = null;
   activeKategoriId = null;
 
+  // Reset state peran sebelum memuat bisnis baru
+  if (typeof _currentMemberRole !== 'undefined') _currentMemberRole = null;
+  if (typeof _orgMembers !== 'undefined') _orgMembers = [];
+
   // Update chip di topbar — pastikan currentCompany & currentUser sudah terisi
   updateUserChip();
 
   // Load data dari Supabase untuk company ini
   await loadDataFromSupabase();
+
+  // Muat hak akses & peran anggota untuk bisnis ini
+  if (typeof loadOrgMembers === 'function') await loadOrgMembers();
+  if (typeof enforcePermissions === 'function') enforcePermissions();
+  const navBtn = document.getElementById('nav-user-mgmt');
+  if (navBtn && typeof isAdmin === 'function') navBtn.style.display = isAdmin() ? '' : 'none';
 
   // Update chip sekali lagi setelah load selesai (guard kalau render async mengubah chip)
   updateUserChip();
