@@ -945,7 +945,7 @@ function renderCompanyList(companies) {
         <div class="cp-company-icon" style="display:flex;align-items:center;justify-content:center;">${icons[c.type] || icons.umum}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(c.name)}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px;text-transform:capitalize;">${c.type || 'Umum'}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;text-transform:capitalize;">${c.type || 'Umum'}${c._role && c._role !== 'owner' ? ` <span style="text-transform:none;color:var(--accent2);font-weight:600;">· Anggota (${labelPeranBisnis(c._role)})</span>` : ''}</div>
         </div>
         <div style="color:var(--muted);font-size:12px;font-family:var(--mono);opacity:0.55;margin-left:4px;flex-shrink:0;">tahan <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="0" y1="1" x2="18" y2="1"/><line x1="0" y1="7" x2="18" y2="7"/><line x1="0" y1="13" x2="18" y2="13"/></svg></div>
       </div>
@@ -1047,6 +1047,9 @@ function showCompanyActionSheet(company) {
   if(bizIconEl) { bizIconEl.innerHTML = icons[company.type] || icons.umum; bizIconEl.style.display='flex'; bizIconEl.style.alignItems='center'; bizIconEl.style.justifyContent='center'; }
   document.getElementById('cp-action-biz-name').textContent = company.name;
   document.getElementById('cp-action-biz-type').textContent = company.type || 'Umum';
+  // Hapus bisnis hanya untuk pemilik; anggota (admin sekalipun) tidak boleh.
+  const delBtn = document.querySelector('#cp-action-sheet .cp-action-btn.delete-btn');
+  if (delBtn) delBtn.style.display = adalahPemilikBisnis(company, currentUser?.id) ? '' : 'none';
   document.getElementById('cp-action-sheet-backdrop').classList.add('open');
 }
 
@@ -1073,6 +1076,7 @@ function cpActionDelete() {
 let _cpDeleteTarget = null;
 
 function showDeleteCompanyConfirm(company) {
+  if (!adalahPemilikBisnis(company, currentUser?.id)) { showAlert('❌ Hanya pemilik yang bisa menghapus bisnis.'); return; }
   _cpDeleteTarget = company;
   document.getElementById('cp-del-biz-name').textContent = company.name;
   document.getElementById('cp-del-journal-warn').textContent =
@@ -1095,6 +1099,8 @@ function closeDeleteCompanyConfirm() {
 async function confirmDeleteCompany() {
   if (!_cpDeleteTarget) return;
   const company = _cpDeleteTarget;
+  // Guard kedua: jurnal dihapus lebih dulu di bawah, dan RLS mengizinkan admin menghapus jurnal.
+  if (!adalahPemilikBisnis(company, currentUser?.id)) { closeDeleteCompanyConfirm(); showAlert('❌ Hanya pemilik yang bisa menghapus bisnis.'); return; }
   const okBtn = document.getElementById('cp-del-btn-ok');
   okBtn.classList.add('loading');
   okBtn.disabled = true;
@@ -1136,25 +1142,32 @@ async function getMyCompanies() {
     console.error('getMyCompanies error:', ownedErr);
     throw new Error(ownedErr.message || 'Gagal mengambil data bisnis');
   }
-  // 2. Companies yang user-nya jadi member (via org_members)
-  let memberCompanies = [];
+  // 2. Companies yang user-nya jadi anggota (via org_members). RLS companies (task 3.2a)
+  //    mengizinkan anggota 'active' membaca bisnisnya. Gagal di sini tidak boleh
+  //    menyembunyikan bisnis milik sendiri, jadi hanya dicatat di Console.
+  let memberships = [], memberCompanies = [];
   try {
-    const { data: memberships } = await _supa
+    // Kaitkan undangan email yang masih pending ke akun ini (fungsi server; gagal = abaikan)
+    try { await _supa.rpc('klaim_undangan'); } catch (e) { /* belum tersedia / tidak ada undangan */ }
+    const { data: ms, error: msErr } = await _supa
       .from('org_members')
-      .select('company_id')
+      .select('company_id, role, status')
       .eq('user_id', currentUser.id);
-    if (memberships && memberships.length) {
-      const ids = memberships.map(m => m.company_id);
-      const { data: mcos } = await _supa
+    if (msErr) throw msErr;
+    memberships = ms || [];
+    const ids = memberships.filter(m => m.status === 'active').map(m => m.company_id);
+    if (ids.length) {
+      const { data: mcos, error: mcErr } = await _supa
         .from('companies')
         .select('*')
         .in('id', ids);
-      memberCompanies = (mcos || []).filter(c => c.user_id !== currentUser.id);
+      if (mcErr) throw mcErr;
+      memberCompanies = mcos || [];
     }
-  } catch(e) { /* tabel org_members mungkin belum ada, skip */ }
-  const all = [...(Array.isArray(owned)?owned:[]), ...memberCompanies];
-  // Deduplicate by id
-  return all.filter((c, i, arr) => arr.findIndex(x => x.id === c.id) === i);
+  } catch (e) {
+    console.warn('[getMyCompanies] bisnis anggota tidak termuat:', e && e.message ? e.message : e);
+  }
+  return susunDaftarBisnis(owned, memberships, memberCompanies, currentUser.id);
 }
 
 // Blokir karakter non-angka di input nominal (kecuali tombol kontrol)

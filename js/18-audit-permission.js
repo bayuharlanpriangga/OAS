@@ -292,11 +292,9 @@ async function loadOrgMembers() {
       (myId && m.user_id === myId) ||
       (myEmail && m.email && m.email.trim().toLowerCase() === myEmail)
     );
-    // Jika member diundang via email dan user_id belum terkait, kaitkan user_id ke Supabase
-    if (me && !me.user_id && myId) {
-      DB.table('org_members').update({ user_id: myId }).eq('id', me.id).then(()=>{}, ()=>{});
-      me.user_id = myId;
-    }
+    // Undangan email yang user_id-nya belum terkait diklaim lewat rpc klaim_undangan()
+    // (dipanggil di getMyCompanies); update langsung ke org_members ditolak RLS untuk non-admin.
+    if (me && !me.user_id && myId) me.user_id = myId;
     // Tentukan peran aktif untuk bisnis ini
     if (currentCompany?.user_id && myId && currentCompany.user_id === myId) {
       _currentMemberRole = 'owner';
@@ -369,21 +367,15 @@ function enforcePermissions() {
 }
 
 // ── Share Link / Join Code ──────────────────────────────────
-/** Generate atau ambil join code untuk company saat ini */
+/** Ambil join code aktif untuk company saat ini; kalau tidak ada/kedaluwarsa, minta database membuatnya. */
 async function getOrCreateJoinCode() {
   if (!currentCompany || !_supa) return null;
-  // Cek apakah sudah ada
   const { data: existing } = await DB.table('company_join_codes')
-    .select('code,expires_at').eq('company_id', currentCompany.id).single();
+    .select('code,expires_at').eq('company_id', currentCompany.id).maybeSingle();
   if (existing && new Date(existing.expires_at) > new Date()) return existing.code;
-  // Buat baru — 8 karakter uppercase alphanumeric
-  const code = Math.random().toString(36).substring(2,6).toUpperCase() +
-               Math.random().toString(36).substring(2,6).toUpperCase();
-  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 hari
-  await DB.table('company_join_codes').upsert({
-    company_id: currentCompany.id, code,
-    created_by: currentUser?.id, expires_at: expires
-  }, { onConflict: 'company_id' });
+  // Kode dibuat di database (acak kuat, berlaku 7 hari) lewat rpc buat_kode_gabung(cid)
+  const { data: code, error } = await _supa.rpc('buat_kode_gabung', { cid: currentCompany.id });
+  if (error) throw new Error(error.message || 'Gagal membuat kode gabung');
   return code;
 }
 
@@ -441,44 +433,22 @@ async function checkJoinCodeInURL() {
   await _processJoinCode(code);
 }
 
-/** Proses join code setelah user dipastikan sudah login */
+/** Proses join code setelah user dipastikan sudah login (lewat rpc gabung(kode); peran awal viewer) */
 async function _processJoinCode(code) {
   if (!code || !currentUser) return;
   // Hapus dari sessionStorage
   sessionStorage.removeItem('oas_pending_join');
   try {
-    const { data: jc, error: jcErr } = await _supa
-      .from('company_join_codes').select('*').eq('code', code).single();
-    if (jcErr || !jc) throw new Error('Kode undangan tidak valid atau sudah kadaluarsa.');
-    if (new Date(jc.expires_at) < new Date()) throw new Error('Kode undangan sudah kadaluarsa (berlaku 7 hari). Minta admin untuk memperbarui kode.');
-    // Ambil info company
-    const { data: co } = await DB.table('companies').select('*').eq('id', jc.company_id).single();
-    if (!co) throw new Error('Bisnis tidak ditemukan.');
-    // Cek apakah sudah member atau owner
-    if (co.user_id === currentUser.id) { showAlert(`ℹ Kamu adalah pemilik bisnis "${co.name}".`); return; }
-    const { data: existing } = await DB.table('org_members').select('id')
-      .eq('company_id', jc.company_id).eq('email', currentUser.email).maybeSingle();
-    if (existing) {
-      showAlert(`ℹ Kamu sudah terdaftar di bisnis "${co.name}".\n\nPilih bisnis tersebut dari daftar bisnis kamu.`);
-      return;
-    }
-    // Konfirmasi join
-    if (!confirm(`✅ Bergabung ke bisnis "${co.name}"?\n\nKamu akan ditambahkan sebagai Member. Admin bisa mengubah izin akses kamu.`)) return;
-    const { error: insertErr } = await DB.table('org_members').insert({
-      company_id: jc.company_id,
-      user_id: currentUser.id,
-      email: currentUser.email,
-      nama: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email,
-      role: 'member',
-      permissions: makeDefaultPerms(false),
-      status: 'active',
-      created_at: new Date().toISOString()
-    });
-    if (insertErr) { showAlert('Gagal bergabung: ' + insertErr.message); return; }
-    showAlert(`✅ Berhasil bergabung ke bisnis "${co.name}"!\n\nKlik tombol bisnis di pojok kiri atas untuk memilih bisnis tersebut.`);
+    // Server memeriksa kode dan kedaluwarsa; bisnis baru terlihat setelah gabung, jadi konfirmasi memakai kodenya.
+    if (!confirm(`✅ Bergabung ke bisnis dengan kode ${code}?\n\nKamu akan ditambahkan sebagai Viewer (hanya bisa melihat). Admin bisa mengubah peran dan izin aksesmu.`)) return;
+    const { data: res, error } = await _supa.rpc('gabung', { kode: code });
+    if (error) throw new Error(error.message || 'Gagal bergabung');
+    const ringkas = ringkasHasilGabung(res);
+    if (!ringkas.berhasil) { showAlert(ringkas.pesan); return; }
+    showAlert(ringkas.pesan + '<br><br>Klik tombol bisnis di pojok kiri atas untuk memilih bisnis tersebut.');
     // Refresh company list agar bisnis baru muncul
     const companies = await getMyCompanies();
-    const newCo = companies.find(c => c.id === jc.company_id);
+    const newCo = companies.find(c => c.id === res.company_id);
     if (newCo && !currentCompany) {
       await selectCompany(newCo);
       updateUserChip?.();
