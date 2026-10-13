@@ -20,28 +20,50 @@ async function initSupabase() {
   } catch(e) {}
 
   // Deteksi OAuth PKCE code dari URL SEBELUM SDK memprosesnya
-  const hasOAuthCode = window.location.search.includes('code=');
-  const hasOAuthHash = window.location.hash.includes('access_token') || window.location.hash.includes('error=');
-  const hasOAuthParams = hasOAuthCode || hasOAuthHash;
-  if (hasOAuthParams) {
+  const oauthUrl = bacaParamOAuth(window.location.search, window.location.hash);
+  const hasOAuthCode = oauthUrl.kode;
+  const hasOAuthHash = oauthUrl.token;
+  if (hasOAuthCode || hasOAuthHash) {
     window.__oauthRedirect = true;
     window.__initialOAuthRedirect = true;
     console.log('[Auth] OAuth redirect terdeteksi, code:', hasOAuthCode, 'hash:', hasOAuthHash);
+  }
+
+  // Redirect error dari Supabase (mis. flow_state_expired: login Google kedaluwarsa atau
+  // dibuka di browser/tab lain). Tidak ada yang bisa ditukar; bersihkan URL dan minta login ulang.
+  if (oauthUrl.error) {
+    console.warn('[Auth] Redirect login berisi error:', oauthUrl.error);
+    history.replaceState(null, '', window.location.pathname + (window.location.hash.includes('error') ? '' : window.location.hash));
+    setTimeout(() => {
+      if (typeof showAlert === 'function') showAlert('⚠️ Login Google kedaluwarsa atau gagal. Silakan login lagi dan selesaikan dalam satu browser/tab.');
+    }, 800);
   }
 
   // Untuk PKCE flow: jika ada ?code= di URL, exchange secara eksplisit
   // Ini memastikan SDK berhasil tukar code → session meski storage terbatas
   if (hasOAuthCode) {
     console.log('[Auth] Memproses PKCE code exchange...');
+    let gagalTukar = false;
     try {
       const { data, error } = await DB.auth.exchangeCodeForSession(window.location.search);
       if (error) {
+        gagalTukar = true;
         console.error('[Auth] exchangeCodeForSession error:', error.message);
       } else {
         console.log('[Auth] exchangeCodeForSession sukses:', data.session?.user?.email);
       }
     } catch(e) {
+      gagalTukar = true;
       console.error('[Auth] exchangeCodeForSession exception:', e.message);
+    }
+    // Tukar gagal: lepas penanda redirect supaya INITIAL_SESSION tanpa sesi masuk mode tamu
+    // (bukan macet selamanya di "Menghubungkan...").
+    if (gagalTukar) {
+      window.__oauthRedirect = false;
+      window.__initialOAuthRedirect = false;
+      setTimeout(() => {
+        if (typeof showAlert === 'function') showAlert('⚠️ Login Google gagal diproses. Silakan login lagi.');
+      }, 800);
     }
     // Bersihkan ?code= dari URL tanpa reload
     const cleanUrl = window.location.pathname + window.location.hash;
