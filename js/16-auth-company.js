@@ -23,7 +23,8 @@ async function initSupabase() {
   const oauthUrl = bacaParamOAuth(window.location.search, window.location.hash);
   const hasOAuthCode = oauthUrl.kode;
   const hasOAuthHash = oauthUrl.token;
-  if (hasOAuthCode || hasOAuthHash) {
+  const hasOAuthParams = hasOAuthCode || hasOAuthHash;
+  if (hasOAuthParams) {
     window.__oauthRedirect = true;
     window.__initialOAuthRedirect = true;
     console.log('[Auth] OAuth redirect terdeteksi, code:', hasOAuthCode, 'hash:', hasOAuthHash);

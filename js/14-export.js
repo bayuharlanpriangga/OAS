@@ -1804,8 +1804,8 @@ function exportExcelFormula(nama, periode) {
   // Empty cell with border
   const eb = () => ({ v:'', t:'s', s:{border:{bottom:{style:'thin',color:{rgb:'EEEEEE'}}, left:{style:'thin',color:{rgb:'EEEEEE'}}, right:{style:'thin',color:{rgb:'EEEEEE'}}}} });
 
-  // // Compute data dari app
-  // const saldo = computeSaldoAll();
+  // Compute data dari app
+  const saldo = computeSaldoAll();
   let totalAset=0, totalLiab=0, totalEk=0, totalPend=0, totalBeban=0;
   akuns.forEach(a=>{
     const s=saldo[a.kode]||{debit:0,kredit:0};

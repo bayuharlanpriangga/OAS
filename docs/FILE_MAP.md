@@ -640,81 +640,81 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 366-368 | `resetPilihSemua` | function |
 | 370-434 | `doResetAll` | async function |
 
-## js/16-auth-company.js (1922 baris, 86.5 KB)
+## js/16-auth-company.js (1945 baris, 87.6 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
-| 4-120 | `initSupabase` | async function |
-| 124-158 | `enterGuestMode` | function |
-| 160-179 | `updateGuestChip` | function |
-| 181-197 | `showGuestBanner` | function |
-| 203-324 | `showAuthModal` | function |
-| 327-359 | `initAuthTabDrag` | function |
-| 362-378 | `typeText` | function |
-| 381-396 | `untypeText` | function |
-| 398-400 | `_authDelay` | function |
-| 408-493 | `playAuthIntro` | async function |
-| 495-501 | `hideAuthModal` | function |
-| 503-511 | `switchModalAuthTab` | function |
-| 513-521 | `showModalAuthMsg` | function |
-| 523-526 | `clearModalAuthMsg` | function |
-| 528-535 | `setModalAuthLoading` | function |
-| 537-546 | `doModalLogin` | async function |
-| 548-563 | `doModalRegister` | async function |
-| 565-571 | `doModalForgotPassword` | async function |
-| 575-600 | `offerGuestDataMigration` | async function |
-| 604-607 | `showAuthScreen` | function |
-| 609-611 | `hideAuthScreen` | function |
-| 613-619 | `switchAuthTab` | function |
-| 621-628 | `showAuthMsg` | function |
-| 630-633 | `clearAuthMsg` | function |
-| 635-642 | `setAuthLoading` | function |
-| 644-647 | `toggleAuthPw` | function |
-| 649-659 | `doLogin` | async function |
-| 661-676 | `doRegister` | async function |
-| 678-713 | `doGoogleLogin` | async function |
-| 716-749 | `showGoogleSetupGuide` | function |
-| 751-757 | `doForgotPassword` | async function |
-| 759-768 | `doLogout` | async function |
-| 772-780 | `handleChipClick` | function |
-| 784-872 | `afterLogin` | async function |
-| 877-894 | `showCompanyPicker` | async function |
-| 896-924 | `showCompanyPickerScreen` | function |
-| 926-961 | `renderCompanyList` | function |
-| 966-1032 | `attachCompanyCardHandlers` | function |
-| 1037-1054 | `showCompanyActionSheet` | function |
-| 1056-1059 | `closeCompanyActionSheet` | function |
-| 1061-1066 | `cpActionOpen` | function |
-| 1068-1073 | `cpActionDelete` | function |
-| 1078-1085 | `showDeleteCompanyConfirm` | function |
-| 1087-1097 | `closeDeleteCompanyConfirm` | function |
-| 1099-1127 | `confirmDeleteCompany` | async function |
-| 1129-1131 | `deleteCompany` | async function |
-| 1133-1171 | `getMyCompanies` | async function |
-| 1174-1185 | `blockNonNumeric` | function |
-| 1186-1192 | `sanitizePaste` | function |
-| 1194-1202 | `selectBizType` | function |
-| 1204-1260 | `createCompany` | async function |
-| 1262-1299 | `selectCompany` | async function |
-| 1301-1340 | `updateUserChip` | function |
-| 1348-1353 | `_loadCloudGagal` | function |
-| 1355-1442 | `loadDataFromSupabase` | async function |
-| 1455-1459 | `_jurnalMetaDari` | function |
-| 1460-1462 | `_errKolomMeta` | function |
-| 1464-1486 | `saveJurnalToSupabase` | async function |
-| 1488-1505 | `updateJurnalInSupabase` | async function |
-| 1507-1517 | `deleteJurnalFromSupabase` | async function |
-| 1520-1529 | `saveAkunsToSupabase` | async function |
-| 1532-1548 | `saveProfilToSupabase` | async function |
-| 1551-1567 | `savePeriodeKunciToCloud` | async function |
-| 1570-1592 | `saveKartuStockToCloud` | async function |
-| 1594-1640 | `loadKartuStockFromData` | function |
-| 1643-1646 | `saveAttachmentToSupabase` | async function |
-| 1697-1720 | `addJurnal` | function |
-| 1726-1734 | `postJurnalLegacy` | function |
-| 1781-1810 | `handleAttachFile` | function |
-| 1814-1842 | `diagnosSupabase` | async function |
-| 1844-1921 | `showSupabaseSetup` | function |
+| 4-143 | `initSupabase` | async function |
+| 147-181 | `enterGuestMode` | function |
+| 183-202 | `updateGuestChip` | function |
+| 204-220 | `showGuestBanner` | function |
+| 226-347 | `showAuthModal` | function |
+| 350-382 | `initAuthTabDrag` | function |
+| 385-401 | `typeText` | function |
+| 404-419 | `untypeText` | function |
+| 421-423 | `_authDelay` | function |
+| 431-516 | `playAuthIntro` | async function |
+| 518-524 | `hideAuthModal` | function |
+| 526-534 | `switchModalAuthTab` | function |
+| 536-544 | `showModalAuthMsg` | function |
+| 546-549 | `clearModalAuthMsg` | function |
+| 551-558 | `setModalAuthLoading` | function |
+| 560-569 | `doModalLogin` | async function |
+| 571-586 | `doModalRegister` | async function |
+| 588-594 | `doModalForgotPassword` | async function |
+| 598-623 | `offerGuestDataMigration` | async function |
+| 627-630 | `showAuthScreen` | function |
+| 632-634 | `hideAuthScreen` | function |
+| 636-642 | `switchAuthTab` | function |
+| 644-651 | `showAuthMsg` | function |
+| 653-656 | `clearAuthMsg` | function |
+| 658-665 | `setAuthLoading` | function |
+| 667-670 | `toggleAuthPw` | function |
+| 672-682 | `doLogin` | async function |
+| 684-699 | `doRegister` | async function |
+| 701-736 | `doGoogleLogin` | async function |
+| 739-772 | `showGoogleSetupGuide` | function |
+| 774-780 | `doForgotPassword` | async function |
+| 782-791 | `doLogout` | async function |
+| 795-803 | `handleChipClick` | function |
+| 807-895 | `afterLogin` | async function |
+| 900-917 | `showCompanyPicker` | async function |
+| 919-947 | `showCompanyPickerScreen` | function |
+| 949-984 | `renderCompanyList` | function |
+| 989-1055 | `attachCompanyCardHandlers` | function |
+| 1060-1077 | `showCompanyActionSheet` | function |
+| 1079-1082 | `closeCompanyActionSheet` | function |
+| 1084-1089 | `cpActionOpen` | function |
+| 1091-1096 | `cpActionDelete` | function |
+| 1101-1108 | `showDeleteCompanyConfirm` | function |
+| 1110-1120 | `closeDeleteCompanyConfirm` | function |
+| 1122-1150 | `confirmDeleteCompany` | async function |
+| 1152-1154 | `deleteCompany` | async function |
+| 1156-1194 | `getMyCompanies` | async function |
+| 1197-1208 | `blockNonNumeric` | function |
+| 1209-1215 | `sanitizePaste` | function |
+| 1217-1225 | `selectBizType` | function |
+| 1227-1283 | `createCompany` | async function |
+| 1285-1322 | `selectCompany` | async function |
+| 1324-1363 | `updateUserChip` | function |
+| 1371-1376 | `_loadCloudGagal` | function |
+| 1378-1465 | `loadDataFromSupabase` | async function |
+| 1478-1482 | `_jurnalMetaDari` | function |
+| 1483-1485 | `_errKolomMeta` | function |
+| 1487-1509 | `saveJurnalToSupabase` | async function |
+| 1511-1528 | `updateJurnalInSupabase` | async function |
+| 1530-1540 | `deleteJurnalFromSupabase` | async function |
+| 1543-1552 | `saveAkunsToSupabase` | async function |
+| 1555-1571 | `saveProfilToSupabase` | async function |
+| 1574-1590 | `savePeriodeKunciToCloud` | async function |
+| 1593-1615 | `saveKartuStockToCloud` | async function |
+| 1617-1663 | `loadKartuStockFromData` | function |
+| 1666-1669 | `saveAttachmentToSupabase` | async function |
+| 1720-1743 | `addJurnal` | function |
+| 1749-1757 | `postJurnalLegacy` | function |
+| 1804-1833 | `handleAttachFile` | function |
+| 1837-1865 | `diagnosSupabase` | async function |
+| 1867-1944 | `showSupabaseSetup` | function |
 
 ## js/17-profil-perusahaan.js (490 baris, 23.5 KB)
 
@@ -1061,6 +1061,12 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 12-15 | `adalahPemilikBisnis` | function |
 | 25-44 | `susunDaftarBisnis` | function |
 | 51-69 | `ringkasHasilGabung` | function |
+
+## js/27-oauth-url.js (24 baris, 1.1 KB)
+
+| Baris | Nama | Jenis |
+| --- | --- | --- |
+| 12-23 | `bacaParamOAuth` | function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 

@@ -145,6 +145,8 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 **Temuan task 3.3:**
 - Hapus Bisnis di layar pilih bisnis tidak dibatasi pemilik. Setelah 3.2b, admin boleh menghapus `jurnal_entries`, jadi anggota admin yang menekan lama lalu Hapus bisa menghapus jurnal bisnis (hapus `companies` gagal diam-diam sesudahnya). Sudah diperbaiki: tombol disembunyikan untuk non-pemilik dan `showDeleteCompanyConfirm`/`confirmDeleteCompany` diberi guard `adalahPemilikBisnis`.
 - Alur gabung di `18-audit-permission.js` masih memakai insert langsung ke `org_members` dan select langsung `company_join_codes`; keduanya ditolak policy baru dari 3.2a, jadi join code tidak bisa dipakai. Sudah dipindah ke rpc di task 3.3b. File `002_akses_tim_inti.sql` dijalankan langsung di SQL Editor dan salinannya tidak ada di repo; tanda tangan fungsinya dicatat di `docs/SCHEMA.md`.
+- Deteksi redirect OAuth memakai `includes('code=')`, yang juga cocok dengan `error_code=` pada redirect error Supabase (`flow_state_expired`); setelah tukar kode gagal, penanda redirect tidak dilepas sehingga app macet di "Menghubungkan...". Diperbaiki dengan `bacaParamOAuth` di `js/27-oauth-url.js` (tes `tests/oauth-url.test.js`) dan pelepasan penanda saat tukar gagal.
+- `exportExcelFormula` di `14-export.js` memakai `saldo` padahal `const saldo = computeSaldoAll();` ter-comment, sehingga ekspor Excel dengan formula error. Baris itu diaktifkan kembali.
 
 ## Fase 4 — Tagihan pembelian (bill) (7 task)
 
