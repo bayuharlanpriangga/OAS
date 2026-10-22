@@ -325,6 +325,8 @@ let _readOnlyNotifTs = 0;
 /** Dipanggil di awal fungsi penyimpan. True = diblokir (viewer); user diberi tahu paling sering sekali per 5 detik. */
 function guardHanyaBaca(aksi) {
   if (!isReadOnly()) return false;
+  // Pemanggil sering sudah menampilkan spinner "Menyimpan..."; tanpa ini spinner nyangkut karena fungsi berhenti di sini.
+  if (typeof hideOpSpinner === 'function') hideOpSpinner();
   if (Date.now() - _readOnlyNotifTs > 5000) {
     _readOnlyNotifTs = Date.now();
     if (typeof showAlert === 'function') showAlert('🔒 Kamu Viewer di bisnis ini, jadi hanya bisa melihat data.' + (aksi ? ' ' + aksi + ' tidak disimpan.' : ''));
@@ -519,6 +521,8 @@ async function renderUserMgmtList() {
     const activeCount = Object.keys(MODULES_CRUD).filter(mod => p[mod]?.read !== false).length;
     const roleBadge = m.role === 'admin'
       ? `<span style="padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(245,158,11,0.15);color:var(--accent3);">Admin</span>`
+      : m.role === 'viewer'
+      ? `<span style="padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(148,163,184,0.15);color:var(--muted);">Viewer</span>`
       : `<span style="padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(34,211,238,0.1);color:var(--accent2);">Member</span>`;
     return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;">
       <div style="display:flex;align-items:flex-start;gap:10px;">
@@ -568,10 +572,12 @@ function openInviteModal() {
     upgradeSelectToOptPicker(invRole, {
       title: '<i class="ti ti-shield-check" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Pilih Role',
       iconMap: {
+        viewer: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted)"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
         member: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent2)"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
         admin:  '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent3)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>'
       },
       subMap: {
+        viewer: 'Hanya bisa melihat data, tidak bisa mengubah',
         member: 'Akses dibatasi sesuai izin yang diatur',
         admin:  'Akses penuh ke semua fitur & kelola tim'
       }
@@ -621,10 +627,12 @@ async function openEditMember(memberId) {
     upgradeSelectToOptPicker(editRole, {
       title: '<i class="ti ti-shield-check" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Pilih Role',
       iconMap: {
+        viewer: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted)"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
         member: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent2)"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
         admin:  '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent3)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>'
       },
       subMap: {
+        viewer: 'Hanya bisa melihat data, tidak bisa mengubah',
         member: 'Akses dibatasi sesuai izin yang diatur',
         admin:  'Akses penuh ke semua fitur & kelola tim'
       }

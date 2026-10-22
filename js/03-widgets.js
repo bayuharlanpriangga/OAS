@@ -2565,6 +2565,7 @@ function _applyCompanyLogo(compressed) {
       if (!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
       if (!jumlah || !akunKode) { orig.apply(this, arguments); return; }
 
+      if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Jurnal')) return;
       if (typeof showOpSpinner === 'function') showOpSpinner('Menyimpan Jurnal Kas...', 'Mengunggah ke cloud');
       orig.apply(this, arguments);
       // Jika local mode: hide setelah 500ms, jika cloud: addJurnal akan trigger async hideOpSpinner
@@ -2584,6 +2585,7 @@ function _applyCompanyLogo(compressed) {
       if (!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
       if (!jumlah) { orig.apply(this, arguments); return; }
 
+      if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Jurnal')) return;
       if (typeof showOpSpinner === 'function') showOpSpinner('Menyimpan Jurnal Penjualan...', 'Mengunggah ke cloud');
       orig.apply(this, arguments);
       if (typeof window.currentCompany === 'undefined' || !window.currentCompany) {
@@ -2603,6 +2605,7 @@ function _applyCompanyLogo(compressed) {
       if (!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
       if (!jumlah || !akunKode) { orig.apply(this, arguments); return; }
 
+      if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Jurnal')) return;
       if (typeof showOpSpinner === 'function') showOpSpinner('Menyimpan Jurnal Pembelian...', 'Mengunggah ke cloud');
       orig.apply(this, arguments);
       if (typeof window.currentCompany === 'undefined' || !window.currentCompany) {
@@ -2625,6 +2628,7 @@ function _applyCompanyLogo(compressed) {
       if (!tanggal) { showAlert('Pilih tanggal terlebih dahulu!'); return; }
       if (lines.length < 2) { orig.apply(this, arguments); return; }
 
+      if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Jurnal')) return;
       if (typeof showOpSpinner === 'function') showOpSpinner('Menyimpan Jurnal Manual...', 'Memvalidasi & mengunggah');
       orig.apply(this, arguments);
       if (typeof window.currentCompany === 'undefined' || !window.currentCompany) {

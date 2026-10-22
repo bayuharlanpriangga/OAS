@@ -12,13 +12,13 @@ let pass = 0, fail = 0;
 const ok = (c, m) => { c ? pass++ : fail++; console.log((c ? '  ok   ' : '  GAGAL ') + m); };
 
 function env(company, memberRole, orgMembers) {
-  const alerts = [];
-  const ctx = { Date, currentUser: { id: 'u-me', email: 'me@x.id' }, currentCompany: company,
+  const alerts = []; let spinnerHidden = 0;
+  const ctx = { Date, hideOpSpinner: () => { spinnerHidden++; }, _spin: () => spinnerHidden, currentUser: { id: 'u-me', email: 'me@x.id' }, currentCompany: company,
     _currentMemberRole: memberRole, _orgMembers: orgMembers || [], showAlert: m => alerts.push(m) };
   vm.createContext(ctx);
   vm.runInContext(bisnis, ctx);
   vm.runInContext(potongan, ctx);
-  return { ctx, alerts, run: c => vm.runInContext(c, ctx) };
+  return { ctx, alerts, spin: () => spinnerHidden, run: c => vm.runInContext(c, ctx) };
 }
 const lain = { id: 'c2', user_id: 'u-lain' };
 
@@ -31,6 +31,11 @@ ok(e.run('isAdmin()') === false, 'viewer bukan admin');
 ok(e.run("guardHanyaBaca('Jurnal')") === true && e.alerts.length === 1, 'guard memblokir dan memberi tahu user');
 e.run("guardHanyaBaca('Jurnal'); guardHanyaBaca('Jurnal')");
 ok(e.alerts.length === 1, 'pemberitahuan tidak membanjir (maks sekali per 5 detik)');
+
+ok(e.spin() >= 1, 'guard menutup spinner "Menyimpan..." yang sudah tampil (tidak nyangkut)');
+e = env({ ...lain, _role: 'member' }, 'member', []);
+e.run("guardHanyaBaca('x')");
+ok(e.spin() === 0, 'member: spinner tidak disentuh');
 
 console.log('[2] peran lain tidak terdampak');
 for (const peran of ['member', 'admin']) {
