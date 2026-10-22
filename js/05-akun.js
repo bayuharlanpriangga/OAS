@@ -377,6 +377,7 @@ let excelTemplate = 'data'; // 'data' or 'formula'
 let exportLogoDataUrl = null; // base64 logo for PDF
 
 function openExportModal() {
+  if (typeof isAdmin === 'function' && !isAdmin() && typeof hasPerm === 'function' && !hasPerm('export', 'read')) { showAlert('⛔ Kamu tidak punya izin untuk mengekspor laporan.'); return; }
   document.getElementById('exp-status').style.display = 'none';
   document.getElementById('exp-btn').disabled = false;
   document.getElementById('exp-btn').innerHTML = '<i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Sekarang';

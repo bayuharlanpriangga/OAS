@@ -48,9 +48,14 @@ ok(e.run('isReadOnly()') === false && e.run("hasPerm('reset','delete')") === tru
 e = env(null, null, []);
 ok(e.run('isReadOnly()') === false && e.run("guardHanyaBaca()") === false, 'mode tamu: tidak dibatasi');
 
-console.log('[3] izin per modul tetap berlaku untuk member');
-e = env({ ...lain, _role: 'member' }, 'member', [{ user_id: 'u-me', role: 'member', permissions: { invoice: { delete: false } } }]);
-ok(e.run("hasPerm('invoice','delete')") === false && e.run("hasPerm('invoice','update')") === true, 'member: izin yang dimatikan admin tetap ditegakkan');
+console.log('[3] izin per modul = hanya Lihat');
+e = env({ ...lain, _role: 'member' }, 'member', [{ user_id: 'u-me', role: 'member', permissions: { invoice: { read: false }, kontak: { read: true } } }]);
+ok(e.run("hasPerm('invoice','read')") === false, 'member: modul yang di-Lihat-nya dimatikan admin tertutup');
+ok(e.run("hasPerm('kontak','read')") === true && e.run("hasPerm('jurnal','read')") === true, 'member: modul lain (termasuk yang tidak tercatat) terbuka');
+ok(e.run("hasPerm('invoice','delete')") === true && e.run("hasPerm('invoice','create')") === true, 'member: hak ubah/hapus tidak lagi per modul (ikut peran)');
+ok(e.run("hasPerm('invoice')") === false, 'tanpa argumen aksi dianggap Lihat');
+e = env({ ...lain, _role: 'member' }, 'member', [{ user_id: 'u-me', role: 'member', permissions: { invoice: { read: true, create: false, update: false, delete: false } } }]);
+ok(e.run("hasPerm('invoice','read')") === true, 'data lama berisi create/update/delete=false: diabaikan, Lihat tetap berlaku');
 
 console.log(`\nHasil: ${pass} lulus, ${fail} gagal`);
 process.exit(fail ? 1 : 0);

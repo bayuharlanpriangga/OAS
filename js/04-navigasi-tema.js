@@ -63,8 +63,9 @@ const pageTitles = {
 
 function showPage(id) {
   // Cek permission sebelum buka halaman (kecuali dashboard & settings — settings itu personal, bukan data bisnis)
-  if (id !== 'dashboard' && id !== 'settings' && !isAdmin() && typeof hasPerm === 'function') {
-    if (!hasPerm(id === 'umur-piutang' ? 'invoice' : id, 'read')) { // umur piutang mengikuti izin Invoice
+  const _modulIzin = typeof modulUntukHalaman === 'function' ? modulUntukHalaman(id) : null;
+  if (id !== 'dashboard' && id !== 'settings' && _modulIzin && !isAdmin() && typeof hasPerm === 'function') {
+    if (!hasPerm(_modulIzin, 'read')) { // modul diambil dari pemetaan halaman (26-daftar-bisnis.js)
       showAlert('⛔ Akses ditolak.\n\nKamu tidak punya izin untuk membuka modul ini.\nHubungi admin untuk mengatur ulang hak akses.');
       return;
     }

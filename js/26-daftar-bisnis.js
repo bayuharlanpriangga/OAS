@@ -14,6 +14,25 @@ function adalahPemilikBisnis(company, userId) {
   return company._role === 'owner' || company.user_id === userId;
 }
 
+// Izin per modul (modal Edit Anggota) hanya mengatur LIHAT. Tiap halaman diikat ke satu modul;
+// halaman tanpa modul (null) selalu terbuka: pengaturan pribadi, tutorial, audit trail, notifikasi.
+const MODUL_HALAMAN = {
+  dashboard: 'dashboard', transaksi: 'transaksi', kurs: 'transaksi',
+  'jurnal-umum': 'jurnal', 'jurnal-kas': 'jurnal', 'jurnal-penjualan': 'jurnal', 'jurnal-pembelian': 'jurnal',
+  'jurnal-berulang': 'jurnal', 'buku-besar': 'jurnal', 'neraca-saldo': 'jurnal',
+  'laba-rugi': 'laba-rugi', neraca: 'neraca', 'perubahan-ekuitas': 'neraca', 'arus-kas': 'arus-kas',
+  akun: 'akun', 'aset-tetap': 'akun', kontak: 'kontak',
+  invoice: 'invoice', 'umur-piutang': 'invoice', produk: 'invoice',
+  anggaran: 'anggaran', pajak: 'pajak', 'kalk-ppn': 'pajak', rekonsiliasi: 'rekonsiliasi',
+  analitik: 'analitik', 'kalk-rasio': 'analitik', 'kalk-bep': 'analitik', 'kalk-bunga': 'analitik',
+  'kalk-penyusutan': 'analitik', 'kalk-persediaan': 'analitik',
+  'ai-assistant': 'ai-assistant',
+};
+/** Modul izin untuk sebuah halaman (id showPage), atau null bila halaman itu selalu terbuka. */
+function modulUntukHalaman(id) {
+  return Object.prototype.hasOwnProperty.call(MODUL_HALAMAN, id) ? MODUL_HALAMAN[id] : null;
+}
+
 /** Peran yang boleh mengubah data bisnis. Viewer (dan peran tak dikenal) hanya baca. */
 const PERAN_BOLEH_TULIS = ['owner', 'admin', 'member'];
 function peranBolehMenulis(role) {

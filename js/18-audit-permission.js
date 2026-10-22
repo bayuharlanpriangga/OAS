@@ -334,9 +334,10 @@ function guardHanyaBaca(aksi) {
   return true;
 }
 
-function hasPerm(mod, act) {
+function hasPerm(mod, act = 'read') {
   if (isAdmin()) return true;
   if (isReadOnly() && act !== 'read') return false;
+  if (act !== 'read') return true; // izin per modul hanya mengatur Lihat; hak ubah ikut peran
   const myId = currentUser?.id;
   const myEmail = (currentUser?.email || '').trim().toLowerCase();
   const me = _orgMembers.find(m =>
@@ -348,41 +349,31 @@ function hasPerm(mod, act) {
   return p[mod]?.[act] !== false;
 }
 
+// Sembunyikan/tampilkan elemen menurut izin; hanya menyentuh yang pernah disembunyikan oleh fungsi ini,
+// supaya elemen yang memang disembunyikan fitur lain tidak ikut muncul.
+function _setPermHidden(el, hidden) {
+  if (hidden) { if (el.style.display !== 'none') { el.dataset.permHidden = '1'; el.style.display = 'none'; } }
+  else if (el.dataset.permHidden) { delete el.dataset.permHidden; el.style.display = ''; }
+}
+
 function enforcePermissions() {
   const isAdm = isAdmin();
   const navUserMgmt = document.getElementById('nav-user-mgmt');
   if (navUserMgmt) navUserMgmt.style.display = isAdm ? '' : 'none';
 
-  if (isAdm) {
-    // Admin / Owner: pastikan kontrol yang sebelumnya disembunyikan ditampilkan kembali
-    document.querySelectorAll('#storage-reset-btn, [onclick*="resetData"], [onclick*="confirmResetAll"]').forEach(b => { b.style.display = ''; });
-    return;
-  }
-
-  Object.keys(MODULES_CRUD).forEach(mod => {
-    // Sembunyikan nav card di sidebar
-    const navEl = document.querySelector(`[data-page="${mod}"]`);
-    if (navEl) navEl.style.display = hasPerm(mod, 'read') ? '' : 'none';
-    if (mod === 'invoice') { const nu = document.querySelector('[data-page="umur-piutang"]'); if (nu) nu.style.display = hasPerm('invoice', 'read') ? '' : 'none'; } // umur piutang mengikuti izin Invoice
-    // Sembunyikan tombol Aksi Cepat di dashboard (onclick="showPage('mod')")
-    document.querySelectorAll(`.quick-action-btn[onclick*="showPage('${mod}')"]`).forEach(btn => {
-      btn.style.display = hasPerm(mod, 'read') ? '' : 'none';
-    });
+  // Menu sidebar dan tombol Aksi Cepat mengikuti izin Lihat modul halamannya (admin/owner selalu penuh)
+  document.querySelectorAll('[data-page]').forEach(el => {
+    const mod = modulUntukHalaman(el.getAttribute('data-page'));
+    if (mod) _setPermHidden(el, !hasPerm(mod, 'read'));
   });
-  // Sembunyikan tombol reset untuk non-admin
-  if (!hasPerm('reset', 'delete')) {
-    document.querySelectorAll('#storage-reset-btn, [onclick*="resetData"], [onclick*="confirmResetAll"]').forEach(b => { b.style.display = 'none'; });
-  }
-  // Sembunyikan tombol create/edit/delete di halaman jika tidak punya akses
-  const currentMod = typeof currentPage !== 'undefined' ? currentPage : null;
-  if (currentMod) {
-    const addBtns = document.querySelectorAll('.btn-tambah, [data-action="create"], .btn-primary[onclick*="baru"], .btn-primary[onclick*="tambah"]');
-    addBtns.forEach(btn => { btn.style.display = hasPerm(currentMod, 'create') ? '' : 'none'; });
-    const editBtns = document.querySelectorAll('[data-action="edit"], .btn-edit');
-    editBtns.forEach(btn => { btn.style.display = hasPerm(currentMod, 'update') ? '' : 'none'; });
-    const delBtns = document.querySelectorAll('[data-action="delete"], .btn-delete, .btn-hapus');
-    delBtns.forEach(btn => { btn.style.display = hasPerm(currentMod, 'delete') ? '' : 'none'; });
-  }
+  document.querySelectorAll('.quick-action-btn[onclick*="showPage("]').forEach(btn => {
+    const m = /showPage\('([^']+)'\)/.exec(btn.getAttribute('onclick') || '');
+    const mod = m && modulUntukHalaman(m[1]);
+    if (mod) _setPermHidden(btn, !hasPerm(mod, 'read'));
+  });
+  document.querySelectorAll('[onclick*="openExportModal"]').forEach(el => _setPermHidden(el, !hasPerm('export', 'read')));
+  // Reset Data khusus admin/owner
+  document.querySelectorAll('#storage-reset-btn, [onclick*="resetData"], [onclick*="confirmResetAll"]').forEach(b => { b.style.display = isAdm ? '' : 'none'; });
 }
 
 // ── Share Link / Join Code ──────────────────────────────────
@@ -564,7 +555,7 @@ function openInviteModal() {
   document.getElementById('invite-nik').value = '';
   document.getElementById('invite-jabatan').value = '';
   document.getElementById('invite-role').value = 'member';
-  renderPermTable('perm-table-invite', makeDefaultPerms(false));
+  renderPermTable('perm-table-invite', makeDefaultPerms());
   // Upgrade role select ke opt-picker dengan icon SVG
   const invRole = document.getElementById('invite-role');
   if (invRole) {
@@ -618,7 +609,7 @@ async function openEditMember(memberId) {
   document.getElementById('edit-member-nik').value = m.nik || '';
   document.getElementById('edit-member-jabatan').value = m.jabatan || '';
   document.getElementById('edit-member-role').value = m.role || 'member';
-  renderPermTable('perm-table-edit', m.permissions || makeDefaultPerms(false));
+  renderPermTable('perm-table-edit', m.permissions || makeDefaultPerms());
   // Upgrade role select ke opt-picker dengan icon SVG
   const editRole = document.getElementById('edit-member-role');
   if (editRole) {
@@ -659,42 +650,38 @@ async function simpanEditMember() {
 
 // ── Permission Table (CRUD per Modul) ─────────────────────────
 
-/** Render tabel permission CRUD ke dalam container */
+/** Render tabel izin Lihat per modul ke dalam container */
 function renderPermTable(containerId, perms) {
   const container = document.getElementById(containerId);
   if (!container) return;
-  const p = perms || makeDefaultPerms(false);
+  const p = perms || makeDefaultPerms();
+  const semua = Object.keys(MODULES_CRUD).every(mod => p[mod]?.read !== false);
   let html = `<table style="width:100%;border-collapse:collapse;font-size:12px;">
     <thead>
       <tr style="border-bottom:1px solid var(--border);">
         <th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:600;">Modul</th>
-        ${CRUD_ACTIONS.map(a => `<th style="text-align:center;padding:6px 4px;color:var(--muted);font-weight:600;min-width:44px;">${CRUD_LABELS[a]}</th>`).join('')}
-        <th style="text-align:center;padding:6px 4px;color:var(--muted);font-weight:600;">Semua</th>
+        <th style="text-align:center;padding:6px 8px;color:var(--muted);font-weight:600;min-width:64px;">
+          <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">Lihat
+            <input type="checkbox" id="${containerId}-semua" ${semua ? 'checked' : ''}
+              onchange="toggleAllPerm('${containerId}',this.checked)"
+              style="width:15px;height:15px;accent-color:var(--accent2);cursor:pointer;" title="Pilih semua">
+          </label>
+        </th>
       </tr>
     </thead>
     <tbody>`;
   Object.entries(MODULES_CRUD).forEach(([mod, info]) => {
-    const isDanger = info.danger;
-    html += `<tr style="border-bottom:1px solid var(--border);${isDanger?'background:rgba(239,68,68,0.04);':''}">
+    html += `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:7px 8px;">
         <div style="display:flex;align-items:center;gap:6px;">
-          <i class="ti ${info.icon}" style="font-size:13px;width:13px;height:13px;color:${isDanger?'var(--red)':'var(--muted)'};flex-shrink:0;"></i>
-          <span style="color:${isDanger?'var(--red)':'var(--text)'};">${info.label}</span>
+          <i class="ti ${info.icon}" style="font-size:13px;width:13px;height:13px;color:var(--muted);flex-shrink:0;"></i>
+          <span style="color:var(--text);">${info.label}</span>
         </div>
       </td>
-      ${CRUD_ACTIONS.map(act => {
-        const checked = p[mod]?.[act] !== false;
-        return `<td style="text-align:center;padding:4px;">
-          <input type="checkbox" data-mod="${mod}" data-act="${act}" class="perm-cb-${containerId}" ${checked?'checked':''}
-            onchange="syncRowAll('${containerId}','${mod}')"
-            style="width:15px;height:15px;accent-color:${isDanger?'var(--red)':'var(--accent)'};cursor:pointer;">
-        </td>`;
-      }).join('')}
       <td style="text-align:center;padding:4px;">
-        <input type="checkbox" data-mod="${mod}" data-act="all" class="perm-cb-${containerId}"
-          ${CRUD_ACTIONS.every(a => p[mod]?.[a] !== false) ? 'checked' : ''}
-          onchange="toggleRowAll('${containerId}','${mod}',this.checked)"
-          style="width:15px;height:15px;accent-color:var(--accent2);cursor:pointer;">
+        <input type="checkbox" data-mod="${mod}" class="perm-cb-${containerId}" ${p[mod]?.read !== false ? 'checked' : ''}
+          onchange="syncPermAll('${containerId}')"
+          style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;">
       </td>
     </tr>`;
   });
@@ -702,28 +689,24 @@ function renderPermTable(containerId, perms) {
   container.innerHTML = html;
 }
 
-/** Toggle semua CRUD di satu modul */
-function toggleRowAll(containerId, mod, checked) {
-  document.querySelectorAll(`.perm-cb-${containerId}[data-mod="${mod}"][data-act!="all"]`).forEach(cb => cb.checked = checked);
+/** Centang/lepas semua modul */
+function toggleAllPerm(containerId, checked) {
+  document.querySelectorAll(`.perm-cb-${containerId}`).forEach(cb => cb.checked = checked);
 }
 
-/** Sync checkbox "Semua" setelah individual diubah */
-function syncRowAll(containerId, mod) {
-  const cbs = Array.from(document.querySelectorAll(`.perm-cb-${containerId}[data-mod="${mod}"][data-act!="all"]`));
-  const allChecked = cbs.every(cb => cb.checked);
-  const allCb = document.querySelector(`.perm-cb-${containerId}[data-mod="${mod}"][data-act="all"]`);
-  if (allCb) allCb.checked = allChecked;
+/** Sinkronkan kotak "pilih semua" di header setelah satu modul diubah */
+function syncPermAll(containerId) {
+  const cbs = Array.from(document.querySelectorAll(`.perm-cb-${containerId}`));
+  const all = document.getElementById(containerId + '-semua');
+  if (all) all.checked = cbs.every(cb => cb.checked);
 }
 
-/** Baca nilai dari tabel permission */
+/** Baca nilai dari tabel izin: { modul: { read: bool } } */
 function readPermTableValues(containerId) {
   const perms = {};
   Object.keys(MODULES_CRUD).forEach(mod => {
-    perms[mod] = {};
-    CRUD_ACTIONS.forEach(act => {
-      const cb = document.querySelector(`.perm-cb-${containerId}[data-mod="${mod}"][data-act="${act}"]`);
-      perms[mod][act] = cb ? cb.checked : true;
-    });
+    const cb = document.querySelector(`.perm-cb-${containerId}[data-mod="${mod}"]`);
+    perms[mod] = { read: cb ? cb.checked : true };
   });
   return perms;
 }

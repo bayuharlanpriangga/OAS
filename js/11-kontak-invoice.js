@@ -128,7 +128,8 @@ function refreshKontakPickers() { /* tidak diperlukan lagi — picker on-demand 
 // MULTI-USER SYSTEM (Supabase-backed) — v2 dengan Share Link & CRUD Permissions
 // ══════════════════════════════════════════════════════════════
 
-// Modul + aksi CRUD yang bisa diatur per user
+// Modul yang bisa diatur per anggota. Izin per modul hanya LIHAT (halaman/menu); hak ubah dan hapus
+// ditentukan peran (viewer/member/admin), bukan per modul. Reset Data selalu khusus admin.
 const MODULES_CRUD = {
   dashboard:    { label: 'Dashboard',          icon: 'ti-layout-dashboard' },
   transaksi:    { label: 'Input Transaksi',     icon: 'ti-credit-card' },
@@ -145,20 +146,12 @@ const MODULES_CRUD = {
   analitik:     { label: 'Analitik & Tren',     icon: 'ti-chart-area' },
   'ai-assistant':{ label: 'AI Assisten',        icon: 'ti-robot' },
   export:       { label: 'Export Laporan',      icon: 'ti-upload' },
-  reset:        { label: 'Reset Data',          icon: 'ti-trash', danger: true },
 };
-const CRUD_ACTIONS = ['read','create','update','delete'];
-const CRUD_LABELS  = { read:'Lihat', create:'Buat', update:'Edit', delete:'Hapus' };
 
-/** Buat default permissions: semua modul, semua CRUD = true (kecuali reset = false) */
-function makeDefaultPerms(isAdmin = false) {
+/** Buat default permissions: semua modul boleh dilihat. */
+function makeDefaultPerms() {
   const p = {};
-  Object.keys(MODULES_CRUD).forEach(mod => {
-    p[mod] = {};
-    CRUD_ACTIONS.forEach(act => {
-      p[mod][act] = mod === 'reset' ? isAdmin : true;
-    });
-  });
+  Object.keys(MODULES_CRUD).forEach(mod => { p[mod] = { read: true }; });
   return p;
 }
 

@@ -106,5 +106,26 @@ eq(ro(milik, ME, null), false, 'pemilik boleh tulis');
 eq(ro(null, ME, null), false, 'mode tamu tidak dibatasi');
 eq(ro({ ...bisnisLain, _role: 'viewer' }, ME, 'admin'), true, 'memberRole admin dari fallback tidak menaikkan viewer');
 
+console.log('[11] pemetaan halaman ke modul izin');
+const modulH = (...a) => vm.runInContext('modulUntukHalaman', ctx)(...a);
+const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const src11 = fs.readFileSync(path.join(__dirname, '..', 'js', '11-kontak-invoice.js'), 'utf8');
+const modulIzin = Object.keys(vm.runInContext('(' + src11.match(/const MODULES_CRUD = (\{[\s\S]*?\n\});/)[1] + ')', vm.createContext({})));
+const halaman = [...new Set([...html.matchAll(/showPage\('([a-z-]+)'\)/g)].map(m => m[1]))];
+const BEBAS = ['settings', 'tutorial', 'audit-trail', 'notifikasi']; // sengaja selalu terbuka
+eq(modulH('jurnal-umum'), 'jurnal', 'jurnal-umum memakai modul Jurnal');
+eq(modulH('umur-piutang'), 'invoice', 'umur piutang mengikuti Invoice');
+eq(modulH('settings'), null, 'settings selalu terbuka');
+eq(modulH('tidak-ada'), null, 'id tak dikenal = null (tidak melempar)');
+eq(modulH('toString'), null, 'nama bawaan Object tidak dianggap halaman');
+ok(halaman.length > 30, 'menemukan daftar halaman dari index.html (' + halaman.length + ')');
+const yatim = halaman.filter(h => modulH(h) === null && !BEBAS.includes(h));
+ok(yatim.length === 0, 'tiap halaman terikat ke modul atau masuk daftar bebas' + (yatim.length ? ' (belum: ' + yatim.join(', ') + ')' : ''));
+const salah = halaman.filter(h => modulH(h) && !modulIzin.includes(modulH(h)));
+ok(salah.length === 0, 'semua modul tujuan ada di tabel izin' + (salah.length ? ' (salah: ' + salah.join(', ') + ')' : ''));
+const kosong = modulIzin.filter(m => m !== 'export' && !halaman.some(h => modulH(h) === m));
+ok(kosong.length === 0, 'tiap modul di tabel izin mengontrol minimal satu halaman' + (kosong.length ? ' (kosong: ' + kosong.join(', ') + ')' : ''));
+ok(!modulIzin.includes('reset'), 'Reset Data tidak ada di tabel izin (khusus admin)');
+
 console.log(`\n${pass} lulus, ${fail} gagal`);
 process.exit(fail ? 1 : 0);
