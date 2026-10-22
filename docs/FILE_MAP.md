@@ -640,7 +640,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 366-368 | `resetPilihSemua` | function |
 | 370-434 | `doResetAll` | async function |
 
-## js/16-auth-company.js (1945 baris, 87.6 KB)
+## js/16-auth-company.js (1955 baris, 88.1 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -701,20 +701,20 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1378-1465 | `loadDataFromSupabase` | async function |
 | 1478-1482 | `_jurnalMetaDari` | function |
 | 1483-1485 | `_errKolomMeta` | function |
-| 1487-1509 | `saveJurnalToSupabase` | async function |
-| 1511-1528 | `updateJurnalInSupabase` | async function |
-| 1530-1540 | `deleteJurnalFromSupabase` | async function |
-| 1543-1552 | `saveAkunsToSupabase` | async function |
-| 1555-1571 | `saveProfilToSupabase` | async function |
-| 1574-1590 | `savePeriodeKunciToCloud` | async function |
-| 1593-1615 | `saveKartuStockToCloud` | async function |
-| 1617-1663 | `loadKartuStockFromData` | function |
-| 1666-1669 | `saveAttachmentToSupabase` | async function |
-| 1720-1743 | `addJurnal` | function |
-| 1749-1757 | `postJurnalLegacy` | function |
-| 1804-1833 | `handleAttachFile` | function |
-| 1837-1865 | `diagnosSupabase` | async function |
-| 1867-1944 | `showSupabaseSetup` | function |
+| 1487-1510 | `saveJurnalToSupabase` | async function |
+| 1512-1530 | `updateJurnalInSupabase` | async function |
+| 1532-1543 | `deleteJurnalFromSupabase` | async function |
+| 1546-1556 | `saveAkunsToSupabase` | async function |
+| 1559-1576 | `saveProfilToSupabase` | async function |
+| 1579-1596 | `savePeriodeKunciToCloud` | async function |
+| 1599-1622 | `saveKartuStockToCloud` | async function |
+| 1624-1670 | `loadKartuStockFromData` | function |
+| 1673-1677 | `saveAttachmentToSupabase` | async function |
+| 1729-1753 | `addJurnal` | function |
+| 1759-1767 | `postJurnalLegacy` | function |
+| 1814-1843 | `handleAttachFile` | function |
+| 1847-1875 | `diagnosSupabase` | async function |
+| 1877-1954 | `showSupabaseSetup` | function |
 
 ## js/17-profil-perusahaan.js (490 baris, 23.5 KB)
 
@@ -746,7 +746,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 446-450 | `closeMataUangPicker` | function |
 | 479-489 | `openPhotoViewer` | function |
 
-## js/18-audit-permission.js (1209 baris, 63.6 KB)
+## js/18-audit-permission.js (1226 baris, 64.3 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -770,31 +770,33 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 268-270 | `auditLogLogout` | function |
 | 275-312 | `loadOrgMembers` | async function |
 | 314-317 | `isAdmin` | function |
-| 319-330 | `hasPerm` | function |
-| 332-367 | `enforcePermissions` | function |
-| 371-380 | `getOrCreateJoinCode` | async function |
-| 382-397 | `showJoinCodeModal` | async function |
-| 399-405 | `regenerateJoinCode` | async function |
-| 407-414 | `copyJoinLink` | function |
-| 417-434 | `checkJoinCodeInURL` | async function |
-| 437-460 | `_processJoinCode` | async function |
-| 463-467 | `openUserMgmtModal` | function |
-| 469-527 | `renderUserMgmtList` | async function |
-| 529-535 | `removeMember` | async function |
-| 539-564 | `openInviteModal` | function |
-| 566-588 | `kirimInvite` | async function |
-| 591-617 | `openEditMember` | async function |
-| 619-635 | `simpanEditMember` | async function |
-| 640-680 | `renderPermTable` | function |
-| 683-685 | `toggleRowAll` | function |
-| 688-693 | `syncRowAll` | function |
-| 696-706 | `readPermTableValues` | function |
-| 760-773 | `openJoinWithCodeModal` | function |
-| 775-802 | `prosesJoinCode` | async function |
-| 815-900 | `getKsSaldo` | function |
-| 1099-1117 | `auditOpenKatPicker` | function |
-| 1120-1135 | `auditOpenAktPicker` | function |
-| 1138-1172 | `auditOpenBizPicker` | function |
+| 320-322 | `isReadOnly` | function |
+| 326-333 | `guardHanyaBaca` | function |
+| 335-347 | `hasPerm` | function |
+| 349-384 | `enforcePermissions` | function |
+| 388-397 | `getOrCreateJoinCode` | async function |
+| 399-414 | `showJoinCodeModal` | async function |
+| 416-422 | `regenerateJoinCode` | async function |
+| 424-431 | `copyJoinLink` | function |
+| 434-451 | `checkJoinCodeInURL` | async function |
+| 454-477 | `_processJoinCode` | async function |
+| 480-484 | `openUserMgmtModal` | function |
+| 486-544 | `renderUserMgmtList` | async function |
+| 546-552 | `removeMember` | async function |
+| 556-581 | `openInviteModal` | function |
+| 583-605 | `kirimInvite` | async function |
+| 608-634 | `openEditMember` | async function |
+| 636-652 | `simpanEditMember` | async function |
+| 657-697 | `renderPermTable` | function |
+| 700-702 | `toggleRowAll` | function |
+| 705-710 | `syncRowAll` | function |
+| 713-723 | `readPermTableValues` | function |
+| 777-790 | `openJoinWithCodeModal` | function |
+| 792-819 | `prosesJoinCode` | async function |
+| 832-917 | `getKsSaldo` | function |
+| 1116-1134 | `auditOpenKatPicker` | function |
+| 1137-1152 | `auditOpenAktPicker` | function |
+| 1155-1189 | `auditOpenBizPicker` | function |
 
 ## js/19-fitur-tambahan.js (1848 baris, 99.7 KB)
 
@@ -984,36 +986,37 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 733-749 | `loadCachedPasswordDisplay` | function |
 | 751-763 | `copyCurrentPassword` | function |
 
-## js/22-cloud-records.js (443 baris, 22.0 KB)
+## js/22-cloud-records.js (455 baris, 23.0 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 24 | `_cloudKursDefault` | function |
 | 25-30 | `_cloudKursFromList` | function |
 | 32-34 | `_cloudKursLegacy` | function |
-| 67 | `_cloudCacheKey` | function |
-| 69-71 | `_cloudCacheLocal` | function |
-| 73-78 | `_cloudReadCache` | function |
-| 80 | `_cloudSeenKey` | function |
-| 83-86 | `_cloudPendingOnce` | function |
-| 89-92 | `_cloudLegacyAllowed` | function |
-| 95-106 | `_cloudIndex` | function |
-| 116-120 | `_cloudHash` | function |
-| 121 | `_cloudSnapHashKey` | function |
-| 122-125 | `_cloudSnapHashRead` | function |
-| 126-133 | `_cloudSnapHashSave` | function |
-| 135-147 | `_cloudUnsynced` | function |
-| 149-157 | `_cloudApplyUnsynced` | function |
-| 161-166 | `_cloudWithTimeout` | function |
-| 170-177 | `_cloudAfterSync` | function |
-| 180-189 | `_cloudSortNewestFirst` | function |
-| 191-194 | `cloudResetRecordsState` | function |
-| 203-233 | `cloudDeleteRecords` | function |
-| 235-238 | `_cloudLoadFromCache` | function |
-| 240-307 | `cloudLoadRecords` | async function |
-| 313-384 | `cloudOfferLocalMigration` | async function |
-| 387-397 | `cloudSyncRecords` | function |
-| 399-442 | `_cloudSyncNow` | async function |
+| 69 | `_cloudReadOnly` | function |
+| 71 | `_cloudCacheKey` | function |
+| 73-75 | `_cloudCacheLocal` | function |
+| 77-82 | `_cloudReadCache` | function |
+| 84 | `_cloudSeenKey` | function |
+| 87-90 | `_cloudPendingOnce` | function |
+| 93-96 | `_cloudLegacyAllowed` | function |
+| 99-110 | `_cloudIndex` | function |
+| 120-124 | `_cloudHash` | function |
+| 125 | `_cloudSnapHashKey` | function |
+| 126-129 | `_cloudSnapHashRead` | function |
+| 130-137 | `_cloudSnapHashSave` | function |
+| 139-151 | `_cloudUnsynced` | function |
+| 153-161 | `_cloudApplyUnsynced` | function |
+| 165-170 | `_cloudWithTimeout` | function |
+| 174-181 | `_cloudAfterSync` | function |
+| 184-193 | `_cloudSortNewestFirst` | function |
+| 195-198 | `cloudResetRecordsState` | function |
+| 207-238 | `cloudDeleteRecords` | function |
+| 240-243 | `_cloudLoadFromCache` | function |
+| 245-313 | `cloudLoadRecords` | async function |
+| 319-394 | `cloudOfferLocalMigration` | async function |
+| 397-408 | `cloudSyncRecords` | function |
+| 410-454 | `_cloudSyncNow` | async function |
 
 ## js/23-penomoran.js (222 baris, 9.7 KB)
 
@@ -1053,14 +1056,17 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 136-145 | `exportAgingPiutangCSV` | function |
 | 147-156 | `cetakAgingPiutang` | function |
 
-## js/26-daftar-bisnis.js (70 baris, 3.2 KB)
+## js/26-daftar-bisnis.js (92 baris, 4.1 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 7-9 | `labelPeranBisnis` | function |
 | 12-15 | `adalahPemilikBisnis` | function |
-| 25-44 | `susunDaftarBisnis` | function |
-| 51-69 | `ringkasHasilGabung` | function |
+| 19-21 | `peranBolehMenulis` | function |
+| 27-31 | `peranAktifBisnis` | function |
+| 34-37 | `bisnisHanyaBaca` | function |
+| 47-66 | `susunDaftarBisnis` | function |
+| 73-91 | `ringkasHasilGabung` | function |
 
 ## js/27-oauth-url.js (24 baris, 1.1 KB)
 

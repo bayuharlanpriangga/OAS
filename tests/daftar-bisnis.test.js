@@ -88,5 +88,23 @@ ok(!r.pesan.includes('<img'), 'nama bisnis di-escape');
 eq(rg(null).berhasil, false, 'null tidak melempar');
 eq(rg({ hasil: 'aneh' }).berhasil, false, 'hasil tak dikenal -> tidak berhasil');
 
+console.log('[10] peran hanya baca (task 3.5)');
+const bolehTulis = (...a) => vm.runInContext('peranBolehMenulis', ctx)(...a);
+const aktif = (...a) => vm.runInContext('peranAktifBisnis', ctx)(...a);
+const ro = (...a) => vm.runInContext('bisnisHanyaBaca', ctx)(...a);
+eq(bolehTulis('viewer'), false, 'viewer tidak boleh menulis');
+eq(bolehTulis('member') && bolehTulis('admin') && bolehTulis('owner'), true, 'member, admin, owner boleh menulis');
+eq(bolehTulis('aneh') || bolehTulis(undefined) || bolehTulis(null), false, 'peran tak dikenal = tidak boleh menulis');
+eq(aktif(null, ME, 'admin'), null, 'tanpa bisnis (mode tamu) tidak punya peran');
+eq(aktif(milik, ME, 'viewer'), 'owner', 'pemilik tetap owner walau memberRole lain');
+eq(aktif({ ...bisnisLain, _role: 'viewer' }, ME, 'member'), 'viewer', '_role dari daftar bisnis menang atas memberRole');
+eq(aktif(bisnisLain, ME, 'member'), 'member', 'tanpa _role dipakai memberRole');
+eq(aktif(bisnisLain, ME, null), 'viewer', 'tanpa info apa pun = viewer');
+eq(ro({ ...bisnisLain, _role: 'viewer' }, ME, null), true, 'viewer = hanya baca');
+eq(ro({ ...bisnisLain, _role: 'member' }, ME, null), false, 'member boleh tulis');
+eq(ro(milik, ME, null), false, 'pemilik boleh tulis');
+eq(ro(null, ME, null), false, 'mode tamu tidak dibatasi');
+eq(ro({ ...bisnisLain, _role: 'viewer' }, ME, 'admin'), true, 'memberRole admin dari fallback tidak menaikkan viewer');
+
 console.log(`\n${pass} lulus, ${fail} gagal`);
 process.exit(fail ? 1 : 0);

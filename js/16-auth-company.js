@@ -1486,6 +1486,7 @@ function _errKolomMeta(error) {
 
 async function saveJurnalToSupabase(entry) {
   if (!currentCompany) return;
+  if (guardHanyaBaca()) return;
   const payload = {
     company_id: currentCompany.id,
     no: entry.no,
@@ -1510,6 +1511,7 @@ async function saveJurnalToSupabase(entry) {
 
 async function updateJurnalInSupabase(entry) {
   if (!currentCompany || !entry._id) return;
+  if (guardHanyaBaca()) return;
   const payload = {
     tanggal: entry.tanggal,
     ket: entry.ket,
@@ -1529,6 +1531,7 @@ async function updateJurnalInSupabase(entry) {
 
 async function deleteJurnalFromSupabase(entry) {
   if (!currentCompany || !entry._id) return;
+  if (guardHanyaBaca()) return;
   showOpSpinner('Menghapus jurnal...', 'Sinkronisasi ke cloud');
   try {
     await DB.table('jurnal_entries').delete().eq('id', entry._id);
@@ -1542,6 +1545,7 @@ async function deleteJurnalFromSupabase(entry) {
 // SAVE AKUNS
 async function saveAkunsToSupabase() {
   if (!currentCompany) return;
+  if (guardHanyaBaca()) return;
   // Upsert semua akun
   const payload = akuns.map(a => ({
     company_id: currentCompany.id,
@@ -1554,6 +1558,7 @@ async function saveAkunsToSupabase() {
 // SAVE PROFIL
 async function saveProfilToSupabase(profilData) {
   if (!currentCompany) return;
+  if (guardHanyaBaca()) return;
   try {
     // Ambil data existing dulu agar tidak menimpa _kartu_stock
     const { data: existing } = await DB.table('company_profiles')
@@ -1574,6 +1579,7 @@ async function saveProfilToSupabase(profilData) {
 async function savePeriodeKunciToCloud() {
   markDirty();
   if (!currentCompany) return true; // mode tamu: cukup lewat serializeData() lokal
+  if (guardHanyaBaca()) return false;
   try {
     const { data: existing } = await DB.table('company_profiles').select('data').eq('company_id', currentCompany.id).single();
     const existingData = (existing && existing.data) ? existing.data : {};
@@ -1591,6 +1597,7 @@ async function savePeriodeKunciToCloud() {
 
 // SAVE & LOAD KARTU STOCK KE CLOUD
 async function saveKartuStockToCloud() {
+  if (guardHanyaBaca()) return false;
   // PENTING: syncKategoriFromKartuStockData() TIDAK dipanggil di sini.
   // Dipanggil dari saveMKS(skipSync=true) — kat.data sudah ditulis langsung oleh
   // addKartuStockOnBuy/deductKartuStockOnSale. Sync di sini overwrite data baru
@@ -1665,6 +1672,7 @@ function loadKartuStockFromData(profileData) {
 // ATTACHMENTS
 async function saveAttachmentToSupabase(jurnalEntry, attachments) {
   if (!currentCompany || !jurnalEntry._id) return;
+  if (guardHanyaBaca()) return;
   await DB.table('jurnal_entries').update({ attachments }).eq('id', jurnalEntry._id);
 }
 
@@ -1675,6 +1683,7 @@ window.saveToStorage = async function(showToast = true) {
   if (!currentCompany) {
     return _origSaveToStorage(showToast);
   }
+  if (isReadOnly()) { hasUnsavedChanges = false; return true; } // viewer: tidak ada yang disimpan; data selalu dari cloud
   // Hanya tampilkan spinner jika belum ada spinner aktif
   const _overlay = document.getElementById('op-spinner-overlay');
   const _spinnerAlreadyActive = _overlay && _overlay.classList.contains('active');
@@ -1726,6 +1735,7 @@ function addJurnal(entry, opsi) {
     guardPeriode(entry.tanggal, 'diposting');
     throw new PeriodeTerkunciError('Periode terkunci sampai ' + periodeKunciSampai + ': ' + entry.tanggal);
   }
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Jurnal')) throw new Error('Viewer hanya bisa membaca data bisnis ini');
   entry.no = 'JRN-' + String(jurnalCounter++).padStart(3,'0');
   if (_jurnalSumberAktif && !entry.sumber) entry.sumber = _jurnalSumberAktif;   // mis. 'Orias AI' (badge tambahan)
   jurnalEntries.push(entry);

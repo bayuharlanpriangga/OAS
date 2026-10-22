@@ -2,11 +2,13 @@
 // Memakai DB palsu di memori + stub localStorage, tanpa browser/Supabase.
 const fs = require('fs'), vm = require('vm'), path = require('path');
 const src = fs.readFileSync(path.join(__dirname, '..', 'js', '22-cloud-records.js'), 'utf8');
+const srcBisnis = fs.readFileSync(path.join(__dirname, '..', 'js', '26-daftar-bisnis.js'), 'utf8'); // adalahPemilikBisnis
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { c ? pass++ : fail++; console.log((c ? '  ok   ' : '  GAGAL ') + m); };
 
-function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } = {}) {
+// peran: peran user di bisnis aktif ('owner' = bisnis milik sendiri; selain itu bisnis milik orang lain).
+function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true, peran = 'owner' } = {}) {
   const net = { failLoad, failWrite, hang: false }; // bisa diubah di tengah tes untuk simulasi offline
   const store = [];            // baris company_records
   const calls = { upsert: [], delete: [] };
@@ -47,11 +49,14 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } =
   const ctx = {
     console, localStorage, DB: { table }, setTimeout, clearTimeout,
     showAlert: m => alerts.push(m), showCustomConfirmGeneral: async o => { confirms.push(o); return confirmAnswer; },
-    hideOpSpinner() {}, currentCompany: { id: 'c1', name: 'Toko A' },
+    hideOpSpinner() {}, currentUser: { id: 'u-me' },
+    currentCompany: { id: 'c1', name: 'Toko A', user_id: peran === 'owner' ? 'u-me' : 'u-lain', _role: peran },
   };
   vm.createContext(ctx);
   // list global di 01-state.js adalah `let`; di sini disediakan lewat script yang sama
   vm.runInContext('let invoiceList=[],kontakList=[],asetTetapList=[],produkList=[],jurnalBerulangList=[],anggaranList=[],notifAlerts=[],counterList=[],kursData={USD:1,IDR:16200,SGD:12100,EUR:18300,MYR:3500,JPY:107,updatedAt:null};', ctx);
+  vm.runInContext(srcBisnis, ctx);
+  ctx.isReadOnly = () => vm.runInContext('bisnisHanyaBaca', ctx)(ctx.currentCompany, ctx.currentUser.id, null); // sama dengan isReadOnly() di 18
   vm.runInContext(src, ctx);
   const run = code => vm.runInContext(code, ctx);
   return { ctx, run, store, calls, ls, alerts, net, confirms };
@@ -465,6 +470,82 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true } =
     await e.run('cloudLoadRecords()');
     ok(e.confirms.length === 1 && e.confirms[0].rows.some(r => r.label === 'Alert notifikasi'), 'data lama yang benar-benar belum di cloud tetap ditawarkan');
     ok(!e.confirms[0].rows.some(r => r.label === 'Invoice'), 'invoice yang sudah di cloud tidak ikut terdaftar di dialog');
+  }
+
+  console.log('[5] bisnis anggota (task 3.4)');
+  for (const peran of ['viewer', 'member', 'admin']) {
+    const e = makeEnv({ peran });
+    e.store.push({ company_id: 'c1', kind: 'invoice', rec_id: 'INV_1', data: { id: 'INV_1', createdAt: '2026-01-01' } });
+    e.store.push({ company_id: 'c1', kind: 'kontak', rec_id: 'K1', data: { id: 'K1' } });
+    e.store.push({ company_id: 'c1', kind: 'produk', rec_id: 'ks1', data: { ksId: 'ks1' } });
+    e.store.push({ company_id: 'c1', kind: 'counter', rec_id: 'INV-2026', data: { id: 'INV-2026', terakhir: 5 } });
+    // data lokal MILIK USER SENDIRI (key global lama) -- tidak boleh ikut masuk ke bisnis orang lain
+    e.ls['oas_invoices'] = JSON.stringify([{ id: 'INV_PRIBADI' }]);
+    e.ls['oas_alerts'] = JSON.stringify([{ id: 'alert_pribadi' }]);
+    e.ls['oas_anggaran'] = JSON.stringify([{ id: 'ang_pribadi' }]);
+    const loaded = await e.run('cloudLoadRecords()');
+    ok(loaded === true, peran + ': record bisnis anggota termuat dari cloud');
+    ok(e.run('invoiceList.map(i=>i.id).join()') === 'INV_1' && e.run('kontakList.length') === 1 && e.run('produkList.length') === 1, peran + ': invoice, kontak, produk masuk ke state');
+    ok(e.run('counterList.length') === 1, peran + ': counter penomoran ikut dimuat');
+    ok(e.confirms.length === 0, peran + ': data lokal pribadi TIDAK ditawarkan ke bisnis orang lain');
+    ok(!e.store.some(r => /pribadi/i.test(r.rec_id)), peran + ': data pribadi tidak terunggah ke bisnis orang lain');
+    ok(!e.ls['oas_rec_legacy_claimed_alert'] && !e.ls['oas_rec_legacy_claimed_anggaran'] && !e.ls['oas_rec_legacy_claimed'], peran + ': data lama global tidak ditandai sudah dipindah (masih bisa dipakai bisnis sendiri)');
+  }
+  {
+    // cloud bisnis anggota kosong: dulu langsung menawarkan data pribadi ke bisnis tsb
+    const e = makeEnv({ peran: 'member' });
+    e.ls['oas_invoices'] = JSON.stringify([{ id: 'INV_PRIBADI' }]);
+    e.ls['oas_kontak'] = JSON.stringify([{ id: 'K_PRIBADI' }]);
+    e.ls['oas_jb'] = JSON.stringify([{ id: 'jb_pribadi' }]);
+    await e.run('cloudLoadRecords()');
+    ok(e.confirms.length === 0 && e.store.length === 0, 'cloud bisnis anggota kosong: tidak ada tawaran unggah data pribadi');
+    ok(e.run('invoiceList.length') === 0, 'state bisnis anggota kosong, tidak terisi data pribadi');
+  }
+  {
+    // pemilik tetap mendapat tawaran seperti biasa (tidak ada regresi)
+    const e = makeEnv({ peran: 'owner' });
+    e.ls['oas_invoices'] = JSON.stringify([{ id: 'INV_old' }]);
+    await e.run('cloudLoadRecords()');
+    ok(e.store.some(r => r.rec_id === 'INV_old'), 'pemilik: data lama tetap diunggah ke bisnis sendiri');
+  }
+  {
+    // cache perubahan milik bisnis anggota itu sendiri (offline) tetap diselamatkan lewat jalur unsynced
+    const e = makeEnv({ peran: 'member' });
+    e.store.push({ company_id: 'c1', kind: 'invoice', rec_id: 'INV_1', data: { id: 'INV_1', createdAt: '2026-01-01' } });
+    await e.run('cloudLoadRecords()');
+    e.run("invoiceList.unshift({id:'INV_OFF', createdAt:'2026-03-01'})");
+    e.run("_cloudCacheLocal('c1','invoice',invoiceList)"); // simulasi simpan saat offline: cache terisi, cloud belum
+    e.run('cloudResetRecordsState()');
+    await e.run('cloudLoadRecords()');
+    ok(e.store.some(r => r.rec_id === 'INV_OFF'), 'member: perubahan offline di bisnis anggota tetap terkirim');
+  }
+
+  console.log('[6] viewer hanya baca (task 3.5)');
+  {
+    const e = makeEnv({ peran: 'viewer' });
+    e.store.push({ company_id: 'c1', kind: 'invoice', rec_id: 'INV_1', data: { id: 'INV_1', createdAt: '2026-01-01' } });
+    // sisa perubahan lokal dari sebelum perannya jadi viewer: tidak boleh diterapkan/dikirim lagi
+    e.ls['oas_rec_invoice_c1'] = JSON.stringify([{ id: 'INV_1', createdAt: '2026-01-01' }, { id: 'INV_LAMA' }]);
+    e.ls['oas_rec_snaph_c1'] = JSON.stringify({ invoice: { INV_1: 'x' } });
+    await e.run('cloudLoadRecords()');
+    ok(e.run('invoiceList.map(i=>i.id).join()') === 'INV_1', 'viewer: state murni dari cloud, perubahan lokal lama tidak diterapkan');
+    ok(!e.store.some(r => r.rec_id === 'INV_LAMA') && e.calls.upsert.length === 0, 'viewer: tidak ada kiriman ke cloud saat memuat');
+    e.run("invoiceList.unshift({id:'INV_VIEWER', createdAt:'2026-05-01'}); kontakList.push({id:'K_V'})");
+    const r = await e.run('cloudSyncRecords()');
+    ok(r === true, 'viewer: cloudSyncRecords tidak dianggap gagal (tidak memunculkan peringatan sinkron)');
+    ok(e.calls.upsert.length === 0 && e.calls.delete.length === 0 && !e.store.some(x => /VIEWER|K_V/.test(x.rec_id)), 'viewer: tidak ada upsert/delete ke cloud');
+    ok(!/INV_VIEWER/.test(e.ls['oas_rec_invoice_c1'] || ''), 'viewer: perubahan tidak ditulis ke cache lokal');
+    ok(e.alerts.length === 0, 'viewer: tidak ada alert gagal sinkron');
+    const gagal = await e.run("cloudDeleteRecords(['invoice'])");
+    ok(gagal.join() === 'invoice' && e.store.some(x => x.rec_id === 'INV_1'), 'viewer: hapus semua record ditolak, data cloud utuh');
+  }
+  {
+    // member tetap bisa menulis di bisnis anggota (tidak ada regresi)
+    const e = makeEnv({ peran: 'member' });
+    await e.run('cloudLoadRecords()');
+    e.run("invoiceList.push({id:'INV_M'})");
+    await e.run('cloudSyncRecords()');
+    ok(e.store.some(x => x.rec_id === 'INV_M' && x.company_id === 'c1'), 'member: tetap menulis ke bisnis anggota');
   }
 
   console.log('\nHasil: ' + pass + ' lulus, ' + fail + ' gagal');

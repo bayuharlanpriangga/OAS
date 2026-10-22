@@ -316,8 +316,25 @@ function isAdmin() {
   return _currentMemberRole === 'admin' || _currentMemberRole === 'owner';
 }
 
+// Viewer = hanya baca (task 3.5). Nilai permissions di org_members tidak boleh melonggarkan ini.
+function isReadOnly() {
+  return typeof bisnisHanyaBaca === 'function' && bisnisHanyaBaca(currentCompany, currentUser?.id, _currentMemberRole);
+}
+
+let _readOnlyNotifTs = 0;
+/** Dipanggil di awal fungsi penyimpan. True = diblokir (viewer); user diberi tahu paling sering sekali per 5 detik. */
+function guardHanyaBaca(aksi) {
+  if (!isReadOnly()) return false;
+  if (Date.now() - _readOnlyNotifTs > 5000) {
+    _readOnlyNotifTs = Date.now();
+    if (typeof showAlert === 'function') showAlert('🔒 Kamu Viewer di bisnis ini, jadi hanya bisa melihat data.' + (aksi ? ' ' + aksi + ' tidak disimpan.' : ''));
+  }
+  return true;
+}
+
 function hasPerm(mod, act) {
   if (isAdmin()) return true;
+  if (isReadOnly() && act !== 'read') return false;
   const myId = currentUser?.id;
   const myEmail = (currentUser?.email || '').trim().toLowerCase();
   const me = _orgMembers.find(m =>

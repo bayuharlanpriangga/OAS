@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 137 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 17/137 task selesai.**
+**Progres: 19/137 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -68,7 +68,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | --- | --- | --- |
 | 1 | Fondasi data | 8/8 |
 | 2 | Umur piutang | 4/4 |
-| 3 | Akses anggota tim | 5/7 |
+| 3 | Akses anggota tim | 7/7 |
 | 4 | Tagihan pembelian (bill) | 0/7 |
 | 5 | Pembayaran | 0/7 |
 | 6 | Kartu piutang/hutang dan model dokumen | 0/3 |
@@ -139,14 +139,25 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 | ☑ | 3.2b | SQL policy `company_records`, `jurnal_entries`, `akuns`, `company_profiles` sesuai matriks D2 pada 3.1 | 3.2a, SQL 001, hasil 3.1 |
 | ☑ | 3.3 | Client: tampilkan bisnis tempat user menjadi anggota di daftar bisnis. Modul `js/26-daftar-bisnis.js` (fungsi murni `susunDaftarBisnis`, tes `tests/daftar-bisnis.test.js`); `getMyCompanies()` hanya memuat keanggotaan `active`, memanggil rpc `klaim_undangan` (gagal diabaikan), dan memberi `_role` tiap bisnis; kartu bisnis menampilkan "Anggota (Viewer/Member/Admin)"; Hapus Bisnis hanya untuk pemilik | potongan selectCompany + daftar bisnis di 16 |
 | ☑ | 3.3b | Client: alur gabung pindah ke rpc. `_processJoinCode` → `gabung(kode)` (hasil `bergabung`/`diaktifkan`/`sudah_anggota`, pesan lewat `ringkasHasilGabung` di `26-daftar-bisnis.js`, peran awal Viewer), `getOrCreateJoinCode` → `buat_kode_gabung(cid)`, update `user_id` langsung di `loadOrgMembers` dihapus (diganti `klaim_undangan` di `getMyCompanies`). Perlu uji manual dua akun | 3.3, hasil dump fungsi 002 |
-| ☐ | 3.4 | Client: muat `company_records` bisnis anggota ke state | CR, 3.3 |
-| ☐ | 3.5 | Peran viewer = hanya baca: blok tulis di cloudSyncRecords dan tombol simpan | CR, potongan izin peran |
+| ☑ | 3.4 | Client: muat `company_records` bisnis anggota ke state. `cloudLoadRecords()` sudah memuat per `company_id` (RLS `cr_select` dari 3.2b mengizinkan anggota active), jadi yang diperbaiki adalah `cloudOfferLocalMigration` di `22-cloud-records.js`: data lama di key global (milik user sendiri) tidak lagi ditawarkan ke bisnis tempat user menjadi anggota; tes di bagian [5] `tests/cloud-records.test.js`. Perlu uji manual dua akun | CR, 3.3 |
+| ☑ | 3.5 | Peran viewer = hanya baca: blok tulis di cloudSyncRecords dan tombol simpan. Fungsi murni `peranBolehMenulis`, `peranAktifBisnis`, `bisnisHanyaBaca` di `26-daftar-bisnis.js`; `isReadOnly()`, `guardHanyaBaca()` dan `hasPerm` (viewer hanya `read`) di `18-audit-permission.js`; guard di `22-cloud-records.js` (sync, muat, tawaran migrasi, hapus massal) dan semua penyimpan di `16-auth-company.js` + `addJurnal`. Tes: `tests/hanya-baca.test.js`, bagian [10] `daftar-bisnis.test.js`, [6] `cloud-records.test.js`. Perlu uji manual akun viewer | CR, potongan izin peran |
 
 **Temuan task 3.3:**
 - Hapus Bisnis di layar pilih bisnis tidak dibatasi pemilik. Setelah 3.2b, admin boleh menghapus `jurnal_entries`, jadi anggota admin yang menekan lama lalu Hapus bisa menghapus jurnal bisnis (hapus `companies` gagal diam-diam sesudahnya). Sudah diperbaiki: tombol disembunyikan untuk non-pemilik dan `showDeleteCompanyConfirm`/`confirmDeleteCompany` diberi guard `adalahPemilikBisnis`.
 - Alur gabung di `18-audit-permission.js` masih memakai insert langsung ke `org_members` dan select langsung `company_join_codes`; keduanya ditolak policy baru dari 3.2a, jadi join code tidak bisa dipakai. Sudah dipindah ke rpc di task 3.3b. File `002_akses_tim_inti.sql` dijalankan langsung di SQL Editor dan salinannya tidak ada di repo; tanda tangan fungsinya dicatat di `docs/SCHEMA.md`.
 - Deteksi redirect OAuth memakai `includes('code=')`, yang juga cocok dengan `error_code=` pada redirect error Supabase (`flow_state_expired`); setelah tukar kode gagal, penanda redirect tidak dilepas sehingga app macet di "Menghubungkan...". Diperbaiki dengan `bacaParamOAuth` di `js/27-oauth-url.js` (tes `tests/oauth-url.test.js`) dan pelepasan penanda saat tukar gagal.
 - `exportExcelFormula` di `14-export.js` memakai `saldo` padahal `const saldo = computeSaldoAll();` ter-comment, sehingga ekspor Excel dengan formula error. Baris itu diaktifkan kembali.
+
+**Temuan task 3.4:**
+- Memuat record bisnis anggota ke state ternyata sudah jalan sejak 3.3: `loadDataFromSupabase` → `cloudLoadRecords()` hanya memfilter `company_id`, tidak `user_id`, dan policy `cr_select` mengizinkan viewer/member/admin. Tes baru memastikan invoice, kontak, produk, dan counter bisnis anggota masuk ke state dan cache per bisnis (`oas_rec_<kind>_<cid>`) tidak bercampur.
+- Bug yang ditemukan dan sudah diperbaiki: `cloudOfferLocalMigration` menawarkan data lama di key global (`oas_invoices`, `oas_kontak`, `oas_jb`, `oas_anggaran`, `oas_alerts`, dll.) ke bisnis mana pun yang sedang dibuka. Di bisnis anggota (cloud masih kosong, atau ada kind `legacyOnce` yang belum diputuskan), data pribadi user bisa terunggah ke bisnis orang lain bila perannya member/admin, dan tanda `oas_rec_legacy_claimed*` ikut terpasang sehingga data itu tidak bisa lagi dipindah ke bisnis sendiri. Sekarang tawaran data lama hanya untuk pemilik (`adalahPemilikBisnis`).
+- Belum ditutup, ikut task 3.5: viewer masih bisa memicu tulis ke cloud (ditolak RLS, user hanya melihat peringatan gagal sinkron), dan `loadDataFromSupabase` memanggil `saveAkunsToSupabase()` bila `akuns` kosong; di bisnis anggota ini seharusnya tidak terjadi karena pemilik sudah mengisi COA.
+
+**Temuan task 3.5:**
+- `hasPerm()` tidak memperhitungkan peran: anggota yang ada di `org_members` dianggap boleh semuanya kecuali yang di-set `false` di `permissions`, jadi viewer (permissions kosong) tampil punya hak buat/ubah/hapus di UI. Sudah diperbaiki: viewer hanya mendapat `read`, apa pun isi `permissions`.
+- Viewer yang mengubah data lalu sync: dulu perubahan itu masuk cache lokal dan ditolak RLS, lalu diterapkan lagi di atas data cloud pada pemuatan berikutnya (lewat jalur perubahan belum tersinkron) sambil terus memunculkan peringatan gagal sinkron. Sekarang viewer tidak menulis ke cloud maupun cache, dan perubahan lokal lama diabaikan saat memuat.
+- Peran diambil dari `_role` daftar bisnis (org_members) lebih dulu, bukan dari `_currentMemberRole`, karena `loadOrgMembers` jatuh ke `member` bila query gagal dan itu menaikkan viewer jadi bisa menulis.
+- Belum ditutup: tombol/form tidak disembunyikan semua. `enforcePermissions` hanya menyembunyikan tombol dengan selector tertentu (`.btn-tambah`, `[data-action]`, dst.), jadi di beberapa halaman viewer masih bisa membuka form dan mengubah tampilan lokal; hasilnya tidak tersimpan (user diberi pesan "Kamu Viewer...") dan hilang saat muat ulang. Perapian per halaman bisa dijadikan task kecil sendiri.
 
 ## Fase 4 — Tagihan pembelian (bill) (7 task)
 

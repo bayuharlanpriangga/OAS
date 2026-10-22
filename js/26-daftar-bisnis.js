@@ -14,6 +14,28 @@ function adalahPemilikBisnis(company, userId) {
   return company._role === 'owner' || company.user_id === userId;
 }
 
+/** Peran yang boleh mengubah data bisnis. Viewer (dan peran tak dikenal) hanya baca. */
+const PERAN_BOLEH_TULIS = ['owner', 'admin', 'member'];
+function peranBolehMenulis(role) {
+  return PERAN_BOLEH_TULIS.indexOf(role) >= 0;
+}
+
+/**
+ * Peran user di bisnis aktif: pemilik > _role dari daftar bisnis (org_members) > peran hasil
+ * loadOrgMembers. Tanpa bisnis (mode tamu) = null. Peran tak dikenal jatuh ke hak terkecil (viewer).
+ */
+function peranAktifBisnis(company, userId, memberRole) {
+  if (!company) return null;
+  if (adalahPemilikBisnis(company, userId)) return 'owner';
+  return company._role || memberRole || 'viewer';
+}
+
+/** True bila user sedang di bisnis yang tidak boleh ia ubah (viewer). Mode tamu tidak dibatasi. */
+function bisnisHanyaBaca(company, userId, memberRole) {
+  const p = peranAktifBisnis(company, userId, memberRole);
+  return p !== null && !peranBolehMenulis(p);
+}
+
 /**
  * Susun daftar bisnis untuk layar pilih bisnis.
  * owned           : baris companies milik user (companies.user_id = user)

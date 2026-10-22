@@ -64,6 +64,10 @@ let _cloudQueue = Promise.resolve(true);
 let _cloudReadyFor = null;    // companyId yang sudah selesai dimuat dari cloud
 let _cloudTableWarned = false;
 
+// Viewer hanya baca (task 3.5): tidak menulis ke cloud maupun cache, dan perubahan lokal lama
+// (mis. dari sebelum perannya diturunkan) tidak diterapkan lagi di atas data cloud.
+function _cloudReadOnly() { return typeof isReadOnly === 'function' && isReadOnly(); }
+
 function _cloudCacheKey(cid, kind) { return 'oas_rec_' + kind + '_' + cid; }
 
 function _cloudCacheLocal(cid, kind, list) {
@@ -203,6 +207,7 @@ function cloudResetRecordsState() {
 function cloudDeleteRecords(kinds) {
   const ks = (kinds || []).filter(k => CLOUD_RECORD_KINDS[k]);
   if (!ks.length) return Promise.resolve([]);
+  if (_cloudReadOnly()) return Promise.resolve(ks); // viewer: semua dianggap gagal dihapus
   const clearLocal = (cid, kind) => {
     const def = CLOUD_RECORD_KINDS[kind];
     def.set([]);
@@ -268,7 +273,7 @@ async function cloudLoadRecords() {
   const byKind = {};
   rows.forEach(r => { (byKind[r.kind] = byKind[r.kind] || []).push(r.data); });
   // Hitung SEBELUM cache ditimpa data cloud di bawah.
-  const unsynced = _cloudUnsynced(cid);
+  const unsynced = _cloudReadOnly() ? {} : _cloudUnsynced(cid);
 
   _cloudSnap[cid] = {};
   Object.entries(CLOUD_RECORD_KINDS).forEach(([kind, def]) => {
@@ -287,14 +292,15 @@ async function cloudLoadRecords() {
   }
 
   // Cloud kosong: mungkin bisnis baru, atau data lama masih di perangkat ini.
-  if (!rows.length) await cloudOfferLocalMigration(cid);
+  const bolehTulis = !_cloudReadOnly();
+  if (!rows.length) { if (bolehTulis) await cloudOfferLocalMigration(cid); }
   else {
     localStorage.setItem('oas_rec_seen_' + cid, '1');
     Object.keys(CLOUD_RECORD_KINDS).forEach(k => _cloudCacheLocal(cid, k, CLOUD_RECORD_KINDS[k].get()));
     // Kind legacyOnce yang sudah punya record di cloud dianggap beres; sisanya
     // mungkin masih punya data lama di perangkat ini.
     _cloudPendingOnce(cid).forEach(k => { if (byKind[k] && byKind[k].length) localStorage.setItem(_cloudSeenKey(cid, k), '1'); });
-    if (_cloudPendingOnce(cid).length) await cloudOfferLocalMigration(cid);
+    if (bolehTulis && _cloudPendingOnce(cid).length) await cloudOfferLocalMigration(cid);
     // Perubahan dari sesi sebelumnya yang belum sempat terkirim (offline / halaman ditutup).
     const kU = Object.keys(unsynced);
     if (kU.length) {
@@ -317,7 +323,11 @@ async function cloudOfferLocalMigration(cid) {
   // Data lama (key global / payload lokal) hanya ditawarkan kalau bisnis ini belum
   // pernah punya data di cloud dan data global belum dipindah ke bisnis lain.
   // Tanpa ini, record yang sengaja dihapus bisa muncul lagi dari data lama.
-  const legacyOk = !localStorage.getItem('oas_rec_legacy_claimed') && !localStorage.getItem('oas_rec_seen_' + cid);
+  // Data lama di key global itu milik user sendiri: hanya boleh dipindah ke bisnis MILIKNYA.
+  // Di bisnis tempat dia menjadi anggota, data pribadi tidak ditawarkan (task 3.4).
+  const pemilik = typeof adalahPemilikBisnis !== 'function'
+    || adalahPemilikBisnis(currentCompany, typeof currentUser !== 'undefined' && currentUser ? currentUser.id : null);
+  const legacyOk = pemilik && !localStorage.getItem('oas_rec_legacy_claimed') && !localStorage.getItem('oas_rec_seen_' + cid);
 
   Object.entries(CLOUD_RECORD_KINDS).forEach(([kind, def]) => {
     const cached = _cloudReadCache(cid, kind);
@@ -330,7 +340,7 @@ async function cloudOfferLocalMigration(cid) {
       if (fresh.length) found[kind] = fresh;
       return;
     }
-    if (def.legacyKey && _cloudLegacyAllowed(cid, kind, def, legacyOk)) {
+    if (def.legacyKey && pemilik && _cloudLegacyAllowed(cid, kind, def, legacyOk)) {
       try {
         let arr = JSON.parse(localStorage.getItem(def.legacyKey) || '[]');
         if (def.fromLegacy) arr = def.fromLegacy(arr);
@@ -386,6 +396,7 @@ async function cloudOfferLocalMigration(cid) {
 // Sinkron ke cloud. kinds = array nama kind; kosong = semua. Mengembalikan Promise<boolean>.
 function cloudSyncRecords(kinds) {
   if (!currentCompany) return Promise.resolve(true); // mode tamu: pakai localStorage lama
+  if (_cloudReadOnly()) return Promise.resolve(true); // viewer: tidak ada yang ditulis (ke cloud maupun cache)
   const cid = currentCompany.id;
   const ks = (kinds && kinds.length) ? kinds : Object.keys(CLOUD_RECORD_KINDS);
   ks.forEach(k => { if (CLOUD_RECORD_KINDS[k]) _cloudCacheLocal(cid, k, CLOUD_RECORD_KINDS[k].get()); });
@@ -400,6 +411,7 @@ async function _cloudSyncNow(cid, kinds) {
   // Jangan tulis kalau user sudah pindah bisnis, atau data cloud belum dimuat
   // (data lokal bisa lebih lama dari cloud dan akan menimpanya).
   if (!currentCompany || currentCompany.id !== cid || _cloudReadyFor !== cid) return false;
+  if (_cloudReadOnly()) return true; // jaga-jaga: antrean lama saat peran berubah
 
   const snapAll = _cloudSnap[cid] || (_cloudSnap[cid] = {});
   const now = new Date().toISOString();
