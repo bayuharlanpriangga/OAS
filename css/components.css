@@ -1093,3 +1093,6 @@ body.light-mode .oas-cal-day.selected { color: #fff; }
   border-radius: 6px; flex-shrink: 0; opacity: 0.6;
 }
 .acc-switch-remove:hover { opacity: 1; color: var(--red); background: rgba(248,113,113,0.1); }
+
+/* Menu yang modulnya tidak boleh dibuka anggota (js/18-audit-permission.js, enforcePermissions) */
+.perm-locked { opacity: .45; filter: grayscale(.6); cursor: not-allowed; }

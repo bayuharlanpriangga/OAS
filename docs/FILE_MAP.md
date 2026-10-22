@@ -746,7 +746,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 446-450 | `closeMataUangPicker` | function |
 | 479-489 | `openPhotoViewer` | function |
 
-## js/18-audit-permission.js (1215 baris, 64.2 KB)
+## js/18-audit-permission.js (1216 baris, 64.3 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -773,31 +773,31 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 320-322 | `isReadOnly` | function |
 | 326-335 | `guardHanyaBaca` | function |
 | 337-350 | `hasPerm` | function |
-| 354-357 | `_setPermHidden` | function |
-| 359-377 | `enforcePermissions` | function |
-| 381-390 | `getOrCreateJoinCode` | async function |
-| 392-407 | `showJoinCodeModal` | async function |
-| 409-415 | `regenerateJoinCode` | async function |
-| 417-424 | `copyJoinLink` | function |
-| 427-444 | `checkJoinCodeInURL` | async function |
-| 447-470 | `_processJoinCode` | async function |
-| 473-477 | `openUserMgmtModal` | function |
-| 479-539 | `renderUserMgmtList` | async function |
-| 541-547 | `removeMember` | async function |
-| 551-577 | `openInviteModal` | function |
-| 579-601 | `kirimInvite` | async function |
-| 604-631 | `openEditMember` | async function |
-| 633-649 | `simpanEditMember` | async function |
-| 654-690 | `renderPermTable` | function |
-| 693-695 | `toggleAllPerm` | function |
-| 698-702 | `syncPermAll` | function |
-| 705-712 | `readPermTableValues` | function |
-| 766-779 | `openJoinWithCodeModal` | function |
-| 781-808 | `prosesJoinCode` | async function |
-| 821-906 | `getKsSaldo` | function |
-| 1105-1123 | `auditOpenKatPicker` | function |
-| 1126-1141 | `auditOpenAktPicker` | function |
-| 1144-1178 | `auditOpenBizPicker` | function |
+| 354-358 | `_setPermLocked` | function |
+| 360-378 | `enforcePermissions` | function |
+| 382-391 | `getOrCreateJoinCode` | async function |
+| 393-408 | `showJoinCodeModal` | async function |
+| 410-416 | `regenerateJoinCode` | async function |
+| 418-425 | `copyJoinLink` | function |
+| 428-445 | `checkJoinCodeInURL` | async function |
+| 448-471 | `_processJoinCode` | async function |
+| 474-478 | `openUserMgmtModal` | function |
+| 480-540 | `renderUserMgmtList` | async function |
+| 542-548 | `removeMember` | async function |
+| 552-578 | `openInviteModal` | function |
+| 580-602 | `kirimInvite` | async function |
+| 605-632 | `openEditMember` | async function |
+| 634-650 | `simpanEditMember` | async function |
+| 655-691 | `renderPermTable` | function |
+| 694-696 | `toggleAllPerm` | function |
+| 699-703 | `syncPermAll` | function |
+| 706-713 | `readPermTableValues` | function |
+| 767-780 | `openJoinWithCodeModal` | function |
+| 782-809 | `prosesJoinCode` | async function |
+| 822-907 | `getKsSaldo` | function |
+| 1106-1124 | `auditOpenKatPicker` | function |
+| 1127-1142 | `auditOpenAktPicker` | function |
+| 1145-1179 | `auditOpenBizPicker` | function |
 
 ## js/19-fitur-tambahan.js (1848 baris, 99.7 KB)
 

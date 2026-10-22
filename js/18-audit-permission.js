@@ -349,11 +349,12 @@ function hasPerm(mod, act = 'read') {
   return p[mod]?.[act] !== false;
 }
 
-// Sembunyikan/tampilkan elemen menurut izin; hanya menyentuh yang pernah disembunyikan oleh fungsi ini,
-// supaya elemen yang memang disembunyikan fitur lain tidak ikut muncul.
-function _setPermHidden(el, hidden) {
-  if (hidden) { if (el.style.display !== 'none') { el.dataset.permHidden = '1'; el.style.display = 'none'; } }
-  else if (el.dataset.permHidden) { delete el.dataset.permHidden; el.style.display = ''; }
+// Menu yang tidak boleh dibuka tetap tampil tetapi diberi tanda terkunci (redup + tooltip);
+// kliknya ditolak oleh showPage()/openExportModal() dengan pesan akses ditolak.
+function _setPermLocked(el, locked) {
+  el.classList.toggle('perm-locked', !!locked);
+  if (locked) { if (el.dataset.permTitle === undefined) el.dataset.permTitle = el.title || ''; el.title = 'Tidak ada izin akses — hubungi admin'; }
+  else if (el.dataset.permTitle !== undefined) { el.title = el.dataset.permTitle; delete el.dataset.permTitle; }
 }
 
 function enforcePermissions() {
@@ -361,17 +362,17 @@ function enforcePermissions() {
   const navUserMgmt = document.getElementById('nav-user-mgmt');
   if (navUserMgmt) navUserMgmt.style.display = isAdm ? '' : 'none';
 
-  // Menu sidebar dan tombol Aksi Cepat mengikuti izin Lihat modul halamannya (admin/owner selalu penuh)
+  // Menu sidebar dan tombol Aksi Cepat tetap tampil; yang modulnya tidak boleh dilihat diberi tanda terkunci (admin/owner selalu penuh)
   document.querySelectorAll('[data-page]').forEach(el => {
     const mod = modulUntukHalaman(el.getAttribute('data-page'));
-    if (mod) _setPermHidden(el, !hasPerm(mod, 'read'));
+    if (mod) _setPermLocked(el, !hasPerm(mod, 'read'));
   });
   document.querySelectorAll('.quick-action-btn[onclick*="showPage("]').forEach(btn => {
     const m = /showPage\('([^']+)'\)/.exec(btn.getAttribute('onclick') || '');
     const mod = m && modulUntukHalaman(m[1]);
-    if (mod) _setPermHidden(btn, !hasPerm(mod, 'read'));
+    if (mod) _setPermLocked(btn, !hasPerm(mod, 'read'));
   });
-  document.querySelectorAll('[onclick*="openExportModal"]').forEach(el => _setPermHidden(el, !hasPerm('export', 'read')));
+  document.querySelectorAll('[onclick*="openExportModal"]').forEach(el => _setPermLocked(el, !hasPerm('export', 'read')));
   // Reset Data khusus admin/owner
   document.querySelectorAll('#storage-reset-btn, [onclick*="resetData"], [onclick*="confirmResetAll"]').forEach(b => { b.style.display = isAdm ? '' : 'none'; });
 }
