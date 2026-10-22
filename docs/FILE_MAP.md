@@ -61,7 +61,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 363-366 | `escapeForJsAttr` | function |
 | 368-399 | `parseJurnalFromAI` | function |
 
-## js/03-widgets.js (2722 baris, 154.5 KB)
+## js/03-widgets.js (2733 baris, 155.1 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -88,24 +88,24 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 771-806 | `selectOptPicker` | function |
 | 808-812 | `closeOptPicker` | function |
 | 814-816 | `optPickerBackdropClick` | function |
-| 820-878 | `upgradeSelectToOptPicker` | function |
-| 882-909 | `upgradeAllPeriodPickers` | function |
-| 912-1010 | `upgradeFormPickers` | function |
-| 1013-1460 | `upgradePajakPickers` | function |
-| 1487-1491 | `closePhotoViewer` | function |
-| 1492 | `_pvKeyClose` | function |
-| 1499-1533 | `openCropModal` | function |
-| 1535-1568 | `_initCropLayout` | function |
-| 1570-1581 | `_clampOffset` | function |
-| 1583-1592 | `_renderCrop` | function |
-| 1594-1610 | `onCropZoomSlider` | function |
-| 1612-1720 | `_attachCropEvents` | function |
-| 1722-1726 | `_pinchDist` | function |
-| 1728-1760 | `confirmCrop` | function |
-| 1762-1765 | `cancelCrop` | function |
-| 1770-1790 | `_applyProfilePhoto` | function |
-| 1792-1802 | `_applyCompanyLogo` | function |
-| 2698-2721 | `updatePwaBtn` | function |
+| 820-889 | `upgradeSelectToOptPicker` | function |
+| 893-920 | `upgradeAllPeriodPickers` | function |
+| 923-1021 | `upgradeFormPickers` | function |
+| 1024-1471 | `upgradePajakPickers` | function |
+| 1498-1502 | `closePhotoViewer` | function |
+| 1503 | `_pvKeyClose` | function |
+| 1510-1544 | `openCropModal` | function |
+| 1546-1579 | `_initCropLayout` | function |
+| 1581-1592 | `_clampOffset` | function |
+| 1594-1603 | `_renderCrop` | function |
+| 1605-1621 | `onCropZoomSlider` | function |
+| 1623-1731 | `_attachCropEvents` | function |
+| 1733-1737 | `_pinchDist` | function |
+| 1739-1771 | `confirmCrop` | function |
+| 1773-1776 | `cancelCrop` | function |
+| 1781-1801 | `_applyProfilePhoto` | function |
+| 1803-1813 | `_applyCompanyLogo` | function |
+| 2709-2732 | `updatePwaBtn` | function |
 
 ## js/04-navigasi-tema.js (706 baris, 32.6 KB)
 
@@ -746,7 +746,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 446-450 | `closeMataUangPicker` | function |
 | 479-489 | `openPhotoViewer` | function |
 
-## js/18-audit-permission.js (1234 baris, 65.4 KB)
+## js/18-audit-permission.js (1232 baris, 65.4 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -783,20 +783,20 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 482-486 | `openUserMgmtModal` | function |
 | 488-548 | `renderUserMgmtList` | async function |
 | 550-556 | `removeMember` | async function |
-| 560-587 | `openInviteModal` | function |
-| 589-611 | `kirimInvite` | async function |
-| 614-642 | `openEditMember` | async function |
-| 644-660 | `simpanEditMember` | async function |
-| 665-705 | `renderPermTable` | function |
-| 708-710 | `toggleRowAll` | function |
-| 713-718 | `syncRowAll` | function |
-| 721-731 | `readPermTableValues` | function |
-| 785-798 | `openJoinWithCodeModal` | function |
-| 800-827 | `prosesJoinCode` | async function |
-| 840-925 | `getKsSaldo` | function |
-| 1124-1142 | `auditOpenKatPicker` | function |
-| 1145-1160 | `auditOpenAktPicker` | function |
-| 1163-1197 | `auditOpenBizPicker` | function |
+| 560-586 | `openInviteModal` | function |
+| 588-610 | `kirimInvite` | async function |
+| 613-640 | `openEditMember` | async function |
+| 642-658 | `simpanEditMember` | async function |
+| 663-703 | `renderPermTable` | function |
+| 706-708 | `toggleRowAll` | function |
+| 711-716 | `syncRowAll` | function |
+| 719-729 | `readPermTableValues` | function |
+| 783-796 | `openJoinWithCodeModal` | function |
+| 798-825 | `prosesJoinCode` | async function |
+| 838-923 | `getKsSaldo` | function |
+| 1122-1140 | `auditOpenKatPicker` | function |
+| 1143-1158 | `auditOpenAktPicker` | function |
+| 1161-1195 | `auditOpenBizPicker` | function |
 
 ## js/19-fitur-tambahan.js (1848 baris, 99.7 KB)
 

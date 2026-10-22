@@ -818,7 +818,18 @@ function optPickerBackdropClick(e) {
 // UPGRADE SELECTS TO OPT PICKER
 // Converts a <select> element to a styled button + opt picker
 function upgradeSelectToOptPicker(selectEl, config = {}) {
-  if (selectEl.dataset.upgraded) return;
+  if (selectEl.dataset.upgraded) {
+    // Sudah jadi picker: jangan buat tombol kedua. Cukup samakan label dengan nilai select
+    // (form yang dipakai ulang, mis. modal Edit Anggota, mengisi select.value lewat kode).
+    const sudah = selectEl.nextElementSibling;
+    if (sudah && sudah.classList && sudah.classList.contains('opt-picker-btn')) {
+      const cur = Array.from(selectEl.options).find(o => o.value === selectEl.value);
+      const lbl = sudah.querySelector('.opt-picker-label');
+      if (cur && lbl) lbl.textContent = cur.textContent;
+      sudah.dataset.value = selectEl.value;
+    }
+    return;
+  }
   selectEl.dataset.upgraded = '1';
 
   const title = config.title || selectEl.closest('.form-group')?.querySelector('label')?.textContent || 'Pilih Opsi';

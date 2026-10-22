@@ -568,7 +568,6 @@ function openInviteModal() {
   // Upgrade role select ke opt-picker dengan icon SVG
   const invRole = document.getElementById('invite-role');
   if (invRole) {
-    delete invRole.dataset.upgraded;
     upgradeSelectToOptPicker(invRole, {
       title: '<i class="ti ti-shield-check" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Pilih Role',
       iconMap: {
@@ -623,7 +622,6 @@ async function openEditMember(memberId) {
   // Upgrade role select ke opt-picker dengan icon SVG
   const editRole = document.getElementById('edit-member-role');
   if (editRole) {
-    delete editRole.dataset.upgraded;
     upgradeSelectToOptPicker(editRole, {
       title: '<i class="ti ti-shield-check" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Pilih Role',
       iconMap: {
