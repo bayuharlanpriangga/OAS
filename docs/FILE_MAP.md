@@ -1090,20 +1090,23 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 111-115 | `tambahBill` | function |
 | 118-124 | `hapusBillById` | function |
 
-## js/29-bill-ui.js (139 baris, 7.9 KB)
+## js/29-bill-ui.js (163 baris, 9.2 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 12 | `_billAkunBeli` | function |
 | 14-17 | `_billPpnTarif` | function |
 | 19-25 | `hitungTotalBillForm` | function |
-| 27-44 | `renderBillItems` | function |
-| 46-50 | `tambahItemBill` | function |
-| 52-78 | `openModalBill` | function |
-| 81-89 | `_billBacaForm` | function |
-| 91-100 | `simpanBill` | function |
-| 102-129 | `renderBillList` | function |
-| 131-138 | `hapusBill` | function |
+| 28-31 | `_billAkunBtnHtml` | function |
+| 35-40 | `_billSinkronAkun` | function |
+| 44-60 | `renderBillItems` | function |
+| 62-67 | `tambahItemBill` | function |
+| 69-73 | `hapusItemBill` | function |
+| 75-101 | `openModalBill` | function |
+| 104-113 | `_billBacaForm` | function |
+| 115-124 | `simpanBill` | function |
+| 126-153 | `renderBillList` | function |
+| 155-162 | `hapusBill` | function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 

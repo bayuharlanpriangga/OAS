@@ -24,28 +24,51 @@ function hitungTotalBillForm() {
   return h;
 }
 
+// Isi tombol picker akun satu baris (sama dengan tampilan Akun Utang Usaha).
+function _billAkunBtnHtml(kode) {
+  const a = akuns.find(x => x.kode === kode);
+  return a ? `<span class="picker-kode-badge">${escapeHtml(a.kode)}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(a.nama)}</span>` : 'Pilih Akun...';
+}
+
+// Picker akun mengisi input hidden per baris tanpa memicu event, jadi nilainya dibaca di sini
+// sebelum baris dirender ulang (tambah/hapus item) dan sebelum simpan.
+function _billSinkronAkun() {
+  _billItems.forEach((it, i) => {
+    const h = document.getElementById('bill-akun-' + i);
+    if (h && h.value) it.akun = h.value;
+  });
+}
+
+// Tiap item disusun bertumpuk (nama, lalu qty + harga, lalu akun) supaya muat di layar sempit
+// tanpa meluber ke samping. minmax(0, ...) mencegah input melebarkan kolom.
 function renderBillItems() {
   const el = document.getElementById('bill-items-list'); if (!el) return;
-  const opsi = _billAkunBeli();
   el.innerHTML = _billItems.map((it, i) => `
-    <div style="margin-bottom:10px;">
-      <div style="display:grid;grid-template-columns:1fr 72px 120px 32px;gap:8px;align-items:center;">
-        <input type="text" value="${escapeHtml(it.nama)}" placeholder="Nama barang / jasa" oninput="_billItems[${i}].nama=this.value">
-        <input type="number" value="${it.qty}" min="1" oninput="_billItems[${i}].qty=+this.value;hitungTotalBillForm()" style="text-align:center;">
-        <input type="number" value="${it.harga}" placeholder="0" oninput="_billItems[${i}].harga=+this.value;hitungTotalBillForm()">
-        <button type="button" onclick="_billItems.splice(${i},1);renderBillItems()">✕</button>
+    <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed var(--border);">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:8px;align-items:center;">
+        <input type="text" value="${escapeHtml(it.nama)}" placeholder="Nama barang / jasa" oninput="_billItems[${i}].nama=this.value" style="min-width:0;width:100%;box-sizing:border-box;">
+        <button type="button" onclick="hapusItemBill(${i})" style="padding:0;">✕</button>
       </div>
-      <select onchange="_billItems[${i}].akun=this.value" style="margin-top:6px;width:100%;">
-        ${opsi.map(a => `<option value="${escapeHtml(a.kode)}"${a.kode === it.akun ? ' selected' : ''}>${escapeHtml(a.kode)} · ${escapeHtml(a.nama)}</option>`).join('')}
-      </select>
+      <div style="display:grid;grid-template-columns:minmax(0,84px) minmax(0,1fr);gap:8px;margin-top:6px;">
+        <input type="number" value="${it.qty}" min="1" placeholder="Qty" oninput="_billItems[${i}].qty=+this.value;hitungTotalBillForm()" style="min-width:0;width:100%;box-sizing:border-box;text-align:center;">
+        <input type="number" value="${it.harga}" placeholder="Harga satuan" oninput="_billItems[${i}].harga=+this.value;hitungTotalBillForm()" style="min-width:0;width:100%;box-sizing:border-box;">
+      </div>
+      <input type="hidden" id="bill-akun-${i}" value="${escapeHtml(it.akun || '')}">
+      <button class="form-picker-btn${it.akun ? ' has-value' : ''}" type="button" id="bill-akun-btn-${i}" style="margin-top:6px;" onclick="openSimplePicker('bill-akun-${i}','bill-akun-btn-${i}','beli')">${_billAkunBtnHtml(it.akun)}</button>
     </div>`).join('');
   hitungTotalBillForm();
-  setTimeout(upgradeFormPickers, 50);
 }
 
 function tambahItemBill() {
+  _billSinkronAkun();
   const akun = (akuns.find(a => a.kode === '1301') || _billAkunBeli()[0] || {}).kode || '';
   _billItems.push({ nama: '', qty: 1, harga: 0, akun });
+  renderBillItems();
+}
+
+function hapusItemBill(i) {
+  _billSinkronAkun();
+  _billItems.splice(i, 1);
   renderBillItems();
 }
 
@@ -79,6 +102,7 @@ function openModalBill() {
 
 // Baca isi form menjadi objek untuk susunBill (28-bill.js).
 function _billBacaForm(status) {
+  _billSinkronAkun();
   const v = id => (document.getElementById(id) || {}).value || '';
   return {
     noBill: v('bill-no'), supplier: v('bill-supplier'), tanggal: v('bill-tgl'), jatuhTempo: v('bill-jatuh-tempo'),

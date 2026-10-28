@@ -160,6 +160,27 @@ ok(run('billList[0].status') === 'draft' && !/4\.6/.test(alerts[0]), 'Simpan Dra
 el('bill-no').value = 'BILL-2026-002'; alerts.length = 0; run('simpanBill("draft")');
 ok(run('billList.length') === 2 && /sudah dipakai/.test(alerts[0]), 'nomor kembar ditolak');
 
+console.log('[item] baris item di layar sempit dan picker akun per baris');
+ctx.akuns = [{ kode: '1301', nama: 'Persediaan Barang Dagangan', tipe: 'Aset' }, { kode: '6101', nama: 'Beban ATK', tipe: 'Beban' }];
+ctx.PICKER_FILTERS = { beli: a => ['Beban', 'Aset', 'HPP'].includes(a.tipe) };
+run('_billItems = []; tambahItemBill(); tambahItemBill()');
+const itemHtml = el('bill-items-list').innerHTML;
+ok(run('_billItems.length') === 2 && run('_billItems[0].akun') === '1301', 'tambahItemBill: 2 baris, akun default 1301');
+ok(!/<select/.test(itemHtml), 'tidak ada <select> bawaan browser di baris item');
+ok((itemHtml.match(/openSimplePicker\('bill-akun-\d','bill-akun-btn-\d','beli'\)/g) || []).length === 2, 'tiap baris memakai picker akun (openSimplePicker, filter beli)');
+ok(itemHtml.includes('1301') && itemHtml.includes('Persediaan Barang Dagangan'), 'tombol picker menampilkan kode dan nama akun');
+ok(!/grid-template-columns:\s*1fr 72px/.test(itemHtml) && (itemHtml.match(/minmax\(0,/g) || []).length >= 4, 'grid memakai minmax(0, ...) agar tidak meluber (tanpa kolom tetap 1fr 72px 120px 32px)');
+ok(!/grid-template-columns:\s*1fr 72px 120px/.test(rd('index.html')), 'header kolom lama di index.html sudah dihapus');
+// pilihan picker (mengisi input hidden tanpa event) terbaca saat tambah/hapus/simpan
+el('bill-akun-0').value = '6101';
+run('tambahItemBill()');
+ok(run('_billItems[0].akun') === '6101' && run('_billItems.length') === 3, 'pilihan akun baris 1 tidak hilang saat tambah item');
+el('bill-akun-1').value = '1301'; el('bill-akun-2').value = '6101';
+run('hapusItemBill(1)');
+ok(run('_billItems.map(i=>i.akun).join()') === '6101,6101' && run('_billItems.length') === 2, 'hapus baris tengah: akun baris lain tetap benar');
+el('bill-akun-0').value = '1301';
+ok(run('_billBacaForm("draft").items[0].akun') === '1301', 'simpan membaca akun dari picker');
+
 console.log('[pemasangan] hook ke file lama');
 const nav = rd('js/04-navigasi-tema.js'), sto = rd('js/15-storage.js'), cr = rd('js/22-cloud-records.js');
 ok(/if\(id==='bill'\)\s*renderBillList\(\)/.test(nav), 'showPage("bill") merender daftar');
