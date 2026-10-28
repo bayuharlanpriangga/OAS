@@ -50,8 +50,8 @@ const CLOUD_RECORD_KINDS = {
   kurs:            { get: () => (kursData && kursData.updatedAt ? [{ id: 'kurs', ...kursData }] : []), set: v => { kursData = _cloudKursFromList(v); },
                      idOf: r => r && r.id, legacyKey: 'oas_kurs', legacyOnce: true, fromLegacy: _cloudKursLegacy },
   // bill: tagihan pembelian dari supplier (task 4.1). State-nya (billList) ada di 28-bill.js.
-  // Belum ada data lama di key global, jadi tidak ada migrasi.
-  bill:            { get: () => billList,           set: v => { billList = v; },           idOf: r => r && r.id, legacyKey: null },
+  // Sejak 4.4 mode tamu menyimpan bill di key `oas_bill`, jadi data itu ditawarkan sekali ke bisnis (legacyOnce, seperti kind lain yang ditambah belakangan).
+  bill:            { get: () => billList,           set: v => { billList = v; },           idOf: r => r && r.id, legacyKey: 'oas_bill', legacyOnce: true },
   // counter: nomor tertinggi yang pernah dipakai per jenis+tahun ({ id:'INV-2026', terakhir:7 }).
   // State-nya (counterList) dan logikanya ada di 23-penomoran.js.
   counter:         { get: () => counterList,        set: v => { counterList = v; },        idOf: r => r && r.id, legacyKey: 'oas_counter', legacyOnce: true,
@@ -368,7 +368,7 @@ async function cloudOfferLocalMigration(cid) {
   }
 
   if (typeof hideOpSpinner === 'function') hideOpSpinner(); // spinner jangan menutupi dialog
-  const label = { invoice: 'Invoice', kontak: 'Kontak', aset_tetap: 'Aset tetap', produk: 'Produk', jurnal_berulang: 'Jurnal berulang', anggaran: 'Anggaran', alert: 'Alert notifikasi', kurs: 'Kurs', counter: 'Penomoran dokumen' };
+  const label = { invoice: 'Invoice', bill: 'Tagihan pembelian', kontak: 'Kontak', aset_tetap: 'Aset tetap', produk: 'Produk', jurnal_berulang: 'Jurnal berulang', anggaran: 'Anggaran', alert: 'Alert notifikasi', kurs: 'Kurs', counter: 'Penomoran dokumen' };
   const ok = await showCustomConfirmGeneral({
     icon: '☁️', iconColor: 'rgba(34,211,238,0.12)', iconBorder: 'rgba(34,211,238,0.3)',
     title: 'Unggah Data Lokal ke Cloud?',

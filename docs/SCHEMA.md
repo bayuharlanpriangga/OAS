@@ -250,7 +250,7 @@ di akhir), sisanya global per-browser/device.
 | `oas_invoices` | Global (hanya mode tamu) | JSON array | `invoiceList`. Saat login, data ada di `company_records`; key ini tidak ditulis lagi |
 | `oas_kontak` | Global (hanya mode tamu) | JSON array | `kontakList` (pelanggan/supplier). Saat login: `company_records` |
 | `oas_aset_tetap` | Global (hanya mode tamu) | JSON array | `asetTetapList`. Saat login: `company_records` |
-| `oas_bill` | Global (hanya mode tamu) | JSON array | `billList` — tagihan pembelian. Saat login: `company_records` (`kind='bill'`). Mulai ditulis di task 4.4 |
+| `oas_bill` | Global (hanya mode tamu) | JSON array | `billList` — tagihan pembelian. Saat login: `company_records` (`kind='bill'`). Ditulis sejak task 4.4; ditawarkan sekali ke bisnis pemilik lewat migrasi data lokal (`legacyOnce`) |
 | `oas_counter` | Global | JSON array | `[{ id:'INV-2026', jenis, tahun, terakhir }]` — nomor tertinggi yang pernah dipakai per jenis+tahun (mode tamu) |
 | `oas_kurs` | Global | JSON object | `{ USD, IDR, SGD, EUR, MYR, JPY, updatedAt }` — kurs multi mata uang |
 | `oas_alerts` | Global | JSON array | `notifAlerts` — aturan notifikasi (arus kas negatif, jatuh tempo, dst) |
@@ -393,6 +393,7 @@ State di `js/28-bill.js`; disinkron lewat `company_records` (`kind='bill'`, `rec
   }[];
   subtotal: number;          // jumlah qty*harga, sebelum PPN
   ppn: number;               // PPN Masukan; 0 bila tanpa PPN
+  ppnTarif: number;          // tarif PPN Masukan (persen) yang dipakai; 0 bila tanpa PPN (sama seperti invoice.ppnTarif)
   total: number;             // subtotal + ppn
   sisaTagihan: number;       // awal = total; berkurang saat dibayar (Fase 5)
   status: 'draft' | 'diterima' | 'lunas';
@@ -400,7 +401,9 @@ State di `js/28-bill.js`; disinkron lewat `company_records` (`kind='bill'`, `rec
   createdAt: string;         // ISO datetime
 }
 ```
-Aturan yang dipakai task berikutnya (belum dipasang di 4.1): saat status `'diterima'`, jurnal dibuat di `jurnalEntries` (Debit akun tiap item + PPN Masukan, Kredit Utang Usaha) lewat `buatJurnalBill()` (4.5-4.6). Status `'draft'` tidak membuat jurnal. Field tambahan seperti nomor faktur pajak supplier (12.1) dan referensi pesanan pembelian (9.5) ditambahkan di task terkait.
+Penyimpanan (task 4.4): record dibuat oleh `susunBill()` (28-bill.js, murni; baris item dengan qty/harga 0 dibuang; status `'diterima'` mewajibkan `akunUtang` dan `akun` tiap item, `'draft'` boleh belum lengkap) dan disimpan lewat `tambahBill()`: bisnis login → `company_records` (`kind='bill'` + `kind='counter'`), mode tamu → `oas_bill` + `oas_counter`. Nomor memakai counter jenis `BILL` (id `BILL-<tahun>`). Reset Data khusus Tagihan Pembelian membuang counter `BILL-*` saja (counter `INV-*` tidak ikut). Di 4.4 belum ada jurnal, jadi bill berstatus `'diterima'` belum punya jurnal; 4.6 harus menanganinya.
+
+Aturan yang dipakai task berikutnya (belum dipasang di 4.4): saat status `'diterima'`, jurnal dibuat di `jurnalEntries` (Debit akun tiap item + PPN Masukan, Kredit Utang Usaha) lewat `buatJurnalBill()` (4.5-4.6). Status `'draft'` tidak membuat jurnal. Field tambahan seperti nomor faktur pajak supplier (12.1) dan referensi pesanan pembelian (9.5) ditambahkan di task terkait.
 
 ### 4.6 Aset Tetap — `asetTetapList[]`
 ```ts

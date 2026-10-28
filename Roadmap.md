@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 137 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 22/137 task selesai.**
+**Progres: 23/137 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -69,7 +69,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | 1 | Fondasi data | 8/8 |
 | 2 | Umur piutang | 4/4 |
 | 3 | Akses anggota tim | 7/7 |
-| 4 | Tagihan pembelian (bill) | 3/7 |
+| 4 | Tagihan pembelian (bill) | 4/7 |
 | 5 | Pembayaran | 0/7 |
 | 6 | Kartu piutang/hutang dan model dokumen | 0/3 |
 | 7 | Penawaran sampai faktur | 0/6 |
@@ -170,9 +170,9 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 | ☑ | 4.1 | Model data bill (kind `bill`) di CLOUD_RECORD_KINDS + update SCHEMA.md. State `billList` di `js/28-bill.js` (dimuat di index.html), kind `bill` di `22-cloud-records.js` (tanpa migrasi key global), bentuk record di `docs/SCHEMA.md` §4.5b, checkbox "Tagihan Pembelian" di modal Reset Data. Tes: bagian [bill] `tests/cloud-records.test.js` | CR, SCH |
 | ☑ | 4.2 | Halaman 'Tagihan Pembelian' kosong + navigasi. `#page-bill` di index.html (isi placeholder `#bill-body`), kartu menu "Tagihan Beli" di grup Fitur Baru, judul di `pageTitles` (04-navigasi-tema.js), izin modul mengikuti Invoice (`MODUL_HALAMAN.bill`). Tes: `daftar-bisnis.test.js` | IDX |
 | ☑ | 4.3 | Form bill: tampilan input (supplier, tanggal, jatuh tempo, item, PPN), belum menyimpan. `#modal-bill` di index.html (tombol "+ Buat Tagihan" di halaman bill), `js/29-bill-ui.js` (form, hitung total langsung, akun debit per item, akun Utang Usaha), fungsi murni `hitungTotalBill` dan `nomorBillBerikut` di `28-bill.js`, filter picker `utang` di `05-akun.js`. Tombol simpan hanya menampilkan pemberitahuan. Tes: `tests/bill.test.js` | 4.1, INV sebagai pola |
-| ☐ | 4.4 | Simpan bill ke cloud + daftar bill, belum ada jurnal | 4.3, CR |
+| ☑ | 4.4 | Simpan bill ke cloud + daftar bill, belum ada jurnal. `susunBill` (validasi + bentuk record, murni), `tambahBill`, `hapusBillById`, `simpanBillState` di `js/28-bill.js` (bisnis login: cloud kind `bill` + `counter`; mode tamu: `oas_bill` + `oas_counter`); `nomorBillBerikut` memakai counter; `simpanBill`, `renderBillList`, `hapusBill` di `js/29-bill-ui.js` (viewer diblokir `guardHanyaBaca`); hook: `showPage('bill')`, `doResetAll` (counter BILL + render ulang), `bill` legacyOnce + label di `22-cloud-records.js`; `counterTanpaJenis`/`resetCounterJenis` di `23-penomoran.js`. Tes: `tests/bill.test.js`, bagian [bill] `cloud-records.test.js`, [13] `penomoran.test.js`. Perlu uji manual di browser | 4.3, CR |
 | ☐ | 4.5 | Fungsi murni buatJurnalBill(bill): Dr Persediaan/Beban + PPN Masukan, Cr Utang Usaha + tes (belum dipasang) | INV (jurnal invoice sebagai pola) |
-| ☐ | 4.6 | ⚠ Pasang jurnal bill ke alur simpan bill lewat hook | 4.5, 4.4 |
+| ☐ | 4.6 | ⚠ Pasang jurnal bill ke alur simpan bill lewat hook. Termasuk bill `diterima` yang sudah tersimpan di 4.4 tanpa jurnal (lihat temuan 4.4) dan pemeriksaan jurnal di `hapusBill` | 4.5, 4.4 |
 | ☐ | 4.7 | Halaman 'Umur Hutang' memakai 2.1 | 2.1, 4.2 |
 
 **Temuan task 4.1:**
@@ -184,6 +184,14 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 - `nomorBillBerikut` memakai `nomorBerikut('BILL', ...)` tanpa counter, jadi menghapus bill terakhir membuat nomornya dipakai lagi. Counter bill (dan penghapusannya di `doResetAll`) dikerjakan di 4.4 bersama pencatatan nomor.
 - Akun debit per item dipilih lewat `<select>` berisi akun Aset/Beban/HPP (filter `beli`), default 1301, bukan picker per baris, supaya baris yang dirender ulang tidak kehilangan pilihan.
 - Nama supplier dari Kontak (tipe supplier/keduanya) muncul sebagai saran (datalist); nama baru tetap boleh diketik, sama seperti pelanggan di invoice.
+
+**Temuan task 4.4:**
+- `saveFiturBaru` (13-analitik-dashboard.js) tidak menyertakan `bill`, dan menambahkannya berarti setiap simpan bill ikut menyinkronkan tujuh kind lain. Dibuat penyimpan sendiri `simpanBillState()` di `28-bill.js` (cloud: `['bill','counter']`; tamu: `oas_bill` + `oas_counter`), jadi tidak ada hook ke file lama untuk simpan.
+- Reset Data: counter hanya ikut terhapus bersama Invoice, jadi mereset Tagihan Pembelian saja membuat nomor tidak mulai lagi dari 001. Sudah diperbaiki: `counterTanpaJenis` dan `resetCounterJenis('BILL')` di `23-penomoran.js`, dipanggil 1 baris di `doResetAll`; counter `INV-*` tidak ikut terhapus. Reset Invoice tetap menghapus semua counter seperti sebelumnya (bill yang masih ada tetap melanjutkan dari nomor tertingginya).
+- Mode tamu mulai menulis `oas_bill`. Supaya data itu tidak terdampar saat user login dan ikut terhapus oleh Reset Data mode tamu, kind `bill` diubah ke `legacyKey: 'oas_bill'` + `legacyOnce` (ditawarkan sekali ke bisnis pemilik, tidak ke bisnis tempat user menjadi anggota). Dialog migrasi sebelumnya tidak punya label untuk `bill` (akan tampil "undefined"); label ditambahkan. Tes 4.1 "bill: tidak ada migrasi dari key global" diganti sesuai perilaku baru.
+- Record bill mendapat field `ppnTarif` (sama seperti `invoice.ppnTarif`), dipakai rekap PPN Masukan (12.2). SCHEMA.md §4.5b diperbarui.
+- Status `diterima` di 4.4 hanya menyimpan data, tanpa jurnal; alert simpan menyebutnya. Task 4.6 harus menangani bill `diterima` yang sudah ada tanpa jurnal (mis. field `jurnalId` + tombol posting untuk yang belum punya) dan `hapusBill` harus memeriksa jurnal sebelum menghapus.
+- Belum ditutup (keputusan): bill belum bisa diedit, jadi draft hanya bisa dihapus lalu dibuat ulang. Usul: task kecil sendiri "Edit draft bill" (form yang sama, `susunBill` sudah menerima `id`/`createdAt`), dikerjakan sebelum atau sesudah 4.6.
 
 ## Fase 5 — Pembayaran (7 task)
 

@@ -1,12 +1,13 @@
 // ═══════════════════════════════════════════════════════════
-// TAGIHAN PEMBELIAN (BILL) — state dan model data (task 4.1, Roadmap.md)
+// TAGIHAN PEMBELIAN (BILL) — state, model data, dan penyimpanan (task 4.1 dan 4.4, Roadmap.md)
 //
 // Bill = tagihan dari supplier yang belum dibayar (padanan invoice di sisi pembelian).
 // Bentuk record: lihat docs/SCHEMA.md §4.5b.
 //
 // State billList. Bisnis login: dimuat/disimpan lewat cloud-records (kind `bill`,
-// 22-cloud-records.js). Mode tamu: key localStorage `oas_bill` (mulai dipakai di 4.4).
-// Modul ini sengaja baru berisi state; halaman, form, simpan, dan jurnal menyusul di 4.2-4.6.
+// 22-cloud-records.js). Mode tamu: key localStorage `oas_bill`.
+// Modul ini berisi state, fungsi murni (hitung total, nomor, susun record), dan penyimpan.
+// Form dan daftar ada di 29-bill-ui.js. Jurnal bill menyusul di 4.5-4.6 (belum ada di sini).
 // ═══════════════════════════════════════════════════════════
 let billList = (() => {
   try { const a = JSON.parse(localStorage.getItem('oas_bill') || '[]'); return Array.isArray(a) ? a : []; }
@@ -27,8 +28,97 @@ function hitungTotalBill(items, ppnAktif, tarifPct) {
   return { subtotal, ppn, total: subtotal + ppn };
 }
 
-// Nomor bill berikutnya (BILL-<tahun>-<urut>). Counter bill menyusul di task 4.4.
+// Nomor bill berikutnya (BILL-<tahun>-<urut>). Memakai counter (kind `counter`) sebagai batas bawah,
+// jadi menghapus bill terakhir tidak membuat nomornya dipakai lagi.
 function nomorBillBerikut(tahun) {
   const y = Number.isInteger(tahun) ? tahun : new Date().getFullYear();
-  return nomorBerikut('BILL', y, billList.map(b => b && b.noBill), []);
+  const counters = (typeof counterList !== 'undefined' && Array.isArray(counterList)) ? counterList : [];
+  return nomorBerikut('BILL', y, billList.map(b => b && b.noBill), counters);
+}
+
+const BILL_STATUS_SIMPAN = ['draft', 'diterima'];
+
+// Validasi isi form lalu susun record bill (murni: tanpa DOM, state, atau localStorage).
+// f : { id, noBill, supplier, tanggal, jatuhTempo, deskripsi, items:[{nama,qty,harga,akun}],
+//       ppnAktif, ppnTarif, akunUtang, status, createdAt }
+// daftarNomor : nomor bill yang sudah ada (untuk cek kembar)
+// Baris item kosong (qty atau harga <= 0) dibuang. Status 'diterima' mewajibkan akun utang dan akun tiap item
+// (jurnal 4.5-4.6 membutuhkannya); 'draft' boleh belum lengkap.
+// Mengembalikan { ok:true, bill } atau { ok:false, pesan }.
+function susunBill(f, daftarNomor) {
+  const gagal = pesan => ({ ok: false, pesan });
+  f = f || {};
+  const teks = v => (typeof v === 'string' ? v.trim() : '');
+  const angka = v => (typeof v === 'number' && isFinite(v) && v > 0) ? v : 0;
+  const status = f.status;
+  if (!BILL_STATUS_SIMPAN.includes(status)) return gagal('Status tagihan tidak valid.');
+
+  const noBill = teks(f.noBill).toUpperCase();
+  const supplier = teks(f.supplier);
+  if (!supplier) return gagal('Isi nama supplier.');
+  if (!noBill) return gagal('Isi nomor tagihan.');
+  if ((Array.isArray(daftarNomor) ? daftarNomor : []).some(n => String(n || '').trim().toUpperCase() === noBill)) {
+    return gagal('Nomor tagihan ' + noBill + ' sudah dipakai. Ganti nomornya, atau tutup lalu buka form baru untuk nomor otomatis.');
+  }
+  const tanggal = teks(f.tanggal);
+  const jatuhTempo = teks(f.jatuhTempo);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal)) return gagal('Isi tanggal tagihan.');
+  if (jatuhTempo && (!/^\d{4}-\d{2}-\d{2}$/.test(jatuhTempo) || jatuhTempo < tanggal)) return gagal('Jatuh tempo tidak boleh sebelum tanggal tagihan.');
+
+  const items = (Array.isArray(f.items) ? f.items : [])
+    .filter(it => it && angka(it.qty) > 0 && angka(it.harga) > 0)
+    .map(it => ({ nama: teks(it.nama), qty: it.qty, harga: it.harga, akun: teks(it.akun) }));
+  if (!items.length) return gagal('Isi minimal 1 item dengan jumlah dan harga lebih dari 0.');
+
+  const akunUtang = teks(f.akunUtang);
+  if (status === 'diterima') {
+    if (!akunUtang) return gagal('Pilih akun Utang Usaha sebelum menyimpan sebagai Diterima.');
+    if (items.some(it => !it.akun)) return gagal('Pilih akun untuk setiap item sebelum menyimpan sebagai Diterima.');
+  }
+
+  const tarif = (typeof f.ppnTarif === 'number' && isFinite(f.ppnTarif) && f.ppnTarif > 0) ? f.ppnTarif : undefined;
+  const h = hitungTotalBill(items, !!f.ppnAktif, tarif);
+  return {
+    ok: true,
+    bill: {
+      id: teks(f.id) || ('BILL_' + Date.now()),
+      noBill, supplier, tanggal, jatuhTempo,
+      deskripsi: teks(f.deskripsi),
+      items,
+      subtotal: h.subtotal, ppn: h.ppn, ppnTarif: f.ppnAktif ? (tarif !== undefined ? tarif : PPN_TARIF_STANDAR) : 0, total: h.total,
+      sisaTagihan: h.total,
+      status,
+      akunUtang,
+      createdAt: teks(f.createdAt) || new Date().toISOString()
+    }
+  };
+}
+
+// Simpan billList dan counter: bisnis login -> cloud (cloud-records), mode tamu -> localStorage.
+// Mengembalikan Promise<boolean> (false bila sinkron cloud gagal; data tetap aman di cache perangkat).
+function simpanBillState() {
+  if (typeof currentCompany !== 'undefined' && currentCompany && typeof cloudSyncRecords === 'function') {
+    return cloudSyncRecords(['bill', 'counter']);
+  }
+  try {
+    localStorage.setItem('oas_bill', JSON.stringify(billList));
+    localStorage.setItem('oas_counter', JSON.stringify(counterList));
+  } catch (e) { return Promise.resolve(false); }
+  return Promise.resolve(true);
+}
+
+// Tambah bill baru ke daftar (terbaru di atas), naikkan counter nomornya, lalu simpan.
+function tambahBill(bill) {
+  billList.unshift(bill);
+  if (typeof counterSetelahPakai === 'function') counterList = counterSetelahPakai(counterList, bill.noBill);
+  return simpanBillState();
+}
+
+// Hapus satu bill dari daftar lalu simpan. Mengembalikan true bila ada yang terhapus.
+function hapusBillById(id) {
+  const n = billList.length;
+  billList = billList.filter(b => b && b.id !== id);
+  if (billList.length === n) return false;
+  simpanBillState();
+  return true;
 }

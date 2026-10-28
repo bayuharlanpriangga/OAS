@@ -68,6 +68,17 @@ function counterSetelahPakai(counterList, nomor) {
   return hasil;
 }
 
+// Counter tanpa semua record jenis tertentu (mis. 'BILL' membuang BILL-2026, BILL-2027, ...).
+// Murni: tidak mengubah counterList. Mengembalikan counterList YANG SAMA bila tidak ada yang dibuang.
+// Dipakai Reset Data saat hanya satu jenis dokumen yang direset, supaya counter jenis lain tidak ikut hilang.
+function counterTanpaJenis(counterList, jenis) {
+  const list = Array.isArray(counterList) ? counterList : [];
+  const J = String(jenis || '').toUpperCase();
+  if (!J) return counterList;
+  const hasil = list.filter(r => !(r && typeof r.id === 'string' && r.id.toUpperCase().startsWith(J + '-')));
+  return hasil.length === list.length ? counterList : hasil;
+}
+
 // Memeriksa dan menyelesaikan bentrok nomor invoice kembar (misal akibat transaksi
 // offline bersamaan di HP & laptop). Murni: tidak mengubah input asli.
 // Mengembalikan { invoices, bentrok, counterList }
@@ -159,6 +170,20 @@ function nomorInvoiceBerikut(tahun) {
 // Nomor yang diketik manual dengan format lain diabaikan. Mengembalikan true bila counter naik.
 function catatNomorInvoice(nomor) {
   const baru = counterSetelahPakai(counterList, nomor);
+  if (baru === counterList) return false;
+  counterList = baru;
+  if (typeof currentCompany !== 'undefined' && currentCompany && typeof cloudSyncRecords === 'function') {
+    cloudSyncRecords(['counter']);
+  } else {
+    try { localStorage.setItem('oas_counter', JSON.stringify(counterList)); } catch (e) {}
+  }
+  return true;
+}
+
+// Buang counter satu jenis dokumen (Reset Data khusus jenis itu), lalu simpan ke cloud / localStorage.
+// Mengembalikan true bila ada counter yang dibuang.
+function resetCounterJenis(jenis) {
+  const baru = counterTanpaJenis(counterList, jenis);
   if (baru === counterList) return false;
   counterList = baru;
   if (typeof currentCompany !== 'undefined' && currentCompany && typeof cloudSyncRecords === 'function') {

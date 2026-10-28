@@ -413,6 +413,8 @@ async function doResetAll() {
       const hapus = kinds.includes('invoice') ? kinds.concat('counter') : kinds;
       const failedKinds = await cloudDeleteRecords(hapus);
       failedKinds.forEach(k => { const l = label[k] || label.invoice; if (!gagal.includes(l)) gagal.push(l); });
+      // Bill saja yang direset: counter BILL ikut dibuang (counter INV dibiarkan). Kalau Invoice ikut, semua counter sudah terhapus di atas.
+      if (kinds.includes('bill') && !kinds.includes('invoice') && !failedKinds.includes('bill') && typeof resetCounterJenis === 'function') resetCounterJenis('BILL');
     }
   } finally { hideOpSpinner(); }
 
@@ -424,7 +426,7 @@ async function doResetAll() {
   updateSaveIndicator('saved');
   renderDashboard();
   renderJurnalUmum();
-  ['renderInvoiceList', 'renderInvoiceKPI', 'renderKontak', 'renderKontakKPI', 'renderAsetTetap', 'renderAsetTetapKPI', 'renderProduk', 'renderJurnalBerulang']
+  ['renderInvoiceList', 'renderInvoiceKPI', 'renderBillList', 'renderKontak', 'renderKontakKPI', 'renderAsetTetap', 'renderAsetTetapKPI', 'renderProduk', 'renderJurnalBerulang']
     .forEach(fn => { try { if (typeof window[fn] === 'function') window[fn](); } catch (e) {} });
 
   const berhasil = Object.keys(label).map(k => label[k]).filter(l => !gagal.includes(l));

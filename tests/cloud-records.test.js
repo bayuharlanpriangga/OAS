@@ -338,11 +338,28 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true, pe
     ok(!e.store.some(r => r.kind === 'bill') && e.run('billList.length') === 0, 'reset bill menghapus di cloud dan state');
   }
   {
-    // tidak ada data lama untuk bill: key global tidak ditawarkan ke cloud
+    // sejak 4.4 mode tamu menyimpan bill di oas_bill: ditawarkan sekali ke bisnis pemilik (legacyOnce)
     const e = makeEnv();
     e.ls['oas_bill'] = JSON.stringify([{ id: 'BILL_X' }]);
     await e.run('cloudLoadRecords()');
-    ok(!e.store.some(r => r.kind === 'bill'), 'bill: tidak ada migrasi dari key global');
+    ok(e.store.some(r => r.kind === 'bill' && r.rec_id === 'BILL_X'), 'bill: data mode tamu (oas_bill) diunggah lewat migrasi');
+    ok(e.confirms.length === 1 && e.confirms[0].rows.some(r => r.label === 'Tagihan pembelian'), 'dialog migrasi memberi label "Tagihan pembelian" (bukan undefined)');
+  }
+  {
+    // bisnis tempat user hanya anggota: bill pribadi tidak ditawarkan
+    const e = makeEnv({ peran: 'member' });
+    e.ls['oas_bill'] = JSON.stringify([{ id: 'BILL_PRIBADI' }]);
+    await e.run('cloudLoadRecords()');
+    ok(e.confirms.length === 0 && !e.store.some(r => r.kind === 'bill'), 'bill pribadi tidak ditawarkan ke bisnis tempat user menjadi anggota');
+  }
+  {
+    // Reset Data kind bill di mode tamu ikut membuang key oas_bill
+    const e = makeEnv();
+    e.run('currentCompany = null');
+    e.ls['oas_bill'] = JSON.stringify([{ id: 'BILL_X' }]);
+    e.run("billList = [{ id: 'BILL_X' }]");
+    await e.run('cloudDeleteRecords(["bill"])');
+    ok(e.run('billList.length') === 0 && !('oas_bill' in e.ls), 'mode tamu: reset bill mengosongkan state dan key oas_bill');
   }
   {
     // viewer tidak menulis bill ke cloud

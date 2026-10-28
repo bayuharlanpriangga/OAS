@@ -188,6 +188,37 @@ console.log('[13] integrasi periksaDanSelesaikanBentrokInvoice');
   ok(syncCalls.includes('invoice,counter'), 'integrasi: sync ke cloud dipanggil untuk invoice dan counter');
 }
 
+console.log('[13] counterTanpaJenis dan resetCounterJenis (Reset Data khusus satu jenis, task 4.4)');
+{
+  const ctj = (...a) => vm.runInContext('counterTanpaJenis', ctx)(...a);
+  const list = [
+    { id: 'INV-2026', jenis: 'INV', tahun: 2026, terakhir: 5 },
+    { id: 'BILL-2026', jenis: 'BILL', tahun: 2026, terakhir: 3 },
+    { id: 'BILL-2027', jenis: 'BILL', tahun: 2027, terakhir: 1 }
+  ];
+  const snap = JSON.stringify(list);
+  const r = ctj(list, 'BILL');
+  ok(r.length === 1 && r[0].id === 'INV-2026', 'semua tahun jenis BILL dibuang, INV tetap');
+  eq(JSON.stringify(list), snap, 'array masukan tidak diubah');
+  ok(ctj(list, 'PO') === list, 'jenis yang tidak ada: referensi sama');
+  ok(ctj(list, 'bill').length === 1, 'jenis tidak peka huruf besar/kecil');
+  ok(ctj(list, '') === list && ctj(list, null) === list, 'jenis kosong: tidak ada yang dibuang');
+  ok(ctj(null, 'BILL') === null && ctj(undefined, 'BILL') === undefined, 'counterList null/undefined tidak error');
+  ok(ctj([{ id: 'BILLX-2026', terakhir: 1 }], 'BILL').length === 1, 'jenis BILLX tidak ikut terbuang saat membuang BILL (cocok per awalan lengkap)');
+
+  const c4 = { localStorage: { _s: {}, getItem(k) { return k in this._s ? this._s[k] : null; }, setItem(k, v) { this._s[k] = String(v); } } };
+  vm.createContext(c4); vm.runInContext(src, c4);
+  vm.runInContext('counterList = ' + JSON.stringify(list), c4);
+  ok(vm.runInContext('resetCounterJenis("BILL")', c4) === true, 'mode tamu: ada yang dibuang -> true');
+  eq(JSON.parse(c4.localStorage._s['oas_counter']).map(x => x.id).join(), 'INV-2026', 'mode tamu: counter INV tersimpan, BILL hilang');
+  ok(vm.runInContext('resetCounterJenis("BILL")', c4) === false, 'ulang: tidak ada yang dibuang -> false');
+  const calls = [];
+  c4.currentCompany = { id: 'c1' }; c4.cloudSyncRecords = k => { calls.push(k.join()); return Promise.resolve(true); };
+  vm.runInContext('counterList = ' + JSON.stringify(list), c4);
+  vm.runInContext('resetCounterJenis("BILL")', c4);
+  eq(calls.join('|'), 'counter', 'bisnis login: sinkron lewat cloudSyncRecords([counter])');
+}
+
 console.log('\nHasil: ' + pass + ' lulus, ' + fail + ' gagal');
 process.exit(fail ? 1 : 0);
 })();

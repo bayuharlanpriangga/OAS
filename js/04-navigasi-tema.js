@@ -153,6 +153,7 @@ function showPage(id) {
   // Fitur Baru
   if(id==='jurnal-berulang') setTimeout(()=>{ renderJurnalBerulang(); upgradeFormPickers(); }, 80);
   if(id==='invoice') setTimeout(()=>{ renderInvoiceList(); renderInvoiceKPI(); upgradeFormPickers(); }, 80);
+  if(id==='bill') renderBillList();
   if(id==='umur-piutang') renderAgingPiutang();
   if(id==='rekonsiliasi') setTimeout(upgradeFormPickers, 80);
   if(id==='kurs') setTimeout(()=>{ renderKursPage(); upgradeFormPickers(); }, 80);

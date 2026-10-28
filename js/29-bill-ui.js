@@ -1,10 +1,11 @@
 // ═══════════════════════════════════════════════════════════
-// TAGIHAN PEMBELIAN (BILL) — form input (task 4.3, Roadmap.md)
+// TAGIHAN PEMBELIAN (BILL) — form input dan daftar (task 4.3 dan 4.4, Roadmap.md)
 //
-// Hanya tampilan: form di #modal-bill dan hitung total langsung. Tombol simpan belum
-// menyimpan apa pun (simpan + daftar: task 4.4, jurnal: 4.5-4.6).
+// Form di #modal-bill (hitung total langsung), simpan ke billList lewat 28-bill.js
+// (cloud untuk bisnis login, localStorage untuk mode tamu), dan daftar di #bill-body.
+// Belum ada jurnal: status 'diterima' belum membuat jurnal utang (task 4.5-4.6).
 // Pola mengikuti form invoice (19-fitur-tambahan.js, 11-kontak-invoice.js).
-// Fungsi hitung ada di 28-bill.js. Dimuat setelah 28-bill.js.
+// Fungsi hitung, validasi, dan penyimpan ada di 28-bill.js. Dimuat setelah 28-bill.js.
 // ═══════════════════════════════════════════════════════════
 let _billItems = [];
 
@@ -76,7 +77,62 @@ function openModalBill() {
   setTimeout(upgradeFormPickers, 80);
 }
 
-// Sementara: form belum menyimpan (task 4.4).
+// Baca isi form menjadi objek untuk susunBill (28-bill.js).
+function _billBacaForm(status) {
+  const v = id => (document.getElementById(id) || {}).value || '';
+  return {
+    noBill: v('bill-no'), supplier: v('bill-supplier'), tanggal: v('bill-tgl'), jatuhTempo: v('bill-jatuh-tempo'),
+    deskripsi: v('bill-deskripsi'), items: _billItems.map(it => ({ ...it })),
+    ppnAktif: !!document.getElementById('bill-ppn-check')?.checked, ppnTarif: _billPpnTarif(),
+    akunUtang: v('bill-akun-utang'), status
+  };
+}
+
 function simpanBill(status) {
-  showAlert('Penyimpanan tagihan pembelian belum tersedia (task 4.4).');
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Tagihan pembelian')) return;
+  const r = susunBill(_billBacaForm(status), billList.map(b => b && b.noBill));
+  if (!r.ok) { showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ' + escapeHtml(r.pesan)); return; }
+  tambahBill(r.bill);
+  closeModal('modal-bill');
+  renderBillList();
+  showAlert('✓ Tagihan ' + escapeHtml(r.bill.noBill) + ' disimpan sebagai ' + (status === 'draft' ? 'draft' : 'diterima') + '.'
+    + (status === 'diterima' ? '<br><span style="font-size:12px;color:var(--muted);">Jurnal utang belum dibuat otomatis (menyusul di task 4.6).</span>' : ''));
+}
+
+function renderBillList() {
+  const el = document.getElementById('bill-body'); if (!el) return;
+  if (!billList.length) {
+    el.style.cssText = 'padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;';
+    el.innerHTML = 'Belum ada tagihan pembelian.';
+    return;
+  }
+  el.style.cssText = '';
+  const hariIni = new Date().toISOString().split('T')[0];
+  const warna = { draft: 'var(--muted)', diterima: 'var(--accent2)', lunas: 'var(--accent)', 'jatuh-tempo': 'var(--red)' };
+  el.innerHTML = `<div class="table-scroll"><table id="bill-table">
+    <thead><tr><th>No. Tagihan</th><th>Supplier</th><th>Tanggal</th><th>Jatuh Tempo</th><th>Total</th><th>Sisa</th><th>Status</th><th>Aksi</th></tr></thead>
+    <tbody>${billList.map(b => {
+      const jt = b.status === 'diterima' && b.jatuhTempo && b.jatuhTempo < hariIni && b.sisaTagihan > 0;
+      const s = jt ? 'jatuh-tempo' : (b.status || 'draft');
+      const badge = `<span style="background:${warna[s]}22;color:${warna[s]};padding:2px 8px;border-radius:6px;font-size:11px;">${s === 'jatuh-tempo' ? 'Jatuh Tempo' : escapeHtml(s.charAt(0).toUpperCase() + s.slice(1))}</span>`;
+      return `<tr>
+        <td style="font-family:var(--mono);font-size:12px;font-weight:600">${escapeHtml(b.noBill)}</td>
+        <td>${escapeHtml(b.supplier)}</td>
+        <td style="font-size:12px">${escapeHtml(b.tanggal)}</td>
+        <td style="font-size:12px;${jt ? 'color:var(--red);font-weight:600;' : ''}">${escapeHtml(b.jatuhTempo || '-')}</td>
+        <td class="debit" style="font-family:var(--mono)">${rp(b.total)}</td>
+        <td style="font-family:var(--mono);color:${b.sisaTagihan > 0 ? 'var(--accent3)' : 'var(--accent)'}">${rp(b.sisaTagihan)}</td>
+        <td>${badge}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="hapusBill('${escapeForJsAttr(b.id)}')"><i class="ti ti-trash" style="font-size:14px;"></i></button></td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+
+function hapusBill(id) {
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Tagihan pembelian')) return;
+  const b = billList.find(x => x && x.id === id); if (!b) return;
+  if (!confirm('Hapus tagihan ' + b.noBill + ' (' + b.supplier + ')?')) return;
+  hapusBillById(id);
+  renderBillList();
+  showAlert('✓ Tagihan dihapus');
 }
