@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 137 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 21/137 task selesai.**
+**Progres: 22/137 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -69,7 +69,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | 1 | Fondasi data | 8/8 |
 | 2 | Umur piutang | 4/4 |
 | 3 | Akses anggota tim | 7/7 |
-| 4 | Tagihan pembelian (bill) | 2/7 |
+| 4 | Tagihan pembelian (bill) | 3/7 |
 | 5 | Pembayaran | 0/7 |
 | 6 | Kartu piutang/hutang dan model dokumen | 0/3 |
 | 7 | Penawaran sampai faktur | 0/6 |
@@ -169,7 +169,7 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 | :---: | --- | --- | --- |
 | ☑ | 4.1 | Model data bill (kind `bill`) di CLOUD_RECORD_KINDS + update SCHEMA.md. State `billList` di `js/28-bill.js` (dimuat di index.html), kind `bill` di `22-cloud-records.js` (tanpa migrasi key global), bentuk record di `docs/SCHEMA.md` §4.5b, checkbox "Tagihan Pembelian" di modal Reset Data. Tes: bagian [bill] `tests/cloud-records.test.js` | CR, SCH |
 | ☑ | 4.2 | Halaman 'Tagihan Pembelian' kosong + navigasi. `#page-bill` di index.html (isi placeholder `#bill-body`), kartu menu "Tagihan Beli" di grup Fitur Baru, judul di `pageTitles` (04-navigasi-tema.js), izin modul mengikuti Invoice (`MODUL_HALAMAN.bill`). Tes: `daftar-bisnis.test.js` | IDX |
-| ☐ | 4.3 | Form bill: tampilan input (supplier, tanggal, jatuh tempo, item, PPN), belum menyimpan | 4.1, INV sebagai pola |
+| ☑ | 4.3 | Form bill: tampilan input (supplier, tanggal, jatuh tempo, item, PPN), belum menyimpan. `#modal-bill` di index.html (tombol "+ Buat Tagihan" di halaman bill), `js/29-bill-ui.js` (form, hitung total langsung, akun debit per item, akun Utang Usaha), fungsi murni `hitungTotalBill` dan `nomorBillBerikut` di `28-bill.js`, filter picker `utang` di `05-akun.js`. Tombol simpan hanya menampilkan pemberitahuan. Tes: `tests/bill.test.js` | 4.1, INV sebagai pola |
 | ☐ | 4.4 | Simpan bill ke cloud + daftar bill, belum ada jurnal | 4.3, CR |
 | ☐ | 4.5 | Fungsi murni buatJurnalBill(bill): Dr Persediaan/Beban + PPN Masukan, Cr Utang Usaha + tes (belum dipasang) | INV (jurnal invoice sebagai pola) |
 | ☐ | 4.6 | ⚠ Pasang jurnal bill ke alur simpan bill lewat hook | 4.5, 4.4 |
@@ -179,6 +179,11 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 - Bill memakai `supplier` (nama kontak, bukan FK, sama seperti `invoice.pelanggan`) dan `akun` per item, supaya jurnal 4.5 bisa memisah Persediaan dan Beban per baris. Status sementara `draft | diterima | lunas`; status turunan dari pembayaran (belum, sebagian, lunas, jatuh tempo) diputuskan di 5.4.
 - Penomoran: fungsi murni `nomorBerikut('BILL', tahun, ...)` sudah mendukung jenis apa pun, tetapi pembungkusnya (`nomorInvoiceBerikut`, `catatNomorInvoice`) khusus invoice. Di 4.3/4.4 perlu pembungkus serupa untuk bill. Kalau memakai counter, `doResetAll` (15-storage.js) hanya ikut menghapus `counter` bersama Invoice, jadi tambahkan kasus bill di sana.
 - Checkbox "Tagihan Pembelian" di modal Reset Data ditambahkan sekarang (1 baris di index.html) supaya record bill tidak jadi tak terhapus.
+
+**Temuan task 4.3:**
+- `nomorBillBerikut` memakai `nomorBerikut('BILL', ...)` tanpa counter, jadi menghapus bill terakhir membuat nomornya dipakai lagi. Counter bill (dan penghapusannya di `doResetAll`) dikerjakan di 4.4 bersama pencatatan nomor.
+- Akun debit per item dipilih lewat `<select>` berisi akun Aset/Beban/HPP (filter `beli`), default 1301, bukan picker per baris, supaya baris yang dirender ulang tidak kehilangan pilihan.
+- Nama supplier dari Kontak (tipe supplier/keduanya) muncul sebagai saran (datalist); nama baru tetap boleh diketik, sama seperti pelanggan di invoice.
 
 ## Fase 5 — Pembayaran (7 task)
 

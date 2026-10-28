@@ -83,6 +83,7 @@
 <script defer src="js/26-daftar-bisnis.js"></script>
 <script defer src="js/27-oauth-url.js"></script>
 <script defer src="js/28-bill.js"></script>
+<script defer src="js/29-bill-ui.js"></script>
 <script defer src="js/99-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- Tabler webfont CDN dihapus: semua ikon "ti-*" sudah self-hosted sebagai SVG mask di css/icons.css (lihat komentar di file itu). Menghapus dependency CDN ini supaya ikon tidak pernah gagal/putus saat CDN lambat atau diblokir jaringan/ad-blocker. -->
@@ -2238,6 +2239,7 @@
   <div class="table-card" style="margin-bottom:16px;">
     <div class="table-header">
       <div class="table-title"><i class="ti ti-file-invoice ti-inline"></i> Daftar Tagihan Pembelian</div>
+      <button class="btn btn-primary" onclick="openModalBill()">+ Buat Tagihan</button>
     </div>
     <div id="bill-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada tagihan pembelian.</div>
   </div>
@@ -4747,6 +4749,54 @@
 </div>
 
 <!-- MODAL: TANDAI INVOICE LUNAS -->
+<div class="modal-backdrop" id="modal-bill" onclick="if(event.target===this)closeModal('modal-bill')">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-head"><div class="modal-title"><i class="ti ti-file-invoice" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Buat Tagihan Pembelian</div><button class="modal-close" onclick="closeModal('modal-bill')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>No. Tagihan</label><input type="text" id="bill-no" placeholder="BILL-2026-001"></div>
+        <div class="form-group"><label>Tanggal Tagihan</label><input type="date" id="bill-tgl"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Supplier</label><input type="text" id="bill-supplier" list="bill-supplier-list" placeholder="PT. Sumber Makmur"><datalist id="bill-supplier-list"></datalist></div>
+        <div class="form-group"><label>Jatuh Tempo</label><input type="date" id="bill-jatuh-tempo"></div>
+      </div>
+      <div class="form-group"><label>Keterangan</label><textarea id="bill-deskripsi" rows="2" placeholder="Pembelian barang dagangan Oktober 2026"></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 72px 120px 32px;gap:8px;margin-bottom:6px;">
+        <span style="font-size:11px;color:var(--muted);font-weight:600;">ITEM / AKUN</span>
+        <span style="font-size:11px;color:var(--muted);font-weight:600;">QTY</span>
+        <span style="font-size:11px;color:var(--muted);font-weight:600;">HARGA</span>
+        <span></span>
+      </div>
+      <div id="bill-items-list"></div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:4px;" onclick="tambahItemBill()">+ Tambah Item</button>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="color:var(--muted);font-size:13px;">Subtotal</span><span id="bill-subtotal" style="font-family:var(--mono);font-size:13px;">Rp 0</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label style="color:var(--muted);font-size:13px;">PPN Masukan <input type="checkbox" id="bill-ppn-check" onchange="hitungTotalBillForm()" style="accent-color:var(--accent);cursor:pointer;">
+            <select id="bill-ppn-tarif" onchange="hitungTotalBillForm()" style="background:var(--surface);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;padding:2px 4px;">
+              <option value="11">11% (non-mewah)</option><option value="12">12% (mewah)</option>
+            </select></label>
+          <span id="bill-ppn-val" style="font-family:var(--mono);font-size:13px;">Rp 0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px;"><span style="font-weight:700;">Total</span><span id="bill-total" style="font-family:var(--mono);font-weight:700;color:var(--accent);font-size:16px;">Rp 0</span></div>
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>Akun Utang Usaha</label>
+        <input type="hidden" id="bill-akun-utang" value="">
+        <button class="form-picker-btn" type="button" id="bill-akun-utang-btn" onclick="openSimplePicker('bill-akun-utang','bill-akun-utang-btn','utang')">Pilih Akun...</button>
+      </div>
+    </div>
+    <div class="modal-footer" style="flex-wrap:wrap;gap:6px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-bill')" style="flex-shrink:0;">Batal</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="simpanBill('draft')" style="flex-shrink:0;white-space:nowrap;"><i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Simpan Draft</button>
+        <button class="btn btn-primary" onclick="simpanBill('diterima')" style="flex-shrink:0;white-space:nowrap;"><i class="ti ti-upload" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i> Simpan & Diterima</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="modal-inv-lunas" onclick="if(event.target===this)closeModal('modal-inv-lunas')">
   <div class="modal" style="max-width:420px;">
     <div class="modal-head"><div class="modal-title"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tandai Lunas</div><button class="modal-close" onclick="closeModal('modal-inv-lunas')">✕</button></div>

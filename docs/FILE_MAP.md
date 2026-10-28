@@ -146,33 +146,33 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 658 | `startTutorial` | function |
 | 677-702 | `openOptPicker` | function |
 
-## js/05-akun.js (523 baris, 30.0 KB)
+## js/05-akun.js (524 baris, 30.1 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 5-11 | `akunNamaTampil` | function |
-| 27-33 | `guessAkunPersediaanDefault` | function |
-| 35-44 | `openSimplePicker` | function |
-| 47-54 | `tipeBadge` | function |
-| 58-138 | `renderAkun` | function |
-| 140-158 | `buildAkunRow` | function |
-| 160-190 | `hapusAkun` | function |
-| 197-201 | `_akunTrashSisaHari` | function |
-| 204-209 | `purgeExpiredAkunTrash` | function |
-| 211-215 | `openModalAkunTrash` | function |
-| 217-246 | `renderAkunTrashList` | function |
-| 248-263 | `restoreAkunTrash` | function |
-| 265 | `openModalAkun` | function |
-| 266 | `closeModal` | function |
-| 271-282 | `openAkunPicker` | function |
-| 284-291 | `closeAkunPicker` | function |
-| 293-304 | `filterAkunPicker` | function |
-| 306-336 | `renderAkunPickerList` | function |
-| 338-347 | `selectAkunFromPicker` | function |
-| 349-355 | `syncAkunTrigger` | function |
-| 356-372 | `simpanAkun` | function |
-| 379-398 | `openExportModal` | function |
-| 400-519 | `getDefaultAkuns` | function |
+| 28-34 | `guessAkunPersediaanDefault` | function |
+| 36-45 | `openSimplePicker` | function |
+| 48-55 | `tipeBadge` | function |
+| 59-139 | `renderAkun` | function |
+| 141-159 | `buildAkunRow` | function |
+| 161-191 | `hapusAkun` | function |
+| 198-202 | `_akunTrashSisaHari` | function |
+| 205-210 | `purgeExpiredAkunTrash` | function |
+| 212-216 | `openModalAkunTrash` | function |
+| 218-247 | `renderAkunTrashList` | function |
+| 249-264 | `restoreAkunTrash` | function |
+| 266 | `openModalAkun` | function |
+| 267 | `closeModal` | function |
+| 272-283 | `openAkunPicker` | function |
+| 285-292 | `closeAkunPicker` | function |
+| 294-305 | `filterAkunPicker` | function |
+| 307-337 | `renderAkunPickerList` | function |
+| 339-348 | `selectAkunFromPicker` | function |
+| 350-356 | `syncAkunTrigger` | function |
+| 357-373 | `simpanAkun` | function |
+| 380-399 | `openExportModal` | function |
+| 401-520 | `getDefaultAkuns` | function |
 
 ## js/06-transaksi.js (1294 baris, 65.4 KB)
 
@@ -1076,11 +1076,25 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | --- | --- | --- |
 | 12-23 | `bacaParamOAuth` | function |
 
-## js/28-bill.js (15 baris, 1.0 KB)
+## js/28-bill.js (35 baris, 2.1 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 11-14 | `billList` | arrow |
+| 23-28 | `hitungTotalBill` | function |
+| 31-34 | `nomorBillBerikut` | function |
+
+## js/29-bill-ui.js (83 baris, 4.5 KB)
+
+| Baris | Nama | Jenis |
+| --- | --- | --- |
+| 11 | `_billAkunBeli` | function |
+| 13-16 | `_billPpnTarif` | function |
+| 18-24 | `hitungTotalBillForm` | function |
+| 26-43 | `renderBillItems` | function |
+| 45-49 | `tambahItemBill` | function |
+| 51-77 | `openModalBill` | function |
+| 80-82 | `simpanBill` | function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 

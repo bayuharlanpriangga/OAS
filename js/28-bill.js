@@ -12,3 +12,23 @@ let billList = (() => {
   try { const a = JSON.parse(localStorage.getItem('oas_bill') || '[]'); return Array.isArray(a) ? a : []; }
   catch (e) { return []; }
 })();
+
+// ── Fungsi murni ───────────────────────────────────────────
+
+// Hitung subtotal, PPN, dan total bill dari daftar item. Memakai hitungPpn (02-utils.js).
+// items     : [{ qty, harga }]; nilai bukan angka / negatif dianggap 0
+// ppnAktif  : true bila bill memakai PPN Masukan
+// tarifPct  : tarif PPN dalam persen (mis. 11); kosong = tarif standar
+// Mengembalikan { subtotal, ppn, total }.
+function hitungTotalBill(items, ppnAktif, tarifPct) {
+  const angka = v => (typeof v === 'number' && isFinite(v) && v > 0) ? v : 0;
+  const subtotal = (Array.isArray(items) ? items : []).reduce((s, it) => s + angka(it && it.qty) * angka(it && it.harga), 0);
+  const ppn = ppnAktif ? hitungPpn(subtotal, tarifPct) : 0;
+  return { subtotal, ppn, total: subtotal + ppn };
+}
+
+// Nomor bill berikutnya (BILL-<tahun>-<urut>). Counter bill menyusul di task 4.4.
+function nomorBillBerikut(tahun) {
+  const y = Number.isInteger(tahun) ? tahun : new Date().getFullYear();
+  return nomorBerikut('BILL', y, billList.map(b => b && b.noBill), []);
+}

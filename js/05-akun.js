@@ -18,6 +18,7 @@ let _simplePickerFilter = null;
 const PICKER_FILTERS = {
   'kas':  a => !['1101','1102','1103','1104'].includes(a.kode),
   'beli': a => ['Beban','Aset','HPP'].includes(a.tipe),
+  'utang': a => a.tipe === 'Liabilitas',
   'persediaan': a => a.tipe === 'Aset' && (a.nama.toLowerCase().includes('persediaan') || a.kode.startsWith('13')),
 };
 
