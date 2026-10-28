@@ -107,44 +107,44 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1803-1813 | `_applyCompanyLogo` | function |
 | 2709-2732 | `updatePwaBtn` | function |
 
-## js/04-navigasi-tema.js (707 baris, 32.7 KB)
+## js/04-navigasi-tema.js (708 baris, 32.8 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 3-6 | `toggleSidebar` | function |
 | 7-10 | `closeSidebar` | function |
 | 19-21 | `inIframe` | arrow |
-| 64-161 | `showPage` | function |
-| 163-165 | `handleAddBtn` | function |
-| 168-178 | `switchTab` | function |
-| 181-192 | `populateAkunSelect` | function |
-| 195-198 | `safeHistoryPush` | function |
-| 199-202 | `safeHistoryReplace` | function |
-| 245-254 | `initTheme` | function |
-| 256-284 | `applyTheme` | function |
-| 297-306 | `syncPwaThemeChrome` | function |
-| 308-312 | `toggleTheme` | function |
-| 314-386 | `initTutDrag` | function |
-| 388-400 | `tutMinimize` | function |
-| 402-409 | `tutRestore` | function |
-| 418-422 | `dismissAndOpenPenyesuaian` | function |
-| 424-426 | `openJurnalPenyesuaian` | function |
-| 428 | `openInlineTemplatePenyesuaian` | function |
-| 429 | `toggleTemplatePenyesuaian` | function |
-| 430 | `fillPenyesuaianInline` | function |
-| 431 | `openModalPenyesuaian` | function |
-| 436-469 | `renderArusKas` | function |
-| 471-480 | `runSequential` | function |
-| 482-490 | `exitTutorial` | function |
-| 492-499 | `clearTutHighlight` | function |
-| 501-592 | `renderTutStep` | function |
-| 594-609 | `tutNext` | function |
-| 611-613 | `tutSkipSection` | function |
-| 615-637 | `positionTutTooltip` | function |
-| 639-650 | `positionTutTooltipCenter` | function |
-| 652-654 | `showTutComplete` | function |
-| 657 | `startTutorial` | function |
-| 676-701 | `openOptPicker` | function |
+| 65-162 | `showPage` | function |
+| 164-166 | `handleAddBtn` | function |
+| 169-179 | `switchTab` | function |
+| 182-193 | `populateAkunSelect` | function |
+| 196-199 | `safeHistoryPush` | function |
+| 200-203 | `safeHistoryReplace` | function |
+| 246-255 | `initTheme` | function |
+| 257-285 | `applyTheme` | function |
+| 298-307 | `syncPwaThemeChrome` | function |
+| 309-313 | `toggleTheme` | function |
+| 315-387 | `initTutDrag` | function |
+| 389-401 | `tutMinimize` | function |
+| 403-410 | `tutRestore` | function |
+| 419-423 | `dismissAndOpenPenyesuaian` | function |
+| 425-427 | `openJurnalPenyesuaian` | function |
+| 429 | `openInlineTemplatePenyesuaian` | function |
+| 430 | `toggleTemplatePenyesuaian` | function |
+| 431 | `fillPenyesuaianInline` | function |
+| 432 | `openModalPenyesuaian` | function |
+| 437-470 | `renderArusKas` | function |
+| 472-481 | `runSequential` | function |
+| 483-491 | `exitTutorial` | function |
+| 493-500 | `clearTutHighlight` | function |
+| 502-593 | `renderTutStep` | function |
+| 595-610 | `tutNext` | function |
+| 612-614 | `tutSkipSection` | function |
+| 616-638 | `positionTutTooltip` | function |
+| 640-651 | `positionTutTooltipCenter` | function |
+| 653-655 | `showTutComplete` | function |
+| 658 | `startTutorial` | function |
+| 677-702 | `openOptPicker` | function |
 
 ## js/05-akun.js (523 baris, 30.0 KB)
 

@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 137 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 20/137 task selesai.**
+**Progres: 21/137 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -69,7 +69,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | 1 | Fondasi data | 8/8 |
 | 2 | Umur piutang | 4/4 |
 | 3 | Akses anggota tim | 7/7 |
-| 4 | Tagihan pembelian (bill) | 1/7 |
+| 4 | Tagihan pembelian (bill) | 2/7 |
 | 5 | Pembayaran | 0/7 |
 | 6 | Kartu piutang/hutang dan model dokumen | 0/3 |
 | 7 | Penawaran sampai faktur | 0/6 |
@@ -168,7 +168,7 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 | ✓ | ID | Tugas | Lampirkan |
 | :---: | --- | --- | --- |
 | ☑ | 4.1 | Model data bill (kind `bill`) di CLOUD_RECORD_KINDS + update SCHEMA.md. State `billList` di `js/28-bill.js` (dimuat di index.html), kind `bill` di `22-cloud-records.js` (tanpa migrasi key global), bentuk record di `docs/SCHEMA.md` §4.5b, checkbox "Tagihan Pembelian" di modal Reset Data. Tes: bagian [bill] `tests/cloud-records.test.js` | CR, SCH |
-| ☐ | 4.2 | Halaman 'Tagihan Pembelian' kosong + navigasi | IDX |
+| ☑ | 4.2 | Halaman 'Tagihan Pembelian' kosong + navigasi. `#page-bill` di index.html (isi placeholder `#bill-body`), kartu menu "Tagihan Beli" di grup Fitur Baru, judul di `pageTitles` (04-navigasi-tema.js), izin modul mengikuti Invoice (`MODUL_HALAMAN.bill`). Tes: `daftar-bisnis.test.js` | IDX |
 | ☐ | 4.3 | Form bill: tampilan input (supplier, tanggal, jatuh tempo, item, PPN), belum menyimpan | 4.1, INV sebagai pola |
 | ☐ | 4.4 | Simpan bill ke cloud + daftar bill, belum ada jurnal | 4.3, CR |
 | ☐ | 4.5 | Fungsi murni buatJurnalBill(bill): Dr Persediaan/Beban + PPN Masukan, Cr Utang Usaha + tes (belum dipasang) | INV (jurnal invoice sebagai pola) |

@@ -46,6 +46,7 @@ const pageTitles = {
   // Fitur Baru
   'jurnal-berulang':['Jurnal Berulang','Otomasi transaksi rutin · Gaji · Sewa · Cicilan'],
   'invoice':['Invoice & Piutang','Buat invoice · Lacak pembayaran · Jurnal otomatis'],
+  'bill':['Tagihan Pembelian','Tagihan dari supplier · Utang usaha · Jatuh tempo'],
   'umur-piutang':['Umur Piutang','Piutang belum lunas per pelanggan · Bucket 0-30, 31-60, 61-90, >90 hari'],
   'rekonsiliasi':['Rekonsiliasi Bank','Cocokkan mutasi bank dengan jurnal · Upload CSV'],
   'kurs':['Multi Mata Uang','Kurs otomatis · Konversi transaksi · History kurs'],

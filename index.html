@@ -235,6 +235,9 @@
       <div class="nav-card" onclick="showPage('invoice')" data-page="invoice">
         <span class="nav-card-icon"><i class="ti ti-file-invoice"></i></span>Invoice
       </div>
+      <div class="nav-card" onclick="showPage('bill')" data-page="bill">
+        <span class="nav-card-icon"><i class="ti ti-file-invoice"></i></span>Tagihan Beli
+      </div>
       <div class="nav-card" onclick="showPage('umur-piutang')" data-page="umur-piutang">
         <span class="nav-card-icon"><i class="ti ti-clock"></i></span>Umur Piutang
       </div>
@@ -2223,6 +2226,20 @@
       </div>
     </div>
     <div id="aging-piutang-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada data untuk ditampilkan.</div>
+  </div>
+</div>
+
+<!-- TAGIHAN PEMBELIAN / BILL (form: task 4.3; daftar + simpan: task 4.4) -->
+<div class="page" id="page-bill">
+  <div class="section-header">
+    <div><div class="section-title"><i class="ti ti-file-invoice" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Tagihan Pembelian</div>
+    <div class="section-sub">Tagihan dari supplier yang belum dibayar · Utang usaha</div></div>
+  </div>
+  <div class="table-card" style="margin-bottom:16px;">
+    <div class="table-header">
+      <div class="table-title"><i class="ti ti-file-invoice ti-inline"></i> Daftar Tagihan Pembelian</div>
+    </div>
+    <div id="bill-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada tagihan pembelian.</div>
   </div>
 </div>
 
