@@ -192,7 +192,7 @@ CREATE POLICY "Anyone can read join code by code value"
   ON company_join_codes FOR SELECT USING (true);
 ```
 
-### 2.2b `company_records` — invoice, kontak, aset tetap, produk, jurnal berulang, anggaran, alert, kurs
+### 2.2b `company_records` — invoice, bill, kontak, aset tetap, produk, jurnal berulang, anggaran, alert, kurs, counter
 
 Migrasi: [`docs/migrations/001_company_records.sql`](./migrations/001_company_records.sql).
 Satu baris = satu record, dipisah per bisnis. Dipakai oleh `js/22-cloud-records.js`.
@@ -200,8 +200,8 @@ Satu baris = satu record, dipisah per bisnis. Dipakai oleh `js/22-cloud-records.
 | Kolom | Tipe | Isi |
 |---|---|---|
 | `company_id` | uuid, FK `companies` | Pemilik data (ON DELETE CASCADE) |
-| `kind` | text | `invoice` \| `kontak` \| `aset_tetap` \| `produk` \| `jurnal_berulang` \| `anggaran` \| `alert` \| `kurs` \| `counter` |
-| `rec_id` | text | id record di app (`INV_..`, `KTK_..`, `AT_..`, `jb_..`, `ang_..`, `alert_..`, `kurs` (satu record), `INV-2026` untuk counter penomoran (`{ id, jenis, tahun, terakhir }`), atau `ksId` untuk produk) |
+| `kind` | text | `invoice` \| `bill` \| `kontak` \| `aset_tetap` \| `produk` \| `jurnal_berulang` \| `anggaran` \| `alert` \| `kurs` \| `counter` |
+| `rec_id` | text | id record di app (`INV_..`, `BILL_..`, `KTK_..`, `AT_..`, `jb_..`, `ang_..`, `alert_..`, `kurs` (satu record), `INV-2026` untuk counter penomoran (`{ id, jenis, tahun, terakhir }`), atau `ksId` untuk produk) |
 | `data` | jsonb | isi record apa adanya |
 | `updated_at` | timestamptz | waktu sync terakhir |
 
@@ -250,12 +250,13 @@ di akhir), sisanya global per-browser/device.
 | `oas_invoices` | Global (hanya mode tamu) | JSON array | `invoiceList`. Saat login, data ada di `company_records`; key ini tidak ditulis lagi |
 | `oas_kontak` | Global (hanya mode tamu) | JSON array | `kontakList` (pelanggan/supplier). Saat login: `company_records` |
 | `oas_aset_tetap` | Global (hanya mode tamu) | JSON array | `asetTetapList`. Saat login: `company_records` |
+| `oas_bill` | Global (hanya mode tamu) | JSON array | `billList` — tagihan pembelian. Saat login: `company_records` (`kind='bill'`). Mulai ditulis di task 4.4 |
 | `oas_counter` | Global | JSON array | `[{ id:'INV-2026', jenis, tahun, terakhir }]` — nomor tertinggi yang pernah dipakai per jenis+tahun (mode tamu) |
 | `oas_kurs` | Global | JSON object | `{ USD, IDR, SGD, EUR, MYR, JPY, updatedAt }` — kurs multi mata uang |
 | `oas_alerts` | Global | JSON array | `notifAlerts` — aturan notifikasi (arus kas negatif, jatuh tempo, dst) |
 | `oas_notif_hist` | Global | JSON array | `notifHistory` — riwayat notifikasi yang sudah muncul |
 | `oas_anggaran` | Global | JSON array | `anggaranList` — anggaran vs aktual per periode |
-| `oas_rec_<kind>_<companyId>` | Per company | JSON array | Cache lokal invoice/kontak/aset_tetap/produk/jurnal_berulang/anggaran/alert/kurs/counter; dipakai bila cloud gagal dimuat atau ditulis |
+| `oas_rec_<kind>_<companyId>` | Per company | JSON array | Cache lokal invoice/bill/kontak/aset_tetap/produk/jurnal_berulang/anggaran/alert/kurs/counter; dipakai bila cloud gagal dimuat atau ditulis |
 | `oas_rec_snaph_<companyId>` | Per company | JSON object | `{ kind: { recId: hash } }` — hash tiap record pada keadaan cloud terakhir yang terkonfirmasi (selesai dimuat / sync sukses). Saat memuat, selisihnya dengan cache = perubahan yang belum tersinkron; diterapkan di atas data cloud lalu dikirim ulang, jadi tidak hilang walau halaman di-refresh saat offline |
 | `oas_rec_seen_<companyId>` / `oas_rec_legacy_claimed` | Per company / global | `'1'` / companyId | Penanda migrasi data lama: data global hanya boleh dipindah ke satu bisnis dan tidak ditawarkan ulang |
 | `oas_mks_<companyId>` / `oas_mks_guest` | Per company | JSON object | Fallback lokal untuk `multiKartuStock` bila gagal sync ke cloud |
@@ -374,6 +375,33 @@ Saat status `'terkirim'`, sistem otomatis membuat entri di `jurnalEntries`
 (Debit Piutang, Kredit Pendapatan, Kredit PPN jika ada) — lihat
 `simpanInvoice()`.
 
+### 4.5b Bill (Tagihan Pembelian) — `billList[]`
+State di `js/28-bill.js`; disinkron lewat `company_records` (`kind='bill'`, `rec_id` = `id`). Padanan invoice di sisi pembelian; bentuknya sengaja dibuat mirip supaya `hitungAging` (task 2.1) dan pola bayar (Fase 5) bisa dipakai ulang.
+```ts
+{
+  id: string;              // "BILL_<timestamp>"
+  noBill: string;            // nomor internal, mis. "BILL-2026-001" (penomoran: 23-penomoran.js, jenis 'BILL')
+  supplier: string;          // nama kontak (bukan FK id), sama seperti invoice.pelanggan
+  tanggal: string;           // "YYYY-MM-DD"
+  jatuhTempo: string;        // "YYYY-MM-DD"
+  deskripsi?: string;
+  items: {
+    nama?: string;
+    qty: number;
+    harga: number;
+    akun: string;            // kode akun debit baris ini (Persediaan atau Beban)
+  }[];
+  subtotal: number;          // jumlah qty*harga, sebelum PPN
+  ppn: number;               // PPN Masukan; 0 bila tanpa PPN
+  total: number;             // subtotal + ppn
+  sisaTagihan: number;       // awal = total; berkurang saat dibayar (Fase 5)
+  status: 'draft' | 'diterima' | 'lunas';
+  akunUtang: string;         // kode akun Utang Usaha (kredit)
+  createdAt: string;         // ISO datetime
+}
+```
+Aturan yang dipakai task berikutnya (belum dipasang di 4.1): saat status `'diterima'`, jurnal dibuat di `jurnalEntries` (Debit akun tiap item + PPN Masukan, Kredit Utang Usaha) lewat `buatJurnalBill()` (4.5-4.6). Status `'draft'` tidak membuat jurnal. Field tambahan seperti nomor faktur pajak supplier (12.1) dan referensi pesanan pembelian (9.5) ditambahkan di task terkait.
+
 ### 4.6 Aset Tetap — `asetTetapList[]`
 ```ts
 {
@@ -464,6 +492,7 @@ Tidak semua state runtime disinkronkan ke Supabase. Berdasarkan pemetaan
 | `multiKartuStock` | ✅ Ya (sebagai JSON) | `company_profiles.data._multi_kartu_stock` |
 | `produkList` | ✅ Ya | `company_records` (`kind='produk'`). Sebelumnya tidak tersimpan sama sekali untuk bisnis login |
 | `invoiceList` | ✅ Ya | `company_records` (`kind='invoice'`) |
+| `billList` | ✅ Ya | `company_records` (`kind='bill'`) |
 | `kontakList` | ✅ Ya | `company_records` (`kind='kontak'`) |
 | `asetTetapList` | ✅ Ya | `company_records` (`kind='aset_tetap'`) |
 | `jurnalBerulangList` | ✅ Ya | `company_records` (`kind='jurnal_berulang'`) |
@@ -474,9 +503,10 @@ Tidak semua state runtime disinkronkan ke Supabase. Berdasarkan pemetaan
 | `jurnalBerulangHistory`, `notifHistory` | ❌ Tidak | localStorage, global |
 | `org_members`, `company_join_codes` | ✅ Ya | tabel sendiri |
 
-**Status**: invoice, kontak, aset tetap, produk, jurnal berulang, anggaran, alert, dan kurs sudah disinkron per bisnis
+**Status**: invoice, bill, kontak, aset tetap, produk, jurnal berulang, anggaran, alert, dan kurs sudah disinkron per bisnis
 lewat `company_records` (`js/22-cloud-records.js`), jadi ikut berpindah antar
 perangkat dan tidak tercampur antar bisnis. Key global `oas_invoices`,
+`oas_bill`,
 `oas_kontak`, `oas_aset_tetap`, `oas_jb`, `oas_anggaran`, `oas_alerts`, `oas_kurs`, `oas_counter` hanya dipakai mode tamu.
 Data lama di key global ditawarkan untuk diunggah sekali per kind per bisnis
 (flag `oas_rec_seen_<companyId>_<kind>`), dan hanya ke satu bisnis

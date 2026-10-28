@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// CLOUD RECORDS — sinkron invoice, kontak, aset tetap, produk, jurnal berulang,
+// CLOUD RECORDS — sinkron invoice, bill, kontak, aset tetap, produk, jurnal berulang,
 // anggaran, alert notifikasi, kurs, dan counter penomoran ke Supabase (tabel company_records), terpisah per bisnis.
 //
 // Kenapa ada: sebelumnya data ini hanya di localStorage dengan key
@@ -49,6 +49,9 @@ const CLOUD_RECORD_KINDS = {
   // (updatedAt terisi). Tanpa record = default, dan default tidak ikut ditulis ke cloud.
   kurs:            { get: () => (kursData && kursData.updatedAt ? [{ id: 'kurs', ...kursData }] : []), set: v => { kursData = _cloudKursFromList(v); },
                      idOf: r => r && r.id, legacyKey: 'oas_kurs', legacyOnce: true, fromLegacy: _cloudKursLegacy },
+  // bill: tagihan pembelian dari supplier (task 4.1). State-nya (billList) ada di 28-bill.js.
+  // Belum ada data lama di key global, jadi tidak ada migrasi.
+  bill:            { get: () => billList,           set: v => { billList = v; },           idOf: r => r && r.id, legacyKey: null },
   // counter: nomor tertinggi yang pernah dipakai per jenis+tahun ({ id:'INV-2026', terakhir:7 }).
   // State-nya (counterList) dan logikanya ada di 23-penomoran.js.
   counter:         { get: () => counterList,        set: v => { counterList = v; },        idOf: r => r && r.id, legacyKey: 'oas_counter', legacyOnce: true,

@@ -54,7 +54,7 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true, pe
   };
   vm.createContext(ctx);
   // list global di 01-state.js adalah `let`; di sini disediakan lewat script yang sama
-  vm.runInContext('let invoiceList=[],kontakList=[],asetTetapList=[],produkList=[],jurnalBerulangList=[],anggaranList=[],notifAlerts=[],counterList=[],kursData={USD:1,IDR:16200,SGD:12100,EUR:18300,MYR:3500,JPY:107,updatedAt:null};', ctx);
+  vm.runInContext('let invoiceList=[],kontakList=[],asetTetapList=[],produkList=[],jurnalBerulangList=[],anggaranList=[],notifAlerts=[],counterList=[],billList=[],kursData={USD:1,IDR:16200,SGD:12100,EUR:18300,MYR:3500,JPY:107,updatedAt:null};', ctx);
   vm.runInContext(srcBisnis, ctx);
   ctx.isReadOnly = () => vm.runInContext('bisnisHanyaBaca', ctx)(ctx.currentCompany, ctx.currentUser.id, null); // sama dengan isReadOnly() di 18
   vm.runInContext(src, ctx);
@@ -315,6 +315,42 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true, pe
     const e = makeEnv();
     ok((await e.run('cloudDeleteRecords([])')).length === 0 && (await e.run('cloudDeleteRecords(["ngawur"])')).length === 0, 'daftar kosong / kind tidak dikenal diabaikan');
     ok(e.calls.delete.length === 0, 'tidak ada panggilan hapus untuk input kosong');
+  }
+
+  console.log('[bill] kind bill tagihan pembelian (task 4.1)');
+  {
+    const bill = { id: 'BILL_1', noBill: 'BILL-2026-001', supplier: 'PT Maju', tanggal: '2026-10-01', jatuhTempo: '2026-10-31',
+      items: [{ nama: 'Kertas', qty: 2, harga: 50000, akun: '1301' }], subtotal: 100000, ppn: 11000, total: 111000, sisaTagihan: 111000, status: 'draft' };
+    const e = makeEnv();
+    e.store.push({ company_id: 'c1', kind: 'bill', rec_id: 'BILL_1', data: bill });
+    e.ls['oas_rec_seen_c1'] = '1';
+    await e.run('cloudLoadRecords()');
+    ok(e.run('billList.length') === 1 && e.run('billList[0].total') === 111000, 'bill dimuat dari cloud ke billList');
+    e.run("billList.push({ id: 'BILL_2', noBill: 'BILL-2026-002', total: 5000 })");
+    await e.run('cloudSyncRecords(["bill"])');
+    ok(e.store.some(r => r.kind === 'bill' && r.rec_id === 'BILL_2'), 'bill baru tersimpan ke cloud (upsert, rec_id = id)');
+    ok(JSON.parse(e.ls['oas_rec_bill_c1']).length === 2, 'cache lokal bill ikut ditulis');
+    ok(!e.store.some(r => r.kind === 'invoice'), 'bill tidak tercampur dengan invoice');
+    e.run("billList = billList.filter(b => b.id !== 'BILL_1')");
+    await e.run('cloudSyncRecords(["bill"])');
+    ok(!e.store.some(r => r.rec_id === 'BILL_1') && e.store.some(r => r.rec_id === 'BILL_2'), 'bill yang dihapus di app ikut terhapus di cloud');
+    await e.run('cloudDeleteRecords(["bill"])');
+    ok(!e.store.some(r => r.kind === 'bill') && e.run('billList.length') === 0, 'reset bill menghapus di cloud dan state');
+  }
+  {
+    // tidak ada data lama untuk bill: key global tidak ditawarkan ke cloud
+    const e = makeEnv();
+    e.ls['oas_bill'] = JSON.stringify([{ id: 'BILL_X' }]);
+    await e.run('cloudLoadRecords()');
+    ok(!e.store.some(r => r.kind === 'bill'), 'bill: tidak ada migrasi dari key global');
+  }
+  {
+    // viewer tidak menulis bill ke cloud
+    const e = makeEnv({ peran: 'viewer' });
+    await e.run('cloudLoadRecords()');
+    e.run("billList.push({ id: 'BILL_V' })");
+    await e.run('cloudSyncRecords(["bill"])');
+    ok(!e.store.some(r => r.kind === 'bill'), 'viewer: bill tidak ditulis ke cloud');
   }
 
   console.log('[counter] kind counter penomoran (task 1.8)');
