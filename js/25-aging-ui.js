@@ -48,27 +48,42 @@ function agingPiutangHtml(hasil) {
     }).join('');
     const t = hasil.total;
     const persen = t.total > 0 ? ' <span style="color:var(--muted);font-size:11px;">(' + Math.round(t.b90plus / t.total * 100) + '% &gt;90 hari)</span>' : '';
-    html = `<div class="table-scroll"><table id="aging-piutang-table">
+    const t0 = hasil.total;
+    const lewat = t0.b0_30 + t0.b31_60 + t0.b61_90 + t0.b90plus;
+    const ringkas = `<div class="aging-ringkas">
+      <div><div class="lbl">Total piutang</div><div class="val">${rp(t0.total)}</div></div>
+      <div><div class="lbl">Lewat jatuh tempo</div><div class="val" style="color:${lewat > 0 ? 'var(--red)' : 'var(--muted)'};">${rp(lewat)}</div></div></div>`;
+    const kartu = '<div class="aging-kartu">' + hasil.perKontak.map((k, i) => {
+      const chips = _AGING_KOLOM.filter(c => k[c[0]] > 0).map(c => `<span class="aging-chip" style="color:${c[2]};">${c[1]} · ${rp(k[c[0]])}</span>`).join('');
+      const rinci = k.dokumen.map(d => `<div><span style="font-family:var(--mono);">${escapeHtml(d.no || '-')}</span><span style="color:${d.umur > 0 ? 'var(--red)' : 'var(--muted)'};">${d.umur > 0 ? 'telat ' + d.umur + ' hari' : 'belum JT'}</span><span style="font-family:var(--mono);">${rp(d.sisa)}</span></div>`).join('');
+      return `<div class="aging-kartu-item" onclick="toggleAgingDetail(${i})">
+        <div class="aging-kartu-head"><span class="aging-kartu-nama"><i class="ti ti-chevron-right" id="aging-kchev-${i}" style="font-size:12px;margin-right:4px;"></i>${escapeHtml(k.kontak)} <span style="color:var(--muted);font-size:11px;font-weight:400;">(${k.dokumen.length})</span></span><span class="aging-kartu-total">${rp(k.total)}</span></div>
+        <div class="aging-chips">${chips}</div>
+        <div class="aging-kartu-det" id="aging-kdet-${i}">${rinci}</div></div>`;
+    }).join('') + '</div>';
+    html = `<div class="table-scroll aging-tabel"><table id="aging-piutang-table">
       <thead><tr><th>Pelanggan</th>${kepala}<th style="text-align:right;">Total</th></tr></thead>
       <tbody>${baris}</tbody>
       <tfoot><tr style="font-weight:700;border-top:2px solid var(--border);"><td>Total${persen}</td>
         ${_AGING_KOLOM.map(c => `<td style="font-family:var(--mono);text-align:right;">${rp(t[c[0]])}</td>`).join('')}
         <td style="font-family:var(--mono);text-align:right;">${rp(t.total)}</td></tr></tfoot>
     </table></div>`;
+    html = ringkas + html + kartu;
   }
   if (hasil.tidakValid.length) {
     html += `<div style="padding:10px 16px;font-size:12px;color:var(--accent3);">${hasil.tidakValid.length} invoice tidak ikut dihitung karena tanggal tidak valid.</div>`;
   }
-  html += '<div style="padding:8px 16px 12px;font-size:11px;color:var(--muted);">Umur dihitung dari jatuh tempo sampai tanggal acuan. Invoice draft dan lunas tidak dihitung; yang parsial memakai sisa tagihan.</div>';
   return html;
 }
 
+const _agingBuka = {};
 function toggleAgingDetail(i) {
-  const row = document.getElementById('aging-det-' + i), chev = document.getElementById('aging-chev-' + i);
-  if (!row) return;
-  const buka = row.style.display === 'none';
-  row.style.display = buka ? 'table-row' : 'none';
-  if (chev) chev.style.transform = buka ? 'rotate(90deg)' : '';
+  const buka = !_agingBuka[i];
+  _agingBuka[i] = buka;
+  const row = document.getElementById('aging-det-' + i), kdet = document.getElementById('aging-kdet-' + i);
+  if (row) row.style.display = buka ? 'table-row' : 'none';
+  if (kdet) kdet.style.display = buka ? 'block' : 'none';
+  ['aging-chev-', 'aging-kchev-'].forEach(p => { const c = document.getElementById(p + i); if (c) c.style.transform = buka ? 'rotate(90deg)' : ''; });
 }
 
 // Hasil hitungAging untuk invoiceList + tanggal di #aging-acuan (kosong/tidak valid -> hari ini).
@@ -83,6 +98,7 @@ function _agingHasilSaatIni() {
 function renderAgingPiutang() {
   const el = document.getElementById('aging-piutang-body'); if (!el) return;
   el.removeAttribute('style');
+  Object.keys(_agingBuka).forEach(k => delete _agingBuka[k]);
   el.innerHTML = agingPiutangHtml(_agingHasilSaatIni());
 }
 

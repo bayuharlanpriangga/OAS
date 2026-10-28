@@ -25,11 +25,18 @@ ok(html.includes('Rp 2.250.000'), 'total semua = 2.250.000 (1.500.000 + 500.000 
 ok(html.includes('Rp 500.000'), 'bucket >90 hari Budi tampil');
 ok(html.includes('telat 253 hari') && html.includes('belum jatuh tempo'), 'rincian dokumen: umur & belum jatuh tempo');
 ok(html.includes('1 invoice tidak ikut dihitung'), 'peringatan tanggal tidak valid');
-ok((html.match(/toggleAgingDetail\(/g) || []).length === 2, 'satu baris klik per pelanggan');
+ok((html.match(/toggleAgingDetail\(/g) || []).length === 4, 'satu klik per pelanggan di tabel dan satu di kartu');
+ok(html.includes('class="table-scroll aging-tabel"') && html.includes('class="aging-kartu"'), 'tabel (desktop) dan kartu (HP) sama-sama dirender');
+ok(html.includes('Total piutang') && html.includes('Lewat jatuh tempo') && html.includes('Rp 2.000.000'), 'ringkasan: total piutang dan yang sudah lewat jatuh tempo (2.000.000)');
+const kartuAni = html.slice(html.indexOf('aging-kartu-item'), html.indexOf('aging-kartu-item', html.indexOf('aging-kartu-item') + 5));
+ok(kartuAni.includes('Belum JT') && !kartuAni.includes('1–30 hari') && !kartuAni.includes('&gt;90'), 'kartu hanya menampilkan kelompok umur yang ada isinya');
+ok(!html.includes('Umur dihitung dari jatuh tempo'), 'teks penjelasan panjang sudah dihapus');
+ok(html.includes('aging-kdet-0') && html.includes('aging-det-0'), 'rincian invoice tersedia di kartu dan tabel');
 
 console.log('[2] kosong');
 const kosong = run('agingPiutangHtml(hitungAging([], "2026-10-12"))');
 ok(kosong.includes('Tidak ada piutang belum lunas') && !kosong.includes('<table id="aging-piutang-table"'), 'pesan kosong, tanpa tabel');
+ok(!kosong.includes('aging-ringkas') && !kosong.includes('aging-kartu'), 'kosong: tanpa ringkasan dan kartu');
 
 console.log('[3] tanggal lokal');
 ok(/^\d{4}-\d{2}-\d{2}$/.test(run('agingHariIni()')), 'agingHariIni berformat YYYY-MM-DD');

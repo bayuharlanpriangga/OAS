@@ -1043,21 +1043,21 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 39 | `_agingKosong` | function |
 | 48-73 | `hitungAging` | function |
 
-## js/25-aging-ui.js (157 baris, 10.6 KB)
+## js/25-aging-ui.js (173 baris, 12.1 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 12-16 | `agingHariIni` | function |
-| 27-64 | `agingPiutangHtml` | function |
-| 66-72 | `toggleAgingDetail` | function |
-| 75-81 | `_agingHasilSaatIni` | function |
-| 83-87 | `renderAgingPiutang` | function |
-| 92-96 | `_agingSel` | function |
-| 99-110 | `agingCsv` | function |
-| 112 | `_agingTgl` | function |
-| 115-134 | `agingCetakHtml` | function |
-| 136-145 | `exportAgingPiutangCSV` | function |
-| 147-156 | `cetakAgingPiutang` | function |
+| 27-77 | `agingPiutangHtml` | function |
+| 80-87 | `toggleAgingDetail` | function |
+| 90-96 | `_agingHasilSaatIni` | function |
+| 98-103 | `renderAgingPiutang` | function |
+| 108-112 | `_agingSel` | function |
+| 115-126 | `agingCsv` | function |
+| 128 | `_agingTgl` | function |
+| 131-150 | `agingCetakHtml` | function |
+| 152-161 | `exportAgingPiutangCSV` | function |
+| 163-172 | `cetakAgingPiutang` | function |
 
 ## js/26-daftar-bisnis.js (111 baris, 5.3 KB)
 
