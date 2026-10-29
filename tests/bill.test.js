@@ -1,5 +1,5 @@
 // Tes js/28-bill.js (hitung total, nomor, susun record, penyimpan, jurnal bill) dan js/29-bill-ui.js (simpan, daftar, hapus)
-// beserta keterkaitannya dengan index.html dan file lama (tasks 4.3-4.6).
+// beserta keterkaitannya dengan index.html dan file lama (tasks 4.3-4.6c).
 // Jalankan: node tests/bill.test.js
 const fs = require('fs'), vm = require('vm'), path = require('path');
 const rd = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
@@ -285,6 +285,115 @@ run('simpanBill("diterima")');
 run('hapusBill(billList[0].id)');
 ok(run('billList.length') === 0 && run('jurnalEntries.length') === 2 && run('jurnalEntries[1].tanggal') === '2099-01-01', 'bill bertanggal masa depan: pembalik bertanggal sama dengan jurnal asal (bukan ditolak)');
 
+console.log('[edit draft] bisaEditBill, formDariBill, perbaruiBill (murni)');
+const draftA = () => ({ id: 'D1', noBill: 'BILL-2026-001', supplier: 'PT Lama', tanggal: '2026-10-01', jatuhTempo: '2026-10-31', deskripsi: 'awal',
+  items: [{ nama: 'Kertas', qty: 2, harga: 50000, akun: '1301' }], subtotal: 100000, ppn: 11000, ppnTarif: 11, total: 111000, sisaTagihan: 111000,
+  status: 'draft', akunUtang: '2101', createdAt: '2026-10-01T03:00:00.000Z' });
+ok(run('bisaEditBill({status:"draft"})') === true && run('bisaEditBill({status:"diterima"})') === false && run('bisaEditBill({status:"lunas"})') === false && run('bisaEditBill(null)') === false && run('bisaEditBill()') === false, 'bisaEditBill: hanya draft');
+ctx.__d = draftA(); let fm = run('formDariBill(__d)');
+ok(fm.id === 'D1' && fm.noBill === 'BILL-2026-001' && fm.supplier === 'PT Lama' && fm.tanggal === '2026-10-01' && fm.jatuhTempo === '2026-10-31' && fm.deskripsi === 'awal' && fm.akunUtang === '2101' && fm.createdAt === '2026-10-01T03:00:00.000Z', 'formDariBill: field dasar terbawa');
+ok(fm.ppnAktif === true && fm.ppnTarif === 11 && fm.items.length === 1 && fm.items[0].nama === 'Kertas' && fm.items[0].akun === '1301', 'formDariBill: PPN aktif dengan tarif record, item terbawa');
+fm.items[0].qty = 99; ok(ctx.__d.items[0].qty === 2, 'formDariBill: item disalin, record asal tidak ikut berubah');
+ctx.__d = { ...draftA(), ppn: 0, ppnTarif: 0, items: [{ nama: 'x', qty: 1, harga: 5 }] }; fm = run('formDariBill(__d)');
+ok(fm.ppnAktif === false && fm.ppnTarif === run('PPN_TARIF_STANDAR') && fm.items[0].akun === '', 'formDariBill: tanpa PPN -> ppnAktif false, tarif standar; akun kosong tetap string kosong');
+ok(run('formDariBill(null).items.length') === 0 && run('formDariBill().ppnAktif') === false && run('formDariBill({items:[null,5,{nama:"a",qty:1,harga:2}]}).items.length') === 1, 'formDariBill: null/sampah tidak error');
+// susunBill dengan id + createdAt dari form edit tidak mengganti keduanya, dan nomor sendiri tidak dianggap kembar
+ctx.__f = { ...run('formDariBill(__d)'), status: 'draft' }; ctx.__f.items = [{ nama: 'Kertas', qty: 2, harga: 50000, akun: '1301' }];
+ctx.__nos = ['BILL-2026-002'];
+r = run('susunBill(__f, __nos)');
+ok(r.ok && r.bill.id === 'D1' && r.bill.createdAt === '2026-10-01T03:00:00.000Z', 'susunBill: id dan createdAt dari draft dipertahankan');
+run('billList=[]; counterList=[]'); ls._s = {};
+ctx.__d1 = draftA(); ctx.__d2 = { ...draftA(), id: 'D2', noBill: 'BILL-2026-002' };
+run('billList=[__d1,__d2]');
+ctx.__e = { ...draftA(), supplier: 'PT Baru', noBill: 'BILL-2026-007' };
+ok(run('perbaruiBill(__e)') === true && run('billList.map(b=>b.id).join()') === 'D1,D2' && run('billList[0].supplier') === 'PT Baru' && run('billList.length') === 2, 'perbaruiBill: diganti di posisi yang sama, jumlah tetap');
+ok(JSON.parse(ls._s['oas_bill'])[0].supplier === 'PT Baru' && run('counterList[0].terakhir') === 7, 'perbaruiBill: tersimpan (mode tamu) dan counter naik ke nomor yang diubah');
+ok(run('perbaruiBill({id:"X"})') === false && run('perbaruiBill(null)') === false && run('perbaruiBill()') === false && run('billList.length') === 2, 'perbaruiBill: id tidak ada / null -> false, daftar utuh');
+const sync2 = []; ctx.currentCompany = { id: 'c1' }; ctx.cloudSyncRecords = k => { sync2.push(k.join()); return Promise.resolve(true); };
+run('perbaruiBill(__e)');
+ok(sync2.join('|') === 'bill,counter', 'perbaruiBill: bisnis login menyinkron bill + counter');
+delete ctx.currentCompany; delete ctx.cloudSyncRecords;
+
+console.log('[edit draft] editBill dan simpanBill mode edit (stub DOM)');
+ctx.akuns = [{ kode: '1301', nama: 'Persediaan Barang Dagangan', tipe: 'Aset' }, { kode: '2101', nama: 'Utang Usaha', tipe: 'Liabilitas' }];
+ctx.kontakList = []; ctx.setTimeout = () => {}; const dibuka = []; ctx.openModal = id => dibuka.push(id);
+el('bill-akun-utang-btn').classList = { add() {}, remove() {} };
+const resetEdit = (extra) => {
+  ctx.__d1 = draftA(); ctx.__d2 = { ...draftA(), id: 'D2', noBill: 'BILL-2026-002' };
+  run(extra ? 'billList=[__d1,__d2]' : 'billList=[__d1]'); run('counterList=[]; jurnalEntries=[]; _billEditId=null; _billItems=[]');
+  jrnSeq = 1; tersimpan = 0; alerts.length = 0; closed.length = 0; dibuka.length = 0; periodeOk = true; viewer = false; confirmAns = true; ls._s = {};
+};
+resetEdit(); viewer = true; run('editBill("D1")');
+ok(dibuka.length === 0 && run('_billEditId') === null, 'viewer: edit diblokir');
+viewer = false; run('editBill("tidak-ada")');
+ok(dibuka.length === 0 && run('_billEditId') === null && alerts.length === 0, 'id tidak ditemukan: tidak terjadi apa-apa');
+run('billList[0].status = "diterima"'); run('editBill("D1")');
+ok(dibuka.length === 0 && run('_billEditId') === null && /Draft/.test(alerts[0]), 'bill diterima: tidak bisa diedit, ada pesan');
+resetEdit(); run('editBill("D1")');
+ok(dibuka.join() === 'modal-bill' && run('_billEditId') === 'D1', 'draft: modal dibuka dalam mode edit');
+ok(el('bill-no').value === 'BILL-2026-001' && el('bill-supplier').value === 'PT Lama' && el('bill-tgl').value === '2026-10-01' && el('bill-jatuh-tempo').value === '2026-10-31' && el('bill-deskripsi').value === 'awal' && el('bill-akun-utang').value === '2101', 'form terisi dari draft (nomor, supplier, tanggal, jatuh tempo, keterangan, akun utang)');
+ok(el('bill-ppn-check').checked === true && el('bill-ppn-tarif').value === '11' && run('_billItems.length') === 1 && run('_billItems[0].nama') === 'Kertas' && /Kertas/.test(el('bill-items-list').innerHTML), 'form terisi: PPN, tarif, dan item');
+ok(el('bill-modal-judul').textContent === 'Edit Tagihan BILL-2026-001', 'judul modal menyebut tagihan yang diedit');
+ok(run('_billItems[0]') !== run('billList[0].items[0]'), 'item di form adalah salinan (Batal tidak mengubah draft)');
+
+// simpan ulang sebagai draft
+el('bill-supplier').value = 'PT Baru'; el('bill-deskripsi').value = 'diubah'; run('_billItems[0].qty = 3');
+alerts.length = 0; run('simpanBill("draft")');
+ok(run('billList.length') === 1 && run('billList[0].id') === 'D1' && run('billList[0].supplier') === 'PT Baru' && run('billList[0].deskripsi') === 'diubah', 'edit draft -> draft: diganti di tempat, tidak jadi bill kedua');
+ok(run('billList[0].total') === 166500 && run('billList[0].sisaTagihan') === 166500 && run('billList[0].status') === 'draft', 'total dan sisa dihitung ulang (3 x 50.000 + PPN 11%)');
+ok(run('billList[0].createdAt') === '2026-10-01T03:00:00.000Z' && run('billList[0].noBill') === 'BILL-2026-001', 'createdAt dan nomor yang sama tidak dianggap kembar');
+ok(run('jurnalEntries.length') === 0 && !run('billList[0].jurnalNo') && closed.join() === 'modal-bill' && /diperbarui/.test(alerts[0]) && run('_billEditId') === null, 'draft tetap tanpa jurnal; modal ditutup; pesan "diperbarui"; mode edit selesai');
+ok(JSON.parse(ls._s['oas_bill'])[0].supplier === 'PT Baru', 'perubahan tertulis ke penyimpanan');
+
+// draft -> diterima: inilah jalan draft ke jurnal
+resetEdit(); run('editBill("D1")'); alerts.length = 0;
+run('simpanBill("diterima")');
+ok(run('billList.length') === 1 && run('billList[0].id') === 'D1' && run('billList[0].status') === 'diterima' && run('billList[0].jurnalNo') === 'JRN-001', 'draft -> Diterima: bill yang sama berstatus diterima dan bernomor jurnal');
+ok(run('jurnalEntries.length') === 1 && run('jurnalEntries[0].jenis') === 'Tagihan Pembelian' && run('jurnalEntries[0].lines.reduce((x,l)=>x+l.kredit,0)') === 111000, 'tepat 1 jurnal utang dibuat, nilainya total bill');
+ok(run('billList[0].createdAt') === '2026-10-01T03:00:00.000Z' && /JRN-001/.test(alerts[0]) && /diperbarui/.test(alerts[0]), 'createdAt tetap; pesan menyebut jurnal');
+ok(run('jurnalBillStatus(billList[0], jurnalEntries, billList).status') === 'aktif' && !/editBill\(/.test(el('bill-body').innerHTML), 'daftar: jurnal aktif dan tombol edit hilang setelah diterima');
+
+// gagal: periode terkunci -> draft utuh, modal tetap terbuka
+resetEdit(); run('editBill("D1")'); el('bill-supplier').value = 'PT Baru'; periodeOk = false; alerts.length = 0;
+run('simpanBill("diterima")');
+ok(run('billList[0].status') === 'draft' && run('billList[0].supplier') === 'PT Lama' && run('jurnalEntries.length') === 0 && closed.length === 0 && run('_billEditId') === 'D1', 'periode terkunci: draft tidak berubah, tanpa jurnal, modal tetap terbuka');
+periodeOk = true; run('simpanBill("diterima")');
+ok(run('billList[0].status') === 'diterima' && run('billList[0].supplier') === 'PT Baru' && run('jurnalEntries.length') === 1, 'setelah kunci dibuka, simpan ulang berhasil (1 jurnal)');
+
+// validasi
+resetEdit(true); run('editBill("D1")'); el('bill-no').value = 'BILL-2026-002'; alerts.length = 0;
+run('simpanBill("draft")');
+ok(run('billList[0].noBill') === 'BILL-2026-001' && /sudah dipakai/.test(alerts[0]) && closed.length === 0, 'nomor diubah ke nomor bill lain: ditolak, draft utuh');
+el('bill-no').value = 'BILL-2026-009'; el('bill-supplier').value = ''; alerts.length = 0; run('simpanBill("draft")');
+ok(run('billList[0].noBill') === 'BILL-2026-001' && /supplier/i.test(alerts[0]), 'form tidak valid: draft utuh, ada pesan');
+el('bill-supplier').value = 'PT Lama'; run('simpanBill("draft")');
+ok(run('billList[0].noBill') === 'BILL-2026-009' && run('billList.length') === 2 && run('billList[1].noBill') === 'BILL-2026-002', 'nomor boleh diganti ke nomor yang belum dipakai');
+resetEdit(); run('editBill("D1")'); viewer = true; el('bill-supplier').value = 'PT Baru';
+run('simpanBill("draft")');
+ok(run('billList[0].supplier') === 'PT Lama', 'viewer: simpan edit diblokir');
+
+// draft berubah di tempat lain saat form terbuka
+resetEdit(); run('editBill("D1")'); run('billList[0].status = "diterima"'); alerts.length = 0;
+run('simpanBill("draft")');
+ok(run('billList[0].status') === 'diterima' && run('billList.length') === 1 && /bukan draft/.test(alerts[0]) && closed.length === 0, 'draft sudah jadi diterima di tempat lain: simpan ditolak, tidak menimpa');
+resetEdit(); run('editBill("D1")'); run('billList = []'); alerts.length = 0;
+run('simpanBill("draft")');
+ok(run('billList.length') === 0 && /tidak ada/.test(alerts[0]), 'draft sudah dihapus di tempat lain: tidak dibuat ulang diam-diam');
+
+// buka form baru setelah edit tidak menimpa draft
+resetEdit(); run('editBill("D1")'); run('openModalBill()');
+ok(run('_billEditId') === null && el('bill-modal-judul').textContent === 'Buat Tagihan Pembelian' && el('bill-supplier').value === '' && el('bill-no').value === 'BILL-2026-002', 'Buat Tagihan setelah edit: mode edit direset, form kosong, nomor otomatis berikutnya');
+run('_billItems[0].harga = 1000'); el('bill-supplier').value = 'PT Lain'; alerts.length = 0; run('simpanBill("draft")');
+ok(run('billList.length') === 2 && run('billList.some(b=>b.id==="D1"&&b.supplier==="PT Lama")') && run('billList.some(b=>b.supplier==="PT Lain")'), 'simpan setelah Buat Tagihan: bill baru, draft lama tidak tertimpa');
+
+// daftar: tombol edit hanya untuk draft
+resetEdit(); run('renderBillList()');
+ok(/editBill\('D1'\)/.test(el('bill-body').innerHTML), 'daftar: draft punya tombol edit');
+run('billList[0].status = "diterima"; renderBillList()');
+ok(!/editBill\(/.test(el('bill-body').innerHTML), 'daftar: bill diterima tidak punya tombol edit');
+run('billList[0].status = "lunas"; renderBillList()');
+ok(!/editBill\(/.test(el('bill-body').innerHTML), 'daftar: bill lunas tidak punya tombol edit');
+
 console.log('[item] baris item di layar sempit dan picker akun per baris');
 ctx.akuns = [{ kode: '1301', nama: 'Persediaan Barang Dagangan', tipe: 'Aset' }, { kode: '6101', nama: 'Beban ATK', tipe: 'Beban' }];
 ctx.PICKER_FILTERS = { beli: a => ['Beban', 'Aset', 'HPP'].includes(a.tipe) };
@@ -382,7 +491,7 @@ ok(/bill:\s*\{.*legacyKey:\s*'oas_bill'.*legacyOnce:\s*true/.test(cr) && cr.incl
 
 console.log('[form] id di 29-bill-ui.js ada di index.html');
 const html = rd('index.html'), ui = rd('js/29-bill-ui.js');
-const ids = [...new Set([...ui.matchAll(/getElementById\('([^']+)'\)/g)].map(m => m[1]))];
+const ids = [...new Set([...ui.matchAll(/getElementById\('([^']+)'\)/g), ...ui.matchAll(/\bset\('(bill-[^']+)'/g)].map(m => m[1]))];
 ids.forEach(id => ok(html.includes('id="' + id + '"'), '#' + id));
 ok(/<script defer src="js\/28-bill\.js"><\/script>\s*<script defer src="js\/29-bill-ui\.js">/.test(html), 'urutan script 28 lalu 29');
 ok(html.includes('onclick="openModalBill()"') && html.includes("openSimplePicker('bill-akun-utang'"), 'tombol buka form dan picker akun utang terpasang');
