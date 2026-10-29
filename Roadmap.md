@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 139 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 30/139 task selesai.**
+**Progres: 31/139 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -70,7 +70,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | 2 | Umur piutang | 4/4 |
 | 3 | Akses anggota tim | 7/7 |
 | 4 | Tagihan pembelian (bill) | 8/9 |
-| 5 | Pembayaran | 1/7 |
+| 5 | Pembayaran | 3/7 |
 | 6 | Kartu piutang/hutang dan model dokumen | 0/3 |
 | 7 | Penawaran sampai faktur | 0/6 |
 | 8 | Surat jalan | 0/3 |
@@ -243,7 +243,7 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 | :---: | --- | --- | --- |
 | ☑ | 5.1 | Model pembayaran (kind `pembayaran`: jenis dokumen, id, tanggal, jumlah, akun kas) + fungsi murni sisaTagihan + tes. Modul baru `js/31-pembayaran.js`: state `pembayaranList`, `pembayaranDokumen`, `totalDibayar`, `sisaTagihan(dok, daftar, jenis)` (murni; sisa = total − `dibayarLama` − Σ pembayaran). Kind `pembayaran` di `CLOUD_RECORD_KINDS` (`22-cloud-records.js`, tanpa key mode tamu) + label dialog migrasi; checkbox "Pembayaran" di modal Reset Data; bentuk record di `docs/SCHEMA.md` §4.5c (+ field opsional `dibayarLama` di invoice dan bill). Belum ada form, simpan, jurnal, atau perubahan di invoice/bill. Tes: `tests/pembayaran.test.js`, bagian [pembayaran] `tests/cloud-records.test.js` | CR, SCH |
 | ☑ | 5.2 | Form bayar invoice (boleh parsial), simpan record pembayaran, belum ada jurnal. Modal `#modal-bayar-inv` (tanggal, jumlah default = sisa, akun kas, metode, catatan, ringkasan + riwayat pembayaran) dan tombol "Bayar" di daftar invoice terkirim yang masih bersisa. Modul baru `js/32-pembayaran-ui.js` (`openModalBayarInvoice`, `simpanPembayaranInvoice`); di `js/31-pembayaran.js`: `susunPembayaran` (validasi + record, murni), `dibayarLamaTurunan` (murni), `catatPembayaran`, `simpanPembayaranState`, dan `pembayaranList` kini dimuat dari `oas_pembayaran` (mode tamu); kind `pembayaran` berubah jadi `legacyKey: 'oas_pembayaran'` + `legacyOnce` di `22-cloud-records.js`. Hook ke file lama: `11-kontak-invoice.js` (1 baris, tombol Bayar), `index.html` (script + modal). Tes: `tests/pembayaran-form.test.js`, bagian [pembayaran] `cloud-records.test.js`, `pembayaran.test.js`. Perlu uji manual di browser | 5.1, INV |
-| ☐ | 5.3 | ⚠ Jurnal bayar invoice: Dr Kas, Cr Piutang, dipasang lewat hook | 5.2, INV |
+| ☑ | 5.3 | ⚠ Jurnal bayar invoice: Dr Kas, Cr Piutang, dipasang lewat hook. Fungsi murni di `js/31-pembayaran.js`: `buatJurnalPembayaranInvoice(pembayaran, inv, opsi)` (jurnal berjenis `Invoice & Piutang`, ket `Pembayaran <noInvoice> — <pelanggan>`), `jurnalPembayaranStatus` (belum/aktif/dibalik) dan `pembayaranInvoiceBelumJurnal`. Pemostingan di `js/32-pembayaran-ui.js`: `postingJurnalPembayaranInvoice` (lewat `postJurnalLegacy`, mengisi `pembayaran.jurnalNo`), `simpanPembayaranInvoice` (jurnal dibuat lebih dulu; gagal = pembayaran tidak dicatat), `jurnalkanPembayaranInvoiceLama` + banner `#inv-belum-jurnal` untuk record 5.2 tanpa jurnal. Penyatuan jalur: tombol "Lunas" membuka form bayar yang sama; `konfirmasiLunasInvoice`, modal `modal-inv-lunas`, dan hook audit-nya dihapus. Hook ke file lama: `11-kontak-invoice.js` (+4 baris), `index.html` (+1 baris placeholder, modal lama dihapus), `08-kartu-stock.js` (hook audit lama dibuang). Tes: `tests/pembayaran-jurnal.test.js` (baru), `pembayaran-form.test.js`, `akuntansi.test.js`. Perlu uji manual di browser | 5.2, INV |
 | ☐ | 5.4 | Status invoice otomatis dari total pembayaran (belum, sebagian, lunas, jatuh tempo) | potongan pemakaian status invoice |
 | ☐ | 5.5 | ⚠ Bayar bill (parsial) + jurnal, meniru pola 5.3 | 5.3, 4.4 |
 | ☐ | 5.6 | Fungsi murni alokasi satu pembayaran ke beberapa faktur + tes | 5.1 |
@@ -269,6 +269,19 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 - **Belum ada hapus/koreksi pembayaran.** Record yang salah ketik belum bisa dibatalkan dari UI. Sengaja ditunda: menghapus record yang sudah dijurnal butuh jurnal pembalik (pola `hapusBill`, 4.6). Disarankan sebagai task kecil sesudah 5.3, sebelum fase ini dianggap siap rilis. Sampai itu ada, kesalahan input hanya bisa diperbaiki lewat Reset Data > Pembayaran (menghapus semua pembayaran; `sisaTagihan` invoice yang sudah berkurang tetap, jadi bagian itu dianggap `dibayarLama`).
 - Reset Data > Invoice tidak menghapus pembayaran invoice itu (record yatim, diabaikan `sisaTagihan`); riwayat di form hanya menampilkan record milik invoice yang ada, jadi tidak tampil di mana pun.
 - Catatan lingkungan (bukan bagian task): di working tree `js/13-analitik-dashboard.js` dan `tests/analitik-topakun.test.js` tampil berubah di `git status` (hanya akhir baris CRLF/LF; `git diff --ignore-space-at-eol` kosong). Tidak disentuh dan tidak ikut commit task ini.
+
+**Temuan task 5.3:**
+- Alur: jurnal dibuat lebih dulu (`postingJurnalPembayaranInvoice`), baru `catatPembayaran`. Kalau periode terkunci pada tanggal pembayaran, jurnal tidak bisa diposting dan pembayaran juga tidak dicatat (tidak ada pembayaran baru tanpa jurnal); form tetap terbuka supaya tanggalnya bisa diganti. Pola sama dengan bill (4.6).
+- Bentuk jurnal: Dr `pembayaran.akunKas`, Cr `invoice.akunPiutang`, sebesar jumlah pembayaran (dibulatkan ke sen, sama seperti `sisaTagihan`), bertanggal pembayaran. Jenis jurnal tetap `Invoice & Piutang` (sama dengan jurnal kirim invoice dan jurnal pelunasan lama), jadi badge dan laporan yang sudah ada tidak berubah. Keterangan memakai awalan "Pembayaran" (bukan "Pelunasan" seperti alur lama) karena sebagian besar pembayaran adalah cicilan; tidak ada kode yang membaca kata "Pelunasan".
+- Penaut pembayaran ke jurnal: `pembayaran.jurnalNo` + ket jurnal, karena `id`/`ref` jurnal tidak tersimpan ke cloud (pola `jurnalBillStatus`). Pembayaran kembar (tanggal, jumlah, akun sama) tidak berebut jurnal yang sama: jurnal yang `jurnalNo`-nya sudah dipakai pembayaran lain dilewati saat mencari. Tes memakai `postJurnalLegacy` dan `buatJurnalPembalik` asli.
+- Akun piutang: diambil dari `invoice.akunPiutang`; bila kosong (invoice lama/AI) dipakai 1201, atau akun pertama yang namanya memuat "piutang" (pola jalur AI di `14-export.js`); bila tetap tidak ada, pembayaran ditolak dengan pesan, bukan membuat jurnal setengah jadi. Akun kas yang sama dengan akun piutang juga ditolak (jurnal nol).
+- **Record 5.2 tanpa jurnal** (dibuat sebelum 5.3) tidak dijurnalkan otomatis saat memuat halaman, karena itu membuat jurnal bertanggal lampau tanpa sepengetahuan pengguna. Halaman Invoice menampilkan banner "N pembayaran invoice belum dijurnal" dengan tombol Buat Jurnal; konfirmasi menyebut jumlah dan total, jurnal bertanggal sama dengan pembayarannya, dan yang jatuh di periode terkunci dilewati lalu disebut di ringkasan (tanggal tidak diganti diam-diam). Pembayaran yang jurnalnya sengaja dibalik tidak ikut daftar (tidak dijurnal ulang diam-diam), dan pembayaran milik invoice yang sudah dihapus dilewati.
+- Penyatuan dua jalur bayar: `konfirmasiLunasInvoice` (jurnal `JRN_LNS_` tanpa record) dihapus bersama modal `modal-inv-lunas`; tombol "Lunas" kini memanggil `openModalBayarInvoice` (jumlah default = sisa, jadi tetap satu klik). Efek samping yang membaik: tombol Lunas lama muncul juga untuk invoice draft dan akan mengkredit piutang yang belum pernah dijurnalkan; sekarang draft ditolak form dengan pesan "kirim dulu invoicenya". Pembayaran yang sudah dicatat lewat alur lama tetap valid (jurnalnya sudah ada di buku besar dan nilainya terwakili `dibayarLama`); jurnal bayar baru hanya untuk jumlah yang dibayar sekarang (diuji).
+- Hook audit "Invoice ditandai Lunas" di `08-kartu-stock.js` dibuang (fungsinya tidak ada lagi); gantinya `auditLog('create','invoice','Pembayaran invoice <no> — Rp...')` di `simpanPembayaranInvoice`, selain log jurnal dari `addJurnal`.
+- **Belum ada hapus/koreksi pembayaran** (tetap dari 5.2). Sekarang tiap pembayaran punya jurnal, jadi koreksinya = jurnal pembalik (pola `hapusBill`, 4.6) + record dihapus + `sisaTagihan` dihitung ulang. Disarankan sebagai task kecil sebelum Fase 5 dianggap siap rilis (mis. 5.3b). Sampai itu ada, pembayaran yang salah hanya bisa dikoreksi lewat Jurnal Umum (jurnal pembalik manual), dan itu membuat banner tidak menawarkan jurnal ulang tetapi sisa invoice tetap berkurang.
+- `hapusInvoice` tidak membalik jurnal invoice maupun jurnal pembayarannya (perilaku lama, tidak diubah); pembayaran invoice yang dihapus menjadi record yatim yang diabaikan `sisaTagihan` dan banner.
+- Status turunan (sebagian, jatuh tempo) tetap di 5.4: `catatPembayaran` masih hanya mengubah status ke `lunas` saat sisa 0.
+- Catatan lingkungan: `docs/FILE_MAP.md` diregenerasi lewat `tools/gen-file-map.js`; diff-nya besar di `git status` karena akhir baris (CRLF/LF), bukan karena isi.
 
 ## Fase 6 — Kartu piutang/hutang dan model dokumen (3 task)
 

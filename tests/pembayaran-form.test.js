@@ -1,5 +1,6 @@
 // Tes form bayar invoice (task 5.2): susunPembayaran, dibayarLamaTurunan, catatPembayaran, simpanPembayaranState
-// (js/31-pembayaran.js) dan alur UI js/32-pembayaran-ui.js + pemasangannya.
+// (js/31-pembayaran.js) dan alur UI js/32-pembayaran-ui.js + pemasangannya. Sejak 5.3 simpan juga memposting jurnal
+// (jurnalnya dites rinci di tests/pembayaran-jurnal.test.js; di sini hanya stub supaya alur form tetap teruji).
 // Jalankan: node tests/pembayaran-form.test.js
 const fs = require('fs'), vm = require('vm'), path = require('path');
 const rd = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
@@ -13,12 +14,15 @@ function makeEnv(opsi) {
   const ctx = {
     console, JSON, Date, Math, isFinite, isNaN, Promise, setTimeout: () => {},
     localStorage: { getItem: k => (k in ls ? ls[k] : null), setItem: (k, v) => { ls[k] = String(v); } },
-    invoiceList: [], billList: [], akuns: [{ kode: '1101', nama: 'Kas', tipe: 'Aset' }], currentCompany: opsi.login ? { id: 'c1' } : null,
+    invoiceList: [], billList: [], akuns: [{ kode: '1101', nama: 'Kas', tipe: 'Aset' }, { kode: '1201', nama: 'Piutang Usaha', tipe: 'Aset' }], currentCompany: opsi.login ? { id: 'c1' } : null,
     cloudSyncRecords: kinds => { synced.push(kinds); return Promise.resolve(true); },
     showAlert: m => alerts.push(m), openModal: id => modals.push('open:' + id), closeModal: id => modals.push('close:' + id),
     rp: n => 'Rp' + n, escapeHtml: s => String(s), upgradeFormPickers: () => {},
     renderInvoiceList: () => { ctx.__render++; }, renderInvoiceKPI: () => {}, __render: 0,
     guardHanyaBaca: () => !!opsi.viewer,
+    // stub jurnal (5.3): postJurnalLegacy memberi nomor JRN-001, JRN-002, ...; guardPeriode tidak pernah menolak
+    jurnalEntries: [], guardPeriode: () => true, saveToStorage: () => {}, auditLog: () => {},
+    postJurnalLegacy: j => { j.no = 'JRN-' + String(ctx.jurnalEntries.length + 1).padStart(3, '0'); ctx.jurnalEntries.push(j); return j; },
     document: { getElementById: id => { if (!(id in form)) form[id] = { value: '', innerHTML: '', textContent: '', classList: { add() {}, remove() {} } }; return form[id]; } },
   };
   vm.createContext(ctx);
@@ -37,7 +41,7 @@ console.log('[susunPembayaran] pembayaran sah');
 let r = S(F(), inv(), []);
 ok(r.ok && r.pembayaran.jumlah === 40000 && r.sisaBaru === 60000 && r.lunas === false, 'cicilan 40.000 dari 100.000: ok, sisa 60.000, belum lunas');
 ok(r.pembayaran.jenis === 'invoice' && r.pembayaran.dokId === 'INV_1' && r.pembayaran.noDok === 'INV-2026-001' && r.pembayaran.akunKas === '1101' && r.pembayaran.tanggal === '2026-10-05', 'record: jenis, dokId (id, bukan nomor), noDok, akun kas, tanggal');
-ok(r.pembayaran.id === 'PAY_100' && r.pembayaran.createdAt === '2026-10-05T03:00:00.000Z' && !('jurnalNo' in r.pembayaran), 'record: id/createdAt dari form, belum ada jurnalNo (jurnal di 5.3)');
+ok(r.pembayaran.id === 'PAY_100' && r.pembayaran.createdAt === '2026-10-05T03:00:00.000Z' && !('jurnalNo' in r.pembayaran), 'record: id/createdAt dari form; susunPembayaran murni, jurnalNo diisi pemostingan jurnal (5.3)');
 ok(!('metode' in r.pembayaran) && !('catatan' in r.pembayaran), 'metode/catatan kosong tidak ikut disimpan');
 r = S(F({ metode: '  Transfer ', catatan: ' DP ' }), inv(), []);
 ok(r.pembayaran.metode === 'Transfer' && r.pembayaran.catatan === 'DP', 'metode dan catatan di-trim lalu disimpan');
@@ -173,12 +177,15 @@ console.log('[UI] alur form bayar');
   e.form['bayar-inv-jumlah'].value = '30000'; e.form['bayar-inv-tgl'].value = '2026-10-05'; e.form['bayar-inv-metode'].value = 'Transfer';
   e.run('simpanPembayaranInvoice()');
   ok(e.run('pembayaranList.length') === 1 && e.run('invoiceList[0].sisaTagihan') === 70000, 'simpan: 1 record, sisa invoice 70.000');
-  ok(e.modals.includes('close:modal-bayar-inv') && e.ctx.__render === 1 && /belum dibuat/.test(e.alerts[e.alerts.length - 1]), 'modal tutup, daftar dirender ulang, alert menyebut jurnal belum dibuat');
+  ok(e.modals.includes('close:modal-bayar-inv') && e.ctx.__render === 1 && /Jurnal JRN-001 dibuat/.test(e.alerts[e.alerts.length - 1]) && e.run('pembayaranList[0].jurnalNo') === 'JRN-001', 'modal tutup, daftar dirender ulang, alert menyebut jurnal JRN-001, record menyimpan jurnalNo');
   e.run('simpanPembayaranInvoice()');
   ok(e.run('pembayaranList.length') === 1, 'klik simpan kedua (klik ganda) tidak mencatat dua kali');
   // buka lagi: riwayat tampil
   e.run("openModalBayarInvoice('INV_1')");
-  ok(/belum dijurnal/.test(e.form['bayar-inv-ringkas'].innerHTML) && /Transfer/.test(e.form['bayar-inv-ringkas'].innerHTML) && e.form['bayar-inv-jumlah'].value === 70000, 'form berikutnya: riwayat menandai "belum dijurnal", jumlah default = sisa 70.000');
+  ok(!/belum dijurnal/.test(e.form['bayar-inv-ringkas'].innerHTML) && /Transfer/.test(e.form['bayar-inv-ringkas'].innerHTML) && e.form['bayar-inv-jumlah'].value === 70000, 'form berikutnya: riwayat tidak menandai "belum dijurnal" (sudah ada jurnalNo), jumlah default = sisa 70.000');
+  e.run('pembayaranList[0].jurnalNo = undefined'); e.run("openModalBayarInvoice('INV_1')");
+  ok(/belum dijurnal/.test(e.form['bayar-inv-ringkas'].innerHTML), 'record lama tanpa jurnalNo (dari 5.2) tetap ditandai "belum dijurnal" di riwayat');
+  e.run("pembayaranList[0].jurnalNo = 'JRN-001'");
   // validasi lewat UI
   e.form['bayar-inv-jumlah'].value = '999999'; e.run('simpanPembayaranInvoice()');
   ok(/melebihi sisa/.test(e.alerts[e.alerts.length - 1]) && e.run('pembayaranList.length') === 1 && e.run('invoiceList[0].sisaTagihan') === 70000, 'jumlah berlebih: alert, tidak ada yang berubah, modal tetap terbuka');
@@ -224,9 +231,9 @@ ok(idx.includes('onclick="simpanPembayaranInvoice()"') && idx.includes("openSimp
 const urut = f => idx.indexOf('src="js/' + f + '"');
 ok(urut('31-pembayaran.js') > 0 && urut('31-pembayaran.js') < urut('32-pembayaran-ui.js') && urut('32-pembayaran-ui.js') < urut('99-init.js'), 'urutan script: 31, lalu 32, sebelum 99-init');
 ok(inv11.includes("openModalBayarInvoice('${i.id}')") && /i\.status==='terkirim'&&i\.sisaTagihan>0\?`<button[^`]*openModalBayarInvoice/.test(inv11), 'tombol Bayar di daftar invoice hanya untuk invoice terkirim yang masih bersisa');
-ok(inv11.includes('openModalLunasInvoice') && inv11.includes('konfirmasiLunasInvoice'), 'alur lama "Lunas" tidak dihapus (penyatuan di 5.3)');
+ok(/function openModalLunasInvoice\(id\) \{ openModalBayarInvoice\(id\); \}/.test(inv11) && !inv11.includes('konfirmasiLunasInvoice') && !inv11.includes('JRN_LNS_'), 'tombol "Lunas" membuka form bayar yang sama; alur lama (jurnal tanpa record) dihapus (penyatuan 5.3)');
 ok(!/pembayaranList|susunPembayaran|catatPembayaran|sisaTagihan\(/.test(inv11), '11-kontak-invoice.js hanya punya hook tombol (tidak memakai state pembayaran)');
-ok(!/jurnalEntries|addJurnal|postJurnal/.test(ui + rd('js/31-pembayaran.js').replace(/\/\/.*$/gm, '')), 'belum ada jurnal (batas task 5.2)');
+ok(!/jurnalEntries|addJurnal|postJurnal/.test(rd('js/31-pembayaran.js').replace(/\/\/.*$/gm, '')), '31-pembayaran.js tetap murni: tidak menyentuh jurnalEntries/addJurnal/postJurnal (posting ada di 32, 5.3)');
 ok(sch.includes('oas_pembayaran') && sch.includes('susunPembayaran'), 'SCHEMA.md memuat oas_pembayaran dan susunPembayaran');
 
 console.log('\nHasil: ' + pass + ' lulus, ' + fail + ' gagal');

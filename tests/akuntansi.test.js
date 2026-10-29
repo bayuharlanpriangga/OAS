@@ -214,7 +214,7 @@ setTimeout(() => {
     console.log('\n[5b] Jenis jurnal per fitur');
     ok(run('JENIS_JURNAL.INVOICE') === 'Invoice & Piutang', 'JENIS_JURNAL.INVOICE = "Invoice & Piutang"');
     const inv11 = read('js/11-kontak-invoice.js');
-    ok((inv11.match(/jenis:JENIS_JURNAL\.INVOICE/g) || []).length === 2, 'kirim invoice & pelunasan invoice sama-sama berjenis Invoice & Piutang');
+    ok((inv11.match(/jenis:JENIS_JURNAL\.INVOICE/g) || []).length === 1 && /_bayarJenisJurnal\(\)[\s\S]*?JENIS_JURNAL\.INVOICE/.test(read('js/31-pembayaran.js')) && /jenis: _bayarJenisJurnal\(\)/.test(read('js/31-pembayaran.js')), 'kirim invoice (11) & pembayaran invoice (31-pembayaran.js, sejak 5.3) sama-sama berjenis Invoice & Piutang');
     ok(!/jenis:\s*'Manual'/.test(inv11 + read('js/19-fitur-tambahan.js') + read('js/10-aset-tetap.js') + read('js/12-kalkulator.js') + read('js/13-analitik-dashboard.js')), 'jurnal otomatis fitur tidak lagi berjenis Manual');
     ok(/id="filter-ju-type"/.test(read('index.html')) && /function syncJurnalTypeFilter/.test(read('js/07-jurnal-laporan.js')), 'filter jenis Jurnal Umum disinkronkan dari data');
 

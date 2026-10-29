@@ -266,6 +266,7 @@ function renderInvoiceKPI() {
 
 function renderInvoiceList() {
   const tbody = document.getElementById('inv-tbody'); if(!tbody) return;
+  if(typeof renderPembayaranBelumJurnal === 'function') renderPembayaranBelumJurnal(); // banner pembayaran belum dijurnal (32-pembayaran-ui.js, task 5.3)
   const filter = document.getElementById('inv-filter-status')?.value || 'all';
   const today = new Date().toISOString().split('T')[0];
   let list = filter==='all' ? invoiceList : invoiceList.filter(i=>{
@@ -295,47 +296,9 @@ function renderInvoiceList() {
   }).join('');
 }
 
-function openModalLunasInvoice(id) {
-  const inv = invoiceList.find(i=>i.id===id); if(!inv) return;
-  document.getElementById('inv-lunas-id').value = id;
-  document.getElementById('inv-lunas-nominal').value = inv.sisaTagihan;
-  document.getElementById('inv-lunas-tgl').value = new Date().toISOString().split('T')[0];
-  // Set default kas akun
-  const kasDefault = akuns.find(a=>a.kode==='1101') || akuns.find(a=>a.tipe==='Aset');
-  if(kasDefault) {
-    const h=document.getElementById('inv-lunas-akun'); if(h) h.value=kasDefault.kode;
-    const btn=document.getElementById('inv-lunas-akun-btn');
-    if(btn){btn.innerHTML=`<span class="picker-kode-badge">${escapeHtml(kasDefault.kode)}</span> ${escapeHtml(kasDefault.nama)}`;btn.classList.add('has-value');}
-  }
-  openModal('modal-inv-lunas');
-  setTimeout(upgradeFormPickers, 80);
-}
-
-function konfirmasiLunasInvoice() {
-  const id = document.getElementById('inv-lunas-id').value;
-  const inv = invoiceList.find(i=>i.id===id); if(!inv) return;
-  const tgl = document.getElementById('inv-lunas-tgl').value;
-  const nominal = parseFloat(document.getElementById('inv-lunas-nominal').value)||0;
-  const akunKas = document.getElementById('inv-lunas-akun').value;
-  if(!guardPeriode(tgl, 'diposting')) return;
-  showOpSpinner('Memproses Pembayaran...', 'Membuat jurnal penerimaan kas');
-  setTimeout(()=>{
-    const entry = {
-      id:'JRN_LNS_'+Date.now(), tanggal:tgl, jenis:JENIS_JURNAL.INVOICE,
-      keterangan:`Pelunasan ${inv.noInvoice} — ${inv.pelanggan}`,
-      lines:[{akun:akunKas,debit:nominal,kredit:0},{akun:inv.akunPiutang,debit:0,kredit:nominal}]
-    };
-    if(!postJurnalLegacy(entry)) { hideOpSpinner(); return; }
-    inv.sisaTagihan = Math.max(0, inv.sisaTagihan - nominal);
-    if(inv.sisaTagihan <= 0) inv.status = 'lunas';
-    saveFiturBaru(); saveToStorage(false);
-    closeModal('modal-inv-lunas');
-    renderInvoiceList(); renderInvoiceKPI();
-    showAlert(`✓ Pembayaran ${rp(nominal)} dicatat. Invoice ${inv.sisaTagihan<=0?'LUNAS':'sebagian terbayar'}.`);
-    hideOpSpinner();
-    cekNotifikasi();
-  }, 800);
-}
+// Tombol "Lunas" memakai form bayar yang sama dengan tombol "Bayar" (js/32-pembayaran-ui.js, task 5.3): jumlah
+// default = sisa tagihan, jadi pelunasan tinggal satu klik, dan tiap pembayaran punya record + jurnal.
+function openModalLunasInvoice(id) { openModalBayarInvoice(id); }
 
 function hapusInvoice(id) {
   if(!confirm('Hapus invoice ini?')) return;

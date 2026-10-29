@@ -5,7 +5,9 @@
 // State pembayaranList disinkron lewat cloud-records (kind `pembayaran`, 22-cloud-records.js).
 // Task 5.1: model, state, dan fungsi hitung. Task 5.2: validasi + penyusun record (susunPembayaran), pencatatan
 // ke invoice (catatPembayaran), dan penyimpan (simpanPembayaranState); form-nya ada di 32-pembayaran-ui.js.
-// Belum ada jurnal (invoice: 5.3), status turunan (5.4), atau pembayaran bill (5.5).
+// Task 5.3: jurnal pembayaran invoice (Dr Kas/Bank, Cr Piutang): buatJurnalPembayaranInvoice, jurnalPembayaranStatus dan
+// pembayaranInvoiceBelumJurnal (semuanya murni, di bawah file ini); pemostingannya ada di 32-pembayaran-ui.js.
+// Belum ada status turunan (5.4), atau pembayaran bill (5.5).
 //
 // Sisa tagihan DIHITUNG dari pembayaran, bukan dikurangi di tempat, supaya menghapus atau
 // mengoreksi pembayaran tidak membuat sisa tidak sinkron:
@@ -154,7 +156,8 @@ function simpanPembayaranState(jenis) {
 // Pasang hasil susunPembayaran yang ok ke state: tambah record (terbaru di atas), isi ulang dibayarLama dan
 // sisaTagihan dokumen dari hasil hitung, lalu simpan. Dokumen yang lunas (sisa 0) berstatus 'lunas', sama seperti
 // alur lama; status turunan selengkapnya (belum/sebagian/jatuh tempo) dikerjakan di 5.4.
-// Tanpa jurnal: record belum punya jurnalNo (diisi 5.3 untuk invoice, 5.5 untuk bill).
+// jurnalNo diisi pemanggil SEBELUM fungsi ini (invoice: postingJurnalPembayaranInvoice di 32-pembayaran-ui.js, 5.3;
+// bill: 5.5); record lama dari 5.2 tanpa jurnalNo dijurnalkan belakangan lewat jurnalkanPembayaranInvoiceLama.
 function catatPembayaran(dok, hasil) {
   if (!dok || !hasil || !hasil.ok) return Promise.resolve(false);
   pembayaranList.unshift(hasil.pembayaran);
@@ -162,4 +165,112 @@ function catatPembayaran(dok, hasil) {
   dok.sisaTagihan = hasil.sisaBaru;
   if (hasil.lunas) dok.status = 'lunas';
   return simpanPembayaranState(hasil.pembayaran.jenis);
+}
+
+// ── Task 5.3: jurnal pembayaran invoice ────────────────────
+
+// Jenis jurnal pembayaran invoice = jenis jurnal invoice (JENIS_JURNAL.INVOICE, 02-utils.js), sama dengan jurnal
+// pelunasan alur lama, supaya badge dan laporan yang sudah ada tidak berubah.
+function _bayarJenisJurnal() {
+  return (typeof JENIS_JURNAL !== 'undefined' && JENIS_JURNAL.INVOICE) ? JENIS_JURNAL.INVOICE : 'Invoice & Piutang';
+}
+
+// Awal keterangan jurnal pembayaran: "Pembayaran <noInvoice> — <pelanggan>". Dipakai pembuat jurnal dan penaut.
+function _bayarKetJurnal(pembayaran, inv) {
+  const no = String((inv && inv.noInvoice) || (pembayaran && pembayaran.noDok) || '').trim();
+  return 'Pembayaran ' + no + ' — ' + String((inv && inv.pelanggan) || '').trim();
+}
+
+// Susun jurnal satu pembayaran invoice (murni): Dr akun kas/bank pembayaran, Cr akun piutang invoice, sebesar jumlah
+// pembayaran (dibulatkan ke sen, sama seperti sisaTagihan). Tanggal jurnal = tanggal pembayaran.
+// opsi.akunPiutang: cadangan bila invoice tidak menyimpan akunPiutang (mis. invoice lama dari AI).
+// Mengembalikan { ok:true, jurnal } (belum bernomor; nomor diisi addJurnal) atau { ok:false, pesan }.
+// Tidak memeriksa kunci periode dan tidak memposting; itu tugas postingJurnalPembayaranInvoice.
+function buatJurnalPembayaranInvoice(pembayaran, inv, opsi) {
+  const gagal = pesan => ({ ok: false, pesan });
+  const teks = v => (typeof v === 'string' ? v.trim() : '');
+  if (!pembayaran || typeof pembayaran !== 'object' || pembayaran.jenis !== 'invoice') return gagal('Pembayaran invoice tidak valid.');
+  if (!inv || typeof inv !== 'object') return gagal('Invoice untuk pembayaran ini tidak ditemukan.');
+  if (String(pembayaran.dokId) !== String(inv.id)) return gagal('Pembayaran ini bukan milik invoice tersebut.');
+  const jumlah = (typeof pembayaran.jumlah === 'number' && isFinite(pembayaran.jumlah)) ? _bayarBulat(pembayaran.jumlah) : 0;
+  if (jumlah <= 0) return gagal('Jumlah pembayaran tidak valid.');
+  const tanggal = teks(pembayaran.tanggal);
+  if (!_bayarTanggalValid(tanggal)) return gagal('Tanggal pembayaran tidak valid.');
+  const akunKas = teks(pembayaran.akunKas);
+  if (!akunKas) return gagal('Akun kas/bank pembayaran kosong.');
+  const akunPiutang = teks(inv.akunPiutang) || teks(opsi && opsi.akunPiutang);
+  if (!akunPiutang) return gagal('Invoice ini tidak punya akun piutang, jurnal pembayaran tidak bisa dibuat.');
+  if (akunKas === akunPiutang) return gagal('Akun kas/bank dan akun piutang tidak boleh sama.');
+  const no = teks(inv.noInvoice) || teks(pembayaran.noDok);
+  const pelanggan = teks(inv.pelanggan);
+  return {
+    ok: true,
+    jurnal: {
+      tanggal,
+      jenis: _bayarJenisJurnal(),
+      keterangan: _bayarKetJurnal(pembayaran, inv),
+      ref: no,
+      lines: [
+        { akun: akunKas, ket: 'Penerimaan ' + no, debit: jumlah, kredit: 0 },
+        { akun: akunPiutang, ket: 'Pelunasan piutang' + (pelanggan ? ' — ' + pelanggan : ''), debit: 0, kredit: jumlah }
+      ]
+    }
+  };
+}
+
+// Status jurnal satu pembayaran invoice, dibaca dari daftar jurnal (murni).
+//   'belum'  : belum punya jurnal (record dari 5.2, atau jurnalnya sudah tidak ada)
+//   'aktif'  : jurnal ada dan belum dibalik
+//   'dibalik': jurnal ada tetapi sudah dibalik (jurnal pembalik)
+// Penaut: pembayaran.jurnalNo (nomor JRN-xxx) bila cocok dengan jurnal berjenis invoice yang ketnya diawali
+// "Pembayaran <noInvoice> — <pelanggan>". Tanpa jurnalNo (atau nomor berulang setelah Reset Data), dicari dari
+// ket + tanggal + akun kas + jumlah, dengan melewati jurnal yang nomornya sudah dipakai pembayaran lain.
+// `id` dan `ref` jurnal tidak ikut tersimpan ke cloud, jadi penaut tidak memakainya (pola jurnalBillStatus).
+// Jurnal pembalik (jenisnya diwarisi dari jurnal asal) tidak dihitung sebagai jurnal pembayaran.
+// Mengembalikan { status, jurnal }.
+function jurnalPembayaranStatus(pembayaran, inv, daftarJurnal, daftarPembayaran) {
+  if (!pembayaran || typeof pembayaran !== 'object' || pembayaran.jenis !== 'invoice' || !inv || typeof inv !== 'object') return { status: 'belum', jurnal: null };
+  const js = (Array.isArray(daftarJurnal) ? daftarJurnal : []).filter(j => j && typeof j === 'object');
+  const ketJ = j => String(j.ket || j.keterangan || '');
+  const pembalikDari = j => {
+    if (j.reversalOf) return String(j.reversalOf);
+    const m = /^\[Pembalik ([^\]]+)\]/.exec(ketJ(j));
+    return m ? m[1].trim() : '';
+  };
+  const jenis = _bayarJenisJurnal();
+  const asal = js.filter(j => j.jenis === jenis && !pembalikDari(j));
+  const awal = _bayarKetJurnal(pembayaran, inv);
+  const jumlah = (typeof pembayaran.jumlah === 'number' && isFinite(pembayaran.jumlah)) ? _bayarBulat(pembayaran.jumlah) : NaN;
+  const dibalik = j => js.some(x => pembalikDari(x) === j.no);
+  const isiCocok = j => String(j.tanggal || '').slice(0, 10) === pembayaran.tanggal
+    && (Array.isArray(j.lines) ? j.lines : []).some(l => l && l.akun === pembayaran.akunKas && _bayarBulat(l.debit || 0) === jumlah);
+  let jurnal = null;
+  if (pembayaran.jurnalNo) jurnal = asal.find(j => j.no === pembayaran.jurnalNo && ketJ(j).startsWith(awal)) || null;
+  if (!jurnal) {
+    const dipakaiLain = new Set((Array.isArray(daftarPembayaran) ? daftarPembayaran : [])
+      .filter(p => p && p !== pembayaran && p.id !== pembayaran.id && p.jurnalNo).map(p => p.jurnalNo));
+    const cocok = asal.filter(j => ketJ(j).startsWith(awal) && isiCocok(j) && !dipakaiLain.has(j.no));
+    jurnal = cocok.find(j => !dibalik(j)) || cocok[0] || null;
+  }
+  if (!jurnal) return { status: 'belum', jurnal: null };
+  return { status: dibalik(jurnal) ? 'dibalik' : 'aktif', jurnal };
+}
+
+// Pembayaran invoice yang belum pernah dijurnal (murni): record dari 5.2 (sebelum jurnal ada) atau yang jurnalnya
+// sudah tidak ada. Yang jurnalnya sengaja DIBALIK tidak ikut (status 'dibalik'): membuatnya lagi secara massal bisa
+// membatalkan koreksi pengguna. Pembayaran milik invoice yang sudah dihapus dilewati (tidak ada piutang yang dikredit).
+// Mengembalikan [{ pembayaran, invoice }] sesuai urutan daftar pembayaran.
+function pembayaranInvoiceBelumJurnal(daftarPembayaran, daftarInvoice, daftarJurnal) {
+  const invs = Array.isArray(daftarInvoice) ? daftarInvoice : [];
+  const semua = Array.isArray(daftarPembayaran) ? daftarPembayaran : [];
+  const hasil = [];
+  semua.forEach(p => {
+    if (!p || typeof p !== 'object' || p.jenis !== 'invoice') return;
+    if (!(typeof p.jumlah === 'number' && isFinite(p.jumlah) && p.jumlah > 0)) return;
+    const inv = invs.find(i => i && String(i.id) === String(p.dokId));
+    if (!inv) return;
+    if (jurnalPembayaranStatus(p, inv, daftarJurnal, semua).status !== 'belum') return;
+    hasil.push({ pembayaran: p, invoice: inv });
+  });
+  return hasil;
 }

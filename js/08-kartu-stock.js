@@ -2834,12 +2834,7 @@ function _installAuditHooks() {
     } catch(e) {}
   });
 
-  // 14. Konfirmasi Lunas Invoice
-  _wrap('konfirmasiLunasInvoice', null, function() {
-    try {
-      _al('edit', 'invoice', 'Invoice ditandai Lunas', 'LUNAS');
-    } catch(e) {}
-  });
+  // 14. (dihapus di task 5.3) Pelunasan invoice kini dicatat simpanPembayaranInvoice (32-pembayaran-ui.js) lewat auditLog sendiri.
 
   // 15. Hapus Invoice
   _wrap('hapusInvoice', function(id) {

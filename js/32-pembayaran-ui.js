@@ -4,9 +4,11 @@
 // Modal `#modal-bayar-inv`: tanggal, jumlah (boleh sebagian), akun kas/bank, metode, catatan, dan riwayat
 // pembayaran invoice itu. Validasi dan penyusunan record ada di susunPembayaran (31-pembayaran.js, murni);
 // file ini hanya membaca form, memanggilnya, lalu mencatat hasilnya lewat catatPembayaran.
-// BELUM ADA JURNAL: record disimpan tanpa jurnalNo dan akun Kas/Piutang di buku besar belum berubah.
-// Pembuatan jurnal (dan penyatuan dengan tombol lama "Lunas") dikerjakan di 5.3; pembayaran yang belum
-// punya jurnalNo ditandai di riwayat supaya 5.3 bisa menjurnalkannya.
+// Task 5.3: tiap pembayaran dijurnal (Dr Kas/Bank, Cr Piutang) lewat postJurnalLegacy (kunci periode, nomor JRN, sync
+// cloud, audit log), sama seperti jurnal bill (29-bill-ui.js). Jurnal dibuat LEBIH DULU; bila gagal (mis. periode
+// terkunci) pembayaran tidak dicatat, jadi tidak ada pembayaran baru tanpa jurnal. Nomor jurnal disimpan di
+// pembayaran.jurnalNo. Record lama dari 5.2 (tanpa jurnalNo) dijurnalkan lewat jurnalkanPembayaranInvoiceLama
+// (tombol di banner halaman Invoice). Tombol lama "Lunas" kini membuka form yang sama (11-kontak-invoice.js).
 // Dimuat setelah 31-pembayaran.js.
 // ═══════════════════════════════════════════════════════════
 
@@ -68,10 +70,72 @@ function simpanPembayaranInvoice() {
     metode: v('bayar-inv-metode'), catatan: v('bayar-inv-catatan')
   }, inv, pembayaranList, 'invoice');
   if (!hasil.ok) { showAlert(hasil.pesan); return; }
+  // Jurnal dulu (5.3): gagal = tidak ada yang dicatat. Hasilnya mengisi hasil.pembayaran.jurnalNo sebelum disimpan.
+  const pj = postingJurnalPembayaranInvoice(hasil.pembayaran, inv, { baru: true });
+  if (!pj.ok) { if (pj.pesan) _bayarPeringatan(pj.pesan); return; }
   catatPembayaran(inv, hasil);
   _bayarInvId = null; // proses sinkron: klik ganda berikutnya tidak menemukan invoice, jadi tidak mencatat dua kali
   closeModal('modal-bayar-inv');
   renderInvoiceList(); renderInvoiceKPI();
-  showAlert(`✓ Pembayaran ${rp(hasil.pembayaran.jumlah)} untuk ${escapeHtml(inv.noInvoice)} dicatat. ${hasil.lunas ? 'Invoice LUNAS.' : 'Sisa tagihan ' + rp(hasil.sisaBaru) + '.'}<br><span style="font-size:12px;">Jurnal kas/piutang belum dibuat (menyusul di pembaruan berikutnya).</span>`);
+  try { if (typeof auditLog === 'function') auditLog('create', 'invoice', `Pembayaran invoice ${inv.noInvoice} — ${rp(hasil.pembayaran.jumlah)}${hasil.lunas ? ' (lunas)' : ''}`, { ref: inv.noInvoice }); } catch (e) {}
+  showAlert(`✓ Pembayaran ${rp(hasil.pembayaran.jumlah)} untuk ${escapeHtml(inv.noInvoice)} dicatat. ${hasil.lunas ? 'Invoice LUNAS.' : 'Sisa tagihan ' + rp(hasil.sisaBaru) + '.'}<br><span style="font-size:12px;color:var(--muted);">Jurnal ${escapeHtml(pj.jurnalNo)} dibuat (Kas bertambah, Piutang berkurang).</span>`);
   if (typeof cekNotifikasi === 'function') cekNotifikasi();
+}
+
+function _bayarPeringatan(pesan) {
+  showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ' + escapeHtml(pesan));
+}
+
+// Posting jurnal satu pembayaran invoice (efek samping). pembayaran.jurnalNo diisi bila berhasil.
+// opsi.baru = true: pembayaran baru disusun, jadi tidak perlu mencari jurnal lama yang cocok.
+// opsi.tanpaGuard = true: pemanggil sudah memastikan periode tidak terkunci (jurnalkan massal), jadi tidak ada alert.
+// Mengembalikan { ok:true, jurnalNo, sudahAda? } atau { ok:false, pesan? } (tanpa pesan = sudah ada alert, mis. periode terkunci).
+function postingJurnalPembayaranInvoice(pembayaran, inv, opsi) {
+  opsi = opsi || {};
+  if (!opsi.baru) {
+    const st = jurnalPembayaranStatus(pembayaran, inv, jurnalEntries, pembayaranList);
+    if (st.status === 'aktif') { pembayaran.jurnalNo = st.jurnal.no; return { ok: true, jurnalNo: st.jurnal.no, sudahAda: true }; }
+  }
+  if (!opsi.tanpaGuard && !guardPeriode(pembayaran.tanggal, 'diposting')) return { ok: false };
+  // Cadangan bila invoice tidak menyimpan akunPiutang: 1201, atau akun pertama yang namanya memuat "piutang".
+  const daftarAkun = (typeof akuns !== 'undefined' && Array.isArray(akuns)) ? akuns : [];
+  const piutang = daftarAkun.find(a => a && a.kode === '1201') || daftarAkun.find(a => a && String(a.nama || '').toLowerCase().includes('piutang')) || null;
+  const r = buatJurnalPembayaranInvoice(pembayaran, inv, { akunPiutang: piutang ? piutang.kode : '' });
+  if (!r.ok) return { ok: false, pesan: r.pesan };
+  const entry = postJurnalLegacy(r.jurnal);
+  if (!entry) return { ok: false };
+  pembayaran.jurnalNo = entry.no;
+  if (typeof saveToStorage === 'function') saveToStorage(false);
+  return { ok: true, jurnalNo: entry.no };
+}
+
+// Jurnalkan semua pembayaran invoice yang belum pernah dijurnal (record dari 5.2). Yang jurnalnya sengaja dibalik tidak disentuh.
+// Yang bertanggal di periode terkunci dilewati dan disebut di ringkasan (tanggal tidak diganti diam-diam).
+function jurnalkanPembayaranInvoiceLama() {
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Pembayaran')) return;
+  const antre = pembayaranInvoiceBelumJurnal(pembayaranList, invoiceList, jurnalEntries);
+  if (!antre.length) { showAlert('Semua pembayaran invoice sudah dijurnal.'); return; }
+  const terkunci = x => typeof isPeriodeTerkunci === 'function' && isPeriodeTerkunci(x.pembayaran.tanggal);
+  const bisa = antre.filter(x => !terkunci(x)), dilewati = antre.length - bisa.length;
+  if (!bisa.length) { _bayarPeringatan(`${dilewati} pembayaran bertanggal di periode yang sudah dikunci${typeof periodeKunciSampai !== 'undefined' && periodeKunciSampai ? ' (sampai ' + periodeKunciSampai + ')' : ''}, jadi belum bisa dijurnal. Buka kunci periode di Settings > Transaksi > Kunci Periode, lalu coba lagi.`); return; }
+  const total = bisa.reduce((s, x) => s + x.pembayaran.jumlah, 0);
+  if (!confirm(`Buat jurnal untuk ${bisa.length} pembayaran invoice (total ${rp(total)})? Tiap jurnal bertanggal sama dengan tanggal pembayarannya: Kas/Bank di debit, Piutang di kredit.` + (dilewati ? `\n\n${dilewati} pembayaran di periode terkunci dilewati.` : ''))) return;
+  let dibuat = 0, tertaut = 0; const gagal = [];
+  bisa.forEach(x => {
+    const r = postingJurnalPembayaranInvoice(x.pembayaran, x.invoice, { tanpaGuard: true });
+    if (!r.ok) gagal.push(x.invoice.noInvoice + (r.pesan ? ' (' + r.pesan + ')' : ''));
+    else if (r.sudahAda) tertaut++; else dibuat++;
+  });
+  simpanPembayaranState('invoice');
+  renderInvoiceList();
+  showAlert(`✓ ${dibuat} jurnal pembayaran dibuat` + (tertaut ? `, ${tertaut} ditautkan ke jurnal yang sudah ada` : '') + '.'
+    + (dilewati ? `<br><span style="font-size:12px;">${dilewati} pembayaran di periode terkunci dilewati.</span>` : '')
+    + (gagal.length ? `<br><span style="font-size:12px;">Gagal: ${escapeHtml(gagal.join('; '))}.</span>` : ''));
+}
+
+// Banner di halaman Invoice (#inv-belum-jurnal): muncul hanya bila ada pembayaran yang belum dijurnal.
+function renderPembayaranBelumJurnal() {
+  const el = document.getElementById('inv-belum-jurnal'); if (!el) return;
+  const n = pembayaranInvoiceBelumJurnal(pembayaranList, invoiceList, jurnalEntries).length;
+  el.innerHTML = n ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 14px;margin-bottom:16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;font-size:12px;color:var(--accent3);"><span><i class="ti ti-alert-triangle" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ${n} pembayaran invoice belum dijurnal, jadi Kas dan Piutang di buku besar belum berubah.</span><button class="btn btn-ghost btn-sm" onclick="jurnalkanPembayaranInvoiceLama()">Buat Jurnal</button></div>` : '';
 }
