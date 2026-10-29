@@ -1172,7 +1172,7 @@ function getPajakNotifications() {
   // PPh 21: setor paling lambat tanggal 10 bulan berikutnya
   if(utangPPh21 > 0 && day >= 1 && day <= 10 && !dismissed.includes(key('pph21'))) {
     notifications.push({
-      id: key('pph21'), icon: 'ti-calculator', type: 'warn',
+      id: key('pph21'), icon: '<i class="ti ti-calculator ti-inline"></i>', type: 'warn',
       judul: `PPh 21 — Jatuh Tempo ${day <= 10 ? 'Tanggal 10' : 'Segera'}`,
       isi: `Utang PPh 21 sebesar ${fmtRp(utangPPh21)} perlu disetor ke kas negara paling lambat tanggal 10 bulan ini.`,
       aksi: "showPage('kalk-ppn')"
@@ -1181,7 +1181,7 @@ function getPajakNotifications() {
   // PPN: lapor & setor paling lambat akhir bulan berikutnya
   if(utangPPN > 0 && day >= 20 && !dismissed.includes(key('ppn'))) {
     notifications.push({
-      id: key('ppn'), icon: 'ti-receipt', type: 'warn',
+      id: key('ppn'), icon: '<i class="ti ti-receipt ti-inline"></i>', type: 'warn',
       judul: `PPN — Lapor Bulan Ini`,
       isi: `PPN terutang ${fmtRp(utangPPN)} perlu dilaporkan di SPT Masa PPN.`,
       aksi: "showPage('kalk-ppn')"
@@ -1199,7 +1199,7 @@ function getPajakNotifications() {
   // PPh Badan: April
   if(utangPPhBadan > 0 && month === 4 && !dismissed.includes(key('pphbadan'))) {
     notifications.push({
-      id: key('pphbadan'), icon: 'ti-building', type: 'warn',
+      id: key('pphbadan'), icon: '<i class="ti ti-building ti-inline"></i>', type: 'warn',
       judul: `PPh Badan — Jatuh Tempo April`,
       isi: `PPh Badan ${fmtRp(utangPPhBadan)} — pastikan SPT Tahunan sudah dilaporkan sebelum 30 April.`,
       aksi: "showPage('kalk-ppn')"

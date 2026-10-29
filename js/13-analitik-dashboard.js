@@ -1842,35 +1842,42 @@ function openPajakBulanPicker() {
   });
 }
 
-function renderRekapSiapSetor() {
-  const bln = document.getElementById('pajak-setor-bulan')?.value;
-  const el  = document.getElementById('rekap-setor-content');
-  if(!el || !bln) return;
-
+// Hitung rekap pajak satu bulan ('YYYY-MM'). Dipakai tampilan (renderRekapSiapSetor) dan cetak PDF (exportRekapPajakPDF),
+// supaya angka di layar dan di PDF pasti sama. Mengembalikan null bila bulan tidak valid.
+function _hitungRekapPajak(bln) {
+  if(!bln) return null;
   const [y,m] = bln.split('-').map(Number);
+  if(!y || !m) return null;
   const fromStr = `${y}-${String(m).padStart(2,'0')}-01`;
   const toStr   = new Date(y, m, 0).toISOString().split('T')[0];
   const blnLabel = new Date(y, m-1, 1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
 
-  const penjEntries = jurnalEntries.filter(j => j.jenis==='Penjualan' && j.tanggal>=fromStr && j.tanggal<=toStr);
-  const beliEntries = jurnalPembelianAktif().filter(j => j.tanggal>=fromStr && j.tanggal<=toStr);   // termasuk bill (4.6b)
-
-  const totalDPPKeluar = penjEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a?.tipe==='Pendapatan'?l.kredit:0);},0),0);
-  const totalDPPMasuk  = beliEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(['HPP','Beban'].includes(a?.tipe)?l.debit:0);},0),0);
   // PPN aktual dari jurnal (bukan estimasi tarif x total penjualan/pembelian)
   const rekapPpn   = rekapPpnJurnal(fromStr, toStr);
   const ppnKeluar  = rekapPpn.keluaran;
   const ppnMasuk   = rekapPpn.masukan;
   const kurangBayar = ppnKeluar - ppnMasuk;
 
-  // Estimasi PPh Badan (25% dari laba bersih)
-  let laba = 0;
-  jurnalEntries.filter(j=>j.tanggal>=fromStr&&j.tanggal<=toStr&&!isJurnalPenutup(j)).forEach(j=>j.lines.forEach(l=>{
+  // Penghasilan bruto, biaya, dan laba dihitung dari SELURUH jurnal bulan itu (kecuali jurnal penutup), per tipe akun,
+  // supaya konsisten satu sama lain: laba = bruto - biaya. Sebelumnya bruto hanya dari jurnal berjenis "Penjualan" dan biaya
+  // hanya dari jurnal pembelian, sehingga invoice (jenis "Invoice & Piutang") dan beban lain tidak ikut, tetapi laba menghitungnya.
+  // Jurnal pembalik ikut dihitung: ia meniadakan jurnal asalnya.
+  let bruto = 0, biaya = 0;
+  jurnalEntries.filter(j=>j.tanggal>=fromStr&&j.tanggal<=toStr&&!isJurnalPenutup(j)).forEach(j=>(j.lines||[]).forEach(l=>{
     const a=akuns.find(x=>x.kode===l.akun);
-    if(a?.tipe==='Pendapatan') laba += (l.kredit||0) - (l.debit||0);
-    if(['Beban','HPP'].includes(a?.tipe)) laba -= (l.debit||0) - (l.kredit||0);
+    if(a?.tipe==='Pendapatan') bruto += (l.kredit||0) - (l.debit||0);
+    if(['Beban','HPP'].includes(a?.tipe)) biaya += (l.debit||0) - (l.kredit||0);
   }));
-  const pphBadan = Math.max(0, laba * 0.22);
+  const laba = bruto - biaya;
+  const pphBadan = Math.max(0, laba * 0.22);   // estimasi 22% dari laba bersih bulan itu
+  return { fromStr, toStr, blnLabel, bruto, biaya, rekapPpn, ppnKeluar, ppnMasuk, kurangBayar, laba, pphBadan };
+}
+
+function renderRekapSiapSetor() {
+  const bln = document.getElementById('pajak-setor-bulan')?.value;
+  const el  = document.getElementById('rekap-setor-content');
+  if(!el || !bln) return;
+  const { blnLabel, bruto, biaya, rekapPpn, ppnKeluar, ppnMasuk, kurangBayar, laba, pphBadan } = _hitungRekapPajak(bln);
 
   el.innerHTML = `
     <div style="border:2px solid var(--accent2);border-radius:12px;overflow:hidden;margin-bottom:16px;">
@@ -1931,8 +1938,8 @@ function renderRekapSiapSetor() {
       </div>
       <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
         ${[
-          ['Penghasilan Bruto', totalDPPKeluar, 'var(--accent)'],
-          ['Biaya-biaya', totalDPPMasuk, 'var(--red)'],
+          ['Penghasilan Bruto', bruto, 'var(--accent)'],
+          ['Biaya-biaya', biaya, 'var(--red)'],
           ['Laba Bersih Estimasi', laba, laba>=0?'var(--text)':'var(--red)'],
           ['Estimasi PPh Badan (22%)', pphBadan, 'var(--accent3)'],
         ].map(([l,v,clr])=>`
@@ -1947,8 +1954,75 @@ function renderRekapSiapSetor() {
     </div>`;
 }
 
+// Cetak rekap pajak bulan terpilih sebagai laporan (jendela baru berlayout cetak, lalu dialog cetak/Simpan sebagai PDF).
+// Angka dari _hitungRekapPajak, sama dengan yang tampil di layar. Layout terang dan terpisah dari tema aplikasi.
 function exportRekapPajakPDF() {
-  showAlert('Fitur cetak PDF rekap pajak akan tersedia setelah data terisi. Gunakan Ctrl+P untuk mencetak.');
+  const bln = document.getElementById('pajak-setor-bulan')?.value;
+  const d = bln ? _hitungRekapPajak(bln) : null;
+  if(!d) { showAlert('Pilih bulan rekap pajak dulu.'); return; }
+  const profil = (typeof getProfil === 'function' ? getProfil() : null) || JSON.parse(localStorage.getItem('oas_profil_v1') || '{}');
+  const e = typeof escapeHtml === 'function' ? escapeHtml : (x => String(x));
+  const rp = n => 'Rp ' + Math.round(n || 0).toLocaleString('id-ID');
+  const tgl = new Date().toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+  const baris = (rows, tipe) => rows.length ? rows.map(r => `<tr>
+      <td>${e(fmtDate(r.j.tanggal))}</td><td>${e(r.j.no || '-')}</td><td>${e(r.j.ket || r.j.keterangan || '-')}</td>
+      <td class="n">${rp(r.dpp)}</td><td class="n">${r.tarifPct ? e(r.tarifPct) + '%' : '-'}</td><td class="n">${rp(r.ppnVal)}</td></tr>`).join('')
+    : `<tr><td colspan="6" class="kosong">Tidak ada transaksi PPN ${tipe} pada periode ini.</td></tr>`;
+  const kb = d.kurangBayar;
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Rekap Pajak ${e(d.blnLabel)}</title><style>
+    @page{size:A4;margin:18mm 16mm}
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#111;margin:0;line-height:1.45}
+    .kop{border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:16px}
+    .kop h1{font-size:18px;margin:0 0 2px}.kop .sub{color:#555;font-size:11px}
+    h2{font-size:15px;margin:0 0 2px}.periode{color:#444;margin-bottom:14px}
+    h3{font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:18px 0 6px;color:#333}
+    table{width:100%;border-collapse:collapse;margin-bottom:6px}
+    th{background:#f0f0f0;text-align:left;font-size:11px}
+    th,td{border:1px solid #bbb;padding:5px 8px;vertical-align:top}
+    td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+    td.kosong{color:#777;text-align:center;font-style:italic}
+    tr.total td{font-weight:700;background:#fafafa}
+    .hasil{border:2px solid #111;padding:10px 14px;margin:14px 0;display:flex;justify-content:space-between;align-items:center;break-inside:avoid}
+    .hasil .l{font-weight:700}.hasil .v{font-size:18px;font-weight:800}
+    .catatan{font-size:10.5px;color:#555;border-left:3px solid #bbb;padding:4px 10px;margin-top:14px}
+    .ttd{margin-top:36px;display:flex;justify-content:flex-end;break-inside:avoid}.ttd div{width:200px;text-align:center}.ttd .garis{border-top:1px solid #111;margin-top:56px;padding-top:4px}
+    table,tr{break-inside:avoid}
+  </style></head><body>
+    <div class="kop"><h1>${e(profil.nama || 'Perusahaan')}</h1><div class="sub">${profil.npwp ? 'NPWP ' + e(profil.npwp) + ' · ' : ''}${e(profil.alamat || '')}</div></div>
+    <h2>Rekap Pajak Siap Setor</h2>
+    <div class="periode">Masa pajak: ${e(d.blnLabel)} (${e(fmtDate(d.fromStr))} – ${e(fmtDate(d.toStr))})</div>
+
+    <h3>Ringkasan SPT Masa PPN (Formulir 1111)</h3>
+    <table>
+      <tr><th></th><th class="n">Jumlah Faktur</th><th class="n">DPP</th><th class="n">PPN</th></tr>
+      <tr><td>Penyerahan BKP/JKP (PPN Keluaran)</td><td class="n">${d.rekapPpn.rowsKeluaran.length}</td><td class="n">${rp(d.rekapPpn.dppKeluaran)}</td><td class="n">${rp(d.ppnKeluar)}</td></tr>
+      <tr><td>Perolehan BKP/JKP (PPN Masukan)</td><td class="n">${d.rekapPpn.rowsMasukan.length}</td><td class="n">${rp(d.rekapPpn.dppMasukan)}</td><td class="n">${rp(d.ppnMasuk)}</td></tr>
+    </table>
+    <div class="hasil"><div><div class="l">${kb > 0 ? 'PPN KURANG BAYAR (WAJIB SETOR)' : 'PPN LEBIH BAYAR (DAPAT DIKOMPENSASI)'}</div><div style="font-size:11px;color:#555">Batas setor: tanggal 15 bulan berikutnya</div></div><div class="v">${rp(Math.abs(kb))}</div></div>
+
+    <h3>Rincian PPN Keluaran</h3>
+    <table><tr><th>Tanggal</th><th>No Jurnal</th><th>Keterangan</th><th class="n">DPP</th><th class="n">Tarif</th><th class="n">PPN</th></tr>${baris(d.rekapPpn.rowsKeluaran, 'Keluaran')}
+      <tr class="total"><td colspan="3">Total</td><td class="n">${rp(d.rekapPpn.dppKeluaran)}</td><td></td><td class="n">${rp(d.ppnKeluar)}</td></tr></table>
+    <h3>Rincian PPN Masukan</h3>
+    <table><tr><th>Tanggal</th><th>No Jurnal</th><th>Keterangan</th><th class="n">DPP</th><th class="n">Tarif</th><th class="n">PPN</th></tr>${baris(d.rekapPpn.rowsMasukan, 'Masukan')}
+      <tr class="total"><td colspan="3">Total</td><td class="n">${rp(d.rekapPpn.dppMasukan)}</td><td></td><td class="n">${rp(d.ppnMasuk)}</td></tr></table>
+
+    <h3>Estimasi PPh Badan</h3>
+    <table>
+      <tr><td>Penghasilan bruto</td><td class="n">${rp(d.bruto)}</td></tr>
+      <tr><td>Biaya-biaya</td><td class="n">${rp(d.biaya)}</td></tr>
+      <tr><td>Laba bersih estimasi</td><td class="n">${rp(d.laba)}</td></tr>
+      <tr class="total"><td>Estimasi PPh Badan (22%)</td><td class="n">${rp(d.pphBadan)}</td></tr>
+    </table>
+    <div class="catatan">Estimasi PPh Badan hanya perkiraan dari laba bulan ini. Konsultasikan dengan akuntan/konsultan pajak untuk perhitungan dan pelaporan resmi.</div>
+    <div class="ttd"><div>${e(profil.kota ? profil.kota + ', ' : '')}${e(tgl)}<div class="garis">${e(profil.nama || 'Penanggung jawab')}</div></div></div>
+  </body></html>`;
+  const win = window.open('', '_blank');
+  if(!win) { showAlert('Pop-up diblokir browser. Izinkan pop-up untuk situs ini, lalu klik Cetak PDF lagi.'); return; }
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => { try { win.focus(); win.print(); } catch(err) {} }, 400);
 }
 
 // ── Patch showPage to init produk & pajak pages ──

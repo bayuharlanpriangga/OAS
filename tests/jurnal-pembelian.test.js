@@ -135,7 +135,9 @@ const files = fs.readdirSync(path.join(__dirname, '..', 'js')).filter(f => f.end
 const sisa = files.filter(f => /\.jenis\s*===?\s*'Pembelian'/.test(rd('js/' + f)));
 ok(sisa.join() === '02-utils.js', 'tidak ada lagi `jenis === \'Pembelian\'` di luar helper (02-utils.js): ' + (sisa.join() || '-'));
 ok((rd('js/14-export.js').match(/jurnalPembelianAktif\(\)/g) || []).length === 2 && (rd('js/14-export.js').match(/ringkasJurnalPembelian\(j\)/g) || []).length === 2, '14-export.js: Excel dan PDF memakai helper');
-ok(/jurnalPembelianAktif\(\)\.filter\(j => j\.tanggal>=fromStr/.test(rd('js/13-analitik-dashboard.js')), '13-analitik-dashboard.js: rekap Siap Setor memakai helper dengan filter tanggal');
+// Sejak perbaikan rekap pajak (bruto/biaya/laba konsisten): biaya dihitung dari semua jurnal bulan itu per tipe akun, jadi jurnal bill
+// yang dibalik tetap tidak dihitung ganda (pembaliknya meniadakan; diuji di tests/rekap-pajak.test.js).
+ok(/biaya \+= \(l\.debit\|\|0\) - \(l\.kredit\|\|0\)/.test(rd('js/13-analitik-dashboard.js')) && /rekapPpnJurnal\(fromStr, toStr\)/.test(rd('js/13-analitik-dashboard.js')), '13-analitik-dashboard.js: rekap Siap Setor menghitung biaya per tipe akun dari semua jurnal (pembalik meniadakan), PPN dari rekapPpnJurnal');
 ok(/const totalPembelian=jurnalPembelianAktif\(\)/.test(f19), '19-fitur-tambahan.js: total pembelian pajak memakai helper');
 ok(/jurnalPembelianAktif\(\)\.forEach/.test(rd('js/07-jurnal-laporan.js')) && /j===JENIS_JURNAL\.BILL\) return 'badge-yellow'/.test(rd('js/07-jurnal-laporan.js')), '07-jurnal-laporan.js: Jurnal Pembelian memakai helper; badge bill kuning seperti Pembelian');
 ok(!/\b(jurnalEntries|postJurnal|addJurnal)/.test(rd('js/28-bill.js')), '28-bill.js tetap murni (tidak menyentuh jurnal langsung)');
