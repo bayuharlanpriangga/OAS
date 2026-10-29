@@ -116,6 +116,7 @@ const BEBAS = ['settings', 'tutorial', 'audit-trail', 'notifikasi']; // sengaja 
 eq(modulH('jurnal-umum'), 'jurnal', 'jurnal-umum memakai modul Jurnal');
 eq(modulH('umur-piutang'), 'invoice', 'umur piutang mengikuti Invoice');
 eq(modulH('bill'), 'invoice', 'tagihan pembelian mengikuti Invoice (task 4.2)');
+eq(modulH('umur-hutang'), 'invoice', 'umur hutang mengikuti Invoice (task 4.7)');
 eq(modulH('settings'), null, 'settings selalu terbuka');
 eq(modulH('tidak-ada'), null, 'id tak dikenal = null (tidak melempar)');
 eq(modulH('toString'), null, 'nama bawaan Object tidak dianggap halaman');

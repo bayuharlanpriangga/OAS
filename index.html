@@ -84,6 +84,7 @@
 <script defer src="js/27-oauth-url.js"></script>
 <script defer src="js/28-bill.js"></script>
 <script defer src="js/29-bill-ui.js"></script>
+<script defer src="js/30-aging-hutang.js"></script>
 <script defer src="js/99-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- Tabler webfont CDN dihapus: semua ikon "ti-*" sudah self-hosted sebagai SVG mask di css/icons.css (lihat komentar di file itu). Menghapus dependency CDN ini supaya ikon tidak pernah gagal/putus saat CDN lambat atau diblokir jaringan/ad-blocker. -->
@@ -241,6 +242,9 @@
       </div>
       <div class="nav-card" onclick="showPage('umur-piutang')" data-page="umur-piutang">
         <span class="nav-card-icon"><i class="ti ti-clock"></i></span>Umur Piutang
+      </div>
+      <div class="nav-card" onclick="showPage('umur-hutang')" data-page="umur-hutang">
+        <span class="nav-card-icon"><i class="ti ti-clock"></i></span>Umur Hutang
       </div>
       <div class="nav-card" onclick="showPage('rekonsiliasi')" data-page="rekonsiliasi">
         <span class="nav-card-icon"><i class="ti ti-git-compare"></i></span>Rekonsiliasi
@@ -2224,6 +2228,24 @@
       <button class="btn btn-ghost btn-sm" onclick="cetakAgingPiutang()"><i class="ti ti-printer" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Cetak</button>
     </div>
     <div id="aging-piutang-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada data untuk ditampilkan.</div>
+  </div>
+</div>
+
+<!-- UMUR HUTANG (tabel: js/25-aging-ui.js jenis 'hutang'; data/ekspor: js/30-aging-hutang.js, task 4.7) -->
+<div class="page" id="page-umur-hutang">
+  <div class="section-header">
+    <div><div class="section-title"><i class="ti ti-clock" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Umur Hutang</div>
+    <div class="section-sub">Utang usaha belum lunas per supplier</div></div>
+  </div>
+  <div class="table-card" style="margin-bottom:16px;">
+    <div class="aging-toolbar">
+      <label class="aging-acuan-wrap">Per
+        <input type="date" id="aging-hutang-acuan" onchange="renderAgingHutang()" aria-label="Per tanggal">
+      </label>
+      <button class="btn btn-ghost btn-sm" onclick="exportAgingHutangCSV()"><i class="ti ti-download" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> CSV</button>
+      <button class="btn btn-ghost btn-sm" onclick="cetakAgingHutang()"><i class="ti ti-printer" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Cetak</button>
+    </div>
+    <div id="aging-hutang-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada data untuk ditampilkan.</div>
   </div>
 </div>
 
