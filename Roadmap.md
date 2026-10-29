@@ -1,12 +1,12 @@
 # Roadmap OAS menuju setara Accurate
 
-Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 137 task kecil (semua ukuran S) · dirancang untuk Claude free tier
+Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 138 task kecil (semua ukuran S) · dirancang untuk Claude free tier
 
 ## 1. Cara pakai dokumen ini
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 24/137 task selesai.**
+**Progres: 25/138 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -69,7 +69,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | 1 | Fondasi data | 8/8 |
 | 2 | Umur piutang | 4/4 |
 | 3 | Akses anggota tim | 7/7 |
-| 4 | Tagihan pembelian (bill) | 5/7 |
+| 4 | Tagihan pembelian (bill) | 6/8 |
 | 5 | Pembayaran | 0/7 |
 | 6 | Kartu piutang/hutang dan model dokumen | 0/3 |
 | 7 | Penawaran sampai faktur | 0/6 |
@@ -163,7 +163,7 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 - Catatan: Audit Trail masih terbuka untuk semua anggota. Kalau ingin dikunci (mis. hanya admin), itu keputusan terpisah.
 - Belum ditutup: tombol/form tidak disembunyikan semua. `enforcePermissions` hanya menyembunyikan tombol dengan selector tertentu (`.btn-tambah`, `[data-action]`, dst.), jadi di beberapa halaman viewer masih bisa membuka form dan mengubah tampilan lokal; hasilnya tidak tersimpan (user diberi pesan "Kamu Viewer...") dan hilang saat muat ulang. Perapian per halaman bisa dijadikan task kecil sendiri.
 
-## Fase 4 — Tagihan pembelian (bill) (7 task)
+## Fase 4 — Tagihan pembelian (bill) (8 task)
 
 | ✓ | ID | Tugas | Lampirkan |
 | :---: | --- | --- | --- |
@@ -172,7 +172,8 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 | ☑ | 4.3 | Form bill: tampilan input (supplier, tanggal, jatuh tempo, item, PPN), belum menyimpan. `#modal-bill` di index.html (tombol "+ Buat Tagihan" di halaman bill), `js/29-bill-ui.js` (form, hitung total langsung, akun debit per item, akun Utang Usaha), fungsi murni `hitungTotalBill` dan `nomorBillBerikut` di `28-bill.js`, filter picker `utang` di `05-akun.js`. Tombol simpan hanya menampilkan pemberitahuan. Tes: `tests/bill.test.js` | 4.1, INV sebagai pola |
 | ☑ | 4.4 | Simpan bill ke cloud + daftar bill, belum ada jurnal. `susunBill` (validasi + bentuk record, murni), `tambahBill`, `hapusBillById`, `simpanBillState` di `js/28-bill.js` (bisnis login: cloud kind `bill` + `counter`; mode tamu: `oas_bill` + `oas_counter`); `nomorBillBerikut` memakai counter; `simpanBill`, `renderBillList`, `hapusBill` di `js/29-bill-ui.js` (viewer diblokir `guardHanyaBaca`); hook: `showPage('bill')`, `doResetAll` (counter BILL + render ulang), `bill` legacyOnce + label di `22-cloud-records.js`; `counterTanpaJenis`/`resetCounterJenis` di `23-penomoran.js`. Tes: `tests/bill.test.js`, bagian [bill] `cloud-records.test.js`, [13] `penomoran.test.js`. Perlu uji manual di browser | 4.3, CR |
 | ☑ | 4.5 | Fungsi murni buatJurnalBill(bill): Dr Persediaan/Beban + PPN Masukan, Cr Utang Usaha + tes (belum dipasang). `buatJurnalBill(bill, opsi)` dan `cariAkunPpnMasukan(daftarAkun)` di `js/28-bill.js`; konstanta `JENIS_JURNAL.BILL` (`'Tagihan Pembelian'`) di `02-utils.js` (1 baris, tanpa efek). Hanya bill `diterima`; hasil `{ ok, jurnal }` atau `{ ok:false, pesan }`. Tes: bagian [cariAkunPpnMasukan] dan [buatJurnalBill] `tests/bill.test.js` | INV (jurnal invoice sebagai pola) |
-| ☐ | 4.6 | ⚠ Pasang jurnal bill ke alur simpan bill lewat hook. Termasuk bill `diterima` yang sudah tersimpan di 4.4 tanpa jurnal (lihat temuan 4.4) dan pemeriksaan jurnal di `hapusBill` | 4.5, 4.4 |
+| ☑ | 4.6 | ⚠ Pasang jurnal bill ke alur simpan bill lewat hook. Termasuk bill `diterima` yang sudah tersimpan di 4.4 tanpa jurnal (lihat temuan 4.4) dan pemeriksaan jurnal di `hapusBill`. Tanpa hook ke file lama: semuanya di `js/29-bill-ui.js` dan `js/28-bill.js`. `postingJurnalBill` (membuat jurnal lewat `buatJurnalBill` + `postJurnalLegacy`, mengisi `bill.jurnalNo`), `simpanBill` (status Diterima memposting jurnal lebih dulu; gagal = bill tidak tersimpan), tombol "Buat Jurnal" (`buatJurnalUntukBill`) untuk bill diterima tanpa jurnal aktif, `hapusBill` (bill yang sudah dijurnal dihapus lewat jurnal pembalik, bukan menghapus jurnal), dan fungsi murni `jurnalBillStatus` + `tanggalPembalikBill` di `28-bill.js`. Tes: bagian [jurnalBillStatus] dan [jurnal bill] `tests/bill.test.js` (memakai `buatJurnalPembalik` asli). Perlu uji manual di browser | 4.5, 4.4 |
+| ☐ | 4.6b | Laporan pembelian ikut membaca jurnal bill: fungsi bantu `adalahJurnalPembelian(j)` (jenis `Pembelian` atau `Tagihan Pembelian`) dipakai di Jurnal Pembelian (`07-jurnal-laporan.js`, tampilkan semua baris debit termasuk PPN), total pembelian dashboard/rekap (`13-analitik-dashboard.js`, `19-fitur-tambahan.js`), ekspor (`14-export.js`), dan total pembelian per kontak (`11-kontak-invoice.js`) + tes | 4.6, hasil grep `jenis==='Pembelian'` |
 | ☐ | 4.7 | Halaman 'Umur Hutang' memakai 2.1 | 2.1, 4.2 |
 
 **Temuan task 4.1:**
@@ -200,6 +201,14 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 - Hanya `no`, `tanggal`, `ket`, `jenis`, `lines`, dan `meta` (`sumber`, `_ppnTarif`, `_ksId`) yang disimpan ke tabel `jurnal_entries`; `id` dan `ref` tidak ikut tersimpan. Untuk 4.6: penaut bill ke jurnalnya jangan memakai `id` jurnal. Pakai nomor jurnal (`JRN-xxx`, diisi `addJurnal`) yang disimpan di record bill (mis. field `jurnalNo`); nomor bill yang ada di `ket` jurnal jadi cadangan pencarian.
 - Jurnal bill memakai jenis sendiri `Tagihan Pembelian` (bukan `Pembelian`), sesuai catatan di `02-utils.js` agar jenis lama tidak dipakai ulang. Akibatnya jurnal bill belum ikut dihitung di tempat yang membaca `jenis === 'Pembelian'`: halaman Jurnal Pembelian (`07-jurnal-laporan.js`), total pembelian di dashboard/rekap (`13-analitik-dashboard.js`, `19-fitur-tambahan.js`), ekspor (`14-export.js`), dan total pembelian per kontak (`11-kontak-invoice.js`). Lihat keputusan terbuka no. 5.
 - Tes `bill.test.js` memeriksa `buatJurnalBill` belum dipasang ke file mana pun (jaga batas task 4.5 dan 4.6).
+
+**Temuan task 4.6:**
+- Alur: Simpan & Diterima membuat jurnal lebih dulu (`postingJurnalBill`), baru menyimpan bill dengan `jurnalNo`. Kalau periode terkunci, jurnal tidak bisa diposting dan bill juga tidak disimpan (tidak ada bill diterima tanpa jurnal). Jurnal diposting lewat `postJurnalLegacy` (kunci periode, nomor JRN, sync cloud, audit log), sama seperti invoice. Viewer diblokir sebelum jurnal dibuat.
+- Penaut bill ke jurnal memakai `bill.jurnalNo` (nomor `JRN-xxx`) dan ket jurnal (`Tagihan <noBill> — <supplier>`), karena `id`/`ref` jurnal tidak tersimpan ke cloud. `jurnalBillStatus` memeriksa keduanya (nomor jurnal bisa berulang setelah Reset Data, jadi nomor saja tidak cukup) dan mengabaikan jurnal pembalik, yang mewarisi jenis `Tagihan Pembelian` dari jurnal asalnya. Kalau `jurnalNo` hilang tetapi jurnalnya ada (mis. simpan bill gagal di tengah jalan), tombol Buat Jurnal hanya menautkan ulang, tidak membuat jurnal ganda.
+- Hapus bill yang sudah dijurnal membuat jurnal pembalik (jurnal asal tidak dihapus) bertanggal hari ini, atau tanggal jurnal asal bila bill bertanggal lebih akhir (aturan `buatJurnalPembalik`). Kalau pembalik gagal dibuat (mis. periode hari ini terkunci), bill tetap ada. Bill yang jurnalnya sudah dibalik manual dari Jurnal Umum dihapus tanpa pembalik kedua, dan daftar menandainya "(dibalik)" dengan tombol Buat Jurnal untuk menjurnal ulang.
+- Bill diterima lama dari 4.4 tampil dengan keterangan "belum dijurnal" dan tombol Buat Jurnal. Jurnalnya bertanggal sama dengan tanggal bill; kalau periodenya sudah dikunci, jurnal tidak bisa dibuat sampai kunci dibuka (tanggal tidak diganti diam-diam).
+- Belum ditutup: bill berstatus `draft` belum bisa dijadikan `diterima` atau diedit, jadi satu-satunya jalan ke jurnal adalah membuat bill baru. Usul tetap: task kecil "Edit draft bill" (lihat temuan 4.4), sekarang lebih mendesak karena draft tidak punya jalur ke jurnal.
+- Jurnal bill belum ikut laporan pembelian (jenis berbeda dari `Pembelian`); dikerjakan di 4.6b sesuai keputusan no. 5.
 
 ## Fase 5 — Pembayaran (7 task)
 
@@ -437,4 +446,4 @@ Selesai fase 21-25 = Rilis E.
 2. **Akses anggota tim** (3.1): desain selesai di `docs/DESAIN_AKSES_TIM.md` (peran owner/admin/member/viewer, penegakan per tingkat peran, masuk lewat fungsi server). 3.2 dipecah jadi 3.2a/3.2b dan peran awal join code = viewer (dikerjakan di 3.2a; ubah bila tidak setuju). Setelah 3.2a dijalankan, client `_processJoinCode`, `getOrCreateJoinCode`, dan `loadOrgMembers` harus pindah ke rpc (`gabung`, `buat_kode_gabung`, `klaim_undangan`) — catatan ada di akhir file SQL; usul dijadikan task kecil sebelum 3.3.
 3. **Target pengguna**: dagang, jasa, atau keduanya. Ini menentukan apakah Fase 14-20 (gudang, batch, dst.) dan POS (Fase 25) perlu dikerjakan.
 4. **Aturan pajak dan payroll** harus dicek ulang dari sumber resmi saat 11.1 dan 18.2 dikerjakan; jangan memakai angka dari ingatan model.
-5. **Jurnal bill di laporan pembelian** (ditemukan di 4.5): jurnal bill berjenis `Tagihan Pembelian`, sehingga belum muncul di Jurnal Pembelian, total pembelian dashboard/rekap, ekspor, dan total pembelian per kontak. Pilihan: (a) tetap jenis sendiri, lalu sebuah task kecil membuat laporan-laporan itu ikut membaca kedua jenis lewat satu fungsi bantu; (b) pakai jenis `Pembelian` supaya langsung muncul di semua laporan, tetapi halaman Jurnal Pembelian hanya menampilkan baris debit pertama (PPN dan akun lain tidak kelihatan) dan jenisnya jadi sulit dibedakan dari pembelian manual. Usul: (a), dikerjakan sesudah 4.6.
+5. ~~**Jurnal bill di laporan pembelian**~~ — diputuskan: jurnal bill tetap berjenis `Tagihan Pembelian`, dan laporan pembelian dibuat membaca kedua jenis lewat fungsi bantu di task 4.6b.

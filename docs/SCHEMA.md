@@ -398,12 +398,13 @@ State di `js/28-bill.js`; disinkron lewat `company_records` (`kind='bill'`, `rec
   sisaTagihan: number;       // awal = total; berkurang saat dibayar (Fase 5)
   status: 'draft' | 'diterima' | 'lunas';
   akunUtang: string;         // kode akun Utang Usaha (kredit)
+  jurnalNo?: string;         // nomor jurnal utang ("JRN-012") yang dibuat saat status 'diterima' (4.6); kosong untuk draft dan bill lama dari 4.4 yang belum dijurnal
   createdAt: string;         // ISO datetime
 }
 ```
-Penyimpanan (task 4.4): record dibuat oleh `susunBill()` (28-bill.js, murni; baris item dengan qty/harga 0 dibuang; status `'diterima'` mewajibkan `akunUtang` dan `akun` tiap item, `'draft'` boleh belum lengkap) dan disimpan lewat `tambahBill()`: bisnis login → `company_records` (`kind='bill'` + `kind='counter'`), mode tamu → `oas_bill` + `oas_counter`. Nomor memakai counter jenis `BILL` (id `BILL-<tahun>`). Reset Data khusus Tagihan Pembelian membuang counter `BILL-*` saja (counter `INV-*` tidak ikut). Di 4.4 belum ada jurnal, jadi bill berstatus `'diterima'` belum punya jurnal; 4.6 harus menanganinya.
+Penyimpanan (task 4.4): record dibuat oleh `susunBill()` (28-bill.js, murni; baris item dengan qty/harga 0 dibuang; status `'diterima'` mewajibkan `akunUtang` dan `akun` tiap item, `'draft'` boleh belum lengkap) dan disimpan lewat `tambahBill()`: bisnis login → `company_records` (`kind='bill'` + `kind='counter'`), mode tamu → `oas_bill` + `oas_counter`. Nomor memakai counter jenis `BILL` (id `BILL-<tahun>`). Reset Data khusus Tagihan Pembelian membuang counter `BILL-*` saja (counter `INV-*` tidak ikut). Sejak 4.6, bill `'diterima'` langsung dijurnal; bill `'diterima'` dari 4.4 yang belum punya jurnal dijurnal lewat tombol "Buat Jurnal" di daftar.
 
-Aturan yang dipakai task berikutnya (belum dipasang di 4.4): saat status `'diterima'`, jurnal dibuat di `jurnalEntries` (Debit akun tiap item + PPN Masukan, Kredit Utang Usaha) lewat `buatJurnalBill()` (4.5-4.6). Status `'draft'` tidak membuat jurnal. Field tambahan seperti nomor faktur pajak supplier (12.1) dan referensi pesanan pembelian (9.5) ditambahkan di task terkait.
+Jurnal bill (4.5-4.6): saat status `'diterima'`, `buatJurnalBill()` (28-bill.js, murni) menyusun jurnal berjenis `Tagihan Pembelian` (`JENIS_JURNAL.BILL`): Debit akun tiap item (item berakun sama digabung) + PPN Masukan (ket `PPN Masukan NN%`, `_ppnTarif`), Kredit `akunUtang` sebesar total; `postingJurnalBill()` (29-bill-ui.js) memostingnya lewat `postJurnalLegacy` dan menyimpan nomor jurnalnya di `jurnalNo`. Penaut bill ke jurnal: `jurnalNo` + ket jurnal `Tagihan <noBill> — <supplier>` (`jurnalBillStatus()`), karena `id`/`ref` jurnal tidak tersimpan ke `jurnal_entries`. Menghapus bill yang sudah dijurnal membuat jurnal pembalik (jurnal asal tidak dihapus). Status `'draft'` tidak membuat jurnal. Field tambahan seperti nomor faktur pajak supplier (12.1) dan referensi pesanan pembelian (9.5) ditambahkan di task terkait.
 
 ### 4.6 Aset Tetap — `asetTetapList[]`
 ```ts

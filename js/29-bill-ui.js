@@ -3,7 +3,9 @@
 //
 // Form di #modal-bill (hitung total langsung), simpan ke billList lewat 28-bill.js
 // (cloud untuk bisnis login, localStorage untuk mode tamu), dan daftar di #bill-body.
-// Belum ada jurnal: status 'diterima' belum membuat jurnal utang (task 4.5-4.6).
+// Jurnal (task 4.6): bill 'diterima' langsung membuat jurnal utang lewat buatJurnalBill (28-bill.js) dan
+// jalur postJurnalLegacy (kunci periode, nomor JRN, sync cloud, audit); nomor jurnalnya disimpan di bill.jurnalNo.
+// Bill diterima lama tanpa jurnal punya tombol "Buat Jurnal"; hapus bill yang sudah dijurnal membuat jurnal pembalik.
 // Pola mengikuti form invoice (19-fitur-tambahan.js, 11-kontak-invoice.js).
 // Fungsi hitung, validasi, dan penyimpan ada di 28-bill.js. Dimuat setelah 28-bill.js.
 // ═══════════════════════════════════════════════════════════
@@ -112,15 +114,76 @@ function _billBacaForm(status) {
   };
 }
 
+// Posting jurnal satu bill (efek samping). bill.jurnalNo diisi bila berhasil.
+// opsi.baru = true: bill baru disusun, jadi tidak perlu mencari jurnal lama yang cocok.
+// Mengembalikan { ok:true, jurnalNo, sudahAda? } atau { ok:false, pesan? } (tanpa pesan = sudah ada alert,
+// mis. periode terkunci).
+function postingJurnalBill(bill, opsi) {
+  if (!(opsi && opsi.baru)) {
+    const st = jurnalBillStatus(bill, jurnalEntries, billList);
+    if (st.status === 'aktif') { bill.jurnalNo = st.jurnal.no; return { ok: true, jurnalNo: st.jurnal.no, sudahAda: true }; }
+  }
+  if (!guardPeriode(bill.tanggal, 'diposting')) return { ok: false };
+  const r = buatJurnalBill(bill, { akunPpnMasukan: cariAkunPpnMasukan(akuns) });
+  if (!r.ok) return { ok: false, pesan: r.pesan };
+  const entry = postJurnalLegacy(r.jurnal);
+  if (!entry) return { ok: false };
+  bill.jurnalNo = entry.no;
+  if (typeof saveToStorage === 'function') saveToStorage(false);
+  return { ok: true, jurnalNo: entry.no };
+}
+
+function _billAlertPeringatan(pesan) {
+  showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ' + escapeHtml(pesan));
+}
+
 function simpanBill(status) {
   if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Tagihan pembelian')) return;
   const r = susunBill(_billBacaForm(status), billList.map(b => b && b.noBill));
-  if (!r.ok) { showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ' + escapeHtml(r.pesan)); return; }
+  if (!r.ok) { _billAlertPeringatan(r.pesan); return; }
+  let jurnalNo = '';
+  if (status === 'diterima') {
+    // Jurnal dibuat lebih dulu; bila gagal (periode terkunci, dll.) bill tidak disimpan setengah jadi.
+    const p = postingJurnalBill(r.bill, { baru: true });
+    if (!p.ok) { if (p.pesan) _billAlertPeringatan(p.pesan); return; }
+    jurnalNo = p.jurnalNo;
+  }
   tambahBill(r.bill);
   closeModal('modal-bill');
   renderBillList();
   showAlert('✓ Tagihan ' + escapeHtml(r.bill.noBill) + ' disimpan sebagai ' + (status === 'draft' ? 'draft' : 'diterima') + '.'
-    + (status === 'diterima' ? '<br><span style="font-size:12px;color:var(--muted);">Jurnal utang belum dibuat otomatis (menyusul di task 4.6).</span>' : ''));
+    + (jurnalNo ? '<br><span style="font-size:12px;color:var(--muted);">Jurnal utang ' + escapeHtml(jurnalNo) + ' dibuat.</span>' : ''));
+}
+
+// Tombol "Buat Jurnal" untuk bill diterima yang belum punya jurnal aktif (mis. bill dari task 4.4).
+function buatJurnalUntukBill(id) {
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Tagihan pembelian')) return;
+  const b = billList.find(x => x && x.id === id); if (!b) return;
+  const st = jurnalBillStatus(b, jurnalEntries, billList);
+  if (st.status === 'aktif') { showAlert('Tagihan ' + escapeHtml(b.noBill) + ' sudah punya jurnal ' + escapeHtml(st.jurnal.no) + '.'); return; }
+  if (b.status !== 'diterima') { showAlert('Hanya tagihan berstatus Diterima yang bisa dijurnal.'); return; }
+  if (!confirm('Buat jurnal utang untuk tagihan ' + b.noBill + ' (' + b.supplier + ') sebesar ' + rp(b.total) + ', bertanggal ' + b.tanggal + '?')) return;
+  const p = postingJurnalBill(b);
+  if (!p.ok) { if (p.pesan) _billAlertPeringatan(p.pesan); return; }
+  simpanBillState();   // simpan jurnalNo di record bill
+  renderBillList();
+  showAlert('✓ Jurnal ' + escapeHtml(p.jurnalNo) + (p.sudahAda ? ' sudah ada dan kini tertaut ke tagihan ' : ' dibuat untuk tagihan ') + escapeHtml(b.noBill) + '.');
+}
+
+// Info jurnal di bawah badge status, dan tombol Buat Jurnal untuk bill diterima tanpa jurnal aktif.
+function _billInfoJurnal(b) {
+  const st = jurnalBillStatus(b, jurnalEntries, billList);
+  const gaya = 'font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px;';
+  if (st.status === 'aktif') return `<div style="${gaya}">${escapeHtml(st.jurnal.no)}</div>`;
+  if (st.status === 'dibalik') return `<div style="${gaya}">${escapeHtml(st.jurnal.no)} (dibalik)</div>`;
+  if (st.status === 'belum' && b.status === 'diterima') return `<div style="${gaya}">belum dijurnal</div>`;
+  return '';
+}
+function _billTombolJurnal(b) {
+  if (b.status !== 'diterima') return '';
+  const st = jurnalBillStatus(b, jurnalEntries, billList);
+  if (st.status === 'aktif') return '';
+  return `<button class="btn btn-sm" title="Buat jurnal utang" style="margin-right:4px;" onclick="buatJurnalUntukBill('${escapeForJsAttr(b.id)}')">Buat Jurnal</button>`;
 }
 
 function renderBillList() {
@@ -146,8 +209,8 @@ function renderBillList() {
         <td style="font-size:12px;${jt ? 'color:var(--red);font-weight:600;' : ''}">${escapeHtml(b.jatuhTempo || '-')}</td>
         <td class="debit" style="font-family:var(--mono)">${rp(b.total)}</td>
         <td style="font-family:var(--mono);color:${b.sisaTagihan > 0 ? 'var(--accent3)' : 'var(--accent)'}">${rp(b.sisaTagihan)}</td>
-        <td>${badge}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="hapusBill('${escapeForJsAttr(b.id)}')"><i class="ti ti-trash" style="font-size:14px;"></i></button></td>
+        <td>${badge}${_billInfoJurnal(b)}</td>
+        <td style="white-space:nowrap;">${_billTombolJurnal(b)}<button class="btn btn-danger btn-sm" onclick="hapusBill('${escapeForJsAttr(b.id)}')"><i class="ti ti-trash" style="font-size:14px;"></i></button></td>
       </tr>`;
     }).join('')}</tbody></table></div>`;
 }
@@ -155,8 +218,20 @@ function renderBillList() {
 function hapusBill(id) {
   if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Tagihan pembelian')) return;
   const b = billList.find(x => x && x.id === id); if (!b) return;
-  if (!confirm('Hapus tagihan ' + b.noBill + ' (' + b.supplier + ')?')) return;
+  const st = jurnalBillStatus(b, jurnalEntries, billList);
+  if (st.status === 'aktif') {
+    // Jurnal yang sudah diposting tidak dihapus; dikoreksi lewat jurnal pembalik (lihat buatJurnalPembalik).
+    const hariIni = new Date().toISOString().split('T')[0];
+    const tgl = tanggalPembalikBill(st.jurnal.tanggal, hariIni);
+    if (!confirm('Tagihan ' + b.noBill + ' (' + b.supplier + ') sudah dijurnal (' + st.jurnal.no + '). Menghapusnya membuat jurnal pembalik bertanggal ' + tgl + '. Lanjutkan?')) return;
+    if (!guardPeriode(tgl, 'dibuatkan jurnal pembalik')) return;
+    let hasil = null;
+    try { hasil = buatJurnalPembalik(st.jurnal, { tanggal: tgl, alasan: 'Tagihan ' + b.noBill + ' dihapus' }); }
+    catch (e) { if (!(e instanceof PeriodeTerkunciError)) throw e; return; }
+    if (!hasil) return;   // alert sudah tampil; tagihan tetap ada
+    if (typeof saveToStorage === 'function') saveToStorage(false);
+  } else if (!confirm('Hapus tagihan ' + b.noBill + ' (' + b.supplier + ')?')) return;
   hapusBillById(id);
   renderBillList();
-  showAlert('✓ Tagihan dihapus');
+  showAlert(st.status === 'aktif' ? '✓ Tagihan dihapus dan jurnalnya dibalik.' : '✓ Tagihan dihapus');
 }

@@ -1,5 +1,5 @@
 // Tes js/28-bill.js (hitung total, nomor, susun record, penyimpan, jurnal bill) dan js/29-bill-ui.js (simpan, daftar, hapus)
-// beserta keterkaitannya dengan index.html dan file lama (tasks 4.3-4.5).
+// beserta keterkaitannya dengan index.html dan file lama (tasks 4.3-4.6).
 // Jalankan: node tests/bill.test.js
 const fs = require('fs'), vm = require('vm'), path = require('path');
 const rd = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
@@ -119,6 +119,18 @@ Object.assign(ctx, {
   showAlert: m => alerts.push(m), closeModal: id => closed.push(id), confirm: () => confirmAns,
   guardHanyaBaca: () => viewer, upgradeFormPickers() {}
 });
+// stub jurnal (task 4.6): jurnal dipasang lewat postJurnalLegacy, dibalik lewat buatJurnalPembalik asli
+let periodeOk = true, jrnSeq = 1, tersimpan = 0;
+const utilsSrc = rd('js/02-utils.js');
+vm.runInContext(['const _REV_KET_RE[^\\n]*\\n', 'function getReversalOf[\\s\\S]*?\\n}\\n', 'function isJurnalPembalik[^\\n]*\\n', 'function getReversedMap[\\s\\S]*?\\n}\\n', 'function ketTanpaPrefixPembalik[^\\n]*\\n']
+  .map(re => utilsSrc.match(new RegExp(re))[0]).join('\n') + '\nclass PeriodeTerkunciError extends Error {}\nvar jurnalEntries = [];', ctx);
+vm.runInContext(rd('js/19-fitur-tambahan.js').match(/function buatJurnalPembalik[\s\S]*?\n}\n/)[0], ctx);
+Object.assign(ctx, {
+  guardPeriode: () => { if (!periodeOk) alerts.push('Periode dikunci'); return periodeOk; },
+  postJurnalLegacy: e => { if (!periodeOk) return null; e.no = 'JRN-' + String(jrnSeq++).padStart(3, '0'); e.ket = e.keterangan; ctx.jurnalEntries.push(e); return e; },
+  addJurnal: e => { e.no = 'JRN-' + String(jrnSeq++).padStart(3, '0'); ctx.jurnalEntries.push(e); },
+  saveToStorage: () => { tersimpan++; }, fmtDate: d => d, markDirty() {}, jurnalCounter: 1
+});
 vm.runInContext(rd('js/29-bill-ui.js'), ctx);
 run('billList=[]; counterList=[]'); ls._s = {};
 run('renderBillList()');
@@ -154,12 +166,120 @@ ok(run('billList.length') === 0 && closed.length === 0 && alerts.length === 1 &&
 el('bill-supplier').value = 'PT Maju'; alerts.length = 0;
 run('simpanBill("diterima")');
 ok(run('billList.length') === 1 && run('billList[0].total') === 111000 && run('billList[0].status') === 'diterima', 'Simpan & Diterima: tersimpan dengan total + PPN 11%');
-ok(closed.join() === 'modal-bill' && /BILL-2026-001/.test(alerts[0]) && /4\.6/.test(alerts[0]), 'modal ditutup; pesan menyebut jurnal belum dibuat');
+ok(closed.join() === 'modal-bill' && /BILL-2026-001/.test(alerts[0]) && /JRN-001/.test(alerts[0]), 'modal ditutup; pesan menyebut nomor jurnal yang dibuat');
 ok(/PT Maju/.test(el('bill-body').innerHTML), 'daftar langsung diperbarui');
 el('bill-no').value = 'BILL-2026-002'; alerts.length = 0; run('simpanBill("draft")');
-ok(run('billList[0].status') === 'draft' && !/4\.6/.test(alerts[0]), 'Simpan Draft: status draft, tanpa catatan jurnal');
+ok(run('billList[0].status') === 'draft' && !/JRN-/.test(alerts[0]) && run('jurnalEntries.length') === 1 && !run('billList[0].jurnalNo'), 'Simpan Draft: status draft, tidak membuat jurnal');
 el('bill-no').value = 'BILL-2026-002'; alerts.length = 0; run('simpanBill("draft")');
 ok(run('billList.length') === 2 && /sudah dipakai/.test(alerts[0]), 'nomor kembar ditolak');
+
+console.log('[jurnalBillStatus] dan tanggalPembalikBill (murni)');
+const bX = { id: 'B1', noBill: 'BILL-2026-001', supplier: 'PT Maju', status: 'diterima', tanggal: '2026-10-01' };
+const jX = (o) => Object.assign({ no: 'JRN-005', jenis: 'Tagihan Pembelian', ket: 'Tagihan BILL-2026-001 — PT Maju', tanggal: '2026-10-01', lines: [] }, o || {});
+const st = (b, js, bs) => { ctx.__sb = b; ctx.__sj = js; ctx.__ss = bs; return run('jurnalBillStatus(__sb, __sj, __ss)'); };
+ok(st({ ...bX, status: 'draft' }, [jX()]).status === 'tanpa' && st(null, []).status === 'tanpa', 'draft / null: tanpa jurnal');
+ok(st(bX, []).status === 'belum' && st(bX, null).status === 'belum' && st(bX, [null, 5, 'x']).status === 'belum', 'diterima tanpa jurnal: belum (daftar kosong/null/sampah tidak error)');
+ok(st(bX, [jX()]).status === 'aktif' && st(bX, [jX()]).jurnal.no === 'JRN-005', 'jurnal cocok dari ket: aktif');
+ok(st({ ...bX, jurnalNo: 'JRN-005' }, [jX()]).status === 'aktif', 'jurnalNo cocok: aktif');
+ok(st({ ...bX, jurnalNo: 'JRN-005' }, [jX({ jenis: 'Pembelian' })]).status === 'belum', 'jenis lain (Pembelian) tidak dianggap jurnal bill');
+ok(st({ ...bX, jurnalNo: 'JRN-001' }, [jX({ no: 'JRN-001', ket: 'Tagihan BILL-2026-999 — PT Lain' })]).status === 'belum', 'nomor jurnal sama tetapi ket beda bill (nomor berulang setelah reset): belum');
+ok(st(bX, [jX({ ket: 'Tagihan BILL-2026-001 — PT Lain' })]).status === 'belum', 'nomor bill sama tetapi supplier beda: belum');
+ok(st(bX, [jX()], [{ id: 'B2', jurnalNo: 'JRN-005' }]).status === 'belum', 'jurnal sudah dipakai bill lain: tidak ditautkan lewat ket');
+ok(st(bX, [jX()], [bX]).status === 'aktif', 'bill itu sendiri di daftarBill tidak menghalangi');
+const pb = jX({ no: 'JRN-006', ket: '[Pembalik JRN-005] Tagihan BILL-2026-001 — PT Maju', reversalOf: 'JRN-005' });
+ok(st(bX, [jX(), pb]).status === 'dibalik' && st(bX, [jX(), pb]).jurnal.no === 'JRN-005', 'ada jurnal pembalik: dibalik (jurnal pembalik tidak dihitung sebagai jurnal bill)');
+const pb2 = jX({ no: 'JRN-006', ket: '[Pembalik JRN-005] Tagihan BILL-2026-001 — PT Maju' });
+ok(st(bX, [jX(), pb2]).status === 'dibalik', 'pembalik dikenali dari awalan ket saja (data dari cloud tanpa reversalOf)');
+const jBaru = jX({ no: 'JRN-010' });
+ok(st(bX, [jX(), pb, jBaru]).status === 'aktif' && st(bX, [jX(), pb, jBaru]).jurnal.no === 'JRN-010', 'dibalik lalu dijurnal ulang: yang aktif dipilih');
+ok(st({ ...bX, status: 'lunas' }, [jX()]).status === 'aktif', 'bill lunas tetap bisa punya jurnal aktif');
+ok(run("tanggalPembalikBill('2026-10-01','2026-10-29')") === '2026-10-29' && run("tanggalPembalikBill('2026-11-05','2026-10-29')") === '2026-11-05' && run("tanggalPembalikBill('','2026-10-29')") === '2026-10-29' && run("tanggalPembalikBill(undefined,'2026-10-29')") === '2026-10-29', 'tanggalPembalikBill: hari ini, kecuali jurnal bertanggal lebih akhir');
+
+console.log('[jurnal bill] simpan, Buat Jurnal, dan hapus (stub DOM + buatJurnalPembalik asli)');
+const resetForm = (no) => {
+  run('billList=[]; counterList=[]; jurnalEntries=[]; _billItems=[{nama:"Kertas",qty:2,harga:50000,akun:"1301"}]'); jrnSeq = 1; tersimpan = 0;
+  el('bill-no').value = no; el('bill-supplier').value = 'PT Maju'; el('bill-tgl').value = '2026-10-01'; el('bill-jatuh-tempo').value = '2026-10-31';
+  el('bill-akun-utang').value = '2101'; el('bill-ppn-check').checked = true; el('bill-ppn-tarif').value = '11';
+  alerts.length = 0; closed.length = 0; periodeOk = true; viewer = false; confirmAns = true;
+};
+resetForm('BILL-2026-001');
+run('simpanBill("diterima")');
+ok(run('jurnalEntries.length') === 1 && run('billList[0].jurnalNo') === 'JRN-001', 'simpan diterima: 1 jurnal dibuat, bill.jurnalNo = JRN-001');
+const jr = run('jurnalEntries[0]');
+ok(jr.jenis === 'Tagihan Pembelian' && jr.lines.length === 3 && jr.lines[2].akun === '2101' && jr.lines[2].kredit === 111000, 'jurnal: Dr 1301 + Dr PPN Masukan, Cr 2101 = 111.000');
+ok(jr.lines.reduce((x, l) => x + l.debit, 0) === jr.lines.reduce((x, l) => x + l.kredit, 0), 'jurnal seimbang');
+ok(jr.ket === 'Tagihan BILL-2026-001 — PT Maju' && tersimpan === 1, 'ket dari keterangan (dibaca postJurnalLegacy) dan saveToStorage dipanggil');
+ok(run('jurnalBillStatus(billList[0], jurnalEntries, billList).status') === 'aktif' && /JRN-001/.test(el('bill-body').innerHTML) && !/Buat Jurnal/.test(el('bill-body').innerHTML), 'daftar menampilkan JRN-001 tanpa tombol Buat Jurnal');
+
+resetForm('BILL-2026-001'); periodeOk = false;
+run('simpanBill("diterima")');
+ok(run('billList.length') === 0 && run('jurnalEntries.length') === 0 && closed.length === 0 && alerts.some(a => /dikunci/.test(a)), 'periode terkunci: bill tidak tersimpan setengah jadi, modal tetap terbuka');
+
+resetForm('BILL-2026-001'); viewer = true;
+run('simpanBill("diterima")');
+ok(run('billList.length') === 0 && run('jurnalEntries.length') === 0, 'viewer: tidak ada bill dan tidak ada jurnal');
+
+resetForm('BILL-2026-001'); el('bill-ppn-check').checked = false; el('bill-akun-utang').value = '';
+run('simpanBill("diterima")');
+ok(run('billList.length') === 0 && run('jurnalEntries.length') === 0 && /Utang Usaha/.test(alerts[0]), 'akun utang kosong: ditolak sebelum jurnal');
+
+// bill diterima lama (dari task 4.4) tanpa jurnal
+resetForm('BILL-2026-001');
+ctx.__lama = { id: 'BILL_LAMA', noBill: 'BILL-2026-001', supplier: 'PT Maju', tanggal: '2026-10-01', jatuhTempo: '2026-10-31', status: 'diterima', akunUtang: '2101',
+  items: [{ nama: 'Kertas', qty: 2, harga: 50000, akun: '1301' }], subtotal: 100000, ppn: 11000, ppnTarif: 11, total: 111000, sisaTagihan: 111000 };
+run('billList=[__lama]; renderBillList()');
+ok(/Buat Jurnal/.test(el('bill-body').innerHTML) && /belum dijurnal/.test(el('bill-body').innerHTML), 'bill diterima tanpa jurnal: tombol Buat Jurnal + keterangan belum dijurnal');
+confirmAns = false; run('buatJurnalUntukBill("BILL_LAMA")');
+ok(run('jurnalEntries.length') === 0, 'konfirmasi dibatalkan: tidak ada jurnal');
+confirmAns = true; viewer = true; run('buatJurnalUntukBill("BILL_LAMA")');
+ok(run('jurnalEntries.length') === 0, 'viewer: Buat Jurnal diblokir');
+viewer = false; periodeOk = false; run('buatJurnalUntukBill("BILL_LAMA")');
+ok(run('jurnalEntries.length') === 0 && !run('billList[0].jurnalNo'), 'periode terkunci: tidak ada jurnal, jurnalNo kosong');
+periodeOk = true; alerts.length = 0; ls._s = {};
+run('buatJurnalUntukBill("BILL_LAMA")');
+ok(run('jurnalEntries.length') === 1 && run('billList[0].jurnalNo') === 'JRN-001' && /JRN-001/.test(alerts[0]), 'Buat Jurnal: jurnal dibuat dan jurnalNo tersimpan di bill');
+ok(JSON.parse(ls._s['oas_bill'])[0].jurnalNo === 'JRN-001', 'jurnalNo ikut tertulis ke penyimpanan (mode tamu: oas_bill)');
+alerts.length = 0; run('buatJurnalUntukBill("BILL_LAMA")');
+ok(run('jurnalEntries.length') === 1 && /sudah punya jurnal/.test(alerts[0]), 'dipanggil lagi: tidak ada jurnal ganda');
+// jurnalNo hilang tetapi jurnal ada (simpan bill gagal tengah jalan): ditautkan ulang, tidak digandakan
+run('delete billList[0].jurnalNo'); alerts.length = 0;
+run('buatJurnalUntukBill("BILL_LAMA")');
+ok(run('jurnalEntries.length') === 1, 'tanpa jurnalNo tetapi jurnal ada: tidak digandakan');
+ok(run('billList[0].status') === 'diterima' && !/Buat Jurnal/.test(el('bill-body').innerHTML), 'setelah itu daftar tanpa tombol Buat Jurnal');
+
+// hapus bill yang sudah dijurnal -> jurnal pembalik
+alerts.length = 0; confirmAns = false;
+run('hapusBill("BILL_LAMA")');
+ok(run('billList.length') === 1 && run('jurnalEntries.length') === 1, 'konfirmasi dibatalkan: bill dan jurnal utuh');
+confirmAns = true; viewer = true; run('hapusBill("BILL_LAMA")');
+ok(run('billList.length') === 1 && run('jurnalEntries.length') === 1, 'viewer: hapus diblokir');
+viewer = false; periodeOk = false; run('hapusBill("BILL_LAMA")');
+ok(run('billList.length') === 1 && run('jurnalEntries.length') === 1, 'periode terkunci: bill tetap ada, tidak ada pembalik');
+periodeOk = true; alerts.length = 0;
+run('hapusBill("BILL_LAMA")');
+ok(run('billList.length') === 0 && run('jurnalEntries.length') === 2, 'hapus: bill hilang, 1 jurnal pembalik ditambahkan (jurnal asal tidak dihapus)');
+const pbl = run('jurnalEntries[1]');
+ok(pbl.reversalOf === 'JRN-001' && /^\[Pembalik JRN-001\]/.test(pbl.ket) && /dihapus/.test(pbl.ket), 'pembalik menaut ke JRN-001 dan menyebut alasan');
+ok(pbl.lines.length === 3 && pbl.lines[0].kredit === 100000 && pbl.lines[2].debit === 111000, 'pembalik: debit/kredit tertukar');
+ok(run('getReversedMap().get("JRN-001")') === pbl.no, 'peta pembalik mengenali JRN-001 sudah dibalik');
+ok(/jurnalnya dibalik/.test(alerts.join()), 'pesan menyebut jurnal dibalik');
+
+// bill tanpa jurnal / draft / jurnal sudah dibalik: hapus biasa tanpa pembalik
+resetForm('BILL-2026-001');
+run('simpanBill("draft")'); run('hapusBill(billList[0].id)');
+ok(run('billList.length') === 0 && run('jurnalEntries.length') === 0, 'draft: hapus biasa, tanpa jurnal pembalik');
+resetForm('BILL-2026-001');
+run('simpanBill("diterima")');
+run('buatJurnalPembalik(jurnalEntries[0], {tanggal:"2026-10-29", alasan:"koreksi manual"})');
+run('renderBillList()');
+ok(run('jurnalBillStatus(billList[0], jurnalEntries, billList).status') === 'dibalik' && /dibalik/.test(el('bill-body').innerHTML) && /Buat Jurnal/.test(el('bill-body').innerHTML), 'jurnal dibalik manual dari Jurnal Umum: daftar menandai (dibalik) dan boleh dijurnal ulang');
+run('hapusBill(billList[0].id)');
+ok(run('billList.length') === 0 && run('jurnalEntries.length') === 2, 'hapus bill yang jurnalnya sudah dibalik: tidak membuat pembalik kedua');
+// tanggal bill setelah hari ini: tanggal pembalik tidak lebih awal dari jurnal asal
+resetForm('BILL-2026-001'); el('bill-tgl').value = '2099-01-01'; el('bill-jatuh-tempo').value = '2099-02-01';
+run('simpanBill("diterima")');
+run('hapusBill(billList[0].id)');
+ok(run('billList.length') === 0 && run('jurnalEntries.length') === 2 && run('jurnalEntries[1].tanggal') === '2099-01-01', 'bill bertanggal masa depan: pembalik bertanggal sama dengan jurnal asal (bukan ditolak)');
 
 console.log('[item] baris item di layar sempit dan picker akun per baris');
 ctx.akuns = [{ kode: '1301', nama: 'Persediaan Barang Dagangan', tipe: 'Aset' }, { kode: '6101', nama: 'Beban ATK', tipe: 'Beban' }];
@@ -248,7 +368,7 @@ ok(JSON.stringify(b0) === snap, 'bill input tidak diubah');
 ok(JSON.stringify(jb(b0)) === JSON.stringify(jb(billOk())), 'hasil sama untuk input sama (murni)');
 const jnl = rd('js/16-auth-company.js');
 ok(/JURNAL_META_KEYS = \[[^\]]*'_ppnTarif'/.test(jnl), 'catatan: _ppnTarif memang kunci meta yang disimpan ke cloud');
-ok(!/buatJurnalBill/.test(rd('js/29-bill-ui.js') + rd('js/16-auth-company.js') + rd('js/04-navigasi-tema.js') + rd('js/15-storage.js')), 'buatJurnalBill belum dipasang ke alur mana pun (task 4.6)');
+ok(/buatJurnalBill\(bill/.test(rd('js/29-bill-ui.js')) && !/buatJurnalBill/.test(rd('js/16-auth-company.js') + rd('js/04-navigasi-tema.js') + rd('js/15-storage.js')), 'buatJurnalBill dipasang hanya di 29-bill-ui.js (tanpa hook ke file lama)');
 
 console.log('[pemasangan] hook ke file lama');
 const nav = rd('js/04-navigasi-tema.js'), sto = rd('js/15-storage.js'), cr = rd('js/22-cloud-records.js');
@@ -262,7 +382,8 @@ const ids = [...new Set([...ui.matchAll(/getElementById\('([^']+)'\)/g)].map(m =
 ids.forEach(id => ok(html.includes('id="' + id + '"'), '#' + id));
 ok(/<script defer src="js\/28-bill\.js"><\/script>\s*<script defer src="js\/29-bill-ui\.js">/.test(html), 'urutan script 28 lalu 29');
 ok(html.includes('onclick="openModalBill()"') && html.includes("openSimplePicker('bill-akun-utang'"), 'tombol buka form dan picker akun utang terpasang');
-ok(!/\b(jurnalEntries|postJurnal|addJurnal|saveToStorage)/.test(ui) && !/\b(jurnalEntries|postJurnal|addJurnal)/.test(rd('js/28-bill.js')), 'simpan bill belum membuat jurnal (pemasangan jurnal di 4.6)');
+ok(!/\b(jurnalEntries|postJurnal|addJurnal)/.test(rd('js/28-bill.js')), '28-bill.js tetap murni: tidak menyentuh jurnal langsung');
+ok(/postJurnalLegacy\(r\.jurnal\)/.test(ui) && !/jurnalEntries\.(push|splice)|jurnalEntries\s*=[^=]/.test(ui), '29-bill-ui.js memposting lewat postJurnalLegacy, tanpa push/splice langsung ke jurnal');
 ok(!/menyusul di task 4\.4|belum tersedia \(task 4\.4\)/.test(ui), 'placeholder simpanBill 4.3 sudah diganti');
 
 console.log('\nHasil: ' + pass + ' lulus, ' + fail + ' gagal');

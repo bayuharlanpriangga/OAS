@@ -7,7 +7,7 @@
 // State billList. Bisnis login: dimuat/disimpan lewat cloud-records (kind `bill`,
 // 22-cloud-records.js). Mode tamu: key localStorage `oas_bill`.
 // Modul ini berisi state, fungsi murni (hitung total, nomor, susun record), dan penyimpan.
-// Form dan daftar ada di 29-bill-ui.js. Fungsi murni jurnal bill ada di sini (4.5); pemasangannya ke alur simpan menyusul di 4.6.
+// Form dan daftar ada di 29-bill-ui.js. Fungsi murni jurnal bill ada di sini (4.5, status/penaut 4.6); pemasangannya ke alur simpan, daftar, dan hapus ada di 29-bill-ui.js (4.6).
 // ═══════════════════════════════════════════════════════════
 let billList = (() => {
   try { const a = JSON.parse(localStorage.getItem('oas_bill') || '[]'); return Array.isArray(a) ? a : []; }
@@ -165,6 +165,48 @@ function buatJurnalBill(bill, opsi) {
   };
   if (ppn > 0) jurnal._ppnTarif = tarif;
   return { ok: true, jurnal };
+}
+
+// Status jurnal sebuah bill, dibaca dari daftar jurnal (murni).
+//   'tanpa'  : bill draft (tidak punya jurnal)
+//   'belum'  : bill belum punya jurnal (mis. bill diterima dari task 4.4, sebelum jurnal bill ada)
+//   'aktif'  : jurnal ada dan belum dibalik
+//   'dibalik': jurnal ada tetapi sudah dibalik (jurnal pembalik)
+// Penaut: bill.jurnalNo (nomor JRN-xxx) bila cocok dengan jurnal berjenis Tagihan Pembelian yang ketnya
+// diawali "Tagihan <noBill> — <supplier>". Tanpa jurnalNo (atau tidak cocok, mis. nomor jurnal berulang
+// setelah reset), dicari dari ket saja, dengan melewati jurnal yang nomornya sudah dipakai bill lain.
+// `id` dan `ref` jurnal tidak ikut tersimpan ke cloud, jadi penaut memakai nomor jurnal dan ket.
+// Jurnal pembalik (yang jenisnya diwarisi dari jurnal asal) tidak dihitung sebagai jurnal bill.
+// Mengembalikan { status, jurnal }.
+function jurnalBillStatus(bill, daftarJurnal, daftarBill) {
+  if (!bill || typeof bill !== 'object' || bill.status === 'draft') return { status: 'tanpa', jurnal: null };
+  const js = (Array.isArray(daftarJurnal) ? daftarJurnal : []).filter(j => j && typeof j === 'object');
+  const ketJ = j => String(j.ket || j.keterangan || '');
+  const pembalikDari = j => {
+    if (j.reversalOf) return String(j.reversalOf);
+    const m = /^\[Pembalik ([^\]]+)\]/.exec(ketJ(j));
+    return m ? m[1].trim() : '';
+  };
+  const asal = js.filter(j => j.jenis === JENIS_JURNAL.BILL && !pembalikDari(j));
+  const awal = 'Tagihan ' + String(bill.noBill || '').trim() + ' — ' + String(bill.supplier || '').trim();
+  const dibalik = j => js.some(x => pembalikDari(x) === j.no);
+  let jurnal = null;
+  if (bill.jurnalNo) jurnal = asal.find(j => j.no === bill.jurnalNo && ketJ(j).startsWith(awal)) || null;
+  if (!jurnal) {
+    const dipakaiLain = new Set((Array.isArray(daftarBill) ? daftarBill : [])
+      .filter(b => b && b !== bill && b.id !== bill.id && b.jurnalNo).map(b => b.jurnalNo));
+    const cocok = asal.filter(j => ketJ(j).startsWith(awal) && !dipakaiLain.has(j.no));
+    jurnal = cocok.find(j => !dibalik(j)) || cocok[0] || null;
+  }
+  if (!jurnal) return { status: 'belum', jurnal: null };
+  return { status: dibalik(jurnal) ? 'dibalik' : 'aktif', jurnal };
+}
+
+// Tanggal jurnal pembalik untuk bill yang dihapus: hari ini, tetapi tidak boleh lebih awal dari
+// tanggal jurnal asal (aturan buatJurnalPembalik). Murni; keduanya "YYYY-MM-DD".
+function tanggalPembalikBill(tanggalJurnal, hariIni) {
+  const t = typeof tanggalJurnal === 'string' ? tanggalJurnal.slice(0, 10) : '';
+  return (t && t > hariIni) ? t : hariIni;
 }
 
 // Simpan billList dan counter: bisnis login -> cloud (cloud-records), mode tamu -> localStorage.
