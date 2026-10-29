@@ -7,7 +7,7 @@
 // State billList. Bisnis login: dimuat/disimpan lewat cloud-records (kind `bill`,
 // 22-cloud-records.js). Mode tamu: key localStorage `oas_bill`.
 // Modul ini berisi state, fungsi murni (hitung total, nomor, susun record), dan penyimpan.
-// Form dan daftar ada di 29-bill-ui.js. Jurnal bill menyusul di 4.5-4.6 (belum ada di sini).
+// Form dan daftar ada di 29-bill-ui.js. Fungsi murni jurnal bill ada di sini (4.5); pemasangannya ke alur simpan menyusul di 4.6.
 // ═══════════════════════════════════════════════════════════
 let billList = (() => {
   try { const a = JSON.parse(localStorage.getItem('oas_bill') || '[]'); return Array.isArray(a) ? a : []; }
@@ -92,6 +92,79 @@ function susunBill(f, daftarNomor) {
       createdAt: teks(f.createdAt) || new Date().toISOString()
     }
   };
+}
+
+// ── Jurnal bill (task 4.5, fungsi murni; belum dipasang ke alur simpan, itu task 4.6) ──
+
+// Kode akun PPN Masukan dari daftar akun: 1502 bila ada, kalau tidak akun yang namanya memuat
+// 'ppn masukan' (sama dengan pencarian di pembelian produk ber-PPN), kalau tidak ketemu: '1502'.
+function cariAkunPpnMasukan(daftarAkun) {
+  const a = (Array.isArray(daftarAkun) ? daftarAkun : []).filter(x => x && x.kode);
+  if (a.some(x => x.kode === '1502')) return '1502';
+  const f = a.find(x => /ppn masukan/i.test(x.nama || ''));
+  return f ? f.kode : '1502';
+}
+
+// Susun entri jurnal dari satu bill berstatus 'diterima' (murni: tidak menyimpan apa pun).
+//   Dr akun tiap item (Persediaan/Beban, item berakun sama digabung)
+//   Dr PPN Masukan (bila bill.ppn > 0)
+//   Cr Utang Usaha (bill.akunUtang) = total debit
+// opsi.akunPpnMasukan : kode akun PPN Masukan (default 1502; lihat cariAkunPpnMasukan)
+// Nominal dibulatkan ke rupiah; selisih pembulatan antar akun dibebankan ke baris debit terbesar
+// supaya jurnal selalu seimbang. Baris PPN memakai ket 'PPN Masukan NN%' + _ppnTarif agar terbaca
+// rekap pajak (ppnDariJurnal), dan ket jurnal memuat nomor bill karena kolom `ref` tidak ikut
+// tersimpan ke cloud (hanya no, tanggal, ket, jenis, lines, meta).
+// Mengembalikan { ok:true, jurnal } atau { ok:false, pesan }.
+function buatJurnalBill(bill, opsi) {
+  const gagal = pesan => ({ ok: false, pesan });
+  const teks = v => (typeof v === 'string' ? v.trim() : '');
+  const angka = v => (typeof v === 'number' && isFinite(v) && v > 0) ? v : 0;
+  if (!bill || typeof bill !== 'object') return gagal('Data tagihan tidak valid.');
+  if (bill.status !== 'diterima') return gagal('Hanya tagihan berstatus Diterima yang dijurnal.');
+  const akunUtang = teks(bill.akunUtang);
+  if (!akunUtang) return gagal('Akun Utang Usaha belum dipilih.');
+  const tanggal = teks(bill.tanggal);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal)) return gagal('Tanggal tagihan tidak valid.');
+  const items = (Array.isArray(bill.items) ? bill.items : []).filter(it => it && angka(it.qty) * angka(it.harga) > 0);
+  if (!items.length) return gagal('Tagihan tidak punya item bernilai.');
+  if (items.some(it => !teks(it.akun))) return gagal('Ada item tanpa akun. Pilih akun untuk setiap item.');
+
+  // Gabung per akun (urutan kemunculan pertama dipertahankan)
+  const grup = [];
+  items.forEach(it => {
+    const kode = teks(it.akun), nilai = angka(it.qty) * angka(it.harga);
+    let g = grup.find(x => x.akun === kode);
+    if (!g) { g = { akun: kode, nilai: 0, nama: [] }; grup.push(g); }
+    g.nilai += nilai;
+    const n = teks(it.nama); if (n && !g.nama.includes(n)) g.nama.push(n);
+  });
+  const target = Math.round(grup.reduce((s, g) => s + g.nilai, 0));
+  grup.forEach(g => { g.debit = Math.round(g.nilai); });
+  const selisih = target - grup.reduce((s, g) => s + g.debit, 0);
+  if (selisih) grup.reduce((a, b) => (b.debit > a.debit ? b : a)).debit += selisih;
+  const barisItem = grup.filter(g => g.debit > 0).map(g => ({
+    akun: g.akun, ket: g.nama.join(', ').slice(0, 80) || 'Pembelian', debit: g.debit, kredit: 0
+  }));
+  if (!barisItem.length) return gagal('Total tagihan 0, tidak ada yang dijurnal.');
+
+  const ppn = angka(bill.ppn) ? Math.round(bill.ppn) : 0;
+  const tarif = angka(bill.ppnTarif);
+  if (ppn > 0 && !tarif) return gagal('Tarif PPN tagihan tidak ada, PPN Masukan tidak bisa dijurnal.');
+  const akunPpn = teks(opsi && opsi.akunPpnMasukan) || '1502';
+  const lines = barisItem.slice();
+  if (ppn > 0) lines.push({ akun: akunPpn, ket: 'PPN Masukan ' + tarif + '%', debit: ppn, kredit: 0 });
+  const total = lines.reduce((s, l) => s + l.debit, 0);
+  lines.push({ akun: akunUtang, ket: 'Utang Usaha — ' + teks(bill.supplier), debit: 0, kredit: total });
+
+  const jurnal = {
+    tanggal,
+    jenis: JENIS_JURNAL.BILL,
+    keterangan: 'Tagihan ' + teks(bill.noBill) + ' — ' + teks(bill.supplier),
+    ref: teks(bill.noBill),
+    lines
+  };
+  if (ppn > 0) jurnal._ppnTarif = tarif;
+  return { ok: true, jurnal };
 }
 
 // Simpan billList dan counter: bisnis login -> cloud (cloud-records), mode tamu -> localStorage.

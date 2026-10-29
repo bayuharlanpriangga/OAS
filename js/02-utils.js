@@ -50,6 +50,7 @@ const JENIS_JURNAL = {
   PPN_PPH:         'PPN & PPh',           // jurnal dari kalkulator PPN & PPh
   GAJI_PPH21:      'Gaji & PPh 21',
   PPH23:           'PPh 23',
+  BILL:            'Tagihan Pembelian',   // jurnal tagihan pembelian (bill) berstatus diterima
 };
 
 // Sumber jurnal = badge TAMBAHAN di samping jenis (bukan pengganti jenis). Mis. penjualan yang dibuat

@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 137 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 23/137 task selesai.**
+**Progres: 24/137 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -69,7 +69,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | 1 | Fondasi data | 8/8 |
 | 2 | Umur piutang | 4/4 |
 | 3 | Akses anggota tim | 7/7 |
-| 4 | Tagihan pembelian (bill) | 4/7 |
+| 4 | Tagihan pembelian (bill) | 5/7 |
 | 5 | Pembayaran | 0/7 |
 | 6 | Kartu piutang/hutang dan model dokumen | 0/3 |
 | 7 | Penawaran sampai faktur | 0/6 |
@@ -171,7 +171,7 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 | ☑ | 4.2 | Halaman 'Tagihan Pembelian' kosong + navigasi. `#page-bill` di index.html (isi placeholder `#bill-body`), kartu menu "Tagihan Beli" di grup Fitur Baru, judul di `pageTitles` (04-navigasi-tema.js), izin modul mengikuti Invoice (`MODUL_HALAMAN.bill`). Tes: `daftar-bisnis.test.js` | IDX |
 | ☑ | 4.3 | Form bill: tampilan input (supplier, tanggal, jatuh tempo, item, PPN), belum menyimpan. `#modal-bill` di index.html (tombol "+ Buat Tagihan" di halaman bill), `js/29-bill-ui.js` (form, hitung total langsung, akun debit per item, akun Utang Usaha), fungsi murni `hitungTotalBill` dan `nomorBillBerikut` di `28-bill.js`, filter picker `utang` di `05-akun.js`. Tombol simpan hanya menampilkan pemberitahuan. Tes: `tests/bill.test.js` | 4.1, INV sebagai pola |
 | ☑ | 4.4 | Simpan bill ke cloud + daftar bill, belum ada jurnal. `susunBill` (validasi + bentuk record, murni), `tambahBill`, `hapusBillById`, `simpanBillState` di `js/28-bill.js` (bisnis login: cloud kind `bill` + `counter`; mode tamu: `oas_bill` + `oas_counter`); `nomorBillBerikut` memakai counter; `simpanBill`, `renderBillList`, `hapusBill` di `js/29-bill-ui.js` (viewer diblokir `guardHanyaBaca`); hook: `showPage('bill')`, `doResetAll` (counter BILL + render ulang), `bill` legacyOnce + label di `22-cloud-records.js`; `counterTanpaJenis`/`resetCounterJenis` di `23-penomoran.js`. Tes: `tests/bill.test.js`, bagian [bill] `cloud-records.test.js`, [13] `penomoran.test.js`. Perlu uji manual di browser | 4.3, CR |
-| ☐ | 4.5 | Fungsi murni buatJurnalBill(bill): Dr Persediaan/Beban + PPN Masukan, Cr Utang Usaha + tes (belum dipasang) | INV (jurnal invoice sebagai pola) |
+| ☑ | 4.5 | Fungsi murni buatJurnalBill(bill): Dr Persediaan/Beban + PPN Masukan, Cr Utang Usaha + tes (belum dipasang). `buatJurnalBill(bill, opsi)` dan `cariAkunPpnMasukan(daftarAkun)` di `js/28-bill.js`; konstanta `JENIS_JURNAL.BILL` (`'Tagihan Pembelian'`) di `02-utils.js` (1 baris, tanpa efek). Hanya bill `diterima`; hasil `{ ok, jurnal }` atau `{ ok:false, pesan }`. Tes: bagian [cariAkunPpnMasukan] dan [buatJurnalBill] `tests/bill.test.js` | INV (jurnal invoice sebagai pola) |
 | ☐ | 4.6 | ⚠ Pasang jurnal bill ke alur simpan bill lewat hook. Termasuk bill `diterima` yang sudah tersimpan di 4.4 tanpa jurnal (lihat temuan 4.4) dan pemeriksaan jurnal di `hapusBill` | 4.5, 4.4 |
 | ☐ | 4.7 | Halaman 'Umur Hutang' memakai 2.1 | 2.1, 4.2 |
 
@@ -193,6 +193,13 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 - Status `diterima` di 4.4 hanya menyimpan data, tanpa jurnal; alert simpan menyebutnya. Task 4.6 harus menangani bill `diterima` yang sudah ada tanpa jurnal (mis. field `jurnalId` + tombol posting untuk yang belum punya) dan `hapusBill` harus memeriksa jurnal sebelum menghapus.
 - Ditemukan saat uji di HP (bug form 4.3, sudah diperbaiki): (a) baris item melebar keluar modal tanpa scrollbar karena grid `1fr 72px 120px 32px` tanpa `minmax(0, ...)`; sekarang tiap item disusun bertumpuk (nama, qty + harga, akun) dan header kolom di `index.html` dihapus. (b) Akun per item memakai `<select>` bawaan browser karena `upgradeFormPickers` hanya meng-upgrade select ber-id tertentu; sekarang memakai picker akun yang sama dengan Akun Utang Usaha (`openSimplePicker`, input hidden per baris, dibaca lewat `_billSinkronAkun` sebelum tambah/hapus/simpan). Tes: bagian [item] `tests/bill.test.js`.
 - Belum ditutup (keputusan): bill belum bisa diedit, jadi draft hanya bisa dihapus lalu dibuat ulang. Usul: task kecil sendiri "Edit draft bill" (form yang sama, `susunBill` sudah menerima `id`/`createdAt`), dikerjakan sebelum atau sesudah 4.6.
+
+**Temuan task 4.5:**
+- Bentuk jurnal: Dr akun tiap item (item berakun sama digabung, ket = nama item), Dr PPN Masukan (`1502`, atau hasil `cariAkunPpnMasukan(akuns)` lewat `opsi.akunPpnMasukan`), Cr `akunUtang` sebesar total debit. Pola entri sama seperti invoice (`keterangan`, `_ppnTarif`, `lines`), jadi 4.6 memasangnya lewat `postJurnalLegacy`. Nominal dibulatkan ke rupiah dan selisih pembulatan antar akun dibebankan ke baris debit terbesar, jadi jurnal selalu seimbang (diuji untuk qty/harga desimal).
+- Rekap pajak sudah bisa membaca jurnal bill tanpa perubahan: `ppnDariJurnal` mengenali debit `1502` / ket "PPN Masukan" dan membaca tarif dari `_ppnTarif` atau dari "NN%" di ket. Tes memastikan DPP dan PPN terbaca benar, termasuk saat `_ppnTarif` tidak ikut tersimpan.
+- Hanya `no`, `tanggal`, `ket`, `jenis`, `lines`, dan `meta` (`sumber`, `_ppnTarif`, `_ksId`) yang disimpan ke tabel `jurnal_entries`; `id` dan `ref` tidak ikut tersimpan. Untuk 4.6: penaut bill ke jurnalnya jangan memakai `id` jurnal. Pakai nomor jurnal (`JRN-xxx`, diisi `addJurnal`) yang disimpan di record bill (mis. field `jurnalNo`); nomor bill yang ada di `ket` jurnal jadi cadangan pencarian.
+- Jurnal bill memakai jenis sendiri `Tagihan Pembelian` (bukan `Pembelian`), sesuai catatan di `02-utils.js` agar jenis lama tidak dipakai ulang. Akibatnya jurnal bill belum ikut dihitung di tempat yang membaca `jenis === 'Pembelian'`: halaman Jurnal Pembelian (`07-jurnal-laporan.js`), total pembelian di dashboard/rekap (`13-analitik-dashboard.js`, `19-fitur-tambahan.js`), ekspor (`14-export.js`), dan total pembelian per kontak (`11-kontak-invoice.js`). Lihat keputusan terbuka no. 5.
+- Tes `bill.test.js` memeriksa `buatJurnalBill` belum dipasang ke file mana pun (jaga batas task 4.5 dan 4.6).
 
 ## Fase 5 — Pembayaran (7 task)
 
@@ -430,3 +437,4 @@ Selesai fase 21-25 = Rilis E.
 2. **Akses anggota tim** (3.1): desain selesai di `docs/DESAIN_AKSES_TIM.md` (peran owner/admin/member/viewer, penegakan per tingkat peran, masuk lewat fungsi server). 3.2 dipecah jadi 3.2a/3.2b dan peran awal join code = viewer (dikerjakan di 3.2a; ubah bila tidak setuju). Setelah 3.2a dijalankan, client `_processJoinCode`, `getOrCreateJoinCode`, dan `loadOrgMembers` harus pindah ke rpc (`gabung`, `buat_kode_gabung`, `klaim_undangan`) — catatan ada di akhir file SQL; usul dijadikan task kecil sebelum 3.3.
 3. **Target pengguna**: dagang, jasa, atau keduanya. Ini menentukan apakah Fase 14-20 (gudang, batch, dst.) dan POS (Fase 25) perlu dikerjakan.
 4. **Aturan pajak dan payroll** harus dicek ulang dari sumber resmi saat 11.1 dan 18.2 dikerjakan; jangan memakai angka dari ingatan model.
+5. **Jurnal bill di laporan pembelian** (ditemukan di 4.5): jurnal bill berjenis `Tagihan Pembelian`, sehingga belum muncul di Jurnal Pembelian, total pembelian dashboard/rekap, ekspor, dan total pembelian per kontak. Pilihan: (a) tetap jenis sendiri, lalu sebuah task kecil membuat laporan-laporan itu ikut membaca kedua jenis lewat satu fungsi bantu; (b) pakai jenis `Pembelian` supaya langsung muncul di semua laporan, tetapi halaman Jurnal Pembelian hanya menampilkan baris debit pertama (PPN dan akun lain tidak kelihatan) dan jenisnya jadi sulit dibedakan dari pembelian manual. Usul: (a), dikerjakan sesudah 4.6.

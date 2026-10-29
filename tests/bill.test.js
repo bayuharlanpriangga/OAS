@@ -1,5 +1,5 @@
-// Tes js/28-bill.js (hitung total, nomor, susun record, penyimpan) dan js/29-bill-ui.js (simpan, daftar, hapus)
-// beserta keterkaitannya dengan index.html dan file lama (tasks 4.3-4.4).
+// Tes js/28-bill.js (hitung total, nomor, susun record, penyimpan, jurnal bill) dan js/29-bill-ui.js (simpan, daftar, hapus)
+// beserta keterkaitannya dengan index.html dan file lama (tasks 4.3-4.5).
 // Jalankan: node tests/bill.test.js
 const fs = require('fs'), vm = require('vm'), path = require('path');
 const rd = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
@@ -12,6 +12,7 @@ const ls = { _s: {}, getItem(k) { return k in this._s ? this._s[k] : null; }, se
 const ctx = { localStorage: ls, console };
 vm.createContext(ctx);
 vm.runInContext(ppnSrc, ctx);
+vm.runInContext(utils.match(/const JENIS_JURNAL = \{[\s\S]*?\n\};/)[0] + '\nvar akuns = [];\n' + utils.match(/function _tarifPpnJurnal[\s\S]*?\n}\n/)[0] + utils.match(/function ppnDariJurnal[\s\S]*?\n}\n/)[0], ctx);
 const pen = rd('js/23-penomoran.js');
 vm.runInContext(['parseNomor', 'nomorBerikut', 'counterSetelahPakai'].map(n => pen.match(new RegExp('function ' + n + '[\\s\\S]*?\\n}\\n'))[0]).join('\n') + '\nlet counterList = [];', ctx);
 vm.runInContext(utils.match(/function escapeHtml[\s\S]*?\n}\n/)[0] + utils.match(/function escapeForJsAttr[\s\S]*?\n}\n/)[0], ctx);
@@ -181,6 +182,74 @@ ok(run('_billItems.map(i=>i.akun).join()') === '6101,6101' && run('_billItems.le
 el('bill-akun-0').value = '1301';
 ok(run('_billBacaForm("draft").items[0].akun') === '1301', 'simpan membaca akun dari picker');
 
+console.log('[cariAkunPpnMasukan]');
+ok(run('cariAkunPpnMasukan([{kode:"1101",nama:"Kas"},{kode:"1502",nama:"PPN Masukan (Pajak Dibayar Dimuka)"}])') === '1502', '1502 dipakai bila ada');
+ok(run('cariAkunPpnMasukan([{kode:"1101",nama:"Kas"},{kode:"1599",nama:"Ppn Masukan Khusus"}])') === '1599', 'tanpa 1502: cari akun bernama ppn masukan');
+ok(run('cariAkunPpnMasukan([{kode:"1101",nama:"Kas"}])') === '1502' && run('cariAkunPpnMasukan(null)') === '1502', 'tidak ketemu / daftar kosong: default 1502');
+
+console.log('[buatJurnalBill] bentuk jurnal');
+const billOk = (o) => Object.assign({ id: 'B1', noBill: 'BILL-2026-001', supplier: 'PT Maju', tanggal: '2026-10-01', status: 'diterima', akunUtang: '2101',
+  items: [{ nama: 'Kertas', qty: 2, harga: 50000, akun: '1301' }, { nama: 'Listrik', qty: 1, harga: 25000, akun: '6101' }],
+  subtotal: 125000, ppn: 13750, ppnTarif: 11, total: 138750, sisaTagihan: 138750 }, o || {});
+const jb = (b, o) => { ctx.__b = b; ctx.__o = o; return run('buatJurnalBill(__b, __o)'); };
+const sumD = j => j.lines.reduce((s, l) => s + l.debit, 0), sumK = j => j.lines.reduce((s, l) => s + l.kredit, 0);
+r = jb(billOk());
+ok(r.ok && r.jurnal.tanggal === '2026-10-01' && r.jurnal.jenis === 'Tagihan Pembelian' && r.jurnal.jenis === run('JENIS_JURNAL.BILL'), 'ok, tanggal dan jenis Tagihan Pembelian');
+ok(r.jurnal.keterangan === 'Tagihan BILL-2026-001 — PT Maju' && r.jurnal.ref === 'BILL-2026-001', 'keterangan memuat nomor bill dan supplier');
+ok(r.jurnal.lines.length === 4, '2 baris item + PPN + utang');
+ok(r.jurnal.lines[0].akun === '1301' && r.jurnal.lines[0].debit === 100000 && r.jurnal.lines[0].kredit === 0, 'Dr 1301 = 100.000');
+ok(r.jurnal.lines[1].akun === '6101' && r.jurnal.lines[1].debit === 25000, 'Dr 6101 = 25.000');
+ok(r.jurnal.lines[2].akun === '1502' && r.jurnal.lines[2].debit === 13750 && r.jurnal.lines[2].ket === 'PPN Masukan 11%', 'Dr 1502 PPN Masukan 13.750, ket berisi tarif');
+ok(r.jurnal.lines[3].akun === '2101' && r.jurnal.lines[3].kredit === 138750 && r.jurnal.lines[3].debit === 0, 'Cr 2101 Utang Usaha = total bill');
+ok(sumD(r.jurnal) === sumK(r.jurnal) && sumK(r.jurnal) === 138750, 'seimbang dan sama dengan bill.total');
+ok(r.jurnal._ppnTarif === 11, '_ppnTarif terisi');
+ok(r.jurnal.lines[0].ket === 'Kertas' && r.jurnal.lines[3].ket.includes('PT Maju'), 'ket baris item = nama item, baris utang memuat supplier');
+
+console.log('[buatJurnalBill] variasi');
+r = jb(billOk({ ppn: 0, ppnTarif: 0, total: 125000 }));
+ok(r.ok && r.jurnal.lines.length === 3 && !r.jurnal.lines.some(l => l.akun === '1502') && r.jurnal._ppnTarif === undefined && sumK(r.jurnal) === 125000, 'tanpa PPN: tidak ada baris PPN dan _ppnTarif');
+r = jb(billOk({ items: [{ nama: 'A', qty: 1, harga: 40000, akun: '1301' }, { nama: 'B', qty: 3, harga: 20000, akun: '1301' }, { nama: 'A', qty: 1, harga: 1000, akun: '1301' }], ppn: 0, ppnTarif: 0 }));
+ok(r.ok && r.jurnal.lines.length === 2 && r.jurnal.lines[0].debit === 101000 && r.jurnal.lines[0].ket === 'A, B', 'akun sama digabung, nama item tidak dobel');
+r = jb(billOk({ ppn: 15000, ppnTarif: 12 }), { akunPpnMasukan: '1599' });
+ok(r.ok && r.jurnal.lines[2].akun === '1599' && r.jurnal.lines[2].ket === 'PPN Masukan 12%' && r.jurnal._ppnTarif === 12, 'akun PPN dari opsi, tarif 12%');
+r = jb(billOk({ items: [{ nama: 'x', qty: 0, harga: 500, akun: '1301' }, { nama: 'Kertas', qty: 1, harga: 7000, akun: '1301' }, null, { nama: 'y', qty: 2, harga: 0, akun: '' }], ppn: 0, ppnTarif: 0 }));
+ok(r.ok && r.jurnal.lines.length === 2 && r.jurnal.lines[0].debit === 7000, 'item kosong (qty/harga 0) dan null diabaikan, termasuk yang tanpa akun');
+ok(jb(billOk({ items: [{ nama: '', qty: 1, harga: 1000, akun: '5101' }], ppn: 0, ppnTarif: 0 })).jurnal.lines[0].ket === 'Pembelian', 'item tanpa nama: ket baris "Pembelian"');
+
+console.log('[buatJurnalBill] pembulatan tetap seimbang');
+r = jb(billOk({ items: [{ nama: 'a', qty: 1.5, harga: 3333, akun: '1301' }, { nama: 'b', qty: 1.5, harga: 3333, akun: '6101' }], ppn: 1100, ppnTarif: 11 }));
+ok(r.ok && sumD(r.jurnal) === sumK(r.jurnal), 'dua akun masing-masing x.5: tetap seimbang');
+ok(r.jurnal.lines.slice(0, 2).reduce((s, l) => s + l.debit, 0) === 9999 && r.jurnal.lines.every(l => Number.isInteger(l.debit) && Number.isInteger(l.kredit)), 'jumlah baris item = pembulatan subtotal (9.999), semua bilangan bulat');
+r = jb(billOk({ items: [{ nama: 'a', qty: 1, harga: 10000, akun: '1301' }, { nama: 'b', qty: 3, harga: 3333.4, akun: '6101' }], ppn: 0, ppnTarif: 0 }));
+ok(r.ok && sumD(r.jurnal) === sumK(r.jurnal) && sumK(r.jurnal) === Math.round(10000 + 3 * 3333.4), 'harga desimal: total = pembulatan subtotal');
+
+console.log('[buatJurnalBill] penolakan');
+ok(!jb(billOk({ status: 'draft' })).ok && /Diterima/.test(jb(billOk({ status: 'draft' })).pesan), 'draft ditolak');
+ok(!jb(billOk({ status: 'lunas' })).ok, 'status lunas ditolak (jurnal dibuat saat diterima)');
+ok(!jb(billOk({ akunUtang: '' })).ok && /Utang Usaha/.test(jb(billOk({ akunUtang: '  ' })).pesan), 'tanpa akun utang ditolak');
+ok(!jb(billOk({ items: [{ nama: 'x', qty: 1, harga: 1000, akun: '' }] })).ok && /akun/.test(jb(billOk({ items: [{ nama: 'x', qty: 1, harga: 1000, akun: '' }] })).pesan), 'item bernilai tanpa akun ditolak');
+ok(!jb(billOk({ items: [] })).ok && !jb(billOk({ items: null })).ok && !jb(billOk({ items: [{ qty: 0, harga: 0, akun: '1301' }] })).ok, 'tanpa item bernilai ditolak');
+ok(!jb(billOk({ tanggal: '' })).ok && !jb(billOk({ tanggal: '01/10/2026' })).ok, 'tanggal tidak valid ditolak');
+ok(!jb(billOk({ ppnTarif: 0 })).ok && /Tarif PPN/.test(jb(billOk({ ppnTarif: 0 })).pesan), 'ada PPN tetapi tarif tidak ada ditolak');
+ok(!jb(null).ok && !jb(undefined).ok && !jb('x').ok, 'bill null/undefined/bukan objek ditolak, tidak error');
+ok(!jb(billOk({ items: [{ nama: 'a', qty: 1, harga: 0.2, akun: '1301' }], ppn: 0, ppnTarif: 0 })).ok, 'total 0 setelah pembulatan ditolak');
+
+console.log('[buatJurnalBill] cocok dengan rekap pajak dan tidak mengubah input');
+r = jb(billOk());
+ctx.__j = r.jurnal;
+const pj = run('ppnDariJurnal(__j)');
+ok(pj && pj.tipe === 'masukan' && pj.ppn === 13750 && pj.dpp === 125000 && pj.tarif === 11, 'ppnDariJurnal membaca PPN Masukan 13.750, DPP 125.000, tarif 11%');
+const jSaja = JSON.parse(JSON.stringify(r.jurnal)); delete jSaja._ppnTarif;
+ctx.__j2 = jSaja;
+ok(run('ppnDariJurnal(__j2)').tarif === 11, 'tarif tetap terbaca dari ket "NN%" saat _ppnTarif tidak ikut tersimpan');
+const b0 = billOk(), snap = JSON.stringify(b0);
+jb(b0);
+ok(JSON.stringify(b0) === snap, 'bill input tidak diubah');
+ok(JSON.stringify(jb(b0)) === JSON.stringify(jb(billOk())), 'hasil sama untuk input sama (murni)');
+const jnl = rd('js/16-auth-company.js');
+ok(/JURNAL_META_KEYS = \[[^\]]*'_ppnTarif'/.test(jnl), 'catatan: _ppnTarif memang kunci meta yang disimpan ke cloud');
+ok(!/buatJurnalBill/.test(rd('js/29-bill-ui.js') + rd('js/16-auth-company.js') + rd('js/04-navigasi-tema.js') + rd('js/15-storage.js')), 'buatJurnalBill belum dipasang ke alur mana pun (task 4.6)');
+
 console.log('[pemasangan] hook ke file lama');
 const nav = rd('js/04-navigasi-tema.js'), sto = rd('js/15-storage.js'), cr = rd('js/22-cloud-records.js');
 ok(/if\(id==='bill'\)\s*renderBillList\(\)/.test(nav), 'showPage("bill") merender daftar');
@@ -193,7 +262,7 @@ const ids = [...new Set([...ui.matchAll(/getElementById\('([^']+)'\)/g)].map(m =
 ids.forEach(id => ok(html.includes('id="' + id + '"'), '#' + id));
 ok(/<script defer src="js\/28-bill\.js"><\/script>\s*<script defer src="js\/29-bill-ui\.js">/.test(html), 'urutan script 28 lalu 29');
 ok(html.includes('onclick="openModalBill()"') && html.includes("openSimplePicker('bill-akun-utang'"), 'tombol buka form dan picker akun utang terpasang');
-ok(!/\b(jurnalEntries|postJurnal|addJurnal|saveToStorage)/.test(ui) && !/\b(jurnalEntries|postJurnal|addJurnal)/.test(rd('js/28-bill.js')), 'simpan bill belum membuat jurnal (jurnal baru di 4.5-4.6)');
+ok(!/\b(jurnalEntries|postJurnal|addJurnal|saveToStorage)/.test(ui) && !/\b(jurnalEntries|postJurnal|addJurnal)/.test(rd('js/28-bill.js')), 'simpan bill belum membuat jurnal (pemasangan jurnal di 4.6)');
 ok(!/menyusul di task 4\.4|belum tersedia \(task 4\.4\)/.test(ui), 'placeholder simpanBill 4.3 sudah diganti');
 
 console.log('\nHasil: ' + pass + ' lulus, ' + fail + ' gagal');
