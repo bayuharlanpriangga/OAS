@@ -1281,12 +1281,14 @@ function buatJurnalPembalik(asal, opsi) {
     // Pembelian, Kas, Penutup, ...) dan nilainya saling meniadakan dengan jurnal asal.
     jenis: asal.jenis || 'Manual',
     reversalOf: asal.no,
+    // Debit ditulis di atas, kredit di bawah (sort stabil: urutan relatif di dalam tiap kelompok tetap).
+    // Tanpa ini, baris kredit jurnal asal yang ditukar jadi debit tetap berada di bawah.
     lines: (asal.lines || []).map(l => ({
       akun: l.akun,
       ket: 'Pembalik: ' + (l.ket || ''),
       debit: l.kredit || 0,
       kredit: l.debit || 0
-    }))
+    })).sort((x, y) => ((y.debit || 0) > 0) - ((x.debit || 0) > 0))
   };
   if (asal.ref) entry.ref = asal.ref;
   if (asal.kontakId) entry.kontakId = asal.kontakId;

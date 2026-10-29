@@ -260,7 +260,11 @@ run('hapusBill("BILL_LAMA")');
 ok(run('billList.length') === 0 && run('jurnalEntries.length') === 2, 'hapus: bill hilang, 1 jurnal pembalik ditambahkan (jurnal asal tidak dihapus)');
 const pbl = run('jurnalEntries[1]');
 ok(pbl.reversalOf === 'JRN-001' && /^\[Pembalik JRN-001\]/.test(pbl.ket) && /dihapus/.test(pbl.ket), 'pembalik menaut ke JRN-001 dan menyebut alasan');
-ok(pbl.lines.length === 3 && pbl.lines[0].kredit === 100000 && pbl.lines[2].debit === 111000, 'pembalik: debit/kredit tertukar');
+ok(pbl.lines.length === 3 && pbl.lines[0].akun === '2101' && pbl.lines[0].debit === 111000 && pbl.lines[1].kredit === 100000 && pbl.lines[2].kredit === 11000, 'pembalik: debit/kredit tertukar dan baris debit (Utang Usaha) ditulis paling atas');
+ok(pbl.lines.every((l, i, a) => i === 0 || !(l.debit > 0 && !(a[i - 1].debit > 0))), 'pembalik: semua baris debit di atas baris kredit');
+ctx.__asalAcak = { no: 'JRN-900', tanggal: '2026-10-01', ket: 'x', jenis: 'Manual', lines: [{ akun: '5101', debit: 10, kredit: 0 }, { akun: '1101', debit: 0, kredit: 30 }, { akun: '5102', debit: 20, kredit: 0 }] };
+const pAcak = run('buatJurnalPembalik(__asalAcak, {tanggal:"2026-10-29", alasan:"uji urutan"})');
+ok(pAcak.lines.map(l => l.akun).join() === '1101,5101,5102' && pAcak.lines[0].debit === 30 && pAcak.lines[1].kredit === 10, 'pembalik jurnal asal sembarang: debit dulu, urutan relatif tiap kelompok tetap');
 ok(run('getReversedMap().get("JRN-001")') === pbl.no, 'peta pembalik mengenali JRN-001 sudah dibalik');
 ok(/jurnalnya dibalik/.test(alerts.join()), 'pesan menyebut jurnal dibalik');
 
