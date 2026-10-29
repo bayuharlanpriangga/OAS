@@ -94,30 +94,6 @@ function susunBill(f, daftarNomor) {
   };
 }
 
-// ── Edit draft bill (task 4.6c) ────────────────────────────
-
-// Hanya bill berstatus draft yang boleh diedit. Bill diterima/lunas sudah (atau akan) punya jurnal,
-// jadi koreksinya lewat hapus (jurnal pembalik) lalu buat ulang, bukan edit langsung.
-function bisaEditBill(bill) {
-  return !!bill && typeof bill === 'object' && bill.status === 'draft';
-}
-
-// Ubah record bill menjadi isian form (kebalikan susunBill). Murni; item disalin supaya mengedit
-// form tidak mengubah record sebelum disimpan. ppnTarif record = 0 bila bill tanpa PPN, jadi
-// ppnAktif dibaca dari ppnTarif > 0 dan tarif form kembali ke tarif standar.
-function formDariBill(bill) {
-  const b = bill && typeof bill === 'object' ? bill : {};
-  const aktif = typeof b.ppnTarif === 'number' && isFinite(b.ppnTarif) && b.ppnTarif > 0;
-  return {
-    id: b.id || '', noBill: b.noBill || '', supplier: b.supplier || '',
-    tanggal: b.tanggal || '', jatuhTempo: b.jatuhTempo || '', deskripsi: b.deskripsi || '',
-    items: (Array.isArray(b.items) ? b.items : []).filter(it => it && typeof it === 'object')
-      .map(it => ({ nama: it.nama || '', qty: it.qty, harga: it.harga, akun: it.akun || '' })),
-    ppnAktif: aktif, ppnTarif: aktif ? b.ppnTarif : PPN_TARIF_STANDAR,
-    akunUtang: b.akunUtang || '', createdAt: b.createdAt || ''
-  };
-}
-
 // ── Jurnal bill (task 4.5, fungsi murni; belum dipasang ke alur simpan, itu task 4.6) ──
 
 // Kode akun PPN Masukan dari daftar akun: 1502 bila ada, kalau tidak akun yang namanya memuat
@@ -251,18 +227,6 @@ function tambahBill(bill) {
   billList.unshift(bill);
   if (typeof counterSetelahPakai === 'function') counterList = counterSetelahPakai(counterList, bill.noBill);
   return simpanBillState();
-}
-
-// Ganti satu bill (dicocokkan lewat id) dengan versi barunya di posisi yang sama, naikkan counter bila
-// nomornya diubah ke nomor yang lebih tinggi, lalu simpan. Mengembalikan true bila bill ditemukan.
-function perbaruiBill(bill) {
-  if (!bill || typeof bill !== 'object') return false;
-  const i = billList.findIndex(b => b && b.id === bill.id);
-  if (i < 0) return false;
-  billList[i] = bill;
-  if (typeof counterSetelahPakai === 'function') counterList = counterSetelahPakai(counterList, bill.noBill);
-  simpanBillState();
-  return true;
 }
 
 // Hapus satu bill dari daftar lalu simpan. Mengembalikan true bila ada yang terhapus.
