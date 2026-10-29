@@ -1385,17 +1385,16 @@ function exportExcelData(nama, periode) {
       [hdr('Tanggal'), hdr('No Faktur'), hdr('Keterangan'), hdr('Metode'), hdr('Akun Debit'), hdr('Nilai Dr (Rp)'), hdr('Kas/Utang Kr (Rp)')],
     ];
     let totalDr=0, totalKr=0;
-    jurnalEntries.filter(j=>j.jenis==='Pembelian').forEach(j => {
-      const krLine = j.lines.find(l=>['1101','2101'].includes(l.akun)&&l.kredit);
-      const drLine = j.lines.find(l=>l.debit&&!['1101','2101'].includes(l.akun));
-      if(!drLine) return;
-      const metode = krLine?.akun==='1101'?'Tunai':'Kredit';
+    jurnalPembelianAktif().forEach(j => {   // pembelian produk + bill, tanpa jurnal yang dibalik (4.6b)
+      const rs = ringkasJurnalPembelian(j);
+      if(!rs.debit.length) return;
+      const metode = rs.tunai?'Tunai':'Kredit';
       rows.push([
-        {v:j.tanggal,t:'s'}, {v:j.ref||j.no,t:'s',s:{font:{color:{rgb:'64748B'}}}},
+        {v:j.tanggal,t:'s'}, {v:rs.no,t:'s',s:{font:{color:{rgb:'64748B'}}}},
         {v:j.ket,t:'s'}, {v:metode,t:'s',s:{alignment:{horizontal:'center'}}},
-        {v:getAkunNama(drLine.akun),t:'s'}, drCell(drLine.debit), krCell(krLine?.kredit||0)
+        {v:rs.debit.map(l=>getAkunNama(l.akun)).join(', '),t:'s'}, drCell(rs.totalDebit), krCell(rs.kredit)
       ]);
-      totalDr += drLine.debit; totalKr += krLine?.kredit||0;
+      totalDr += rs.totalDebit; totalKr += rs.kredit;
     });
     rows.push([]);
     rows.push([boldTxt('TOTAL'),{v:'',t:'s'},{v:'',t:'s'},{v:'',t:'s'},{v:'',t:'s'}, boldNum(totalDr), boldNum(totalKr)]);
@@ -2578,17 +2577,16 @@ function exportPDF(nama, periode, proyek='') {
 
   // JURNAL PEMBELIAN
   if(document.getElementById('exp-jurnal-beli')?.checked) {
-    const pbEntries = jurnalEntries.filter(j=>j.jenis==='Pembelian');
+    const pbEntries = jurnalPembelianAktif();   // pembelian produk + bill, tanpa jurnal yang dibalik (4.6b)
     sectionHeader('JURNAL PEMBELIAN', `${pbEntries.length} transaksi`);
     const cols = [20,18,50,16,38,28];
     tableHeader(['Tanggal','No. Faktur','Keterangan','Metode','Akun Debit','Kr (Kas/Utang)'],cols);
     let tD=0,tK=0,ri=0;
     pbEntries.forEach(j=>{
-      const krLine=j.lines.find(l=>['1101','2101'].includes(l.akun)&&l.kredit);
-      const drLine=j.lines.find(l=>l.debit&&!['1101','2101'].includes(l.akun));
-      if(!drLine) return;
-      tableRow([j.tanggal,j.ref||j.no,j.ket,krLine?.akun==='1101'?'Tunai':'Kredit',getAkunNama(drLine.akun),fmtRpPDF(krLine?.kredit||0)],cols,ri++%2===0?null:[248,250,252]);
-      tD+=drLine.debit; tK+=krLine?.kredit||0;
+      const rs=ringkasJurnalPembelian(j);
+      if(!rs.debit.length) return;
+      tableRow([j.tanggal,rs.no,j.ket,rs.tunai?'Tunai':'Kredit',rs.debit.map(l=>getAkunNama(l.akun)).join(', '),fmtRpPDF(rs.kredit)],cols,ri++%2===0?null:[248,250,252]);
+      tD+=rs.totalDebit; tK+=rs.kredit;
     });
     totalRow(['','','','','TOTAL',fmtRpPDF(tK)],cols);
   }

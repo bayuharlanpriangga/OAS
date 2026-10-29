@@ -5,7 +5,7 @@
 function jeninsBadge(j){
   if(j==='Kas') return 'badge-blue';
   if(j==='Penjualan') return 'badge-green';
-  if(j==='Pembelian') return 'badge-yellow';
+  if(j==='Pembelian' || j===JENIS_JURNAL.BILL) return 'badge-yellow';
   if(j===JENIS_JURNAL.INVOICE) return 'badge-green';
   return 'badge-gray';
 }
@@ -179,18 +179,17 @@ function renderJurnalPembelian() {
   const search = document.getElementById('filter-jb')?.value?.toLowerCase()||'';
   const body = document.getElementById('jurnal-pembelian-body');
   const rows=[];
-  const _revMapB = getReversedMap();
-  jurnalEntries.filter(j=>j.jenis==='Pembelian' && !isJurnalPembalik(j) && !_revMapB.has(j.no)).forEach(j=>{
-    if(search && !j.ket.toLowerCase().includes(search) && !(j.ref||j.no||'').toLowerCase().includes(search)) return;
-    const krLine=j.lines.find(l=>['1101','2101'].includes(l.akun)&&l.kredit);
-    const drLine=j.lines.find(l=>l.debit&&l.akun!=='1101'&&l.akun!=='2101');
-    if(drLine) rows.push(`<tr>
+  // Pembelian produk + bill (jenis 'Tagihan Pembelian'); jurnal yang dibalik dan pembaliknya tidak ditampilkan (task 4.6b)
+  jurnalPembelianAktif().forEach(j=>{
+    const rs=ringkasJurnalPembelian(j);
+    if(search && !(j.ket||'').toLowerCase().includes(search) && !(rs.no||'').toLowerCase().includes(search)) return;
+    if(rs.debit.length) rows.push(`<tr>
       <td>${fmtDate(j.tanggal)}</td>
-      <td style="font-family:var(--mono);font-size:12px;">${j.ref||j.no}</td>
+      <td style="font-family:var(--mono);font-size:12px;">${rs.no}</td>
       <td>${j.ket}</td>
-      <td><span class="badge ${krLine?.akun==='1101'?'badge-green':'badge-yellow'}">${krLine?.akun==='1101'?'Tunai':'Kredit'}</span></td>
-      <td>${akunNamaTampil(drLine.akun)} — <span class="debit">${fmtRp(drLine.debit)}</span></td>
-      <td class="kredit">${fmtRp(krLine?.kredit||0)}</td>
+      <td><span class="badge ${rs.tunai?'badge-green':'badge-yellow'}">${rs.tunai?'Tunai':'Kredit'}</span></td>
+      <td>${rs.debit.map(l=>`${akunNamaTampil(l.akun)} — <span class="debit">${fmtRp(l.debit)}</span>`).join('<br>')}</td>
+      <td class="kredit">${fmtRp(rs.kredit)}</td>
     </tr>`);
   });
   body.innerHTML = rows.join('') || `<tr><td colspan="6">${emptyState(search ? 'Tidak ada pembelian sesuai pencarian' : 'Belum ada pembelian')}</td></tr>`;

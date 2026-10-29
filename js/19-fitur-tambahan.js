@@ -686,7 +686,7 @@ function renderPajakOtomatis() {
 
     // Fallback: kalau belum ada jurnal PPN sama sekali, tetap tampil info
     const totalPenjualan=jurnalEntries.filter(j=>j.jenis==='Penjualan').reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a&&a.tipe==='Pendapatan'?l.kredit:0)},0),0);
-    const totalPembelian=jurnalEntries.filter(j=>j.jenis==='Pembelian').reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a&&(a.tipe==='HPP'||a.tipe==='Beban')?l.debit:0)},0),0);
+    const totalPembelian=jurnalPembelianAktif().reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a&&(a.tipe==='HPP'||a.tipe==='Beban')?l.debit:0)},0),0);
 
     // KPI
     const kpiEl=document.getElementById('pajak-kpi');

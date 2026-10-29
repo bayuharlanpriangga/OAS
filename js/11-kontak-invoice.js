@@ -47,7 +47,7 @@ function recalcKontakTotalTrx() {
     if (!kontakList[idx].totalPembelian) kontakList[idx].totalPembelian = 0;
     kontakList[idx].totalTrx += total;
     if (j.jenis === 'Penjualan') kontakList[idx].totalPenjualan += total;
-    if (j.jenis === 'Pembelian') kontakList[idx].totalPembelian += total;
+    if (adalahJurnalPembelian(j) && !isJurnalPembalik(j) && !isJurnalDibalik(j)) kontakList[idx].totalPembelian += total;
   });
 }
 

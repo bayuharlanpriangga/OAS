@@ -1853,7 +1853,7 @@ function renderRekapSiapSetor() {
   const blnLabel = new Date(y, m-1, 1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
 
   const penjEntries = jurnalEntries.filter(j => j.jenis==='Penjualan' && j.tanggal>=fromStr && j.tanggal<=toStr);
-  const beliEntries = jurnalEntries.filter(j => j.jenis==='Pembelian' && j.tanggal>=fromStr && j.tanggal<=toStr);
+  const beliEntries = jurnalPembelianAktif().filter(j => j.tanggal>=fromStr && j.tanggal<=toStr);   // termasuk bill (4.6b)
 
   const totalDPPKeluar = penjEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(a?.tipe==='Pendapatan'?l.kredit:0);},0),0);
   const totalDPPMasuk  = beliEntries.reduce((s,j)=>s+j.lines.reduce((ss,l)=>{const a=akuns.find(x=>x.kode===l.akun);return ss+(['HPP','Beban'].includes(a?.tipe)?l.debit:0);},0),0);

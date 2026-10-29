@@ -82,6 +82,40 @@ function getReversedMap() {
 }
 function isJurnalDibalik(j) { return !!j && !!j.no && getReversedMap().has(j.no); }
 
+// ── Jurnal pembelian (task 4.6b) ──
+// Laporan pembelian membaca dua jenis: 'Pembelian' (pembelian produk) dan 'Tagihan Pembelian' (bill diterima).
+function adalahJurnalPembelian(j) { return !!j && (j.jenis === 'Pembelian' || j.jenis === JENIS_JURNAL.BILL); }
+
+// Jurnal pembelian yang masih berlaku (default: dari semua jurnal). Jurnal yang sudah dibalik dan jurnal
+// pembaliknya dibuang karena saling meniadakan, sama seperti rekapPpnJurnal. Perlu karena pembalik mewarisi
+// jenis jurnal asal: tanpa ini bill yang dihapus tetap terhitung sebagai pembelian. Filter tanggal dilakukan pemanggil.
+function jurnalPembelianAktif(daftar) {
+  const dibalik = getReversedMap();
+  return (Array.isArray(daftar) ? daftar : jurnalEntries)
+    .filter(j => adalahJurnalPembelian(j) && !isJurnalPembalik(j) && !dibalik.has(j.no));
+}
+
+// Ringkasan satu jurnal pembelian untuk laporan/ekspor (murni).
+// debit: semua baris debit (Persediaan/Beban, termasuk PPN Masukan); pembelian produk lama tidak menghitung
+// baris Kas/Utang Usaha (1101/2101) sebagai debit. kredit: total kredit pokok (bill: semua baris kredit, karena
+// akun utangnya dipilih pengguna; pembelian lama: baris Kas/Utang Usaha pertama). tunai: kredit pokok ke Kas.
+// no: nomor dokumen (ref; untuk bill dibaca dari ket "Tagihan <noBill> — ..." karena ref tidak tersimpan ke cloud).
+function ringkasJurnalPembelian(j) {
+  const lines = (j && Array.isArray(j.lines)) ? j.lines : [];
+  const bill = !!j && j.jenis === JENIS_JURNAL.BILL;
+  const kasUtang = l => l.akun === '1101' || l.akun === '2101';
+  const jum = (arr, f) => arr.reduce((s, l) => s + (l[f] || 0), 0);
+  const debit = lines.filter(l => (l.debit || 0) > 0 && (bill || !kasUtang(l)));
+  const kreditAll = lines.filter(l => (l.kredit || 0) > 0);
+  const kreditPokok = bill ? kreditAll : kreditAll.filter(kasUtang).slice(0, 1);
+  const m = bill ? /^Tagihan (\S+) —/.exec(String(j.ket || j.keterangan || '')) : null;
+  return {
+    debit, totalDebit: jum(debit, 'debit'), kredit: jum(kreditPokok, 'kredit'),
+    tunai: kreditPokok.length > 0 && kreditPokok[0].akun === '1101',
+    no: (j && j.ref) || (m ? m[1] : '') || (j && j.no) || ''
+  };
+}
+
 // Keterangan tanpa awalan "[Pembalik ...]" (untuk tampilan)
 function ketTanpaPrefixPembalik(ket) { return String(ket || '').replace(_REV_KET_RE, ''); }
 
