@@ -336,7 +336,16 @@ async function cloudOfferLocalMigration(cid) {
   const legacyOk = pemilik && !localStorage.getItem('oas_rec_legacy_claimed') && !localStorage.getItem('oas_rec_seen_' + cid);
 
   Object.entries(CLOUD_RECORD_KINDS).forEach(([kind, def]) => {
-    const cached = _cloudReadCache(cid, kind);
+    let cached = _cloudReadCache(cid, kind);
+    // Record tanpa id (mis. `{}`) tidak bisa disinkronkan (dilewati _cloudIndex), jadi selalu tampak "belum ada di cloud"
+    // dan dialog ini muncul terus. Buang dari cache dan state; record kosong seperti itu tidak membawa data.
+    const bersih = cached.filter(r => { const id = def.idOf(r); return id !== undefined && id !== null && id !== ''; });
+    if (bersih.length !== cached.length) {
+      console.warn('[cloud-records] ' + (cached.length - bersih.length) + ' record tanpa id dibuang dari ' + kind);
+      cached = bersih;
+      _cloudCacheLocal(cid, kind, bersih);
+      if (_cloudReadyFor === cid) def.set((def.get() || []).filter(r => { const id = def.idOf(r); return id !== undefined && id !== null && id !== ''; }));
+    }
     if (cached.length) {
       // Cache bisnis ini baru saja ditulis dari data cloud, jadi sebagian besar identik dengan
       // cloud. Tawarkan hanya yang baru/berbeda dari snapshot cloud; kalau tidak, dialog
@@ -370,6 +379,10 @@ async function cloudOfferLocalMigration(cid) {
     return;
   }
 
+  // Batal diingat per bisnis untuk isi data yang sama; dialog muncul lagi hanya kalau datanya berubah.
+  const _sidik = JSON.stringify(Object.fromEntries(Object.entries(found).map(([k, arr]) => [k, arr.length + ':' + JSON.stringify(arr).length])));
+  const _kunciBatal = 'oas_rec_dismiss_' + cid;
+  if (localStorage.getItem(_kunciBatal) === _sidik) return;
   if (typeof hideOpSpinner === 'function') hideOpSpinner(); // spinner jangan menutupi dialog
   const label = { invoice: 'Invoice', bill: 'Tagihan pembelian', pembayaran: 'Pembayaran', kontak: 'Kontak', aset_tetap: 'Aset tetap', produk: 'Produk', jurnal_berulang: 'Jurnal berulang', anggaran: 'Anggaran', alert: 'Alert notifikasi', kurs: 'Kurs', counter: 'Penomoran dokumen' };
   const ok = await showCustomConfirmGeneral({
@@ -384,7 +397,11 @@ async function cloudOfferLocalMigration(cid) {
     btnLabel: '☁️ Ya, Unggah',
     btnGradient: 'linear-gradient(135deg,#22d3ee,#4ade80)'
   });
-  if (!ok || !currentCompany || currentCompany.id !== cid) return; // batal: data lokal tidak disentuh
+  if (!ok || !currentCompany || currentCompany.id !== cid) {
+    if (!ok) { try { localStorage.setItem(_kunciBatal, _sidik); } catch (e) {} } // batal: data lokal tidak disentuh, jangan tanya lagi untuk data yang sama
+    return;
+  }
+  try { localStorage.removeItem(_kunciBatal); } catch (e) {}
 
   Object.entries(found).forEach(([kind, arr]) => CLOUD_RECORD_KINDS[kind].set(arr));
   const synced = await cloudSyncRecords();
