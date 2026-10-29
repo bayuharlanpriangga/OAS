@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 139 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 28/139 task selesai.**
+**Progres: 29/139 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -241,13 +241,22 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 
 | ✓ | ID | Tugas | Lampirkan |
 | :---: | --- | --- | --- |
-| ☐ | 5.1 | Model pembayaran (kind `pembayaran`: jenis dokumen, id, tanggal, jumlah, akun kas) + fungsi murni sisaTagihan + tes | CR, SCH |
+| ☑ | 5.1 | Model pembayaran (kind `pembayaran`: jenis dokumen, id, tanggal, jumlah, akun kas) + fungsi murni sisaTagihan + tes. Modul baru `js/31-pembayaran.js`: state `pembayaranList`, `pembayaranDokumen`, `totalDibayar`, `sisaTagihan(dok, daftar, jenis)` (murni; sisa = total − `dibayarLama` − Σ pembayaran). Kind `pembayaran` di `CLOUD_RECORD_KINDS` (`22-cloud-records.js`, tanpa key mode tamu) + label dialog migrasi; checkbox "Pembayaran" di modal Reset Data; bentuk record di `docs/SCHEMA.md` §4.5c (+ field opsional `dibayarLama` di invoice dan bill). Belum ada form, simpan, jurnal, atau perubahan di invoice/bill. Tes: `tests/pembayaran.test.js`, bagian [pembayaran] `tests/cloud-records.test.js` | CR, SCH |
 | ☐ | 5.2 | Form bayar invoice (boleh parsial), simpan record pembayaran, belum ada jurnal | 5.1, INV |
 | ☐ | 5.3 | ⚠ Jurnal bayar invoice: Dr Kas, Cr Piutang, dipasang lewat hook | 5.2, INV |
 | ☐ | 5.4 | Status invoice otomatis dari total pembayaran (belum, sebagian, lunas, jatuh tempo) | potongan pemakaian status invoice |
 | ☐ | 5.5 | ⚠ Bayar bill (parsial) + jurnal, meniru pola 5.3 | 5.3, 4.4 |
 | ☐ | 5.6 | Fungsi murni alokasi satu pembayaran ke beberapa faktur + tes | 5.1 |
 | ☐ | 5.7 | UI alokasi pembayaran ke beberapa faktur sekaligus | 5.6, 5.3 |
+
+**Temuan task 5.1:**
+- Sisa tagihan dihitung dari pembayaran, bukan dikurangi di tempat: `sisaTagihan = max(0, total − dibayarLama − Σ jumlah)`. Dengan begitu menghapus atau mengoreksi pembayaran tidak membuat sisa tidak sinkron. Field `sisaTagihan` di invoice/bill tetap ada karena dibaca daftar, ekspor, dan aging (`hitungAging`, 4.7); alur bayar (5.2, 5.5) wajib mengisinya ulang dari fungsi ini setiap kali pembayaran ditambah atau dihapus, jadi Umur Piutang/Hutang ikut tanpa perubahan.
+- Alur lama sudah ada: `konfirmasiLunasInvoice` (`11-kontak-invoice.js`, tombol "Tandai Lunas") sudah mendukung bayar sebagian, jurnal `JRN_LNS_` (Dr Kas, Cr Piutang), dan `status = 'lunas'`, tetapi hanya mengurangi `sisaTagihan` tanpa catatan pembayaran. Karena itu ada `dibayarLama`: pembayaran pertama di invoice yang sudah dibayar lewat alur lama (5.2) mengisinya dengan `total − sisaTagihan`. Tanpa itu, sisa lama hidup lagi (diuji). 5.2 dan 5.3 harus mengganti isi `konfirmasiLunasInvoice` supaya hanya ada satu jalur dan semua pembayaran punya record.
+- `dokId` memakai `id` dokumen, bukan nomor (nomor bisa berulang setelah Reset Data). Pencocokan juga memeriksa `jenis`, jadi id invoice dan id bill yang kebetulan sama tidak saling memengaruhi. Record rusak (jumlah bukan angka > 0), jenis tidak dikenal, atau milik dokumen yang sudah dihapus diabaikan.
+- Kelebihan bayar tidak menghasilkan sisa negatif (dijepit di 0). Menolak pembayaran yang melebihi sisa adalah tugas validasi `susun...` di 5.2.
+- Pembulatan ke sen supaya cicilan desimal (0,1 + 0,2 untuk 0,3) melunasi tepat.
+- Tanpa migrasi SQL: `company_records.kind` berupa teks bebas (kind `bill` di 4.1 juga tanpa migrasi). Mode tamu belum menyimpan pembayaran (`legacyKey: null`, state hanya di memori); 5.2 harus menambah `oas_pembayaran` bila mode tamu didukung, dan menyesuaikan `legacyKey`/`legacyOnce` seperti yang dilakukan 4.4 untuk bill.
+- Reset Data: checkbox Pembayaran berdiri sendiri. Mereset Invoice atau Tagihan Pembelian tidak ikut menghapus pembayarannya; pembayaran yatim itu aman karena diabaikan `sisaTagihan`, tetapi daftar riwayat pembayaran di 5.2 harus menyaringnya (atau reset invoice/bill diputuskan ikut menghapus pembayaran jenisnya).
 
 ## Fase 6 — Kartu piutang/hutang dan model dokumen (3 task)
 

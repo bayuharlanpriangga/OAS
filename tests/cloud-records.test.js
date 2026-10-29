@@ -54,7 +54,7 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true, pe
   };
   vm.createContext(ctx);
   // list global di 01-state.js adalah `let`; di sini disediakan lewat script yang sama
-  vm.runInContext('let invoiceList=[],kontakList=[],asetTetapList=[],produkList=[],jurnalBerulangList=[],anggaranList=[],notifAlerts=[],counterList=[],billList=[],kursData={USD:1,IDR:16200,SGD:12100,EUR:18300,MYR:3500,JPY:107,updatedAt:null};', ctx);
+  vm.runInContext('let invoiceList=[],kontakList=[],asetTetapList=[],produkList=[],jurnalBerulangList=[],anggaranList=[],notifAlerts=[],counterList=[],billList=[],pembayaranList=[],kursData={USD:1,IDR:16200,SGD:12100,EUR:18300,MYR:3500,JPY:107,updatedAt:null};', ctx);
   vm.runInContext(srcBisnis, ctx);
   ctx.isReadOnly = () => vm.runInContext('bisnisHanyaBaca', ctx)(ctx.currentCompany, ctx.currentUser.id, null); // sama dengan isReadOnly() di 18
   vm.runInContext(src, ctx);
@@ -368,6 +368,58 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true, pe
     e.run("billList.push({ id: 'BILL_V' })");
     await e.run('cloudSyncRecords(["bill"])');
     ok(!e.store.some(r => r.kind === 'bill'), 'viewer: bill tidak ditulis ke cloud');
+  }
+
+  console.log('[pembayaran] kind pembayaran (task 5.1)');
+  {
+    const pay = { id: 'PAY_1', jenis: 'invoice', dokId: 'INV_1', noDok: 'INV-2026-001', tanggal: '2026-10-05', jumlah: 40000, akunKas: '1101', createdAt: '2026-10-05T01:00:00.000Z' };
+    const e = makeEnv();
+    e.store.push({ company_id: 'c1', kind: 'pembayaran', rec_id: 'PAY_1', data: pay });
+    e.ls['oas_rec_seen_c1'] = '1';
+    await e.run('cloudLoadRecords()');
+    ok(e.run('pembayaranList.length') === 1 && e.run('pembayaranList[0].jumlah') === 40000, 'pembayaran dimuat dari cloud ke pembayaranList');
+    e.run("pembayaranList.push({ id: 'PAY_2', jenis: 'bill', dokId: 'BILL_1', jumlah: 5000 })");
+    await e.run('cloudSyncRecords(["pembayaran"])');
+    ok(e.store.some(r => r.kind === 'pembayaran' && r.rec_id === 'PAY_2'), 'pembayaran baru tersimpan ke cloud (upsert, rec_id = id)');
+    ok(JSON.parse(e.ls['oas_rec_pembayaran_c1']).length === 2, 'cache lokal pembayaran ikut ditulis');
+    ok(!e.store.some(r => r.kind === 'invoice' || r.kind === 'bill'), 'pembayaran tidak tercampur dengan invoice/bill');
+    e.run("pembayaranList = pembayaranList.filter(p => p.id !== 'PAY_1')");
+    await e.run('cloudSyncRecords(["pembayaran"])');
+    ok(!e.store.some(r => r.rec_id === 'PAY_1') && e.store.some(r => r.rec_id === 'PAY_2'), 'pembayaran yang dihapus di app ikut terhapus di cloud');
+    await e.run('cloudDeleteRecords(["pembayaran"])');
+    ok(!e.store.some(r => r.kind === 'pembayaran') && e.run('pembayaranList.length') === 0, 'reset pembayaran menghapus di cloud dan state');
+  }
+  {
+    // belum ada penyimpanan mode tamu (5.1): key lama apa pun tidak ditawarkan sebagai data lokal
+    const e = makeEnv();
+    e.ls['oas_pembayaran'] = JSON.stringify([{ id: 'PAY_X' }]);
+    await e.run('cloudLoadRecords()');
+    ok(e.confirms.length === 0 && !e.store.some(r => r.kind === 'pembayaran'), 'pembayaran: tidak ada migrasi dari key global');
+  }
+  {
+    // mode tamu: reset pembayaran cukup mengosongkan state
+    const e = makeEnv();
+    e.run('currentCompany = null');
+    e.run("pembayaranList = [{ id: 'PAY_X' }]");
+    const gagal = await e.run('cloudDeleteRecords(["pembayaran"])');
+    ok(e.run('pembayaranList.length') === 0 && gagal.length === 0, 'mode tamu: reset pembayaran mengosongkan state');
+  }
+  {
+    // viewer tidak menulis pembayaran ke cloud
+    const e = makeEnv({ peran: 'viewer' });
+    await e.run('cloudLoadRecords()');
+    e.run("pembayaranList.push({ id: 'PAY_V' })");
+    await e.run('cloudSyncRecords(["pembayaran"])');
+    ok(!e.store.some(r => r.kind === 'pembayaran'), 'viewer: pembayaran tidak ditulis ke cloud');
+  }
+  {
+    // pembayaran yang belum tersinkron (offline) dikirim ulang saat dimuat, sama seperti kind lain
+    const e = makeEnv();
+    e.ls['oas_rec_pembayaran_c1'] = JSON.stringify([{ id: 'PAY_OFF', jenis: 'invoice', dokId: 'INV_1', jumlah: 1 }]);
+    e.ls['oas_rec_snaph_c1'] = JSON.stringify({ pembayaran: {} });   // kind ini pernah terkonfirmasi (kosong) di perangkat
+    e.store.push({ company_id: 'c1', kind: 'invoice', rec_id: 'INV_1', data: { id: 'INV_1' } });
+    await e.run('cloudLoadRecords()');
+    ok(e.run('pembayaranList.some(p => p.id === "PAY_OFF")') && e.store.some(r => r.kind === 'pembayaran' && r.rec_id === 'PAY_OFF'), 'pembayaran offline yang belum terkirim diterapkan dan dikirim ulang');
   }
 
   console.log('[counter] kind counter penomoran (task 1.8)');

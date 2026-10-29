@@ -990,37 +990,37 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 733-749 | `loadCachedPasswordDisplay` | function |
 | 751-763 | `copyCurrentPassword` | function |
 
-## js/22-cloud-records.js (458 baris, 23.4 KB)
+## js/22-cloud-records.js (461 baris, 23.8 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 24 | `_cloudKursDefault` | function |
 | 25-30 | `_cloudKursFromList` | function |
 | 32-34 | `_cloudKursLegacy` | function |
-| 72 | `_cloudReadOnly` | function |
-| 74 | `_cloudCacheKey` | function |
-| 76-78 | `_cloudCacheLocal` | function |
-| 80-85 | `_cloudReadCache` | function |
-| 87 | `_cloudSeenKey` | function |
-| 90-93 | `_cloudPendingOnce` | function |
-| 96-99 | `_cloudLegacyAllowed` | function |
-| 102-113 | `_cloudIndex` | function |
-| 123-127 | `_cloudHash` | function |
-| 128 | `_cloudSnapHashKey` | function |
-| 129-132 | `_cloudSnapHashRead` | function |
-| 133-140 | `_cloudSnapHashSave` | function |
-| 142-154 | `_cloudUnsynced` | function |
-| 156-164 | `_cloudApplyUnsynced` | function |
-| 168-173 | `_cloudWithTimeout` | function |
-| 177-184 | `_cloudAfterSync` | function |
-| 187-196 | `_cloudSortNewestFirst` | function |
-| 198-201 | `cloudResetRecordsState` | function |
-| 210-241 | `cloudDeleteRecords` | function |
-| 243-246 | `_cloudLoadFromCache` | function |
-| 248-316 | `cloudLoadRecords` | async function |
-| 322-397 | `cloudOfferLocalMigration` | async function |
-| 400-411 | `cloudSyncRecords` | function |
-| 413-457 | `_cloudSyncNow` | async function |
+| 75 | `_cloudReadOnly` | function |
+| 77 | `_cloudCacheKey` | function |
+| 79-81 | `_cloudCacheLocal` | function |
+| 83-88 | `_cloudReadCache` | function |
+| 90 | `_cloudSeenKey` | function |
+| 93-96 | `_cloudPendingOnce` | function |
+| 99-102 | `_cloudLegacyAllowed` | function |
+| 105-116 | `_cloudIndex` | function |
+| 126-130 | `_cloudHash` | function |
+| 131 | `_cloudSnapHashKey` | function |
+| 132-135 | `_cloudSnapHashRead` | function |
+| 136-143 | `_cloudSnapHashSave` | function |
+| 145-157 | `_cloudUnsynced` | function |
+| 159-167 | `_cloudApplyUnsynced` | function |
+| 171-176 | `_cloudWithTimeout` | function |
+| 180-187 | `_cloudAfterSync` | function |
+| 190-199 | `_cloudSortNewestFirst` | function |
+| 201-204 | `cloudResetRecordsState` | function |
+| 213-244 | `cloudDeleteRecords` | function |
+| 246-249 | `_cloudLoadFromCache` | function |
+| 251-319 | `cloudLoadRecords` | async function |
+| 325-400 | `cloudOfferLocalMigration` | async function |
+| 403-414 | `cloudSyncRecords` | function |
+| 416-460 | `_cloudSyncNow` | async function |
 
 ## js/23-penomoran.js (247 baris, 10.9 KB)
 
@@ -1138,6 +1138,15 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 30-35 | `renderAgingHutang` | function |
 | 37-46 | `exportAgingHutangCSV` | function |
 | 48-57 | `cetakAgingHutang` | function |
+
+## js/31-pembayaran.js (54 baris, 3.5 KB)
+
+| Baris | Nama | Jenis |
+| --- | --- | --- |
+| 28 | `_bayarBulat` | function |
+| 32-37 | `pembayaranDokumen` | function |
+| 40-45 | `totalDibayar` | function |
+| 50-53 | `sisaTagihan` | function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 

@@ -85,6 +85,7 @@
 <script defer src="js/28-bill.js"></script>
 <script defer src="js/29-bill-ui.js"></script>
 <script defer src="js/30-aging-hutang.js"></script>
+<script defer src="js/31-pembayaran.js"></script>
 <script defer src="js/99-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- Tabler webfont CDN dihapus: semua ikon "ti-*" sudah self-hosted sebagai SVG mask di css/icons.css (lihat komentar di file itu). Menghapus dependency CDN ini supaya ikon tidak pernah gagal/putus saat CDN lambat atau diblokir jaringan/ad-blocker. -->
@@ -3099,6 +3100,7 @@
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="jurnal" data-label="Jurnal Umum" checked style="accent-color:var(--red);width:15px;height:15px;"> Jurnal Umum</label>
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="invoice" data-label="Invoice" style="accent-color:var(--red);width:15px;height:15px;"> Invoice</label>
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="bill" data-label="Tagihan Pembelian" style="accent-color:var(--red);width:15px;height:15px;"> Tagihan Pembelian</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="pembayaran" data-label="Pembayaran" style="accent-color:var(--red);width:15px;height:15px;"> Pembayaran</label>
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="kontak" data-label="Kontak" style="accent-color:var(--red);width:15px;height:15px;"> Kontak</label>
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="aset_tetap" data-label="Aset Tetap" style="accent-color:var(--red);width:15px;height:15px;"> Aset Tetap</label>
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="produk" data-label="Produk" style="accent-color:var(--red);width:15px;height:15px;"> Produk</label>
