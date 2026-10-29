@@ -76,13 +76,13 @@ ok(run('pembayaranDokumen(__l, "invoice", "")').length === 0 && run('pembayaranD
 console.log('[state dan pemasangan]');
 ok(run('Array.isArray(pembayaranList) && pembayaranList.length === 0'), 'pembayaranList mulai kosong');
 const cr = rd('js/22-cloud-records.js'), idx = rd('index.html'), sch = rd('docs/SCHEMA.md'), src = rd('js/31-pembayaran.js');
-ok(/pembayaran:\s+\{ get: \(\) => pembayaranList,\s+set: v => \{ pembayaranList = v; \},\s+idOf: r => r && r\.id, legacyKey: null \}/.test(cr), 'kind pembayaran terdaftar di CLOUD_RECORD_KINDS (id = r.id, tanpa legacy)');
+ok(/pembayaran:\s+\{ get: \(\) => pembayaranList,\s+set: v => \{ pembayaranList = v; \},\s+idOf: r => r && r\.id, legacyKey: 'oas_pembayaran', legacyOnce: true \}/.test(cr), 'kind pembayaran terdaftar di CLOUD_RECORD_KINDS (id = r.id, mode tamu oas_pembayaran, legacyOnce sejak 5.2)');
 ok(cr.includes("pembayaran: 'Pembayaran'"), 'label dialog migrasi untuk pembayaran (bukan undefined)');
 ok(/data-reset="pembayaran" data-label="Pembayaran"/.test(idx), 'checkbox Pembayaran di modal Reset Data');
 ok(idx.includes('<script defer src="js/31-pembayaran.js"></script>') && idx.indexOf('src="js/30-aging-hutang.js"') < idx.indexOf('src="js/31-pembayaran.js"') && idx.indexOf('src="js/31-pembayaran.js"') < idx.indexOf('src="js/99-init.js"'), 'script dimuat setelah 30 dan sebelum 99-init');
 ok(sch.includes('### 4.5c Pembayaran') && sch.includes('PAY_') && sch.includes('`pembayaran`') && sch.includes('dibayarLama'), 'SCHEMA.md: §4.5c, kind, rec_id PAY_, dibayarLama');
-ok(!/document\.|localStorage|window\.|getElementById/.test(src.replace(/\/\/.*$/gm, '')), 'modul tidak menyentuh DOM atau localStorage');
-ok(!/pembayaranList|sisaTagihan\(|totalDibayar\(|pembayaranDokumen\(/.test(['11-kontak-invoice', '28-bill', '29-bill-ui', '24-aging', '30-aging-hutang', '15-storage'].map(f => rd('js/' + f + '.js')).join('\n')), 'belum dipasang ke invoice/bill/aging/storage (batas task 5.1)');
+ok(!/document\.|window\.|getElementById/.test(src.replace(/\/\/.*$/gm, '')), 'modul tidak menyentuh DOM (localStorage hanya untuk mode tamu, sejak 5.2)');
+ok(!/pembayaranList|sisaTagihan\(|totalDibayar\(|pembayaranDokumen\(/.test(['11-kontak-invoice', '28-bill', '29-bill-ui', '24-aging', '30-aging-hutang', '15-storage'].map(f => rd('js/' + f + '.js')).join('\n')), 'state/fungsi hitung tidak dipakai langsung di invoice/bill/aging/storage (hook invoice hanya openModalBayarInvoice)');
 
 console.log('\nHasil: ' + pass + ' lulus, ' + fail + ' gagal');
 process.exit(fail ? 1 : 0);

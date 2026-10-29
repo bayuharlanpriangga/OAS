@@ -53,8 +53,8 @@ const CLOUD_RECORD_KINDS = {
   // Sejak 4.4 mode tamu menyimpan bill di key `oas_bill`, jadi data itu ditawarkan sekali ke bisnis (legacyOnce, seperti kind lain yang ditambah belakangan).
   bill:            { get: () => billList,           set: v => { billList = v; },           idOf: r => r && r.id, legacyKey: 'oas_bill', legacyOnce: true },
   // pembayaran: pembayaran atas invoice/bill (task 5.1). State-nya (pembayaranList) dan fungsi hitungnya ada di 31-pembayaran.js.
-  // legacyKey null: belum ada yang menulis pembayaran ke localStorage; penyimpanan mode tamu diputuskan di 5.2.
-  pembayaran:      { get: () => pembayaranList,     set: v => { pembayaranList = v; },     idOf: r => r && r.id, legacyKey: null },
+  // Sejak 5.2 mode tamu menyimpan pembayaran di key `oas_pembayaran`, jadi data itu ditawarkan sekali ke bisnis pemilik (legacyOnce, seperti bill).
+  pembayaran:      { get: () => pembayaranList,     set: v => { pembayaranList = v; },     idOf: r => r && r.id, legacyKey: 'oas_pembayaran', legacyOnce: true },
   // counter: nomor tertinggi yang pernah dipakai per jenis+tahun ({ id:'INV-2026', terakhir:7 }).
   // State-nya (counterList) dan logikanya ada di 23-penomoran.js.
   counter:         { get: () => counterList,        set: v => { counterList = v; },        idOf: r => r && r.id, legacyKey: 'oas_counter', legacyOnce: true,

@@ -251,6 +251,7 @@ di akhir), sisanya global per-browser/device.
 | `oas_kontak` | Global (hanya mode tamu) | JSON array | `kontakList` (pelanggan/supplier). Saat login: `company_records` |
 | `oas_aset_tetap` | Global (hanya mode tamu) | JSON array | `asetTetapList`. Saat login: `company_records` |
 | `oas_bill` | Global (hanya mode tamu) | JSON array | `billList` — tagihan pembelian. Saat login: `company_records` (`kind='bill'`). Ditulis sejak task 4.4; ditawarkan sekali ke bisnis pemilik lewat migrasi data lokal (`legacyOnce`) |
+| `oas_pembayaran` | Global (hanya mode tamu) | JSON array | `pembayaranList` — pembayaran invoice/bill. Saat login: `company_records` (`kind='pembayaran'`). Ditulis sejak task 5.2; ditawarkan sekali ke bisnis pemilik lewat migrasi data lokal (`legacyOnce`) |
 | `oas_counter` | Global | JSON array | `[{ id:'INV-2026', jenis, tahun, terakhir }]` — nomor tertinggi yang pernah dipakai per jenis+tahun (mode tamu) |
 | `oas_kurs` | Global | JSON object | `{ USD, IDR, SGD, EUR, MYR, JPY, updatedAt }` — kurs multi mata uang |
 | `oas_alerts` | Global | JSON array | `notifAlerts` — aturan notifikasi (arus kas negatif, jatuh tempo, dst) |
@@ -409,7 +410,7 @@ Penyimpanan (task 4.4): record dibuat oleh `susunBill()` (28-bill.js, murni; bar
 Jurnal bill (4.5-4.6): saat status `'diterima'`, `buatJurnalBill()` (28-bill.js, murni) menyusun jurnal berjenis `Tagihan Pembelian` (`JENIS_JURNAL.BILL`): Debit akun tiap item (item berakun sama digabung) + PPN Masukan (ket `PPN Masukan NN%`, `_ppnTarif`), Kredit `akunUtang` sebesar total; `postingJurnalBill()` (29-bill-ui.js) memostingnya lewat `postJurnalLegacy` dan menyimpan nomor jurnalnya di `jurnalNo`. Penaut bill ke jurnal: `jurnalNo` + ket jurnal `Tagihan <noBill> — <supplier>` (`jurnalBillStatus()`), karena `id`/`ref` jurnal tidak tersimpan ke `jurnal_entries`. Menghapus bill yang sudah dijurnal membuat jurnal pembalik (jurnal asal tidak dihapus). Status `'draft'` tidak membuat jurnal. Field tambahan seperti nomor faktur pajak supplier (12.1) dan referensi pesanan pembelian (9.5) ditambahkan di task terkait.
 
 ### 4.5c Pembayaran — `pembayaranList[]`
-State di `js/31-pembayaran.js`; disinkron lewat `company_records` (`kind='pembayaran'`, `rec_id` = `id`). Satu record = satu pembayaran atas satu dokumen. Task 5.1 hanya model dan fungsi hitung; form dan simpan di 5.2, jurnal invoice di 5.3, bill di 5.5.
+State di `js/31-pembayaran.js`; disinkron lewat `company_records` (`kind='pembayaran'`, `rec_id` = `id`). Satu record = satu pembayaran atas satu dokumen. Task 5.1: model dan fungsi hitung. Task 5.2: form bayar invoice dan penyimpanan (tanpa jurnal). Jurnal invoice di 5.3, status turunan di 5.4, bill di 5.5.
 ```ts
 {
   id: string;              // "PAY_<timestamp>"
@@ -421,14 +422,15 @@ State di `js/31-pembayaran.js`; disinkron lewat `company_records` (`kind='pembay
   akunKas: string;           // kode akun Kas/Bank (invoice: debit; bill: kredit)
   metode?: string;           // mis. "Transfer", teks bebas
   catatan?: string;
-  jurnalNo?: string;         // nomor jurnal pembayaran ("JRN-xxx"); diisi 5.3 (invoice) dan 5.5 (bill)
+  jurnalNo?: string;         // nomor jurnal pembayaran ("JRN-xxx"); diisi 5.3 (invoice) dan 5.5 (bill). Kosong = belum dijurnal (semua pembayaran dari 5.2 sampai 5.3 dikerjakan)
   createdAt: string;         // ISO datetime
 }
 ```
 Sisa tagihan dihitung, bukan dikurangi di tempat (fungsi murni di `31-pembayaran.js`, diuji `tests/pembayaran.test.js`):
 `sisaTagihan(dok, daftar, jenis) = max(0, dok.total − dok.dibayarLama − Σ jumlah pembayaran dokumen itu)`.
 Record dengan `jenis`/`dokId` yang tidak cocok, atau `jumlah` bukan angka > 0, diabaikan (termasuk pembayaran milik dokumen yang sudah dihapus).
-`dibayarLama` menampung pembayaran lewat alur lama ("Tandai Lunas", `konfirmasiLunasInvoice` di `11-kontak-invoice.js`) yang hanya mengurangi `sisaTagihan` tanpa membuat record; pembayaran pertama di dokumen seperti itu (5.2) mengisinya dengan `total − sisaTagihan`, supaya sisa lama tidak hidup lagi.
+Pencatatan (task 5.2, `js/31-pembayaran.js` + form `js/32-pembayaran-ui.js`): `susunPembayaran(f, dok, daftar, jenis)` (murni) memvalidasi dan menyusun record: dokumen berstatus boleh dibayar (invoice `terkirim`, bill `diterima`) dan masih bersisa; tanggal valid dan tidak sebelum tanggal dokumen; `jumlah` > 0 (dibulatkan ke sen) dan tidak melebihi sisa; `akunKas` terisi; `id` tidak kembar. Hasilnya `{ ok, pembayaran, dibayarLama, sisaBaru, lunas }` atau `{ ok:false, pesan }`. `catatPembayaran(dok, hasil)` menambah record (terbaru di atas), mengisi ulang `dok.dibayarLama` (hanya bila > 0) dan `dok.sisaTagihan` dari hasil hitung, mengubah status menjadi `lunas` bila sisa 0 (parity alur lama; status turunan lengkap di 5.4), lalu menyimpan lewat `simpanPembayaranState(jenis)`: bisnis login → satu antrean sinkron `[invoice|bill, 'pembayaran']`; mode tamu → `oas_pembayaran` + `oas_invoices`/`oas_bill`. Pembayaran dari 5.2 belum punya jurnal: Kas dan Piutang di buku besar belum berubah sampai 5.3 menjurnalkan record yang `jurnalNo`-nya kosong.
+`dibayarLama` menampung pembayaran lewat alur lama ("Tandai Lunas", `konfirmasiLunasInvoice` di `11-kontak-invoice.js`) yang hanya mengurangi `sisaTagihan` tanpa membuat record; pembayaran baru di dokumen seperti itu (5.2) mengisinya lewat `dibayarLamaTurunan` = `max(dibayarLama, total − sisaTagihan tersimpan − Σ record)`, supaya sisa lama tidak hidup lagi, termasuk bila "Tandai Lunas" dipakai sesudah ada record.
 
 ### 4.6 Aset Tetap — `asetTetapList[]`
 ```ts
@@ -521,7 +523,7 @@ Tidak semua state runtime disinkronkan ke Supabase. Berdasarkan pemetaan
 | `produkList` | ✅ Ya | `company_records` (`kind='produk'`). Sebelumnya tidak tersimpan sama sekali untuk bisnis login |
 | `invoiceList` | ✅ Ya | `company_records` (`kind='invoice'`) |
 | `billList` | ✅ Ya | `company_records` (`kind='bill'`) |
-| `pembayaranList` | ✅ Ya | `company_records` (`kind='pembayaran'`). Tanpa key mode tamu sampai 5.2 |
+| `pembayaranList` | ✅ Ya | `company_records` (`kind='pembayaran'`). Mode tamu: `oas_pembayaran` (sejak 5.2) |
 | `kontakList` | ✅ Ya | `company_records` (`kind='kontak'`) |
 | `asetTetapList` | ✅ Ya | `company_records` (`kind='aset_tetap'`) |
 | `jurnalBerulangList` | ✅ Ya | `company_records` (`kind='jurnal_berulang'`) |
@@ -535,7 +537,7 @@ Tidak semua state runtime disinkronkan ke Supabase. Berdasarkan pemetaan
 **Status**: invoice, bill, pembayaran, kontak, aset tetap, produk, jurnal berulang, anggaran, alert, dan kurs sudah disinkron per bisnis
 lewat `company_records` (`js/22-cloud-records.js`), jadi ikut berpindah antar
 perangkat dan tidak tercampur antar bisnis. Key global `oas_invoices`,
-`oas_bill`,
+`oas_bill`, `oas_pembayaran`,
 `oas_kontak`, `oas_aset_tetap`, `oas_jb`, `oas_anggaran`, `oas_alerts`, `oas_kurs`, `oas_counter` hanya dipakai mode tamu.
 Data lama di key global ditawarkan untuk diunggah sekali per kind per bisnis
 (flag `oas_rec_seen_<companyId>_<kind>`), dan hanya ke satu bisnis

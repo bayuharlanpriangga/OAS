@@ -387,7 +387,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 194-246 | `atRenderCard` | function |
 | 253 | `filterKontak` | function |
 
-## js/11-kontak-invoice.js (364 baris, 27.9 KB)
+## js/11-kontak-invoice.js (365 baris, 28.1 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -412,11 +412,11 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 178-186 | `hitungTotalInvoice` | function |
 | 188-238 | `simpanInvoice` | function |
 | 240-257 | `renderInvoiceKPI` | function |
-| 259-287 | `renderInvoiceList` | function |
-| 289-303 | `openModalLunasInvoice` | function |
-| 305-329 | `konfirmasiLunasInvoice` | function |
-| 331-339 | `hapusInvoice` | function |
-| 344-363 | `handleRekonCSV` | function |
+| 259-288 | `renderInvoiceList` | function |
+| 290-304 | `openModalLunasInvoice` | function |
+| 306-330 | `konfirmasiLunasInvoice` | function |
+| 332-340 | `hapusInvoice` | function |
+| 345-364 | `handleRekonCSV` | function |
 
 ## js/12-kalkulator.js (2268 baris, 113.1 KB)
 
@@ -482,7 +482,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 2189-2205 | `hitungPPh23` | function |
 | 2207-2244 | `hitungBadan` | function |
 
-## js/13-analitik-dashboard.js (1996 baris, 96.3 KB)
+## js/13-analitik-dashboard.js (1996 baris, 98.4 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -990,7 +990,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 733-749 | `loadCachedPasswordDisplay` | function |
 | 751-763 | `copyCurrentPassword` | function |
 
-## js/22-cloud-records.js (461 baris, 23.8 KB)
+## js/22-cloud-records.js (461 baris, 23.9 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -1139,14 +1139,29 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 37-46 | `exportAgingHutangCSV` | function |
 | 48-57 | `cetakAgingHutang` | function |
 
-## js/31-pembayaran.js (54 baris, 3.5 KB)
+## js/31-pembayaran.js (166 baris, 10.6 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
-| 28 | `_bayarBulat` | function |
-| 32-37 | `pembayaranDokumen` | function |
-| 40-45 | `totalDibayar` | function |
-| 50-53 | `sisaTagihan` | function |
+| 27-30 | `pembayaranList` | arrow |
+| 33 | `_bayarBulat` | function |
+| 37-42 | `pembayaranDokumen` | function |
+| 45-50 | `totalDibayar` | function |
+| 55-58 | `sisaTagihan` | function |
+| 65-69 | `_bayarTanggalValid` | function |
+| 77-84 | `dibayarLamaTurunan` | function |
+| 93-137 | `susunPembayaran` | function |
+| 141-152 | `simpanPembayaranState` | function |
+| 158-165 | `catatPembayaran` | function |
+
+## js/32-pembayaran-ui.js (78 baris, 5.9 KB)
+
+| Baris | Nama | Jenis |
+| --- | --- | --- |
+| 15 | `_bayarSet` | function |
+| 18-29 | `_bayarInvRingkasHtml` | function |
+| 31-55 | `openModalBayarInvoice` | function |
+| 57-77 | `simpanPembayaranInvoice` | function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 

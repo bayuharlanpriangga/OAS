@@ -279,6 +279,7 @@ function renderInvoiceList() {
       <td style="font-family:var(--mono);color:${i.sisaTagihan>0?'var(--accent3)':'var(--accent)'}">${rp(i.sisaTagihan)}</td>
       <td>${badge}</td>
       <td style="display:flex;gap:6px;">
+        ${i.status==='terkirim'&&i.sisaTagihan>0?`<button class="btn btn-ghost btn-sm" onclick="openModalBayarInvoice('${i.id}')"><i class="ti ti-cash" style="color:var(--accent2);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Bayar</button>`:''}
         ${i.status!=='lunas'?`<button class="btn btn-ghost btn-sm" onclick="openModalLunasInvoice('${i.id}')"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Lunas</button>`:''}
         <button class="btn btn-danger btn-sm" onclick="hapusInvoice('${i.id}')"><i class="ti ti-trash" style="font-size:14px;"></i></button>
       </td>

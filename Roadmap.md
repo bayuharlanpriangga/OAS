@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 139 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 29/139 task selesai.**
+**Progres: 30/139 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -70,7 +70,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | 2 | Umur piutang | 4/4 |
 | 3 | Akses anggota tim | 7/7 |
 | 4 | Tagihan pembelian (bill) | 8/9 |
-| 5 | Pembayaran | 0/7 |
+| 5 | Pembayaran | 1/7 |
 | 6 | Kartu piutang/hutang dan model dokumen | 0/3 |
 | 7 | Penawaran sampai faktur | 0/6 |
 | 8 | Surat jalan | 0/3 |
@@ -242,7 +242,7 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 | ✓ | ID | Tugas | Lampirkan |
 | :---: | --- | --- | --- |
 | ☑ | 5.1 | Model pembayaran (kind `pembayaran`: jenis dokumen, id, tanggal, jumlah, akun kas) + fungsi murni sisaTagihan + tes. Modul baru `js/31-pembayaran.js`: state `pembayaranList`, `pembayaranDokumen`, `totalDibayar`, `sisaTagihan(dok, daftar, jenis)` (murni; sisa = total − `dibayarLama` − Σ pembayaran). Kind `pembayaran` di `CLOUD_RECORD_KINDS` (`22-cloud-records.js`, tanpa key mode tamu) + label dialog migrasi; checkbox "Pembayaran" di modal Reset Data; bentuk record di `docs/SCHEMA.md` §4.5c (+ field opsional `dibayarLama` di invoice dan bill). Belum ada form, simpan, jurnal, atau perubahan di invoice/bill. Tes: `tests/pembayaran.test.js`, bagian [pembayaran] `tests/cloud-records.test.js` | CR, SCH |
-| ☐ | 5.2 | Form bayar invoice (boleh parsial), simpan record pembayaran, belum ada jurnal | 5.1, INV |
+| ☑ | 5.2 | Form bayar invoice (boleh parsial), simpan record pembayaran, belum ada jurnal. Modal `#modal-bayar-inv` (tanggal, jumlah default = sisa, akun kas, metode, catatan, ringkasan + riwayat pembayaran) dan tombol "Bayar" di daftar invoice terkirim yang masih bersisa. Modul baru `js/32-pembayaran-ui.js` (`openModalBayarInvoice`, `simpanPembayaranInvoice`); di `js/31-pembayaran.js`: `susunPembayaran` (validasi + record, murni), `dibayarLamaTurunan` (murni), `catatPembayaran`, `simpanPembayaranState`, dan `pembayaranList` kini dimuat dari `oas_pembayaran` (mode tamu); kind `pembayaran` berubah jadi `legacyKey: 'oas_pembayaran'` + `legacyOnce` di `22-cloud-records.js`. Hook ke file lama: `11-kontak-invoice.js` (1 baris, tombol Bayar), `index.html` (script + modal). Tes: `tests/pembayaran-form.test.js`, bagian [pembayaran] `cloud-records.test.js`, `pembayaran.test.js`. Perlu uji manual di browser | 5.1, INV |
 | ☐ | 5.3 | ⚠ Jurnal bayar invoice: Dr Kas, Cr Piutang, dipasang lewat hook | 5.2, INV |
 | ☐ | 5.4 | Status invoice otomatis dari total pembayaran (belum, sebagian, lunas, jatuh tempo) | potongan pemakaian status invoice |
 | ☐ | 5.5 | ⚠ Bayar bill (parsial) + jurnal, meniru pola 5.3 | 5.3, 4.4 |
@@ -257,6 +257,18 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 - Pembulatan ke sen supaya cicilan desimal (0,1 + 0,2 untuk 0,3) melunasi tepat.
 - Tanpa migrasi SQL: `company_records.kind` berupa teks bebas (kind `bill` di 4.1 juga tanpa migrasi). Mode tamu belum menyimpan pembayaran (`legacyKey: null`, state hanya di memori); 5.2 harus menambah `oas_pembayaran` bila mode tamu didukung, dan menyesuaikan `legacyKey`/`legacyOnce` seperti yang dilakukan 4.4 untuk bill.
 - Reset Data: checkbox Pembayaran berdiri sendiri. Mereset Invoice atau Tagihan Pembelian tidak ikut menghapus pembayarannya; pembayaran yatim itu aman karena diabaikan `sisaTagihan`, tetapi daftar riwayat pembayaran di 5.2 harus menyaringnya (atau reset invoice/bill diputuskan ikut menghapus pembayaran jenisnya).
+
+**Temuan task 5.2:**
+- **Pembayaran dari form ini belum dijurnal.** Sisa tagihan invoice berkurang, tetapi Kas dan Piutang di buku besar tidak berubah sampai 5.3. Form dan alert menyebutnya terus terang, dan riwayat menandai tiap record tanpa `jurnalNo` dengan "belum dijurnal". 5.3 wajib menjurnalkan semua record `pembayaran` berjenis invoice yang `jurnalNo`-nya kosong (pola tombol "Buat Jurnal" di 4.6), bukan hanya pembayaran baru; periode terkunci pada tanggal pembayaran baru ketahuan saat itu.
+- Dua jalur bayar hidup berdampingan: tombol baru "Bayar" (record, tanpa jurnal) dan tombol lama "Lunas" (`konfirmasiLunasInvoice`, jurnal tanpa record) tidak diubah supaya perilaku lama tidak rusak. 5.3 harus menyatukannya (isi `konfirmasiLunasInvoice` diganti agar memakai `susunPembayaran` + jurnal), lalu tombol "Lunas" cukup membuka form yang sama.
+- Keduanya aman dipakai bergantian: `dibayarLamaTurunan` = `max(dibayarLama, total − sisaTagihan tersimpan − Σ record)`, jadi bagian yang dibayar lewat "Lunas" (tanpa record) otomatis dipindah ke `dibayarLama` pada pembayaran berikutnya, baik sebelum maupun sesudah ada record. Ini memperluas aturan 5.1 ("pembayaran pertama"), yang hanya benar bila "Lunas" tidak dipakai sesudah ada record. Batas bayar di form = `sisaTagihan` tersimpan, bukan total.
+- Aturan validasi (`susunPembayaran`): invoice harus `terkirim` (draft dan lunas ditolak dengan pesan sendiri), jumlah > 0 dan ≤ sisa (dibulatkan ke sen; kelebihan bayar ditolak, bukan dijepit), akun kas wajib, tanggal valid dan **tidak boleh sebelum tanggal invoice** (keputusan baru: jurnal 5.3 akan mengkredit piutang yang belum ada pada tanggal itu; ubah bila ingin membolehkan uang muka), id tidak kembar. Fungsi yang sama dipakai 5.5 untuk bill (`jenis` `'bill'`, status `diterima`).
+- Status: sisa 0 otomatis `lunas` (sama seperti alur lama); status sebagian/jatuh tempo diturunkan di 5.4. Sengaja tidak dibiarkan `terkirim` dengan sisa 0, karena tombol "Lunas" lama akan muncul pada invoice yang sudah tidak punya sisa.
+- Simpan: bisnis login mengirim `['invoice','pembayaran']` dalam satu antrean sinkron (invoice dan record tidak berpisah di tengah jalan); mode tamu menulis `oas_pembayaran` + `oas_invoices`. Mode tamu sekarang didukung, jadi kind `pembayaran` memakai `legacyKey` + `legacyOnce` seperti `bill` (ditawarkan sekali ke bisnis pemilik, tidak ke bisnis tempat user menjadi anggota; Reset Data di mode tamu ikut membuang key-nya). Tes lama "tidak ada migrasi dari key global" diganti sesuai perilaku baru.
+- Klik ganda tidak mencatat dua kali: simpan berjalan sinkron dan melepas `_bayarInvId` setelah sukses. Viewer diblokir `guardHanyaBaca` di buka form maupun simpan. Tanggal default form = hari ini, atau tanggal invoice bila invoice bertanggal lebih akhir.
+- **Belum ada hapus/koreksi pembayaran.** Record yang salah ketik belum bisa dibatalkan dari UI. Sengaja ditunda: menghapus record yang sudah dijurnal butuh jurnal pembalik (pola `hapusBill`, 4.6). Disarankan sebagai task kecil sesudah 5.3, sebelum fase ini dianggap siap rilis. Sampai itu ada, kesalahan input hanya bisa diperbaiki lewat Reset Data > Pembayaran (menghapus semua pembayaran; `sisaTagihan` invoice yang sudah berkurang tetap, jadi bagian itu dianggap `dibayarLama`).
+- Reset Data > Invoice tidak menghapus pembayaran invoice itu (record yatim, diabaikan `sisaTagihan`); riwayat di form hanya menampilkan record milik invoice yang ada, jadi tidak tampil di mana pun.
+- Catatan lingkungan (bukan bagian task): di working tree `js/13-analitik-dashboard.js` dan `tests/analitik-topakun.test.js` tampil berubah di `git status` (hanya akhir baris CRLF/LF; `git diff --ignore-space-at-eol` kosong). Tidak disentuh dan tidak ikut commit task ini.
 
 ## Fase 6 — Kartu piutang/hutang dan model dokumen (3 task)
 

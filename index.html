@@ -86,6 +86,7 @@
 <script defer src="js/29-bill-ui.js"></script>
 <script defer src="js/30-aging-hutang.js"></script>
 <script defer src="js/31-pembayaran.js"></script>
+<script defer src="js/32-pembayaran-ui.js"></script>
 <script defer src="js/99-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- Tabler webfont CDN dihapus: semua ikon "ti-*" sudah self-hosted sebagai SVG mask di css/icons.css (lihat komentar di file itu). Menghapus dependency CDN ini supaya ikon tidak pernah gagal/putus saat CDN lambat atau diblokir jaringan/ad-blocker. -->
@@ -4829,6 +4830,30 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-inv-lunas')">Batal</button>
       <button class="btn btn-primary" onclick="konfirmasiLunasInvoice()"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Konfirmasi Lunas & Buat Jurnal</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: BAYAR INVOICE (task 5.2; js/32-pembayaran-ui.js) -->
+<div class="modal-backdrop" id="modal-bayar-inv" onclick="if(event.target===this)closeModal('modal-bayar-inv')">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-head"><div class="modal-title"><i class="ti ti-cash" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <span id="bayar-inv-judul">Bayar Invoice</span></div><button class="modal-close" onclick="closeModal('modal-bayar-inv')">✕</button></div>
+    <div class="modal-body">
+      <div id="bayar-inv-ringkas" style="margin-bottom:14px;"></div>
+      <div class="form-group"><label>Tanggal Pembayaran</label><input type="date" id="bayar-inv-tgl"></div>
+      <div class="form-group"><label>Jumlah Dibayar (Rp) — boleh sebagian</label><input type="number" id="bayar-inv-jumlah" min="0" step="any"></div>
+      <div class="form-group">
+        <label>Akun Kas/Bank Penerima</label>
+        <input type="hidden" id="bayar-inv-akun" value="">
+        <button class="form-picker-btn" type="button" id="bayar-inv-akun-btn" onclick="openSimplePicker('bayar-inv-akun','bayar-inv-akun-btn','kas')">Pilih Akun...</button>
+      </div>
+      <div class="form-group"><label>Metode (opsional)</label><input type="text" id="bayar-inv-metode" placeholder="Transfer, Tunai, ..."></div>
+      <div class="form-group"><label>Catatan (opsional)</label><input type="text" id="bayar-inv-catatan"></div>
+      <div style="padding:10px;background:rgba(251,191,36,0.08);border-radius:8px;font-size:12px;color:var(--accent3);">Pembayaran dicatat dan sisa tagihan berkurang, tetapi jurnal kas/piutang belum dibuat otomatis.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-bayar-inv')">Batal</button>
+      <button class="btn btn-primary" onclick="simpanPembayaranInvoice()"><i class="ti ti-circle-check" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Simpan Pembayaran</button>
     </div>
   </div>
 </div>

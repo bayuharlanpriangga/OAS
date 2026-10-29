@@ -390,19 +390,28 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true, pe
     ok(!e.store.some(r => r.kind === 'pembayaran') && e.run('pembayaranList.length') === 0, 'reset pembayaran menghapus di cloud dan state');
   }
   {
-    // belum ada penyimpanan mode tamu (5.1): key lama apa pun tidak ditawarkan sebagai data lokal
+    // sejak 5.2 mode tamu menyimpan pembayaran di oas_pembayaran: ditawarkan sekali ke bisnis pemilik (legacyOnce)
     const e = makeEnv();
     e.ls['oas_pembayaran'] = JSON.stringify([{ id: 'PAY_X' }]);
     await e.run('cloudLoadRecords()');
-    ok(e.confirms.length === 0 && !e.store.some(r => r.kind === 'pembayaran'), 'pembayaran: tidak ada migrasi dari key global');
+    ok(e.store.some(r => r.kind === 'pembayaran' && r.rec_id === 'PAY_X'), 'pembayaran: data mode tamu (oas_pembayaran) diunggah lewat migrasi');
+    ok(e.confirms.length === 1 && e.confirms[0].rows.some(r => r.label === 'Pembayaran'), 'dialog migrasi memberi label \"Pembayaran\" (bukan undefined)');
+  }
+  {
+    // bisnis tempat user hanya anggota: pembayaran pribadi tidak ditawarkan
+    const e = makeEnv({ peran: 'member' });
+    e.ls['oas_pembayaran'] = JSON.stringify([{ id: 'PAY_PRIBADI' }]);
+    await e.run('cloudLoadRecords()');
+    ok(e.confirms.length === 0 && !e.store.some(r => r.kind === 'pembayaran'), 'pembayaran pribadi tidak ditawarkan ke bisnis tempat user menjadi anggota');
   }
   {
     // mode tamu: reset pembayaran cukup mengosongkan state
     const e = makeEnv();
     e.run('currentCompany = null');
+    e.ls['oas_pembayaran'] = JSON.stringify([{ id: 'PAY_X' }]);
     e.run("pembayaranList = [{ id: 'PAY_X' }]");
     const gagal = await e.run('cloudDeleteRecords(["pembayaran"])');
-    ok(e.run('pembayaranList.length') === 0 && gagal.length === 0, 'mode tamu: reset pembayaran mengosongkan state');
+    ok(e.run('pembayaranList.length') === 0 && gagal.length === 0 && !('oas_pembayaran' in e.ls), 'mode tamu: reset pembayaran mengosongkan state dan key oas_pembayaran');
   }
   {
     // viewer tidak menulis pembayaran ke cloud
