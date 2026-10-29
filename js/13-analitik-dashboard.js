@@ -619,7 +619,7 @@ function anDrawTopAkun(id, textClr, gridClr) {
     if(!a) return null;
     const saldo = a.normal==='D' ? raw : -raw;
     return { nama: a.nama, saldo: Math.abs(saldo), tipe: a.tipe };
-  }).filter(Boolean).sort((a,b)=>b.saldo-a.saldo).slice(0,8);
+  }).filter(x=>x && x.saldo>0).sort((a,b)=>b.saldo-a.saldo).slice(0,8);   // saldo 0 dibuang: semua akun nol (mis. bill dihapus, jurnal + pembaliknya meniadakan) membuat maxV=0 -> NaN -> createLinearGradient error
   if(!items.length) return;
 
   const pad={l:130,r:16,t:12,b:12}; const cW=W-pad.l-pad.r; const cH=H-pad.t-pad.b;
