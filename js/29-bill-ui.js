@@ -6,10 +6,13 @@
 // Jurnal (task 4.6): bill 'diterima' langsung membuat jurnal utang lewat buatJurnalBill (28-bill.js) dan
 // jalur postJurnalLegacy (kunci periode, nomor JRN, sync cloud, audit); nomor jurnalnya disimpan di bill.jurnalNo.
 // Bill diterima lama tanpa jurnal punya tombol "Buat Jurnal"; hapus bill yang sudah dijurnal membuat jurnal pembalik.
+// Edit draft (task 4.6c): tombol pensil di daftar membuka form yang sama (editBill); simpan mengganti draft di tempat
+// (perbaruiBill), dan "Simpan & Diterima" dari draft membuat jurnal lewat jalur yang sama dengan bill baru.
 // Pola mengikuti form invoice (19-fitur-tambahan.js, 11-kontak-invoice.js).
 // Fungsi hitung, validasi, dan penyimpan ada di 28-bill.js. Dimuat setelah 28-bill.js.
 // ═══════════════════════════════════════════════════════════
 let _billItems = [];
+let _billEditId = null;   // id draft yang sedang diedit di form; null = tagihan baru (task 4.6c)
 
 function _billAkunBeli() { return akuns.filter(a => PICKER_FILTERS.beli(a)); }
 
@@ -74,32 +77,52 @@ function hapusItemBill(i) {
   renderBillItems();
 }
 
-function openModalBill() {
-  const tgl = new Date().toISOString().split('T')[0];
-  const due = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
-  document.getElementById('bill-no').value = nomorBillBerikut();
-  document.getElementById('bill-tgl').value = tgl;
-  document.getElementById('bill-jatuh-tempo').value = due;
-  document.getElementById('bill-supplier').value = '';
-  document.getElementById('bill-deskripsi').value = '';
-  document.getElementById('bill-ppn-check').checked = false;
-  document.getElementById('bill-ppn-tarif').value = String(PPN_TARIF_STANDAR);
+// Isi picker Akun Utang Usaha (input hidden + tombol) dari kode akun; kode kosong/tak dikenal = belum dipilih.
+function _billSetAkunUtang(kode) {
+  const a = akuns.find(x => x.kode === kode);
+  const h = document.getElementById('bill-akun-utang'), btn = document.getElementById('bill-akun-utang-btn');
+  if (h) h.value = a ? a.kode : '';
+  if (!btn) return;
+  if (a) { btn.innerHTML = `<span class="picker-kode-badge">${escapeHtml(a.kode)}</span> ${escapeHtml(a.nama)}`; btn.classList.add('has-value'); }
+  else { btn.textContent = 'Pilih Akun...'; btn.classList.remove('has-value'); }
+}
+
+// Isi form dari objek f (bentuk formDariBill) lalu buka modal. Dipakai tagihan baru dan edit draft.
+function _billBukaForm(f, judul) {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+  set('bill-no', f.noBill); set('bill-tgl', f.tanggal); set('bill-jatuh-tempo', f.jatuhTempo);
+  set('bill-supplier', f.supplier); set('bill-deskripsi', f.deskripsi);
+  const ppn = document.getElementById('bill-ppn-check'); if (ppn) ppn.checked = !!f.ppnAktif;
+  set('bill-ppn-tarif', String(f.ppnTarif));
+  const jdl = document.getElementById('bill-modal-judul'); if (jdl) jdl.textContent = judul;
   // Saran nama supplier dari Kontak
   const dl = document.getElementById('bill-supplier-list');
   if (dl) dl.innerHTML = kontakList.filter(k => k.tipe === 'supplier' || k.tipe === 'keduanya')
     .map(k => `<option value="${escapeHtml(k.nama)}"></option>`).join('');
-  // Akun Utang Usaha default
-  const utang = akuns.find(a => a.kode === '2101') || akuns.find(a => a.tipe === 'Liabilitas' && a.nama.toLowerCase().includes('utang usaha'));
-  const h = document.getElementById('bill-akun-utang'), btn = document.getElementById('bill-akun-utang-btn');
-  if (h) h.value = utang ? utang.kode : '';
-  if (btn) {
-    if (utang) { btn.innerHTML = `<span class="picker-kode-badge">${escapeHtml(utang.kode)}</span> ${escapeHtml(utang.nama)}`; btn.classList.add('has-value'); }
-    else { btn.textContent = 'Pilih Akun...'; btn.classList.remove('has-value'); }
-  }
-  _billItems = [];
-  tambahItemBill();
+  _billSetAkunUtang(f.akunUtang);
+  _billItems = f.items.map(it => ({ ...it }));
+  if (_billItems.length) renderBillItems(); else tambahItemBill();
   openModal('modal-bill');
   setTimeout(upgradeFormPickers, 80);
+}
+
+function openModalBill() {
+  _billEditId = null;
+  const tgl = new Date().toISOString().split('T')[0];
+  const due = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+  // Akun Utang Usaha default
+  const utang = akuns.find(a => a.kode === '2101') || akuns.find(a => a.tipe === 'Liabilitas' && a.nama.toLowerCase().includes('utang usaha'));
+  _billBukaForm({ noBill: nomorBillBerikut(), tanggal: tgl, jatuhTempo: due, supplier: '', deskripsi: '',
+    ppnAktif: false, ppnTarif: PPN_TARIF_STANDAR, akunUtang: utang ? utang.kode : '', items: [] }, 'Buat Tagihan Pembelian');
+}
+
+// Buka draft di form yang sama untuk diedit (task 4.6c). Hanya status draft; yang lain tidak punya tombolnya.
+function editBill(id) {
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Tagihan pembelian')) return;
+  const b = billList.find(x => x && x.id === id); if (!b) return;
+  if (!bisaEditBill(b)) { showAlert('Hanya tagihan berstatus Draft yang bisa diedit. Koreksi tagihan lain dengan menghapusnya (jurnal dibalik) lalu membuat ulang.'); return; }
+  _billEditId = b.id;
+  _billBukaForm(formDariBill(b), 'Edit Tagihan ' + b.noBill);
 }
 
 // Baca isi form menjadi objek untuk susunBill (28-bill.js).
@@ -139,7 +162,13 @@ function _billAlertPeringatan(pesan) {
 
 function simpanBill(status) {
   if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Tagihan pembelian')) return;
-  const r = susunBill(_billBacaForm(status), billList.map(b => b && b.noBill));
+  // Mode edit (task 4.6c): draft lama harus masih ada dan masih draft (bisa berubah lewat tab/perangkat lain).
+  const lama = _billEditId ? billList.find(b => b && b.id === _billEditId) : null;
+  if (_billEditId && !bisaEditBill(lama)) { _billAlertPeringatan('Tagihan ini sudah tidak ada atau bukan draft lagi. Tutup form, lalu buka ulang dari daftar.'); return; }
+  const f = _billBacaForm(status);
+  if (lama) { f.id = lama.id; f.createdAt = lama.createdAt; }
+  // Nomor milik draft yang sedang diedit tidak dihitung kembar dengan dirinya sendiri.
+  const r = susunBill(f, billList.filter(b => b !== lama).map(b => b && b.noBill));
   if (!r.ok) { _billAlertPeringatan(r.pesan); return; }
   let jurnalNo = '';
   if (status === 'diterima') {
@@ -148,10 +177,11 @@ function simpanBill(status) {
     if (!p.ok) { if (p.pesan) _billAlertPeringatan(p.pesan); return; }
     jurnalNo = p.jurnalNo;
   }
-  tambahBill(r.bill);
+  if (lama) perbaruiBill(Object.assign({}, lama, r.bill)); else tambahBill(r.bill);
+  _billEditId = null;
   closeModal('modal-bill');
   renderBillList();
-  showAlert('✓ Tagihan ' + escapeHtml(r.bill.noBill) + ' disimpan sebagai ' + (status === 'draft' ? 'draft' : 'diterima') + '.'
+  showAlert('✓ Tagihan ' + escapeHtml(r.bill.noBill) + (lama ? ' diperbarui dan disimpan sebagai ' : ' disimpan sebagai ') + (status === 'draft' ? 'draft' : 'diterima') + '.'
     + (jurnalNo ? '<br><span style="font-size:12px;color:var(--muted);">Jurnal utang ' + escapeHtml(jurnalNo) + ' dibuat.</span>' : ''));
 }
 
@@ -186,6 +216,12 @@ function _billTombolJurnal(b) {
   return `<button class="btn btn-sm" title="Buat jurnal utang" style="margin-right:4px;" onclick="buatJurnalUntukBill('${escapeForJsAttr(b.id)}')">Buat Jurnal</button>`;
 }
 
+// Tombol edit hanya untuk draft (task 4.6c).
+function _billTombolEdit(b) {
+  if (!bisaEditBill(b)) return '';
+  return `<button class="btn btn-sm" title="Edit draft" style="margin-right:4px;" onclick="editBill('${escapeForJsAttr(b.id)}')"><i class="ti ti-pencil" style="font-size:14px;"></i></button>`;
+}
+
 function renderBillList() {
   const el = document.getElementById('bill-body'); if (!el) return;
   if (!billList.length) {
@@ -210,7 +246,7 @@ function renderBillList() {
         <td class="debit" style="font-family:var(--mono)">${rp(b.total)}</td>
         <td style="font-family:var(--mono);color:${b.sisaTagihan > 0 ? 'var(--accent3)' : 'var(--accent)'}">${rp(b.sisaTagihan)}</td>
         <td>${badge}${_billInfoJurnal(b)}</td>
-        <td style="white-space:nowrap;">${_billTombolJurnal(b)}<button class="btn btn-danger btn-sm" onclick="hapusBill('${escapeForJsAttr(b.id)}')"><i class="ti ti-trash" style="font-size:14px;"></i></button></td>
+        <td style="white-space:nowrap;">${_billTombolEdit(b)}${_billTombolJurnal(b)}<button class="btn btn-danger btn-sm" onclick="hapusBill('${escapeForJsAttr(b.id)}')"><i class="ti ti-trash" style="font-size:14px;"></i></button></td>
       </tr>`;
     }).join('')}</tbody></table></div>`;
 }
