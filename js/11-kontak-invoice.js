@@ -193,6 +193,21 @@ function hitungTotalInvoice() {
   const tot=document.getElementById('inv-total'); if(tot) tot.textContent=fmt(total);
 }
 
+// Jurnal piutang saat invoice dikirim: Dr piutang, Cr pendapatan (+ Cr PPN keluaran). Dipakai simpanInvoice('terkirim') dan kirimInvoice.
+function _entryJurnalKirimInvoice(inv) {
+  const ppn = inv.ppn || 0;
+  return {
+    id:'JRN_INV_'+Date.now(), tanggal:inv.tanggal, jenis:JENIS_JURNAL.INVOICE,
+    keterangan:`Invoice ${inv.noInvoice} — ${inv.pelanggan}`,
+    _ppnTarif: ppn>0 ? inv.ppnTarif : undefined,   // supaya terbaca di rekap pajak
+    lines:[
+      {akun:inv.akunPiutang, debit:inv.total, kredit:0},
+      {akun:inv.akunPend, debit:0, kredit:inv.total - ppn},
+      ...(ppn>0?[{akun:akunPpnKeluaranKode(), ket:`Utang PPN Keluaran ${inv.ppnTarif}%`, debit:0, kredit:ppn}]:[])
+    ].filter(l=>l.akun)
+  };
+}
+
 function simpanInvoice(status) {
   const pelanggan = document.getElementById('inv-pelanggan').value.trim();
   const nominal = _invItems.reduce((s,it)=>s+it.qty*it.harga,0);
@@ -221,16 +236,7 @@ function simpanInvoice(status) {
     };
     if(status === 'terkirim') {
       // Buat jurnal piutang otomatis
-      const entry = {
-        id:'JRN_INV_'+Date.now(), tanggal:inv.tanggal, jenis:JENIS_JURNAL.INVOICE,
-        keterangan:`Invoice ${inv.noInvoice} — ${inv.pelanggan}`,
-        _ppnTarif: ppn>0 ? ppnTarif : undefined,   // supaya terbaca di rekap pajak
-        lines:[
-          {akun:inv.akunPiutang, debit:total, kredit:0},
-          {akun:inv.akunPend, debit:0, kredit:nominal},
-          ...(ppn>0?[{akun:akunPpnKeluaranKode(), ket:`Utang PPN Keluaran ${ppnTarif}%`, debit:0, kredit:ppn}]:[])
-        ].filter(l=>l.akun)
-      };
+      const entry = _entryJurnalKirimInvoice(inv);
       if(!postJurnalLegacy(entry)) { hideOpSpinner(); return; }
       saveToStorage(false);
     }
@@ -243,6 +249,25 @@ function simpanInvoice(status) {
     hideOpSpinner();
     cekNotifikasi();
   }, 900);
+}
+
+// Kirim invoice draft: buat jurnal piutang (sama dengan "Simpan & Terkirim" di form) lalu status jadi 'terkirim'.
+// Draft tidak punya jurnal, jadi pengiriman satu-satunya jalan menuju bisa dibayar (31-pembayaran.js).
+function kirimInvoice(id) {
+  const inv = invoiceList.find(i => i.id === id);
+  if(!inv) { showAlert('Invoice tidak ditemukan.'); return; }
+  if(inv.status && inv.status !== 'draft') { showAlert('Invoice ini sudah berstatus ' + escapeHtml(inv.status) + ', tidak perlu dikirim lagi.'); return; }
+  if(!inv.akunPiutang || !inv.akunPend) { showAlert('Akun piutang/pendapatan invoice ini belum terisi, jadi jurnalnya tidak bisa dibuat. Hapus lalu buat ulang dengan akun terisi.'); return; }
+  if(!guardPeriode(inv.tanggal, 'diposting')) return;
+  if(!confirm('Kirim invoice ' + inv.noInvoice + '?\nJurnal piutang dibuat pada tanggal ' + inv.tanggal + ' dan invoice jadi bisa dibayar.')) return;
+  const entry = _entryJurnalKirimInvoice(inv);
+  if(!postJurnalLegacy(entry)) return;
+  saveToStorage(false);
+  inv.status = 'terkirim';
+  saveFiturBaru();
+  renderInvoiceList(); renderInvoiceKPI();
+  showAlert(`✓ Invoice ${escapeHtml(inv.noInvoice)} terkirim dan jurnal piutang dibuat. Sekarang bisa dibayar.`);
+  cekNotifikasi();
 }
 
 function renderInvoiceKPI() {
@@ -271,14 +296,14 @@ function renderInvoiceList() {
   const today = new Date().toISOString().split('T')[0];
   let list = filter==='all' ? invoiceList : invoiceList.filter(i=>{
     if(filter==='jatuh-tempo') return i.status!=='lunas' && i.jatuhTempo < today;
-    return i.status===filter;
+    return (i.status||'draft')===filter;   // status kosong ditampilkan sebagai Draft di badge, jadi ikut filter Draft
   });
   if(!list.length) { tbody.innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">Belum ada invoice${filter!=='all'?' dengan filter ini':''}</td></tr>`; return; }
   tbody.innerHTML = list.map(i=>{
     const jt = i.jatuhTempo < today && i.status!=='lunas';
     const statusMap = {draft:'var(--muted)',terkirim:'var(--accent2)',lunas:'var(--accent)','jatuh-tempo':'var(--red)'};
     const s = jt?'jatuh-tempo':(i.status||'draft');
-    const badge = `<span style="background:${statusMap[s]}22;color:${statusMap[s]};padding:2px 8px;border-radius:6px;font-size:11px;text-transform:capitalize;">${s==='jatuh-tempo'?'<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Jatuh Tempo':s}</span>`;
+    const badge = `<span style="background:color-mix(in srgb, ${statusMap[s]} 13%, transparent);color:${statusMap[s]};padding:2px 8px;border-radius:6px;font-size:11px;text-transform:capitalize;">${s==='jatuh-tempo'?'<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Jatuh Tempo':s}</span>`;
     return `<tr>
       <td style="font-family:var(--mono);font-size:12px;font-weight:600">${i.noInvoice}</td>
       <td>${i.pelanggan}</td>
@@ -289,7 +314,8 @@ function renderInvoiceList() {
       <td>${badge}</td>
       <td style="display:flex;gap:6px;">
         ${i.status==='terkirim'&&i.sisaTagihan>0?`<button class="btn btn-ghost btn-sm" onclick="openModalBayarInvoice('${i.id}')"><i class="ti ti-cash" style="color:var(--accent2);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Bayar</button>`:''}
-        ${i.status!=='lunas'?`<button class="btn btn-ghost btn-sm" onclick="openModalLunasInvoice('${i.id}')"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Lunas</button>`:''}
+        ${s==='draft'?`<button class="btn btn-ghost btn-sm" onclick="kirimInvoice('${i.id}')" title="Kirim invoice: buat jurnal piutang, status jadi Terkirim"><i class="ti ti-upload" style="color:var(--accent2);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Kirim</button>`:''}
+        ${i.status==='terkirim'?`<button class="btn btn-ghost btn-sm" onclick="openModalLunasInvoice('${i.id}')"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Lunas</button>`:''}
         <button class="btn btn-danger btn-sm" onclick="hapusInvoice('${i.id}')"><i class="ti ti-trash" style="font-size:14px;"></i></button>
       </td>
     </tr>`;
