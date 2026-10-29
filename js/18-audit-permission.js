@@ -210,6 +210,10 @@ function auditLoadMore() { _auditPage++; renderAuditTrail(); }
 
 // ── Export CSV ────────────────────────────────────────────────────────────
 function auditExportCSV() {
+  if (typeof isAdmin === 'function' && !isAdmin()) {
+    showAlert('⛔ Akses ditolak: Audit Trail hanya dapat diekspor oleh Admin atau Pemilik bisnis.');
+    return;
+  }
   const logs=auditGetAll();
   if(!logs.length){showAlert('Belum ada log audit.');return;}
   const header=['Waktu','Bisnis','Aksi','Kategori','Deskripsi','Oleh','Role','Referensi'];
@@ -229,6 +233,10 @@ function auditExportCSV() {
 
 // ── Clear old >90 days ────────────────────────────────────────────────────
 function auditClearOld() {
+  if (typeof isAdmin === 'function' && !isAdmin()) {
+    showAlert('⛔ Akses ditolak: Hanya Admin atau Pemilik bisnis yang dapat membersihkan log audit.');
+    return;
+  }
   const cutoff=new Date(Date.now()-90*24*3600*1000).toISOString();
   const logs=auditGetAll(),before=logs.length;
   const fresh=logs.filter(e=>e.ts>=cutoff);
@@ -359,22 +367,56 @@ function _setPermLocked(el, locked) {
 
 function enforcePermissions() {
   const isAdm = isAdmin();
+  const readOnly = typeof isReadOnly === 'function' && isReadOnly();
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.classList.toggle('role-viewer', !!readOnly);
+  }
+
   const navUserMgmt = document.getElementById('nav-user-mgmt');
   if (navUserMgmt) navUserMgmt.style.display = isAdm ? '' : 'none';
 
   // Menu sidebar dan tombol Aksi Cepat tetap tampil; yang modulnya tidak boleh dilihat diberi tanda terkunci (admin/owner selalu penuh)
   document.querySelectorAll('[data-page]').forEach(el => {
-    const mod = modulUntukHalaman(el.getAttribute('data-page'));
+    const pageId = el.getAttribute('data-page');
+    if (pageId === 'audit-trail') {
+      _setPermLocked(el, !isAdm);
+      return;
+    }
+    const mod = modulUntukHalaman(pageId);
     if (mod) _setPermLocked(el, !hasPerm(mod, 'read'));
   });
   document.querySelectorAll('.quick-action-btn[onclick*="showPage("]').forEach(btn => {
     const m = /showPage\('([^']+)'\)/.exec(btn.getAttribute('onclick') || '');
+    if (m && m[1] === 'audit-trail') {
+      _setPermLocked(btn, !isAdm);
+      return;
+    }
     const mod = m && modulUntukHalaman(m[1]);
     if (mod) _setPermLocked(btn, !hasPerm(mod, 'read'));
   });
   document.querySelectorAll('[onclick*="openExportModal"]').forEach(el => _setPermLocked(el, !hasPerm('export', 'read')));
   // Reset Data khusus admin/owner
   document.querySelectorAll('#storage-reset-btn, [onclick*="resetData"], [onclick*="confirmResetAll"]').forEach(b => { b.style.display = isAdm ? '' : 'none'; });
+
+  // Sembunyikan tombol aksi buat/ubah untuk role Viewer (task 3.5)
+  const viewerSelectors = [
+    'button[onclick*="openModalInvoice"]',
+    'button[onclick*="openModalBill"]',
+    'button[onclick*="openModalKontak"]',
+    'button[onclick*="openModalAkun"]',
+    'button[onclick*="openModalAsetTetap"]',
+    'button[onclick*="openModalTambahKS"]',
+    'button[onclick*="openModalKelolaSemuaKartuStock"]',
+    'button[onclick*="openModalJurnalBerulang"]',
+    'button[onclick*="openModalAlertBaru"]',
+    'button[onclick*="openModalAnggaran"]',
+    'button[onclick*="openModalSaldoAwal"]',
+    '#btn-setting-saldo-awal',
+    '#coa-trash-btn'
+  ];
+  document.querySelectorAll(viewerSelectors.join(',')).forEach(b => {
+    b.style.display = readOnly ? 'none' : '';
+  });
 }
 
 // ── Share Link / Join Code ──────────────────────────────────

@@ -196,6 +196,7 @@ function toggleAktifJB(id) {
 let _invItems = [];
 
 function openModalInvoice(editId) {
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Invoice')) return;
   _invItems = [{ nama:'', qty:1, harga:0 }];
   const tgl = new Date().toISOString().split('T')[0];
   const due = new Date(Date.now()+30*86400000).toISOString().split('T')[0];

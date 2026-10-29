@@ -107,6 +107,7 @@ function _billBukaForm(f, judul) {
 }
 
 function openModalBill() {
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Tagihan pembelian')) return;
   _billEditId = null;
   const tgl = new Date().toISOString().split('T')[0];
   const due = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
@@ -149,6 +150,11 @@ function postingJurnalBill(bill, opsi) {
   if (!guardPeriode(bill.tanggal, 'diposting')) return { ok: false };
   const r = buatJurnalBill(bill, { akunPpnMasukan: cariAkunPpnMasukan(akuns) });
   if (!r.ok) return { ok: false, pesan: r.pesan };
+  // Kaitkan kontakId bila supplier cocok dengan kontak yang ada (task 4.6b)
+  if (bill.supplier && typeof kontakList !== 'undefined' && Array.isArray(kontakList)) {
+    const k = kontakList.find(x => x && x.nama && x.nama.trim().toLowerCase() === bill.supplier.trim().toLowerCase());
+    if (k) r.jurnal.kontakId = k.id;
+  }
   const entry = postJurnalLegacy(r.jurnal);
   if (!entry) return { ok: false };
   bill.jurnalNo = entry.no;

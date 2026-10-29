@@ -340,6 +340,7 @@ function exportPerubahanEkuitasPDF(){const el=document.getElementById('pe-conten
 // REGISTER ASET TETAP (UPGRADED: card view, foto, auto-penyusutan)
 // ══════════════════════════════════════════════════════════════
 function openModalAsetTetap(editId=null){
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Aset tetap')) return;
   try{
     const f=editId?asetTetapList.find(a=>a.id===editId):null;
     const setVal=(id,v)=>{const el=document.getElementById(id);if(el){el.value=v;el.dispatchEvent(new Event('change',{bubbles:true}));}};

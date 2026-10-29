@@ -18,7 +18,52 @@
 function billUntukAging(daftarBill, daftarJurnal) {
   const bills = (Array.isArray(daftarBill) ? daftarBill : []).filter(b => b && typeof b === 'object');
   const jurnal = Array.isArray(daftarJurnal) ? daftarJurnal : [];
-  return bills.filter(b => b.status === 'diterima' && jurnalBillStatus(b, jurnal, bills).status !== 'dibalik');
+  const aktifBills = bills.filter(b => b.status === 'diterima' && jurnalBillStatus(b, jurnal, bills).status !== 'dibalik');
+
+  // Sertakan juga pembelian produk kredit langsung lewat jurnal (jenis 'Pembelian' dengan kredit Utang)
+  // yang belum ada di billList (task 4.7)
+  const noBillSet = new Set();
+  aktifBills.forEach(b => {
+    if (b.noBill) noBillSet.add(b.noBill.toLowerCase());
+    if (b.jurnalNo) noBillSet.add(b.jurnalNo.toLowerCase());
+  });
+
+  const extraKredit = [];
+  jurnal.forEach(j => {
+    if (!j || j.jenis !== 'Pembelian') return;
+    if (typeof isJurnalPembalik === 'function' && isJurnalPembalik(j)) return;
+    if (typeof isJurnalDibalik === 'function' && isJurnalDibalik(j, jurnal)) return;
+    if (j.no && noBillSet.has(j.no.toLowerCase())) return;
+    if (j.ref && noBillSet.has(j.ref.toLowerCase())) return;
+
+    const lines = Array.isArray(j.lines) ? j.lines : [];
+    const utangLine = lines.find(l => l && l.kredit > 0 && String(l.akun).startsWith('21'));
+    if (!utangLine) return;
+
+    let sup = 'Supplier Umum';
+    if (j.kontakId && typeof kontakList !== 'undefined' && Array.isArray(kontakList)) {
+      const k = kontakList.find(x => x && x.id === j.kontakId);
+      if (k && k.nama) sup = k.nama;
+    }
+    if (sup === 'Supplier Umum' && j.ket) {
+      const parts = j.ket.split('—');
+      if (parts.length > 1 && parts[1].trim()) sup = parts[1].trim();
+    }
+
+    extraKredit.push({
+      id: 'jrn_kredit_' + (j._id || j.no),
+      noBill: j.ref || j.no,
+      supplier: sup,
+      tanggal: j.tanggal,
+      jatuhTempo: j.tanggal,
+      total: utangLine.kredit,
+      sisaTagihan: utangLine.kredit,
+      status: 'diterima',
+      jurnalNo: j.no
+    });
+  });
+
+  return extraKredit.length ? aktifBills.concat(extraKredit) : aktifBills;
 }
 
 function _agingHutangHasil() {

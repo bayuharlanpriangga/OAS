@@ -798,7 +798,36 @@ function simpanPembelian() {
   // Build jurnal lines
   const lines = _getBeliJurnalLines(akunKode, totalBeli, metode, ket);
 
-  addJurnal({ tanggal, ket, jenis:'Pembelian', ref: faktur, kontakId, lines });
+  const jrnEntry = { tanggal, ket, jenis:'Pembelian', ref: faktur, kontakId, lines };
+  addJurnal(jrnEntry);
+
+  // Jika pembelian kredit, buatkan record bill (tagihan) agar tercatat di Umur Hutang & Pembayaran (task 4.7)
+  if (metode === 'kredit' && typeof tambahBill === 'function') {
+    const supplierNama = kontakId && typeof kontakList !== 'undefined'
+      ? (kontakList.find(k => k.id === kontakId)?.nama || 'Supplier Umum')
+      : 'Supplier Umum';
+    const noBillBaru = faktur || (typeof nomorBillBerikut === 'function' ? nomorBillBerikut() : ('BILL-' + tanggal.slice(0,4) + '-001'));
+    const due = new Date(new Date(tanggal).getTime() + 30 * 86400000).toISOString().split('T')[0];
+    const billRec = {
+      id: 'bill_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      noBill: noBillBaru,
+      supplier: supplierNama,
+      tanggal: tanggal,
+      jatuhTempo: due,
+      deskripsi: ket,
+      total: totalBeli,
+      sisaTagihan: totalBeli,
+      status: 'diterima',
+      jurnalNo: jrnEntry.no || null,
+      items: [{ nama: ket || 'Pembelian Produk', qty: (typeof qty !== 'undefined' ? qty : 1), harga: totalBeli, akun: akunKode || '1301' }],
+      ppnAktif: false,
+      ppnTarif: 0,
+      akunUtang: '2101',
+      createdAt: new Date().toISOString()
+    };
+    tambahBill(billRec);
+    if (typeof simpanBillState === 'function') simpanBillState();
+  }
 
   // ── Auto-jurnal PPN Masukan jika produk ber-PPN di master produk ──
   if(produkId) {

@@ -853,20 +853,41 @@ async function afterLogin() {
     let list = [];
     try {
       list = await getMyCompanies();
+      try { localStorage.setItem('oas_companies_' + currentUser.id, JSON.stringify(list)); } catch(e) {}
     } catch(getErr) {
       // Fallback ke query langsung jika getMyCompanies gagal (misal tabel org_members belum ada)
       console.warn('[afterLogin] getMyCompanies failed, fallback:', getErr.message);
-      const { data: owned, error: compErr } = await _supa
-        .from('companies').select('*').eq('user_id', currentUser.id).order('created_at');
-      if (compErr) {
-        const msg = compErr.message || '';
-        if (msg.includes('relation') || msg.includes('does not exist') || compErr.code === '42P01')
-          throw new Error('Tabel "companies" belum dibuat. Buka Setup Supabase.');
-        if (compErr.code === '42501' || msg.includes('policy') || msg.includes('permission'))
-          throw new Error('RLS Policy belum diatur. Buka Setup Supabase.');
-        throw new Error('Query gagal: ' + msg + ' (code: ' + compErr.code + ')');
+      try {
+        const { data: owned, error: compErr } = await _supa
+          .from('companies').select('*').eq('user_id', currentUser.id).order('created_at');
+        if (compErr) {
+          const msg = compErr.message || '';
+          if (msg.includes('relation') || msg.includes('does not exist') || compErr.code === '42P01')
+            throw new Error('Tabel "companies" belum dibuat. Buka Setup Supabase.');
+          if (compErr.code === '42501' || msg.includes('policy') || msg.includes('permission'))
+            throw new Error('RLS Policy belum diatur. Buka Setup Supabase.');
+          throw new Error('Query gagal: ' + msg + ' (code: ' + compErr.code + ')');
+        }
+        list = Array.isArray(owned) ? owned : [];
+        try { localStorage.setItem('oas_companies_' + currentUser.id, JSON.stringify(list)); } catch(e) {}
+      } catch(fallbackErr) {
+        // Jika offline atau koneksi gagal, coba muat dari cache lokal (task 1.2 / 8c)
+        const cachedListStr = localStorage.getItem('oas_companies_' + currentUser.id);
+        const lastCompStr = localStorage.getItem('oas_active_company_' + currentUser.id);
+        if (cachedListStr) {
+          try { list = JSON.parse(cachedListStr) || []; } catch(e) {}
+        }
+        if ((!list || list.length === 0) && lastCompStr) {
+          try {
+            const lastComp = JSON.parse(lastCompStr);
+            if (lastComp && lastComp.id) list = [lastComp];
+          } catch(e) {}
+        }
+        if (!list || list.length === 0) {
+          throw fallbackErr;
+        }
+        console.warn('[afterLogin] Koneksi offline/gagal, memuat ' + list.length + ' bisnis dari cache lokal.');
       }
-      list = Array.isArray(owned) ? owned : [];
     }
     console.log('[afterLogin] Jumlah bisnis ditemukan:', list.length);
 
@@ -877,7 +898,21 @@ async function afterLogin() {
       updateUserChip();
       await offerGuestDataMigration();
     } else {
-      showCompanyPickerScreen(list);
+      // Jika ada bisnis aktif terakhir yang tersimpan dan ada di list, buka langsung
+      const lastCompStr = localStorage.getItem('oas_active_company_' + currentUser.id);
+      let lastComp = null;
+      if (lastCompStr) {
+        try {
+          const parsed = JSON.parse(lastCompStr);
+          lastComp = list.find(c => c && c.id === parsed.id) || null;
+        } catch(e) {}
+      }
+      if (lastComp) {
+        await selectCompany(lastComp);
+        updateUserChip();
+      } else {
+        showCompanyPickerScreen(list);
+      }
     }
 
   } catch(e) {
@@ -1286,6 +1321,13 @@ async function selectCompany(company) {
   currentCompany = company;
   isGuestMode = false;
   document.getElementById('company-picker').style.display = 'none';
+
+  // Simpan bisnis aktif terakhir untuk pengguna ini agar saat offline/reload bisnis bisa dipulihkan (task 1.2 / 8c)
+  try {
+    if (currentUser && currentUser.id && company) {
+      localStorage.setItem('oas_active_company_' + currentUser.id, JSON.stringify(company));
+    }
+  } catch(e) {}
 
   // Reset semua data agar tidak bocor ke bisnis baru
   multiKartuStock = {};

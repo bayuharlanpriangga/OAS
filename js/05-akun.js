@@ -263,7 +263,11 @@ function restoreAkunTrash(kode) {
   showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Akun ${akunAsli.kode} - ${akunAsli.nama} berhasil di-restore. Jurnal lama yang mereferensikannya otomatis terhubung kembali.`);
 }
 
-function openModalAkun(){document.getElementById('modal-akun').classList.add('open');setTimeout(upgradeFormPickers,80);}
+function openModalAkun(){
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Akun')) return;
+  document.getElementById('modal-akun').classList.add('open');
+  setTimeout(upgradeFormPickers,80);
+}
 function closeModal(id){document.getElementById(id).classList.remove('open');if(typeof closeInfoPopover==='function')closeInfoPopover();}
 
 // AKUN PICKER BOTTOM SHEET

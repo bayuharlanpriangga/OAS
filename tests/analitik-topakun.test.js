@@ -15,7 +15,7 @@ const g2d = {
 const canvas = { parentElement: { offsetWidth: 400 }, style: {}, getContext: () => g2d };
 const ctx = { document: { getElementById: () => canvas }, window: { devicePixelRatio: 1 }, anBaseHeight: () => 220, anFmtShort: v => String(v) };
 vm.createContext(ctx);
-vm.runInContext(src.match(/function anDrawTopAkun[\s\S]*?\n}\n/)[0], ctx);
+vm.runInContext(src.match(/function anDrawTopAkun[\s\S]*?\r?\n}\r?\n/)[0], ctx);
 const akuns = [{ kode: '1301', nama: 'Persediaan', normal: 'D', tipe: 'Aset' }, { kode: '2101', nama: 'Utang Usaha', normal: 'K', tipe: 'Liabilitas' }];
 const jalankan = (entries) => { ctx.akuns = akuns; ctx.jurnalEntries = entries; bars.length = 0; let err = null; try { vm.runInContext("anDrawTopAkun('c', '#000', '#111')", ctx); } catch (e) { err = e; } return err; };
 const j = (d1, k1, d2, k2) => ({ lines: [{ akun: '1301', debit: d1, kredit: k1 }, { akun: '2101', debit: d2, kredit: k2 }] });

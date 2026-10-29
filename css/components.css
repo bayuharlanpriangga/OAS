@@ -1096,3 +1096,39 @@ body.light-mode .oas-cal-day.selected { color: #fff; }
 
 /* Menu yang modulnya tidak boleh dibuka anggota (js/18-audit-permission.js, enforcePermissions) */
 .perm-locked { opacity: .45; filter: grayscale(.6); cursor: not-allowed; }
+
+/* Viewer: sembunyikan semua tombol buat/ubah/hapus dan tombol simpan transaksi (task 3.5) */
+body.role-viewer .viewer-hide,
+body.role-viewer [onclick*="openModalInvoice"],
+body.role-viewer [onclick*="openModalBill"],
+body.role-viewer [onclick*="openModalKontak"],
+body.role-viewer [onclick*="openModalAkun"],
+body.role-viewer [onclick*="openModalAsetTetap"],
+body.role-viewer [onclick*="openModalTambahKS"],
+body.role-viewer [onclick*="openModalKelolaSemuaKartuStock"],
+body.role-viewer [onclick*="openModalJurnalBerulang"],
+body.role-viewer [onclick*="openModalAlertBaru"],
+body.role-viewer [onclick*="openModalAnggaran"],
+body.role-viewer [onclick*="openModalSaldoAwal"],
+body.role-viewer #btn-setting-saldo-awal,
+body.role-viewer #coa-trash-btn,
+body.role-viewer [onclick*="hapusInvoice"],
+body.role-viewer [onclick*="openModalBayarInvoice"],
+body.role-viewer [onclick*="openModalLunasInvoice"],
+body.role-viewer [onclick*="hapusBill"],
+body.role-viewer [onclick*="editBill"],
+body.role-viewer [onclick*="buatJurnalUntukBill"],
+body.role-viewer [onclick*="hapusKontak"],
+body.role-viewer [onclick*="hapusJurnal"],
+body.role-viewer [onclick*="openModalEditJurnal"],
+body.role-viewer [onclick*="hapusAsetTetap"],
+body.role-viewer [onclick*="openModalEditAset"],
+body.role-viewer [onclick*="openModalJualAset"],
+body.role-viewer [onclick*="hapusProduk"],
+body.role-viewer [onclick*="openModalProduk"],
+body.role-viewer #page-transaksi .tab-content button[type="submit"],
+body.role-viewer #page-transaksi .tab-content button[onclick*="simpan"],
+body.role-viewer #page-transaksi .tab-content button[onclick*="save"] {
+  display: none !important;
+}
+

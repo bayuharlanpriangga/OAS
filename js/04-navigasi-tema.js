@@ -65,6 +65,10 @@ const pageTitles = {
 
 function showPage(id) {
   // Cek permission sebelum buka halaman (kecuali dashboard & settings — settings itu personal, bukan data bisnis)
+  if (id === 'audit-trail' && typeof isAdmin === 'function' && !isAdmin()) {
+    showAlert('⛔ Akses ditolak.\n\nAudit Trail hanya dapat diakses oleh Admin atau Pemilik bisnis.');
+    return;
+  }
   const _modulIzin = typeof modulUntukHalaman === 'function' ? modulUntukHalaman(id) : null;
   if (id !== 'dashboard' && id !== 'settings' && _modulIzin && !isAdmin() && typeof hasPerm === 'function') {
     if (!hasPerm(_modulIzin, 'read')) { // modul diambil dari pemetaan halaman (26-daftar-bisnis.js)
