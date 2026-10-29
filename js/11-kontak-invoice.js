@@ -314,6 +314,7 @@ function renderInvoiceList() {
       <td>${badge}</td>
       <td style="display:flex;gap:6px;">
         ${i.status==='terkirim'&&i.sisaTagihan>0?`<button class="btn btn-ghost btn-sm" onclick="openModalBayarInvoice('${i.id}')"><i class="ti ti-cash" style="color:var(--accent2);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Bayar</button>`:''}
+        ${typeof _bayarTombolRiwayat==='function'?_bayarTombolRiwayat(i):''}
         ${s==='draft'?`<button class="btn btn-ghost btn-sm" onclick="kirimInvoice('${i.id}')" title="Kirim invoice: buat jurnal piutang, status jadi Terkirim"><i class="ti ti-upload" style="color:var(--accent2);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Kirim</button>`:''}
         ${i.status==='terkirim'?`<button class="btn btn-ghost btn-sm" onclick="openModalLunasInvoice('${i.id}')"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Lunas</button>`:''}
         <button class="btn btn-danger btn-sm" onclick="hapusInvoice('${i.id}')"><i class="ti ti-trash" style="font-size:14px;"></i></button>

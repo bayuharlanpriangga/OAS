@@ -22,12 +22,69 @@ function _bayarInvRingkasHtml(inv) {
   const sisa = sisaTagihan(Object.assign({}, inv, { dibayarLama: lama }), pembayaranList, 'invoice');
   const baris = (l, v, clr) => `<div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;margin-bottom:4px;"><span style="color:var(--muted);">${l}</span><span style="font-family:var(--mono);${clr ? 'color:' + clr + ';' : ''}font-weight:600;">${v}</span></div>`;
   const riwayat = pembayaranDokumen(pembayaranList, 'invoice', inv.id).slice().sort((a, b) => String(a.tanggal).localeCompare(String(b.tanggal)));
-  const itemRiwayat = (t, j, ket) => `<div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:4px 0;border-top:1px solid var(--border);"><span>${escapeHtml(t)}${ket ? ` <span style="color:var(--accent3);">· ${escapeHtml(ket)}</span>` : ''}</span><span style="font-family:var(--mono);">${rp(j)}</span></div>`;
+  const itemRiwayat = (t, j, ket, payId) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:12px;padding:4px 0;border-top:1px solid var(--border);"><span>${escapeHtml(t)}${ket ? ` <span style="color:var(--accent3);">· ${escapeHtml(ket)}</span>` : ''}</span><span style="display:flex;align-items:center;gap:8px;"><span style="font-family:var(--mono);">${rp(j)}</span>${payId ? `<button type="button" class="btn btn-danger btn-sm" title="Hapus pembayaran ini (jurnalnya dibalik)" onclick="hapusPembayaranInvoice('${escapeForJsAttr(payId)}')"><i class="ti ti-trash" style="font-size:12px;"></i></button>` : ''}</span></div>`;
   let rw = '';
   if (lama > 0) rw += itemRiwayat('Dibayar sebelumnya (tanpa rincian)', lama, '');
-  riwayat.forEach(p => { rw += itemRiwayat(p.tanggal + (p.metode ? ' · ' + p.metode : ''), p.jumlah, p.jurnalNo ? '' : 'belum dijurnal'); });
+  riwayat.forEach(p => { rw += itemRiwayat(p.tanggal + (p.metode ? ' · ' + p.metode : ''), p.jumlah, p.jurnalNo ? '' : 'belum dijurnal', p.id); });
   return baris('Total invoice', rp(inv.total)) + baris('Sudah dibayar', rp(Math.max(0, inv.total - sisa)), 'var(--accent)') + baris('Sisa tagihan', rp(sisa), 'var(--accent3)')
     + (rw ? `<div style="margin-top:10px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Riwayat pembayaran</div>${rw}` : '');
+}
+
+// Form pembayaran (#bayar-inv-form + tombol simpan) disembunyikan di mode riwayat (task 5.3b): invoice lunas tidak bisa
+// dibayar lagi, tetapi pembayarannya tetap perlu bisa dilihat dan dihapus bila salah.
+function _bayarFormTampil(tampil) {
+  const f = document.getElementById('bayar-inv-form'); if (f && f.style) f.style.display = tampil ? '' : 'none';
+  const b = document.getElementById('bayar-inv-simpan'); if (b && b.style) b.style.display = tampil ? '' : 'none';
+}
+
+// Tombol "Riwayat" di baris invoice yang punya pembayaran tercatat (dipanggil renderInvoiceList, 11-kontak-invoice.js).
+function _bayarTombolRiwayat(inv) {
+  if (!inv || !pembayaranDokumen(pembayaranList, 'invoice', inv.id).length) return '';
+  return `<button class="btn btn-ghost btn-sm" onclick="openRiwayatPembayaranInvoice('${escapeForJsAttr(inv.id)}')" title="Riwayat pembayaran (hapus yang salah)"><i class="ti ti-history" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Riwayat</button>`;
+}
+
+// Buka modal hanya untuk melihat riwayat pembayaran satu invoice (terkirim atau lunas) dan menghapus yang salah.
+function openRiwayatPembayaranInvoice(id) {
+  const inv = invoiceList.find(i => i && i.id === id); if (!inv) return;
+  _bayarInvId = null; // mode riwayat: tidak ada pembayaran baru yang bisa disimpan dari modal ini
+  const judul = document.getElementById('bayar-inv-judul'); if (judul) judul.textContent = 'Riwayat Pembayaran ' + inv.noInvoice;
+  const ringkas = document.getElementById('bayar-inv-ringkas'); if (ringkas) { ringkas.dataset.invId = inv.id; ringkas.innerHTML = _bayarInvRingkasHtml(inv); }
+  _bayarFormTampil(false);
+  openModal('modal-bayar-inv');
+}
+
+// Hapus satu pembayaran invoice. Jurnal pembayaran yang masih berlaku DIBALIK (jurnal pembalik bertanggal hari ini,
+// atau tanggal jurnal asal bila lebih baru), bukan dihapus; lalu record dibuang dan sisa/status invoice dihitung ulang.
+// Urutan: jurnal pembalik dulu; bila gagal (mis. periode terkunci) tidak ada yang berubah.
+function hapusPembayaranInvoice(payId) {
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Pembayaran')) return;
+  const p = pembayaranList.find(x => x && x.id === payId); if (!p) return;
+  const inv = invoiceList.find(i => i && String(i.id) === String(p.dokId)) || null;
+  const hasil = susunHapusPembayaran(payId, inv, pembayaranList, jurnalEntries);
+  if (!hasil.ok) { _bayarPeringatan(hasil.pesan); return; }
+  const label = (inv ? inv.noInvoice : (p.noDok || '')) + ' — ' + rp(p.jumlah) + ' (' + p.tanggal + ')';
+  if (hasil.jurnalStatus === 'aktif') {
+    const hariIni = new Date().toISOString().split('T')[0];
+    const tgl = tanggalPembalikBill(hasil.jurnal.tanggal, hariIni); // aturan sama dengan hapusBill: tidak lebih awal dari jurnal asal
+    if (!confirm('Hapus pembayaran ' + label + '? Jurnalnya (' + hasil.jurnal.no + ') dibalik dengan jurnal pembalik bertanggal ' + tgl + ', dan sisa tagihan invoice naik kembali' + (inv && inv.status === 'lunas' ? ' (status kembali Terkirim)' : '') + '.')) return;
+    if (!guardPeriode(tgl, 'dibuatkan jurnal pembalik')) return;
+    let balik = null;
+    try { balik = buatJurnalPembalik(hasil.jurnal, { tanggal: tgl, alasan: 'Pembayaran ' + label + ' dihapus' }); }
+    catch (e) { if (!(e instanceof PeriodeTerkunciError)) throw e; return; }
+    if (!balik) return; // alert sudah tampil; pembayaran tetap ada
+    if (typeof saveToStorage === 'function') saveToStorage(false);
+  } else if (!confirm('Hapus pembayaran ' + label + '? ' + (hasil.jurnalStatus === 'dibalik' ? 'Jurnalnya sudah dibalik sebelumnya.' : 'Pembayaran ini belum punya jurnal.'))) return;
+  terapkanHapusPembayaran(inv, hasil);
+  try { if (typeof auditLog === 'function') auditLog('delete', 'invoice', 'Hapus pembayaran invoice ' + label, { ref: inv ? inv.noInvoice : (p.noDok || '') }); } catch (e) {}
+  // Modal masih terbuka: segarkan ringkasan dan riwayatnya; tutup bila tidak ada lagi yang ditampilkan.
+  const ringkas = document.getElementById('bayar-inv-ringkas');
+  if (inv && ringkas) {
+    if (!pembayaranDokumen(pembayaranList, 'invoice', inv.id).length && !(inv.dibayarLama > 0)) closeModal('modal-bayar-inv');
+    else ringkas.innerHTML = _bayarInvRingkasHtml(inv);
+  }
+  renderInvoiceList(); renderInvoiceKPI();
+  showAlert('✓ Pembayaran dihapus' + (hasil.jurnalStatus === 'aktif' ? ' dan jurnalnya dibalik' : '') + (inv ? '. Sisa tagihan ' + escapeHtml(inv.noInvoice) + ' sekarang ' + rp(hasil.sisaBaru) + '.' : '.'));
+  if (typeof cekNotifikasi === 'function') cekNotifikasi();
 }
 
 function openModalBayarInvoice(id) {
@@ -36,6 +93,7 @@ function openModalBayarInvoice(id) {
   // Pemeriksaan status dan sisa dipakai bersama dengan simpan (susunPembayaran), jadi cukup dites tanpa jumlah di sini.
   if (inv.status !== 'terkirim') { showAlert(inv.status === 'lunas' ? 'Invoice ini sudah lunas.' : 'Invoice draft belum bisa dibayar. Kirim dulu invoicenya.'); return; }
   _bayarInvId = inv.id;
+  _bayarFormTampil(true);
   const lama = dibayarLamaTurunan(inv, pembayaranList, 'invoice');
   const sisa = sisaTagihan(Object.assign({}, inv, { dibayarLama: lama }), pembayaranList, 'invoice');
   const judul = document.getElementById('bayar-inv-judul'); if (judul) judul.textContent = 'Bayar Invoice ' + inv.noInvoice;

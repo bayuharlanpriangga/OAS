@@ -4821,6 +4821,7 @@
     <div class="modal-head"><div class="modal-title"><i class="ti ti-cash" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> <span id="bayar-inv-judul">Bayar Invoice</span></div><button class="modal-close" onclick="closeModal('modal-bayar-inv')">✕</button></div>
     <div class="modal-body">
       <div id="bayar-inv-ringkas" style="margin-bottom:14px;"></div>
+      <div id="bayar-inv-form">
       <div class="form-group"><label>Tanggal Pembayaran</label><input type="date" id="bayar-inv-tgl"></div>
       <div class="form-group"><label>Jumlah Dibayar (Rp) — boleh sebagian</label><input type="number" id="bayar-inv-jumlah" min="0" step="any"></div>
       <div class="form-group">
@@ -4831,10 +4832,11 @@
       <div class="form-group"><label>Metode (opsional)</label><input type="text" id="bayar-inv-metode" placeholder="Transfer, Tunai, ..."></div>
       <div class="form-group"><label>Catatan (opsional)</label><input type="text" id="bayar-inv-catatan"></div>
       <div style="padding:10px;background:rgba(251,191,36,0.08);border-radius:8px;font-size:12px;color:var(--accent3);">Pembayaran dicatat, sisa tagihan berkurang, dan jurnal otomatis dibuat: Kas/Bank di debit, Piutang di kredit.</div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-bayar-inv')">Batal</button>
-      <button class="btn btn-primary" onclick="simpanPembayaranInvoice()"><i class="ti ti-circle-check" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Simpan Pembayaran</button>
+      <button class="btn btn-primary" id="bayar-inv-simpan" onclick="simpanPembayaranInvoice()"><i class="ti ti-circle-check" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Simpan Pembayaran</button>
     </div>
   </div>
 </div>

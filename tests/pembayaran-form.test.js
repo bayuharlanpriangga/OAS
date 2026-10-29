@@ -17,7 +17,7 @@ function makeEnv(opsi) {
     invoiceList: [], billList: [], akuns: [{ kode: '1101', nama: 'Kas', tipe: 'Aset' }, { kode: '1201', nama: 'Piutang Usaha', tipe: 'Aset' }], currentCompany: opsi.login ? { id: 'c1' } : null,
     cloudSyncRecords: kinds => { synced.push(kinds); return Promise.resolve(true); },
     showAlert: m => alerts.push(m), openModal: id => modals.push('open:' + id), closeModal: id => modals.push('close:' + id),
-    rp: n => 'Rp' + n, escapeHtml: s => String(s), upgradeFormPickers: () => {},
+    rp: n => 'Rp' + n, escapeHtml: s => String(s), escapeForJsAttr: s => String(s), upgradeFormPickers: () => {},
     renderInvoiceList: () => { ctx.__render++; }, renderInvoiceKPI: () => {}, __render: 0,
     guardHanyaBaca: () => !!opsi.viewer,
     // stub jurnal (5.3): postJurnalLegacy memberi nomor JRN-001, JRN-002, ...; guardPeriode tidak pernah menolak

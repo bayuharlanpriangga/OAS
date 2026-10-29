@@ -21,7 +21,7 @@ function makeEnv(opsi) {
     akuns: opsi.akuns || [{ kode: '1101', nama: 'Kas', tipe: 'Aset' }, { kode: '1201', nama: 'Piutang Usaha', tipe: 'Aset' }],
     cloudSyncRecords: kinds => { synced.push({ kinds, jurnalNo: vm.runInContext('pembayaranList.map(p => p.jurnalNo)', ctx) }); return Promise.resolve(true); },
     showAlert: m => alerts.push(m), openModal: id => modals.push('open:' + id), closeModal: id => modals.push('close:' + id),
-    rp: n => 'Rp' + n, escapeHtml: s => String(s), upgradeFormPickers: () => {}, fmtDate: s => s, fmtRp: n => 'Rp' + n,
+    rp: n => 'Rp' + n, escapeHtml: s => String(s), escapeForJsAttr: s => String(s), upgradeFormPickers: () => {}, fmtDate: s => s, fmtRp: n => 'Rp' + n,
     renderInvoiceList: () => { ctx.__render++; if (ctx.renderPembayaranBelumJurnal) ctx.renderPembayaranBelumJurnal(); }, renderInvoiceKPI: () => {}, __render: 0,
     guardHanyaBaca: () => !!opsi.viewer,
     confirm: m => { confirms.push(m); return opsi.confirm !== false; },

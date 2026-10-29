@@ -274,3 +274,43 @@ function pembayaranInvoiceBelumJurnal(daftarPembayaran, daftarInvoice, daftarJur
   });
   return hasil;
 }
+
+// ── Task 5.3b: hapus pembayaran invoice ────────────────────
+
+// Susun penghapusan satu pembayaran invoice (murni: tidak mengubah dok, daftar, maupun jurnal).
+// id           : id record pembayaran
+// dok          : invoice pemilik pembayaran (null/undefined = invoice sudah dihapus: record yatim, hanya dibuang)
+// daftar       : pembayaranList; daftarJurnal: jurnalEntries (untuk status jurnal pembayaran itu)
+// Hasil { ok:true, pembayaran, daftarBaru, dibayarLama, sisaBaru, statusBaru, jurnalStatus, jurnal } atau { ok:false, pesan }.
+//   jurnalStatus 'aktif'  : jurnal pembayaran masih berlaku, pemanggil wajib membaliknya (jurnal pembalik) sebelum menerapkan.
+//   jurnalStatus 'belum'  : record 5.2 tanpa jurnal; 'dibalik': jurnalnya sudah dibalik manual. Keduanya cukup dibuang recordnya.
+//   dibayarLama dihitung dari daftar SEBELUM record dibuang (dibayarLamaTurunan), jadi pelunasan lewat alur lama tidak hilang.
+//   statusBaru: invoice 'lunas' yang sisanya > 0 lagi kembali 'terkirim'; status lain tidak berubah.
+function susunHapusPembayaran(id, dok, daftar, daftarJurnal) {
+  const gagal = pesan => ({ ok: false, pesan });
+  const semua = Array.isArray(daftar) ? daftar : [];
+  const p = semua.find(x => x && typeof x === 'object' && String(x.id) === String(id));
+  if (!p) return gagal('Pembayaran tidak ditemukan.');
+  if (p.jenis !== 'invoice') return gagal('Hapus pembayaran tagihan pembelian dikerjakan di task 5.5.');
+  const daftarBaru = semua.filter(x => x !== p);
+  if (!dok || typeof dok !== 'object' || String(dok.id) !== String(p.dokId)) {
+    return { ok: true, pembayaran: p, daftarBaru, dibayarLama: 0, sisaBaru: 0, statusBaru: undefined, jurnalStatus: 'belum', jurnal: null, yatim: true };
+  }
+  const dibayarLama = dibayarLamaTurunan(dok, semua, 'invoice');
+  const sisaBaru = sisaTagihan(Object.assign({}, dok, { dibayarLama }), daftarBaru, 'invoice');
+  const statusBaru = (dok.status === 'lunas' && sisaBaru > 0) ? 'terkirim' : dok.status;
+  const st = (typeof jurnalPembayaranStatus === 'function') ? jurnalPembayaranStatus(p, dok, daftarJurnal, semua) : { status: 'belum', jurnal: null };
+  return { ok: true, pembayaran: p, daftarBaru, dibayarLama, sisaBaru, statusBaru, jurnalStatus: st.status, jurnal: st.jurnal, yatim: false };
+}
+
+// Terapkan hasil susunHapusPembayaran yang ok ke state: buang record, isi ulang dibayarLama/sisaTagihan/status invoice, simpan.
+function terapkanHapusPembayaran(dok, hasil) {
+  if (!hasil || !hasil.ok) return Promise.resolve(false);
+  pembayaranList = hasil.daftarBaru;
+  if (dok && !hasil.yatim) {
+    if (hasil.dibayarLama > 0) dok.dibayarLama = hasil.dibayarLama;
+    dok.sisaTagihan = hasil.sisaBaru;
+    if (hasil.statusBaru) dok.status = hasil.statusBaru;
+  }
+  return simpanPembayaranState('invoice');
+}
