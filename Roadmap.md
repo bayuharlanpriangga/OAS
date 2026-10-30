@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 139 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 31/139 task selesai.**
+**Progres: 32/139 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -70,7 +70,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | 2 | Umur piutang | 4/4 |
 | 3 | Akses anggota tim | 7/7 |
 | 4 | Tagihan pembelian (bill) | 8/9 |
-| 5 | Pembayaran | 3/7 |
+| 5 | Pembayaran | 4/7 |
 | 6 | Kartu piutang/hutang dan model dokumen | 0/3 |
 | 7 | Penawaran sampai faktur | 0/6 |
 | 8 | Surat jalan | 0/3 |
@@ -245,7 +245,7 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 | ☑ | 5.2 | Form bayar invoice (boleh parsial), simpan record pembayaran, belum ada jurnal. Modal `#modal-bayar-inv` (tanggal, jumlah default = sisa, akun kas, metode, catatan, ringkasan + riwayat pembayaran) dan tombol "Bayar" di daftar invoice terkirim yang masih bersisa. Modul baru `js/32-pembayaran-ui.js` (`openModalBayarInvoice`, `simpanPembayaranInvoice`); di `js/31-pembayaran.js`: `susunPembayaran` (validasi + record, murni), `dibayarLamaTurunan` (murni), `catatPembayaran`, `simpanPembayaranState`, dan `pembayaranList` kini dimuat dari `oas_pembayaran` (mode tamu); kind `pembayaran` berubah jadi `legacyKey: 'oas_pembayaran'` + `legacyOnce` di `22-cloud-records.js`. Hook ke file lama: `11-kontak-invoice.js` (1 baris, tombol Bayar), `index.html` (script + modal). Tes: `tests/pembayaran-form.test.js`, bagian [pembayaran] `cloud-records.test.js`, `pembayaran.test.js`. Perlu uji manual di browser | 5.1, INV |
 | ☑ | 5.3 | ⚠ Jurnal bayar invoice: Dr Kas, Cr Piutang, dipasang lewat hook. Fungsi murni di `js/31-pembayaran.js`: `buatJurnalPembayaranInvoice(pembayaran, inv, opsi)` (jurnal berjenis `Invoice & Piutang`, ket `Pembayaran <noInvoice> — <pelanggan>`), `jurnalPembayaranStatus` (belum/aktif/dibalik) dan `pembayaranInvoiceBelumJurnal`. Pemostingan di `js/32-pembayaran-ui.js`: `postingJurnalPembayaranInvoice` (lewat `postJurnalLegacy`, mengisi `pembayaran.jurnalNo`), `simpanPembayaranInvoice` (jurnal dibuat lebih dulu; gagal = pembayaran tidak dicatat), `jurnalkanPembayaranInvoiceLama` + banner `#inv-belum-jurnal` untuk record 5.2 tanpa jurnal. Penyatuan jalur: tombol "Lunas" membuka form bayar yang sama; `konfirmasiLunasInvoice`, modal `modal-inv-lunas`, dan hook audit-nya dihapus. Hook ke file lama: `11-kontak-invoice.js` (+4 baris), `index.html` (+1 baris placeholder, modal lama dihapus), `08-kartu-stock.js` (hook audit lama dibuang). Tes: `tests/pembayaran-jurnal.test.js` (baru), `pembayaran-form.test.js`, `akuntansi.test.js`. Perlu uji manual di browser | 5.2, INV |
 | ☑ | 5.3b | Hapus pembayaran invoice (temuan 5.2 dan 5.3, tidak ada di rencana awal). Tombol "Riwayat" di baris invoice yang punya pembayaran membuka modal bayar dalam mode riwayat (form disembunyikan, jadi invoice lunas pun bisa dilihat); tiap record punya tombol hapus. Jurnal pembayaran yang masih berlaku DIBALIK lewat `buatJurnalPembalik` (bertanggal hari ini atau tanggal jurnal asal bila lebih baru, aturan `tanggalPembalikBill`), lalu record dibuang, `sisaTagihan` dihitung ulang dan invoice lunas yang bersisa kembali `terkirim`. Jurnal dibalik lebih dulu: gagal (mis. periode terkunci) = tidak ada yang berubah. Record tanpa jurnal atau yang jurnalnya sudah dibalik manual cukup dibuang. Fungsi murni `susunHapusPembayaran` dan `terapkanHapusPembayaran` di `js/31-pembayaran.js`; `hapusPembayaranInvoice`, `openRiwayatPembayaranInvoice`, `_bayarTombolRiwayat`, `_bayarFormTampil` di `js/32-pembayaran-ui.js`. Hook: `11-kontak-invoice.js` (1 baris), `index.html` (id `bayar-inv-form`, `bayar-inv-simpan`). Tes: `tests/pembayaran-hapus.test.js`. Pembayaran bill menyusul di 5.5. Perlu uji manual di browser | 5.3 |
-| ☐ | 5.4 | Status invoice otomatis dari total pembayaran (belum, sebagian, lunas, jatuh tempo) | potongan pemakaian status invoice |
+| ☑ | 5.4 | Status invoice otomatis dari total pembayaran: 'sebagian' untuk invoice/bill yang dibayar sebagian, 'lunas' saat sisa 0, 'terkirim'/'diterima' bila belum dibayar | 5.3 |
 | ☐ | 5.5 | ⚠ Bayar bill (parsial) + jurnal, meniru pola 5.3 | 5.3, 4.4 |
 | ☐ | 5.6 | Fungsi murni alokasi satu pembayaran ke beberapa faktur + tes | 5.1 |
 | ☐ | 5.7 | UI alokasi pembayaran ke beberapa faktur sekaligus | 5.6, 5.3 |
