@@ -301,7 +301,7 @@ function renderInvoiceList() {
   if(!list.length) { tbody.innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">Belum ada invoice${filter!=='all'?' dengan filter ini':''}</td></tr>`; return; }
   tbody.innerHTML = list.map(i=>{
     const jt = i.jatuhTempo < today && i.status!=='lunas';
-    const statusMap = {draft:'var(--muted)',terkirim:'var(--accent2)',sebagian:'var(--yellow)',lunas:'var(--accent)','jatuh-tempo':'var(--red)'};
+    const statusMap = {draft:'var(--muted)',terkirim:'var(--accent2)',sebagian:'var(--accent3)',lunas:'var(--accent)','jatuh-tempo':'var(--red)'};
     const s = jt?'jatuh-tempo':(i.status||'draft');
     const badge = `<span style="background:color-mix(in srgb, ${statusMap[s]} 13%, transparent);color:${statusMap[s]};padding:2px 8px;border-radius:6px;font-size:11px;text-transform:capitalize;">${s==='jatuh-tempo'?'<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Jatuh Tempo':s}</span>`;
     return `<tr>

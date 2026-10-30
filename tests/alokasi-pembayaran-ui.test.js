@@ -21,6 +21,14 @@ vm.createContext(ctx);vm.runInContext(rd('js/31-pembayaran.js'),ctx);vm.runInCon
 (async()=>{
 ctx.openModalAlokasiPembayaran();
 ok(modals.includes('open:modal-alokasi-inv'),'aksi Alokasi Pembayaran membuka modal');
+const hostBaris=fields['alokasi-inv-baris'];
+const markupAwal=hostBaris.innerHTML;
+ok(!markupAwal.includes('>Sisa:'),'teks sisa di bawah field nominal dihilangkan agar sejajar dengan picker');
+ok(markupAwal.includes('sisa Rp'),'keterangan sisa tetap tersedia pada option invoice');
+fields['alokasi-inv-jumlah'].value='200000';
+ctx.ubahAlokasiInvoice(0,'jumlah','12500');
+ok(hostBaris.innerHTML===markupAwal,'input nominal tidak me-render ulang baris sehingga fokus/kursor tetap terjaga');
+ok(fields['alokasi-inv-total'].innerHTML.includes('12.500'),'ringkasan alokasi diperbarui langsung saat nominal diketik');
 ctx.tambahBarisAlokasi();
 ctx.ubahAlokasiInvoice(0,'dokId','I1');ctx.ubahAlokasiInvoice(0,'jumlah',75000);
 ctx.ubahAlokasiInvoice(1,'dokId','I2');ctx.ubahAlokasiInvoice(1,'jumlah',125000);

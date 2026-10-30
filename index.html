@@ -2280,7 +2280,7 @@
     <div class="table-header">
       <div class="table-title"><i class="ti ti-clipboard-list ti-inline"></i> Daftar Invoice</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-ghost btn-sm" onclick="openModalAlokasiPembayaran()"><i class="ti ti-layers-intersect"></i> Alokasi Pembayaran</button>
+        <button class="btn btn-ghost btn-sm" onclick="openModalAlokasiPembayaran()"><i class="ti ti-arrows-exchange"></i> Alokasi Pembayaran</button>
         <select id="inv-filter-status" onchange="renderInvoiceList()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;font-family:var(--sans);">
           <option value="all">Semua Status</option>
           <option value="draft">Draft</option>
@@ -4822,7 +4822,7 @@
 <!-- MODAL: ALOKASI SATU PENERIMAAN KE BEBERAPA INVOICE (task 5.7) -->
 <div class="modal-backdrop" id="modal-alokasi-inv" onclick="if(event.target===this)closeModal('modal-alokasi-inv')">
   <div class="modal" style="max-width:720px;">
-    <div class="modal-head"><div class="modal-title"><i class="ti ti-layers-intersect" style="color:var(--accent);"></i> Alokasi Pembayaran Beberapa Invoice</div><button class="modal-close" onclick="closeModal('modal-alokasi-inv')">✕</button></div>
+    <div class="modal-head"><div class="modal-title"><i class="ti ti-arrows-exchange" style="color:var(--accent);"></i> Alokasi Pembayaran Beberapa Invoice</div><button class="modal-close" onclick="closeModal('modal-alokasi-inv')">✕</button></div>
     <div class="modal-body">
       <div style="padding:10px 12px;background:var(--surface2);border-radius:9px;font-size:12px;color:var(--muted);margin-bottom:14px;">Catat satu penerimaan bank/kas, lalu bagi nominalnya ke beberapa invoice yang masih memiliki tagihan. Total alokasi wajib sama dengan jumlah penerimaan.</div>
       <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -4838,7 +4838,7 @@
         <div class="form-group"><label>Catatan (opsional)</label><input type="text" id="alokasi-inv-catatan"></div>
       </div>
     </div>
-    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('modal-alokasi-inv')">Batal</button><button class="btn btn-primary" onclick="simpanAlokasiPembayaran()"><i class="ti ti-circle-check"></i> Simpan Penerimaan</button></div>
+    <div class="modal-footer"><button class="btn btn-ghost" type="button" onclick="closeModal('modal-alokasi-inv')">Batal</button><button class="btn btn-primary" type="button" onclick="simpanAlokasiPembayaran()"><i class="ti ti-circle-check"></i> Simpan Penerimaan</button></div>
   </div>
 </div>
 

@@ -261,6 +261,11 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 - Setelah seluruh jurnal berhasil dan sinkronisasi mengembalikan sukses, baru UI menutup modal, merender ulang daftar, dan menulis audit log alokasi. Setiap record pembayaran tetap memiliki `jurnalNo` unik dan `grupId` batch yang sama.
 - Uji browser nyata dan Supabase produksi tetap diperlukan; automated test mensimulasikan kegagalan posting dan kegagalan sync, bukan gangguan jaringan/Supabase live.
 
+**UI follow-up 5.7.4 (badge status sebagian):**
+- Memperbaiki warna badge status `sebagian` pada daftar Invoice & Piutang. Sebelumnya statusMap memakai `var(--yellow)`, padahal token tersebut tidak didefinisikan di tema; akibatnya deklarasi warna badge tidak valid dan status tampil sebagai teks biasa.
+- Mengganti token ke `var(--accent3)` yang memang tersedia dan juga digunakan untuk status sebagian pada daftar Tagihan Pembelian. Tampilan badge invoice sekarang konsisten dengan bill.
+- Menambahkan `tests/invoice-status-badge.test.js` untuk memastikan seluruh status invoice menggunakan token warna tema yang valid dan mencegah penggunaan ulang `--yellow` yang tidak tersedia.
+
 **Regression fix 5.7.1 (selesai):**
 - Memperbaiki `statusDariPembayaran()` agar menerima status dasar, `sebagian`, dan `lunas` sebagai status yang perlu dihitung ulang. Transisi invoice: `terkirim → sebagian → lunas`, lalu saat pembayaran dihapus `lunas → sebagian → terkirim`. Bill mengikuti pola `diterima → sebagian → lunas → sebagian → diterima`.
 - Status `draft` dan status asing tetap tidak berubah. Pembayaran parsial berulang, pembayaran penuh, penghapusan satu dari beberapa cicilan, serta penghapusan pembayaran terakhir diuji.
@@ -541,3 +546,16 @@ Selesai fase 21-25 = Rilis E.
 3. **Target pengguna**: dagang, jasa, atau keduanya. Ini menentukan apakah Fase 14-20 (gudang, batch, dst.) dan POS (Fase 25) perlu dikerjakan.
 4. **Aturan pajak dan payroll** harus dicek ulang dari sumber resmi saat 11.1 dan 18.2 dikerjakan; jangan memakai angka dari ingatan model.
 5. ~~**Jurnal bill di laporan pembelian**~~ — diputuskan: jurnal bill tetap berjenis `Tagihan Pembelian`, dan laporan pembelian dibuat membaca kedua jenis lewat fungsi bantu di task 4.6b.
+
+
+### UI polish 5.7.2 (perbaikan berdasarkan uji browser)
+- [x] Memperbaiki input nominal alokasi agar tidak kehilangan fokus/kursor saat mengetik; ringkasan total diperbarui tanpa menggambar ulang baris input.
+- [x] Mengganti ikon `ti-layers-intersect` yang tidak tersedia di `css/icons.css` dengan ikon `ti-arrows-exchange` yang tersedia.
+- [x] Mengganti kelas footer modal yang keliru (`modal-foot`) menjadi `modal-footer` agar padding, border, jarak tombol, dan alignment mengikuti komponen modal standar.
+- [ ] Verifikasi visual ulang di browser desktop dan mobile setelah deploy.
+
+### UI polish 5.7.3 (perataan field alokasi)
+- [x] Menghapus teks kecil `Sisa: ...` di bawah field nominal agar field nominal sejajar vertikal dengan invoice picker.
+- [x] Mempertahankan informasi sisa tagihan pada setiap opsi invoice di dropdown picker.
+- [x] Menambahkan regression assertion bahwa teks sisa tidak dirender di bawah field nominal dan tetap tersedia pada opsi invoice.
+- [ ] Verifikasi visual ulang di browser desktop dan mobile setelah deploy.

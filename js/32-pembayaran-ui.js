@@ -219,13 +219,15 @@ function _alokasiRender() {
       const sisa = sisaTagihan(Object.assign({}, x, { dibayarLama: dibayarLamaTurunan(x,pembayaranList,'invoice') }),pembayaranList,'invoice');
       return `<option value="${escapeForJsAttr(x.id)}" ${String(x.id)===String(row.dokId)?'selected':''}>${escapeHtml(x.noInvoice || x.id)} · ${escapeHtml(x.pelanggan || '')} · sisa ${rp(sisa)}</option>`;
     }).join('');
-    const sisa = inv ? sisaTagihan(Object.assign({},inv,{dibayarLama:dibayarLamaTurunan(inv,pembayaranList,'invoice')}),pembayaranList,'invoice') : 0;
     return `<div class="alokasi-inv-row" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(120px, .55fr) auto;gap:8px;align-items:center;margin-bottom:8px;">
       <select class="form-input" onchange="ubahAlokasiInvoice(${idx},'dokId',this.value)"><option value="">Pilih invoice...</option>${opsi}</select>
-      <div><input class="form-input" type="number" min="0.01" step="any" placeholder="Nominal" value="${row.jumlah || ''}" oninput="ubahAlokasiInvoice(${idx},'jumlah',this.value)" style="width:100%;"><div style="font-size:10px;color:var(--muted);margin-top:3px;">Sisa: ${rp(sisa)}</div></div>
+      <input class="form-input" type="number" min="0.01" step="any" placeholder="Nominal" value="${row.jumlah || ''}" oninput="ubahAlokasiInvoice(${idx},'jumlah',this.value)" style="width:100%;">
       <button class="btn btn-danger btn-sm" type="button" onclick="hapusBarisAlokasi(${idx})" title="Hapus baris"><i class="ti ti-trash"></i></button>
     </div>`;
   }).join('') || '<div style="color:var(--muted);font-size:12px;padding:8px 0;">Belum ada invoice dipilih.</div>';
+  _alokasiUpdateRingkasan();
+}
+function _alokasiUpdateRingkasan() {
   const total = _alokasiBaris.reduce((n,x)=>n+(Number(x.jumlah)||0),0);
   const penerimaan = Number((document.getElementById('alokasi-inv-jumlah')||{}).value || 0);
   const info = document.getElementById('alokasi-inv-total');
@@ -234,7 +236,10 @@ function _alokasiRender() {
 function ubahAlokasiInvoice(idx, field, value) {
   if (!_alokasiBaris[idx]) return;
   _alokasiBaris[idx][field] = field === 'jumlah' ? (value === '' ? '' : Number(value)) : value;
-  _alokasiRender();
+  // Jangan render ulang baris ketika pengguna sedang mengetik nominal: innerHTML
+  // yang diganti akan melepas fokus/kursor setelah setiap karakter.
+  if (field === 'jumlah') _alokasiUpdateRingkasan();
+  else _alokasiRender();
 }
 function tambahBarisAlokasi() {
   const dipakai = new Set(_alokasiBaris.map(x=>String(x.dokId)));
