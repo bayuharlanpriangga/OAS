@@ -3,8 +3,8 @@
 //
 // Tabel Jurnal Umum, Jurnal Kas, Jurnal Penjualan, Jurnal Pembelian dan Buku Besar (per akun): header kolom Tanggal dan nomor (No. Jurnal /
 // No. Invoice / No. Faktur) bisa diklik untuk mengubah urutan.
-//  - Tanggal : bergantian antara urutan awal tabel itu dan kebalikannya (Umum/Kas awalnya terbaru di atas,
-//    Penjualan/Pembelian/Buku Besar awalnya terlama di atas; klik pertama selalu membalik).
+//  - Tanggal : tidak diurutkan (awal) -> kebalikan urutan awal tabel itu -> urutan awal (aktif) -> tidak diurutkan
+//    (Umum/Kas awalnya terbaru di atas, Penjualan/Pembelian/Buku Besar awalnya terlama di atas; klik pertama selalu membalik).
 //  - Nomor   : tidak diurutkan (awal) -> kecil ke besar -> besar ke kecil -> tidak diurutkan.
 //  - Bila keduanya aktif, kolom yang TERAKHIR diklik jadi urutan utama dan yang lain jadi pembanding kedua
 //    (mis. tanggal utama: entri sehari yang sama diurutkan menurut nomornya).
@@ -71,9 +71,11 @@ Object.keys(_TABEL_URUT_JURNAL).forEach(t => { _urutJurnal[t] = { awal: _TABEL_U
 function ubahUrutJurnal(tabel, kolom) {
   const u = _urutJurnal[tabel]; if (!u) return;
   if (kolom === 'tgl') {
-    u.tgl = (u.tgl === 'desc') ? 'asc' : 'desc';
-    u.tglAktif = true;
-    u.utama = 'tgl';
+    // Tanggal: mati (urutan awal) -> kebalikan urutan awal -> urutan awal (aktif) -> mati. Klik ketiga mematikannya.
+    const kebalikan = u.awal === 'desc' ? 'asc' : 'desc';
+    if (!u.tglAktif) { u.tglAktif = true; u.tgl = kebalikan; u.utama = 'tgl'; }
+    else if (u.tgl !== u.awal) { u.tgl = u.awal; u.utama = 'tgl'; }
+    else { u.tglAktif = false; u.tgl = u.awal; u.utama = u.no ? 'no' : 'tgl'; }   // mati: nomor (bila aktif) jadi satu-satunya urutan
   } else if (kolom === 'no') {
     u.no = u.no === null ? 'asc' : (u.no === 'asc' ? 'desc' : null);
     u.utama = u.no ? 'no' : 'tgl';               // nomor dimatikan: tanggal (bila aktif) kembali jadi utama

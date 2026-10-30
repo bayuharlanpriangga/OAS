@@ -48,9 +48,13 @@ const klik = (t, k) => { vm.runInContext("ubahUrutJurnal('" + t + "','" + k + "'
 const st = t => JSON.parse(vm.runInContext('JSON.stringify(_urutJurnal)', ctx))[t];
 ok(['umum', 'kas'].every(t => st(t).awal === 'desc' && st(t).tgl === 'desc') && ['jual', 'beli', 'bb'].every(t => st(t).awal === 'asc' && st(t).tgl === 'asc'), 'awal: Umum/Kas terbaru di atas; Penjualan/Pembelian/Buku Besar terlama di atas (seperti tampilan lama)');
 let s = klik('umum', 'tgl'); ok(s.tglAktif && s.tgl === 'asc' && s.utama === 'tgl', 'Umum: klik Tanggal -> terbaru pindah ke bawah');
-s = klik('umum', 'tgl'); ok(s.tgl === 'desc', 'Umum: klik lagi -> terbaru kembali di atas');
+s = klik('umum', 'tgl'); ok(s.tglAktif && s.tgl === 'desc', 'Umum: klik kedua -> terbaru kembali di atas (masih aktif)');
+s = klik('umum', 'tgl'); ok(!s.tglAktif && s.tgl === 'desc', 'Umum: klik ketiga -> tanggal mati (urutan awal, tidak aktif)');
+s = klik('umum', 'tgl'); ok(s.tglAktif && s.tgl === 'asc', 'Umum: klik keempat -> mulai putaran baru (terbaru di bawah)');
+s = klik('umum', 'tgl'); s = klik('umum', 'tgl');
 s = klik('jual', 'tgl'); ok(s.tglAktif && s.tgl === 'desc', 'Penjualan: klik pertama langsung membalik (terbaru di atas)');
-s = klik('jual', 'tgl'); ok(s.tgl === 'asc', 'Penjualan: klik lagi kembali ke terlama di atas');
+s = klik('jual', 'tgl'); ok(s.tglAktif && s.tgl === 'asc', 'Penjualan: klik kedua kembali ke terlama di atas (masih aktif)');
+s = klik('jual', 'tgl'); ok(!s.tglAktif && s.tgl === 'asc', 'Penjualan: klik ketiga mematikan tanggal');
 s = klik('kas', 'no'); ok(s.no === 'asc' && s.utama === 'no', 'Kas: klik No. Jurnal -> kecil ke besar, jadi utama');
 s = klik('kas', 'no'); ok(s.no === 'desc', 'Kas: klik lagi -> besar ke kecil');
 s = klik('kas', 'tgl'); ok(s.utama === 'tgl' && s.no === 'desc', 'Kas: klik Tanggal saat nomor aktif -> tanggal jadi utama, nomor jadi pembanding');
@@ -64,6 +68,14 @@ ctx.dirender.length = 0; klik('beli', 'tgl'); klik('jual', 'no'); klik('kas', 't
 ok(ctx.dirender.join() === 'renderJurnalPembelian,renderJurnalPenjualan,renderJurnalKas,renderJurnalUmum,renderBukuBesar', 'tiap klik menggambar ulang tabel yang benar');
 ctx.dirender.length = 0; klik('lain', 'tgl'); klik('umum', 'lain');
 ok(ctx.dirender.length === 0, 'tabel atau kolom tidak dikenal diabaikan');
+
+console.log('[tanggal dimatikan]');
+vm.runInContext("_urutJurnal.kas = { awal: 'desc', tglAktif: false, tgl: 'desc', no: null, utama: 'tgl' };", ctx);
+klik('kas', 'tgl'); klik('kas', 'no');
+s = klik('kas', 'tgl'); s = klik('kas', 'tgl');
+ok(s.tglAktif === false && s.no === 'asc' && s.utama === 'no', 'Kas: tanggal dimatikan saat nomor aktif -> hanya nomor yang berlaku, jadi utama');
+ok(U(J, { awal: 'desc', tglAktif: false, tgl: 'desc', no: null, utama: 'tgl' }) === U(J, AWAL), 'tanggal mati = urutan awal tabel (tidak ada urutan tersisa)');
+ok(U(J, { awal: 'desc', tglAktif: false, tgl: 'desc', no: 'asc', utama: 'no' }) === 'JRN-001,JRN-002,JRN-003,JRN-010,JRN-021,', 'tanggal mati + nomor aktif: murni urut nomor');
 
 console.log('[urutkanBarisJurnal]');
 const baris = [{ tanggal: '2026-10-01', no: 'A-1', html: '<tr>1</tr>' }, { tanggal: '2026-10-03', no: 'A-3', html: '<tr>3</tr>' }, { tanggal: '2026-10-02', no: 'A-2', html: '<tr>2</tr>' }];
