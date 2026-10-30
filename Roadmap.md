@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 139 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 33/139 task selesai.**
+**Progres: 34/139 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -247,8 +247,16 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 | ☑ | 5.3b | Hapus pembayaran invoice (temuan 5.2 dan 5.3, tidak ada di rencana awal). Tombol "Riwayat" di baris invoice yang punya pembayaran membuka modal bayar dalam mode riwayat (form disembunyikan, jadi invoice lunas pun bisa dilihat); tiap record punya tombol hapus. Jurnal pembayaran yang masih berlaku DIBALIK lewat `buatJurnalPembalik` (bertanggal hari ini atau tanggal jurnal asal bila lebih baru, aturan `tanggalPembalikBill`), lalu record dibuang, `sisaTagihan` dihitung ulang dan invoice lunas yang bersisa kembali `terkirim`. Jurnal dibalik lebih dulu: gagal (mis. periode terkunci) = tidak ada yang berubah. Record tanpa jurnal atau yang jurnalnya sudah dibalik manual cukup dibuang. Fungsi murni `susunHapusPembayaran` dan `terapkanHapusPembayaran` di `js/31-pembayaran.js`; `hapusPembayaranInvoice`, `openRiwayatPembayaranInvoice`, `_bayarTombolRiwayat`, `_bayarFormTampil` di `js/32-pembayaran-ui.js`. Hook: `11-kontak-invoice.js` (1 baris), `index.html` (id `bayar-inv-form`, `bayar-inv-simpan`). Tes: `tests/pembayaran-hapus.test.js`. Pembayaran bill menyusul di 5.5. Perlu uji manual di browser | 5.3 |
 | ☑ | 5.4 | Status invoice otomatis dari total pembayaran: 'sebagian' untuk invoice/bill yang dibayar sebagian, 'lunas' saat sisa 0, 'terkirim'/'diterima' bila belum dibayar | 5.3 |
 | ☑ | 5.5 | ⚠ Bayar bill (parsial) + jurnal, meniru pola 5.3. Form bayar dan riwayat di daftar bill; jurnal Dr Utang Usaha, Cr Kas/Bank; hapus pembayaran membalik jurnal dan memulihkan sisa/status. Modul 31/32, modal di index.html, tes `tests/pembayaran-bill.test.js`. | 5.3, 4.4 |
-| ☐ | 5.6 | Fungsi murni alokasi satu pembayaran ke beberapa faktur + tes | 5.1 |
+| ☑ | 5.6 | Fungsi murni `susunAlokasiPembayaran(f, invoices, daftar)` + tes. Satu penerimaan dipecah menjadi record pembayaran per invoice dengan `grupId` yang sama agar kompatibel dengan jurnal dan hitungan sisa yang sudah ada. Validasi seluruh alokasi dilakukan sebelum hasil dikembalikan; total alokasi wajib sama dengan jumlah penerimaan, invoice tidak boleh duplikat, dan setiap invoice harus valid serta masih memiliki sisa. Tes `tests/alokasi-pembayaran.test.js`. | 5.1 |
 | ☐ | 5.7 | UI alokasi pembayaran ke beberapa faktur sekaligus | 5.6, 5.3 |
+
+
+**Temuan task 5.6:**
+- Satu penerimaan ke beberapa invoice disimpan sebagai beberapa record `pembayaran` (satu record per invoice), bukan satu record multi-dokumen. Ini mempertahankan kontrak 5.1-5.5: `dokId` tetap menunjuk satu invoice, `sisaTagihan()` tetap sederhana, dan 5.7 dapat memosting satu jurnal per alokasi tanpa mengubah mekanisme jurnal lama.
+- Semua record hasil satu penerimaan memiliki `grupId` yang sama. ID record deterministik: `<id-batch>_1`, `<id-batch>_2`, dst. `grupId` adalah pengenal batch, bukan pengganti `id`.
+- `susunAlokasiPembayaran(f, invoices, daftar)` murni dan tidak mengubah invoice atau daftar pembayaran. Hasilnya memuat `pembayaran[]`, `perubahan[]` per invoice (`dibayarLama`, `sisaBaru`, `lunas`), serta `totalDialokasikan`. Fungsi tidak menyimpan atau memosting jurnal; itu bagian UI/integrasi 5.7.
+- Validasi bersifat atomik: jika satu invoice gagal, tidak ada hasil parsial yang dikembalikan. Menolak invoice hilang/duplikat, status yang tidak dapat dibayar, tanggal sebelum invoice, akun kas kosong, jumlah alokasi tidak valid atau melebihi sisa, benturan ID, dan total alokasi yang tidak sama dengan jumlah penerimaan.
+- Tidak ada migrasi SQL. `grupId` merupakan field opsional pada record `pembayaran`; record lama tetap kompatibel.
 
 **Temuan task 5.1:**
 - Sisa tagihan dihitung dari pembayaran, bukan dikurangi di tempat: `sisaTagihan = max(0, total − dibayarLama − Σ jumlah)`. Dengan begitu menghapus atau mengoreksi pembayaran tidak membuat sisa tidak sinkron. Field `sisaTagihan` di invoice/bill tetap ada karena dibaca daftar, ekspor, dan aging (`hitungAging`, 4.7); alur bayar (5.2, 5.5) wajib mengisinya ulang dari fungsi ini setiap kali pembayaran ditambah atau dihapus, jadi Umur Piutang/Hutang ikut tanpa perubahan.

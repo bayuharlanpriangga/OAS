@@ -140,6 +140,65 @@ function susunPembayaran(f, dok, daftar, jenis) {
   return { ok: true, pembayaran, dibayarLama: lama, sisaBaru, lunas: sisaBaru <= 0 };
 }
 
+// ── Task 5.6: alokasi satu penerimaan ke beberapa invoice ─────────────
+// Satu transaksi penerimaan dapat melunasi sebagian/seluruh beberapa invoice sekaligus.
+// Agar kompatibel dengan model pembayaran 5.1-5.5 (satu record + satu jurnal per dokumen),
+// fungsi ini memecah satu batch menjadi beberapa record pembayaran invoice dengan grupId sama.
+// Input f: { id, createdAt, tanggal, jumlah, akunKas, metode?, catatan?, alokasi:[{ dokId, jumlah }] }.
+// Input invoices: daftar invoice yang tersedia. Fungsi murni: tidak mengubah invoice/daftar.
+// Hasil: { ok:true, grupId, pembayaran:[...], perubahan:[{dokId,dibayarLama,sisaBaru,lunas}], totalDialokasikan }
+// atau { ok:false, pesan }. Jumlah batch wajib sama persis dengan jumlah seluruh alokasi agar
+// tidak ada uang penerimaan yang diam-diam tidak terpetakan ke piutang.
+function susunAlokasiPembayaran(f, invoices, daftar) {
+  const gagal = pesan => ({ ok: false, pesan });
+  f = f || {};
+  const listInv = Array.isArray(invoices) ? invoices : [];
+  const alokasi = Array.isArray(f.alokasi) ? f.alokasi : [];
+  const grupId = typeof f.id === 'string' ? f.id.trim() : '';
+  if (!grupId) return gagal('ID penerimaan kosong.');
+  if (!f.createdAt || typeof f.createdAt !== 'string') return gagal('Waktu pembuatan pembayaran kosong.');
+  if (!_bayarTanggalValid(typeof f.tanggal === 'string' ? f.tanggal.trim() : '')) return gagal('Isi tanggal pembayaran yang valid.');
+  if (typeof f.jumlah !== 'number' || !isFinite(f.jumlah) || _bayarBulat(f.jumlah) <= 0) return gagal('Jumlah penerimaan harus lebih dari 0.');
+  if (typeof f.akunKas !== 'string' || !f.akunKas.trim()) return gagal('Pilih akun kas/bank.');
+  if (!alokasi.length) return gagal('Tambahkan minimal satu invoice untuk dialokasikan.');
+
+  const idTerpakai = new Set((Array.isArray(daftar) ? daftar : []).filter(p => p && p.id != null).map(p => String(p.id)));
+  const dokTerpakai = new Set();
+  const pembayaran = [];
+  const perubahan = [];
+  let totalDialokasikan = 0;
+
+  for (let i = 0; i < alokasi.length; i++) {
+    const item = alokasi[i] || {};
+    if (item.dokId === undefined || item.dokId === null || String(item.dokId).trim() === '') return gagal('Invoice pada alokasi ke-' + (i + 1) + ' tidak valid.');
+    const dokId = String(item.dokId);
+    if (dokTerpakai.has(dokId)) return gagal('Invoice yang sama tidak boleh dialokasikan lebih dari sekali.');
+    dokTerpakai.add(dokId);
+    const inv = listInv.find(d => d && String(d.id) === dokId);
+    if (!inv) return gagal('Invoice pada alokasi ke-' + (i + 1) + ' tidak ditemukan.');
+    const jumlah = typeof item.jumlah === 'number' && isFinite(item.jumlah) ? _bayarBulat(item.jumlah) : NaN;
+    if (!isFinite(jumlah) || jumlah <= 0) return gagal('Jumlah alokasi setiap invoice harus lebih dari 0.');
+
+    // ID turunan deterministik supaya batch dapat disimpan sebagai record terpisah tanpa bentrok.
+    const paymentId = grupId + '_' + (i + 1);
+    if (idTerpakai.has(paymentId)) return gagal('ID pembayaran batch sudah dipakai.');
+    const hasil = susunPembayaran({
+      id: paymentId, createdAt: f.createdAt, tanggal: f.tanggal, jumlah,
+      akunKas: f.akunKas, metode: f.metode, catatan: f.catatan
+    }, inv, daftar, 'invoice');
+    if (!hasil.ok) return gagal('Invoice ' + String(inv.noInvoice || inv.id) + ': ' + hasil.pesan);
+
+    const record = Object.assign({}, hasil.pembayaran, { grupId });
+    pembayaran.push(record);
+    perubahan.push({ dokId: inv.id, dibayarLama: hasil.dibayarLama, sisaBaru: hasil.sisaBaru, lunas: hasil.lunas });
+    totalDialokasikan = _bayarBulat(totalDialokasikan + jumlah);
+  }
+
+  const jumlahBatch = _bayarBulat(f.jumlah);
+  if (totalDialokasikan !== jumlahBatch) return gagal('Total alokasi (Rp ' + totalDialokasikan.toLocaleString('id-ID') + ') harus sama dengan jumlah penerimaan (Rp ' + jumlahBatch.toLocaleString('id-ID') + ').');
+  return { ok: true, grupId, pembayaran, perubahan, totalDialokasikan };
+}
+
 // Simpan state pembayaran dan dokumen yang berubah. Bisnis login: satu antrean sinkron untuk invoice + pembayaran
 // (jenis 'bill': bill + pembayaran). Mode tamu: localStorage `oas_pembayaran` + `oas_invoices`/`oas_bill`.
 function simpanPembayaranState(jenis) {

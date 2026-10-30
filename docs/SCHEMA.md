@@ -410,13 +410,14 @@ Penyimpanan (task 4.4): record dibuat oleh `susunBill()` (28-bill.js, murni; bar
 Jurnal bill (4.5-4.6): saat status `'diterima'`, `buatJurnalBill()` (28-bill.js, murni) menyusun jurnal berjenis `Tagihan Pembelian` (`JENIS_JURNAL.BILL`): Debit akun tiap item (item berakun sama digabung) + PPN Masukan (ket `PPN Masukan NN%`, `_ppnTarif`), Kredit `akunUtang` sebesar total; `postingJurnalBill()` (29-bill-ui.js) memostingnya lewat `postJurnalLegacy` dan menyimpan nomor jurnalnya di `jurnalNo`. Penaut bill ke jurnal: `jurnalNo` + ket jurnal `Tagihan <noBill> — <supplier>` (`jurnalBillStatus()`), karena `id`/`ref` jurnal tidak tersimpan ke `jurnal_entries`. Menghapus bill yang sudah dijurnal membuat jurnal pembalik (jurnal asal tidak dihapus). Status `'draft'` tidak membuat jurnal. Field tambahan seperti nomor faktur pajak supplier (12.1) dan referensi pesanan pembelian (9.5) ditambahkan di task terkait.
 
 ### 4.5c Pembayaran — `pembayaranList[]`
-State di `js/31-pembayaran.js`; disinkron lewat `company_records` (`kind='pembayaran'`, `rec_id` = `id`). Satu record = satu pembayaran atas satu dokumen. Task 5.1: model dan fungsi hitung. Task 5.2: form bayar invoice dan penyimpanan. Task 5.3: jurnal pembayaran invoice. Status turunan di 5.4, bill di 5.5.
+State di `js/31-pembayaran.js`; disinkron lewat `company_records` (`kind='pembayaran'`, `rec_id` = `id`). Satu record = satu alokasi pembayaran atas satu dokumen. Untuk penerimaan yang dialokasikan ke beberapa invoice (task 5.6), dibuat beberapa record dengan `grupId` yang sama; setiap record tetap menunjuk tepat satu dokumen. Task 5.1: model dan fungsi hitung. Task 5.2: form bayar invoice dan penyimpanan. Task 5.3: jurnal pembayaran invoice. Status turunan di 5.4, bill di 5.5.
 ```ts
 {
-  id: string;              // "PAY_<timestamp>"
+  id: string;              // "PAY_<timestamp>" atau ID turunan batch "<id-batch>_<urutan>"
   jenis: 'invoice' | 'bill';  // jenis dokumen yang dibayar
   dokId: string;             // id dokumen (invoice.id / bill.id), bukan nomor dokumen: nomor bisa berulang setelah Reset Data
   noDok: string;             // salinan nomor dokumen saat dibayar (noInvoice / noBill), hanya untuk tampilan
+  grupId?: string;           // ID penerimaan gabungan (task 5.6); sama untuk record alokasi dalam satu batch
   tanggal: string;           // "YYYY-MM-DD"
   jumlah: number;            // > 0; tidak boleh melebihi sisa saat dicatat (divalidasi di 5.2)
   akunKas: string;           // kode akun Kas/Bank (invoice: debit; bill: kredit)
