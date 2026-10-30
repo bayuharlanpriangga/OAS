@@ -301,7 +301,7 @@ function renderInvoiceList() {
   if(!list.length) { tbody.innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">Belum ada invoice${filter!=='all'?' dengan filter ini':''}</td></tr>`; return; }
   tbody.innerHTML = list.map(i=>{
     const jt = i.jatuhTempo < today && i.status!=='lunas';
-    const statusMap = {draft:'var(--muted)',terkirim:'var(--accent2)',lunas:'var(--accent)','jatuh-tempo':'var(--red)'};
+    const statusMap = {draft:'var(--muted)',terkirim:'var(--accent2)',sebagian:'var(--yellow)',lunas:'var(--accent)','jatuh-tempo':'var(--red)'};
     const s = jt?'jatuh-tempo':(i.status||'draft');
     const badge = `<span style="background:color-mix(in srgb, ${statusMap[s]} 13%, transparent);color:${statusMap[s]};padding:2px 8px;border-radius:6px;font-size:11px;text-transform:capitalize;">${s==='jatuh-tempo'?'<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Jatuh Tempo':s}</span>`;
     return `<tr>
@@ -313,10 +313,9 @@ function renderInvoiceList() {
       <td style="font-family:var(--mono);color:${i.sisaTagihan>0?'var(--accent3)':'var(--accent)'}">${rp(i.sisaTagihan)}</td>
       <td>${badge}</td>
       <td style="display:flex;gap:6px;">
-        ${i.status==='terkirim'&&i.sisaTagihan>0?`<button class="btn btn-ghost btn-sm" onclick="openModalBayarInvoice('${i.id}')"><i class="ti ti-cash" style="color:var(--accent2);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Bayar</button>`:''}
+        ${(i.status==='terkirim'||i.status==='sebagian')&&i.sisaTagihan>0?`<button class="btn btn-ghost btn-sm" onclick="openModalBayarInvoice('${i.id}')"><i class="ti ti-cash" style="color:var(--accent2);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Bayar</button>`:''}
         ${typeof _bayarTombolRiwayat==='function'?_bayarTombolRiwayat(i):''}
         ${s==='draft'?`<button class="btn btn-ghost btn-sm" onclick="kirimInvoice('${i.id}')" title="Kirim invoice: buat jurnal piutang, status jadi Terkirim"><i class="ti ti-upload" style="color:var(--accent2);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Kirim</button>`:''}
-        ${i.status==='terkirim'?`<button class="btn btn-ghost btn-sm" onclick="openModalLunasInvoice('${i.id}')"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Lunas</button>`:''}
         <button class="btn btn-danger btn-sm" onclick="hapusInvoice('${i.id}')"><i class="ti ti-trash" style="font-size:14px;"></i></button>
       </td>
     </tr>`;

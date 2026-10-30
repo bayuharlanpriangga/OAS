@@ -153,9 +153,35 @@ function simpanPembayaranState(jenis) {
   return Promise.resolve(true);
 }
 
+// ── Task 5.4: status invoice otomatis ──────────────────────
+
+// Status invoice/bill turunan dari total pembayaran (murni).
+// Invoice: 'draft' = belum terkirim (tidak berubah), 'terkirim' = belum dibayar, 'sebagian' = dibayar sebagian,
+//          'lunas' = sisa 0, 'jatuh-tempo' = dikomputasi di tempat pemakai (bukan disimpan, hanya untuk filter/badge).
+// Bill: 'draft' = belum diterima (tidak berubah), 'diterima' = belum lunas, 'sebagian', 'lunas'.
+// Fungsi ini hanya dipanggil untuk invoice/bill yang sudah terkirim/diterima, jadi tidak mengubah draft ke lain.
+// Mengembalikan status baru atau status asal (dok.status) bila belum terkirim/diterima atau total tidak valid.
+function statusDariPembayaran(dok, daftar, jenis) {
+  if (!dok || typeof dok !== 'object') return '';
+  jenis = jenis || 'invoice';
+  const asal = (typeof dok.status === 'string' ? dok.status : '').trim();
+  const boleh = PEMBAYARAN_STATUS_BOLEH[jenis];
+  if (!boleh || !boleh.includes(asal)) return asal; // draft atau status lain: tidak berubah
+  
+  const total = (typeof dok.total === 'number' && isFinite(dok.total)) ? dok.total : 0;
+  if (total <= 0) return asal; // total tidak valid: tidak mengubah status
+  
+  const sisa = sisaTagihan(dok, daftar, jenis);
+  
+  if (sisa <= 0) return 'lunas';
+  const dibayar = totalDibayar(dok, daftar, jenis);
+  if (dibayar > 0 && sisa < total) return 'sebagian';
+  return asal; // belum dibayar: tetap terkirim/diterima
+}
+
 // Pasang hasil susunPembayaran yang ok ke state: tambah record (terbaru di atas), isi ulang dibayarLama dan
-// sisaTagihan dokumen dari hasil hitung, lalu simpan. Dokumen yang lunas (sisa 0) berstatus 'lunas', sama seperti
-// alur lama; status turunan selengkapnya (belum/sebagian/jatuh tempo) dikerjakan di 5.4.
+// sisaTagihan dokumen dari hasil hitung, lalu simpan. Status dokumen ditentukan lewat statusDariPembayaran (5.4):
+// sisa 0 -> 'lunas', dibayar sebagian -> 'sebagian', belum dibayar -> tetap 'terkirim'/'diterima' (atau draft, tidak berubah).
 // jurnalNo diisi pemanggil SEBELUM fungsi ini (invoice: postingJurnalPembayaranInvoice di 32-pembayaran-ui.js, 5.3;
 // bill: 5.5); record lama dari 5.2 tanpa jurnalNo dijurnalkan belakangan lewat jurnalkanPembayaranInvoiceLama.
 function catatPembayaran(dok, hasil) {
@@ -163,7 +189,7 @@ function catatPembayaran(dok, hasil) {
   pembayaranList.unshift(hasil.pembayaran);
   if (hasil.dibayarLama > 0) dok.dibayarLama = hasil.dibayarLama;
   dok.sisaTagihan = hasil.sisaBaru;
-  if (hasil.lunas) dok.status = 'lunas';
+  dok.status = statusDariPembayaran(dok, pembayaranList, hasil.pembayaran.jenis);
   return simpanPembayaranState(hasil.pembayaran.jenis);
 }
 
@@ -285,7 +311,7 @@ function pembayaranInvoiceBelumJurnal(daftarPembayaran, daftarInvoice, daftarJur
 //   jurnalStatus 'aktif'  : jurnal pembayaran masih berlaku, pemanggil wajib membaliknya (jurnal pembalik) sebelum menerapkan.
 //   jurnalStatus 'belum'  : record 5.2 tanpa jurnal; 'dibalik': jurnalnya sudah dibalik manual. Keduanya cukup dibuang recordnya.
 //   dibayarLama dihitung dari daftar SEBELUM record dibuang (dibayarLamaTurunan), jadi pelunasan lewat alur lama tidak hilang.
-//   statusBaru: invoice 'lunas' yang sisanya > 0 lagi kembali 'terkirim'; status lain tidak berubah.
+//   statusBaru: diturunkan dari statusDariPembayaran (5.4): 'lunas' -> 'terkirim'/'sebagian', atau status asal bila tidak berubah.
 function susunHapusPembayaran(id, dok, daftar, daftarJurnal) {
   const gagal = pesan => ({ ok: false, pesan });
   const semua = Array.isArray(daftar) ? daftar : [];
@@ -298,7 +324,8 @@ function susunHapusPembayaran(id, dok, daftar, daftarJurnal) {
   }
   const dibayarLama = dibayarLamaTurunan(dok, semua, 'invoice');
   const sisaBaru = sisaTagihan(Object.assign({}, dok, { dibayarLama }), daftarBaru, 'invoice');
-  const statusBaru = (dok.status === 'lunas' && sisaBaru > 0) ? 'terkirim' : dok.status;
+  const dokBaru = Object.assign({}, dok, { dibayarLama, sisaTagihan: sisaBaru });
+  const statusBaru = statusDariPembayaran(dokBaru, daftarBaru, 'invoice');
   const st = (typeof jurnalPembayaranStatus === 'function') ? jurnalPembayaranStatus(p, dok, daftarJurnal, semua) : { status: 'belum', jurnal: null };
   return { ok: true, pembayaran: p, daftarBaru, dibayarLama, sisaBaru, statusBaru, jurnalStatus: st.status, jurnal: st.jurnal, yatim: false };
 }
