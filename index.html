@@ -2280,6 +2280,7 @@
     <div class="table-header">
       <div class="table-title"><i class="ti ti-clipboard-list ti-inline"></i> Daftar Invoice</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="openModalAlokasiPembayaran()"><i class="ti ti-layers-intersect"></i> Alokasi Pembayaran</button>
         <select id="inv-filter-status" onchange="renderInvoiceList()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;font-family:var(--sans);">
           <option value="all">Semua Status</option>
           <option value="draft">Draft</option>
@@ -4814,6 +4815,30 @@
         <button class="btn btn-primary" onclick="simpanBill('diterima')" style="flex-shrink:0;white-space:nowrap;"><i class="ti ti-upload" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i> Simpan & Diterima</button>
       </div>
     </div>
+  </div>
+</div>
+
+
+<!-- MODAL: ALOKASI SATU PENERIMAAN KE BEBERAPA INVOICE (task 5.7) -->
+<div class="modal-backdrop" id="modal-alokasi-inv" onclick="if(event.target===this)closeModal('modal-alokasi-inv')">
+  <div class="modal" style="max-width:720px;">
+    <div class="modal-head"><div class="modal-title"><i class="ti ti-layers-intersect" style="color:var(--accent);"></i> Alokasi Pembayaran Beberapa Invoice</div><button class="modal-close" onclick="closeModal('modal-alokasi-inv')">✕</button></div>
+    <div class="modal-body">
+      <div style="padding:10px 12px;background:var(--surface2);border-radius:9px;font-size:12px;color:var(--muted);margin-bottom:14px;">Catat satu penerimaan bank/kas, lalu bagi nominalnya ke beberapa invoice yang masih memiliki tagihan. Total alokasi wajib sama dengan jumlah penerimaan.</div>
+      <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label>Tanggal Pembayaran</label><input type="date" id="alokasi-inv-tgl"></div>
+        <div class="form-group"><label>Total Penerimaan (Rp)</label><input type="number" id="alokasi-inv-jumlah" min="0.01" step="any" oninput="_alokasiRender()"></div>
+      </div>
+      <div class="form-group"><label>Akun Kas/Bank</label><input type="hidden" id="alokasi-inv-akun"><button class="form-picker-btn" type="button" id="alokasi-inv-akun-btn" onclick="openSimplePicker('alokasi-inv-akun','alokasi-inv-akun-btn','kas')">Pilih Akun...</button></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 9px;"><label style="font-size:12px;font-weight:600;">Alokasi per Invoice</label><button class="btn btn-ghost btn-sm" type="button" onclick="tambahBarisAlokasi()"><i class="ti ti-plus"></i> Tambah Invoice</button></div>
+      <div id="alokasi-inv-baris"></div>
+      <div id="alokasi-inv-total" style="padding:10px 12px;background:var(--surface2);border-radius:8px;font-size:12px;margin:10px 0 14px;"></div>
+      <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label>Metode (opsional)</label><input type="text" id="alokasi-inv-metode" placeholder="Transfer, Tunai, ..."></div>
+        <div class="form-group"><label>Catatan (opsional)</label><input type="text" id="alokasi-inv-catatan"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('modal-alokasi-inv')">Batal</button><button class="btn btn-primary" onclick="simpanAlokasiPembayaran()"><i class="ti ti-circle-check"></i> Simpan Penerimaan</button></div>
   </div>
 </div>
 

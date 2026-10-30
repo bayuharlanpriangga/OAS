@@ -91,7 +91,7 @@ function openModalBayarInvoice(id) {
   if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Pembayaran')) return;
   const inv = invoiceList.find(i => i && i.id === id); if (!inv) return;
   // Pemeriksaan status dan sisa dipakai bersama dengan simpan (susunPembayaran), jadi cukup dites tanpa jumlah di sini.
-  if (inv.status !== 'terkirim') { showAlert(inv.status === 'lunas' ? 'Invoice ini sudah lunas.' : 'Invoice draft belum bisa dibayar. Kirim dulu invoicenya.'); return; }
+  if (!['terkirim','sebagian'].includes(inv.status)) { showAlert(inv.status === 'lunas' ? 'Invoice ini sudah lunas.' : 'Invoice draft belum bisa dibayar. Kirim dulu invoicenya.'); return; }
   _bayarInvId = inv.id;
   _bayarFormTampil(true);
   const lama = dibayarLamaTurunan(inv, pembayaranList, 'invoice');
@@ -196,6 +196,143 @@ function renderPembayaranBelumJurnal() {
   const el = document.getElementById('inv-belum-jurnal'); if (!el) return;
   const n = pembayaranInvoiceBelumJurnal(pembayaranList, invoiceList, jurnalEntries).length;
   el.innerHTML = n ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 14px;margin-bottom:16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;font-size:12px;color:var(--accent3);"><span><i class="ti ti-alert-triangle" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ${n} pembayaran invoice belum dijurnal, jadi Kas dan Piutang di buku besar belum berubah.</span><button class="btn btn-ghost btn-sm" onclick="jurnalkanPembayaranInvoiceLama()">Buat Jurnal</button></div>` : '';
+}
+
+
+
+// ── Task 5.7: penerimaan gabungan untuk beberapa invoice ─────────
+let _alokasiBaris = [];
+function _alokasiInvoiceTersedia() {
+  return (Array.isArray(invoiceList) ? invoiceList : []).filter(inv => {
+    if (!inv || !['terkirim','sebagian'].includes(inv.status)) return false;
+    const sisa = sisaTagihan(Object.assign({}, inv, { dibayarLama: dibayarLamaTurunan(inv, pembayaranList, 'invoice') }), pembayaranList, 'invoice');
+    return sisa > 0;
+  });
+}
+function _alokasiFmt(n) { return Number(n || 0).toLocaleString('id-ID'); }
+function _alokasiRender() {
+  const host = document.getElementById('alokasi-inv-baris'); if (!host) return;
+  const tersedia = _alokasiInvoiceTersedia();
+  host.innerHTML = _alokasiBaris.map((row, idx) => {
+    const inv = tersedia.find(x => String(x.id) === String(row.dokId));
+    const opsi = tersedia.map(x => {
+      const sisa = sisaTagihan(Object.assign({}, x, { dibayarLama: dibayarLamaTurunan(x,pembayaranList,'invoice') }),pembayaranList,'invoice');
+      return `<option value="${escapeForJsAttr(x.id)}" ${String(x.id)===String(row.dokId)?'selected':''}>${escapeHtml(x.noInvoice || x.id)} · ${escapeHtml(x.pelanggan || '')} · sisa ${rp(sisa)}</option>`;
+    }).join('');
+    const sisa = inv ? sisaTagihan(Object.assign({},inv,{dibayarLama:dibayarLamaTurunan(inv,pembayaranList,'invoice')}),pembayaranList,'invoice') : 0;
+    return `<div class="alokasi-inv-row" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(120px, .55fr) auto;gap:8px;align-items:center;margin-bottom:8px;">
+      <select class="form-input" onchange="ubahAlokasiInvoice(${idx},'dokId',this.value)"><option value="">Pilih invoice...</option>${opsi}</select>
+      <div><input class="form-input" type="number" min="0.01" step="any" placeholder="Nominal" value="${row.jumlah || ''}" oninput="ubahAlokasiInvoice(${idx},'jumlah',this.value)" style="width:100%;"><div style="font-size:10px;color:var(--muted);margin-top:3px;">Sisa: ${rp(sisa)}</div></div>
+      <button class="btn btn-danger btn-sm" type="button" onclick="hapusBarisAlokasi(${idx})" title="Hapus baris"><i class="ti ti-trash"></i></button>
+    </div>`;
+  }).join('') || '<div style="color:var(--muted);font-size:12px;padding:8px 0;">Belum ada invoice dipilih.</div>';
+  const total = _alokasiBaris.reduce((n,x)=>n+(Number(x.jumlah)||0),0);
+  const penerimaan = Number((document.getElementById('alokasi-inv-jumlah')||{}).value || 0);
+  const info = document.getElementById('alokasi-inv-total');
+  if (info) info.innerHTML = `<div style="display:flex;justify-content:space-between;"><span>Total alokasi</span><strong>${rp(total)}</strong></div><div style="display:flex;justify-content:space-between;margin-top:4px;"><span>Selisih dari penerimaan</span><strong style="color:${Math.round((penerimaan-total)*100)===0?'var(--accent)':'var(--accent3)'};">${rp(penerimaan-total)}</strong></div>`;
+}
+function ubahAlokasiInvoice(idx, field, value) {
+  if (!_alokasiBaris[idx]) return;
+  _alokasiBaris[idx][field] = field === 'jumlah' ? (value === '' ? '' : Number(value)) : value;
+  _alokasiRender();
+}
+function tambahBarisAlokasi() {
+  const dipakai = new Set(_alokasiBaris.map(x=>String(x.dokId)));
+  const inv = _alokasiInvoiceTersedia().find(x=>!dipakai.has(String(x.id)));
+  _alokasiBaris.push({ dokId: inv ? inv.id : '', jumlah: '' }); _alokasiRender();
+}
+function hapusBarisAlokasi(idx) { _alokasiBaris.splice(idx,1); _alokasiRender(); }
+function openModalAlokasiPembayaran() {
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Pembayaran')) return;
+  if (!_alokasiInvoiceTersedia().length) { showAlert('Tidak ada invoice terkirim yang masih memiliki sisa tagihan.'); return; }
+  _alokasiBaris = [];
+  const tgl = new Date().toISOString().slice(0,10);
+  _bayarSet('alokasi-inv-tgl',tgl); _bayarSet('alokasi-inv-jumlah',''); _bayarSet('alokasi-inv-metode',''); _bayarSet('alokasi-inv-catatan','');
+  const kas = akuns.find(a=>a.kode==='1101') || akuns.find(a=>a.tipe==='Aset');
+  _bayarSet('alokasi-inv-akun',kas?kas.kode:'');
+  const btn=document.getElementById('alokasi-inv-akun-btn');
+  if(btn){if(kas){btn.innerHTML=`<span class="picker-kode-badge">${escapeHtml(kas.kode)}</span> ${escapeHtml(kas.nama)}`;btn.classList.add('has-value');}else{btn.textContent='Pilih Akun...';btn.classList.remove('has-value');}}
+  tambahBarisAlokasi();
+  openModal('modal-alokasi-inv'); setTimeout(upgradeFormPickers,80);
+}
+function simpanAlokasiPembayaran() {
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Pembayaran')) return;
+  const v=id=>(document.getElementById(id)||{}).value||'';
+  let id='RCV_'+Date.now(), n=1; while(pembayaranList.some(p=>p&&String(p.id).startsWith(id))) id='RCV_'+Date.now()+'_'+(n++);
+  const hasil=susunAlokasiPembayaran({id,createdAt:new Date().toISOString(),tanggal:v('alokasi-inv-tgl'),jumlah:Number(v('alokasi-inv-jumlah')),akunKas:v('alokasi-inv-akun'),metode:v('alokasi-inv-metode'),catatan:v('alokasi-inv-catatan'),alokasi:_alokasiBaris.map(x=>({dokId:x.dokId,jumlah:Number(x.jumlah)}))},invoiceList,pembayaranList);
+  if(!hasil.ok){showAlert(hasil.pesan);return;}
+  // Pra-validasi semua jurnal dan periode sebelum jurnal pertama diposting.
+  const paket=[];
+  for(const p of hasil.pembayaran){
+    const inv=invoiceList.find(x=>String(x.id)===String(p.dokId));
+    if(!guardPeriode(p.tanggal,'diposting')) return;
+    const akunPiutang=(akuns.find(a=>a&&a.kode==='1201')||akuns.find(a=>a&&String(a.nama||'').toLowerCase().includes('piutang'))||null);
+    const j=buatJurnalPembayaranInvoice(p,inv,{akunPiutang:akunPiutang?akunPiutang.kode:''});
+    if(!j.ok){_bayarPeringatan((inv.noInvoice||'Invoice')+': '+j.pesan);return;}
+    paket.push({p,inv,jurnal:j.jurnal});
+  }
+  if(!confirm(`Catat penerimaan ${rp(hasil.totalDialokasikan)} untuk ${paket.length} invoice? Sistem akan membuat satu jurnal Kas/Bank dan Piutang untuk setiap invoice.`)) return;
+  const posted=[];
+  const balikBatch = (alasan) => {
+    const gagalBalik=[];
+    for(const entry of posted.slice().reverse()){
+      const hariIni=new Date().toISOString().slice(0,10);
+      const tgl=entry.tanggal && entry.tanggal>hariIni ? entry.tanggal : hariIni;
+      try {
+        if(!guardPeriode(tgl,'dibuatkan jurnal pembalik')) { gagalBalik.push(entry.no); continue; }
+        const pembalik=buatJurnalPembalik(entry,{tanggal:tgl,alasan:`Pembatalan otomatis penerimaan ${id}: ${alasan}`});
+        if(!pembalik) gagalBalik.push(entry.no);
+      } catch(e) { gagalBalik.push(entry.no); }
+    }
+    if(typeof saveToStorage==='function') saveToStorage(false);
+    return gagalBalik;
+  };
+  try {
+    for(const item of paket){
+      const entry=postJurnalLegacy(item.jurnal);
+      if(!entry) throw new Error('Posting jurnal tidak berhasil.');
+      item.p.jurnalNo=entry.no; posted.push(entry);
+    }
+  } catch(e) {
+    const gagalBalik=balikBatch(e && e.message ? e.message : 'kegagalan posting');
+    _bayarPeringatan('Penerimaan dibatalkan dan tidak ada record pembayaran yang disimpan. '+posted.length+' jurnal yang sempat dibuat '+(gagalBalik.length ? 'belum seluruhnya berhasil dibalik ('+gagalBalik.join(', ')+'); periksa Jurnal Umum.' : 'sudah dinetralkan dengan jurnal pembalik.')+' Jangan ulangi sebelum memeriksa Jurnal Umum.');
+    return;
+  }
+
+  // Simpan snapshot agar kegagalan sinkronisasi dapat dipulihkan tanpa meninggalkan alokasi setengah jadi.
+  const snapshotPembayaran=pembayaranList.slice();
+  const snapshotInvoice=paket.map(x=>({inv:x.inv,sisaTagihan:x.inv.sisaTagihan,status:x.inv.status,dibayarLama:x.inv.dibayarLama,adaDibayarLama:Object.prototype.hasOwnProperty.call(x.inv,'dibayarLama')}));
+  const map=new Map(hasil.perubahan.map(x=>[String(x.dokId),x]));
+  for(const item of paket){
+    pembayaranList.unshift(item.p);
+    const perubahan=map.get(String(item.inv.id));
+    if(perubahan.dibayarLama>0)item.inv.dibayarLama=perubahan.dibayarLama;
+    item.inv.sisaTagihan=perubahan.sisaBaru;
+    item.inv.status=statusDariPembayaran(item.inv,pembayaranList,'invoice');
+  }
+  Promise.resolve().then(()=>simpanPembayaranState('invoice')).then(ok=>{
+    if(ok===false){
+      pembayaranList=snapshotPembayaran;
+      snapshotInvoice.forEach(x=>{x.inv.sisaTagihan=x.sisaTagihan;x.inv.status=x.status;if(x.adaDibayarLama)x.inv.dibayarLama=x.dibayarLama;else delete x.inv.dibayarLama;});
+      const gagalBalik=balikBatch('sinkronisasi penyimpanan gagal');
+      return Promise.resolve().then(()=>simpanPembayaranState('invoice')).then(()=>{
+        renderInvoiceList();renderInvoiceKPI();
+        _bayarPeringatan('Penyimpanan penerimaan gagal. Alokasi dan perubahan invoice dipulihkan; jurnal '+(gagalBalik.length?'belum seluruhnya berhasil dibalik ('+gagalBalik.join(', ')+')':'sudah dinetralkan dengan jurnal pembalik')+'. Periksa Jurnal Umum dan status sinkronisasi sebelum mencoba lagi.');
+      });
+    }
+    try{for(const item of paket)if(typeof auditLog==='function')auditLog('create','invoice',`Alokasi penerimaan ${id} ke ${item.inv.noInvoice} — ${rp(item.p.jumlah)}`,{ref:item.inv.noInvoice});}catch(e){}
+    closeModal('modal-alokasi-inv'); renderInvoiceList(); renderInvoiceKPI();
+    showAlert(`✓ Penerimaan ${rp(hasil.totalDialokasikan)} berhasil dialokasikan ke ${paket.length} invoice. ${posted.length} jurnal dibuat.`);
+    if(typeof cekNotifikasi==='function')cekNotifikasi();
+  }).catch(err=>{
+    pembayaranList=snapshotPembayaran;
+    snapshotInvoice.forEach(x=>{x.inv.sisaTagihan=x.sisaTagihan;x.inv.status=x.status;if(x.adaDibayarLama)x.inv.dibayarLama=x.dibayarLama;else delete x.inv.dibayarLama;});
+    const gagalBalik=balikBatch('exception sinkronisasi');
+    Promise.resolve().then(()=>simpanPembayaranState('invoice')).finally(()=>{
+      renderInvoiceList();renderInvoiceKPI();
+      _bayarPeringatan('Terjadi kesalahan penyimpanan. Perubahan pembayaran dipulihkan. '+(gagalBalik.length?'Jurnal perlu diperiksa manual: '+gagalBalik.join(', '):'Jurnal telah dinetralkan.')+' '+escapeHtml(err&&err.message||''));
+    });
+  });
 }
 
 // ── Task 5.5: pembayaran bill (Dr Utang Usaha, Cr Kas/Bank) ──

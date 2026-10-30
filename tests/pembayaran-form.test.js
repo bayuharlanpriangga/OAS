@@ -121,7 +121,7 @@ console.log('[catatPembayaran] state dan penyimpanan');
   e.ctx.__h = h;
   e.run('catatPembayaran(invoiceList[0], __h)');
   ok(e.run('pembayaranList.length') === 1 && e.run('pembayaranList[0].id') === 'PAY_100', 'record masuk pembayaranList');
-  ok(e.run('invoiceList[0].sisaTagihan') === 60000 && e.run('invoiceList[0].status') === 'terkirim' && e.run('invoiceList[0].dibayarLama') === undefined, 'sebagian: sisaTagihan 60.000, status tetap terkirim, dibayarLama tidak ditambahkan saat 0');
+  ok(e.run('invoiceList[0].sisaTagihan') === 60000 && e.run('invoiceList[0].status') === 'sebagian' && e.run('invoiceList[0].dibayarLama') === undefined, 'sebagian: sisaTagihan 60.000, status sebagian, dibayarLama tidak ditambahkan saat 0');
   ok(JSON.parse(e.ls['oas_pembayaran']).length === 1 && JSON.parse(e.ls['oas_invoices'])[0].sisaTagihan === 60000, 'mode tamu: oas_pembayaran dan oas_invoices ditulis');
   ok(!('oas_bill' in e.ls), 'pembayaran invoice tidak menulis oas_bill');
   // cicilan kedua melunasi
@@ -230,7 +230,7 @@ ok(idx.includes('id="modal-bayar-inv"') && idx.includes('id="bayar-inv-ringkas"'
 ok(idx.includes('onclick="simpanPembayaranInvoice()"') && idx.includes("openSimplePicker('bayar-inv-akun','bayar-inv-akun-btn','kas')"), 'tombol simpan dan picker akun kas terhubung');
 const urut = f => idx.indexOf('src="js/' + f + '"');
 ok(urut('31-pembayaran.js') > 0 && urut('31-pembayaran.js') < urut('32-pembayaran-ui.js') && urut('32-pembayaran-ui.js') < urut('99-init.js'), 'urutan script: 31, lalu 32, sebelum 99-init');
-ok(inv11.includes("openModalBayarInvoice('${i.id}')") && /i\.status==='terkirim'&&i\.sisaTagihan>0\?`<button[^`]*openModalBayarInvoice/.test(inv11), 'tombol Bayar di daftar invoice hanya untuk invoice terkirim yang masih bersisa');
+ok(inv11.includes("openModalBayarInvoice('${i.id}')") && /\(i\.status==='terkirim'\|\|i\.status==='sebagian'\)&&i\.sisaTagihan>0\?`<button[^`]*openModalBayarInvoice/.test(inv11), 'tombol Bayar di daftar invoice untuk invoice terkirim/sebagian yang masih bersisa');
 ok(/function openModalLunasInvoice\(id\) \{ openModalBayarInvoice\(id\); \}/.test(inv11) && !inv11.includes('konfirmasiLunasInvoice') && !inv11.includes('JRN_LNS_'), 'tombol "Lunas" membuka form bayar yang sama; alur lama (jurnal tanpa record) dihapus (penyatuan 5.3)');
 ok(!/pembayaranList|susunPembayaran|catatPembayaran|sisaTagihan\(/.test(inv11), '11-kontak-invoice.js hanya punya hook tombol (tidak memakai state pembayaran)');
 ok(!/jurnalEntries|addJurnal|postJurnal/.test(rd('js/31-pembayaran.js').replace(/\/\/.*$/gm, '')), '31-pembayaran.js tetap murni: tidak menyentuh jurnalEntries/addJurnal/postJurnal (posting ada di 32, 5.3)');

@@ -1,12 +1,12 @@
 # Roadmap OAS menuju setara Accurate
 
-Disusun 9 Oktober 2026, direvisi 12 Oktober 2026 · 25 fase · 139 task kecil (semua ukuran S) · dirancang untuk Claude free tier
+Disusun 9 Oktober 2026, direvisi 30 Oktober 2026 · 25 fase · 139 task kecil (semua ukuran S) · dirancang untuk Claude free tier
 
 ## 1. Cara pakai dokumen ini
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 34/139 task selesai.**
+**Progres: 35/139 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -70,7 +70,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | 2 | Umur piutang | 4/4 |
 | 3 | Akses anggota tim | 7/7 |
 | 4 | Tagihan pembelian (bill) | 8/9 |
-| 5 | Pembayaran | 5/7 |
+| 5 | Pembayaran | 7/7 |
 | 6 | Kartu piutang/hutang dan model dokumen | 0/3 |
 | 7 | Penawaran sampai faktur | 0/6 |
 | 8 | Surat jalan | 0/3 |
@@ -248,8 +248,25 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 | ☑ | 5.4 | Status invoice otomatis dari total pembayaran: 'sebagian' untuk invoice/bill yang dibayar sebagian, 'lunas' saat sisa 0, 'terkirim'/'diterima' bila belum dibayar | 5.3 |
 | ☑ | 5.5 | ⚠ Bayar bill (parsial) + jurnal, meniru pola 5.3. Form bayar dan riwayat di daftar bill; jurnal Dr Utang Usaha, Cr Kas/Bank; hapus pembayaran membalik jurnal dan memulihkan sisa/status. Modul 31/32, modal di index.html, tes `tests/pembayaran-bill.test.js`. | 5.3, 4.4 |
 | ☑ | 5.6 | Fungsi murni `susunAlokasiPembayaran(f, invoices, daftar)` + tes. Satu penerimaan dipecah menjadi record pembayaran per invoice dengan `grupId` yang sama agar kompatibel dengan jurnal dan hitungan sisa yang sudah ada. Validasi seluruh alokasi dilakukan sebelum hasil dikembalikan; total alokasi wajib sama dengan jumlah penerimaan, invoice tidak boleh duplikat, dan setiap invoice harus valid serta masih memiliki sisa. Tes `tests/alokasi-pembayaran.test.js`. | 5.1 |
-| ☐ | 5.7 | UI alokasi pembayaran ke beberapa faktur sekaligus | 5.6, 5.3 |
+| ☑ | 5.7 | UI alokasi pembayaran ke beberapa faktur sekaligus. Tombol **Alokasi Pembayaran** di halaman Invoice membuka modal penerimaan gabungan: tanggal, total penerimaan, akun kas/bank, metode/catatan, baris invoice + nominal alokasi, live total/selisih, tambah/hapus baris. Hanya invoice terkirim/sebagian yang masih bersisa ditawarkan. Simpan memvalidasi batch melalui `susunAlokasiPembayaran`, pra-validasi jurnal dan periode untuk seluruh alokasi, membuat satu jurnal Dr Kas/Bank Cr Piutang per invoice, menyimpan record per invoice dengan `grupId` sama, memperbarui sisa/status seluruh invoice, lalu sinkronisasi satu kali. Tombol Bayar individual juga mendukung status sebagian. Tes: `tests/alokasi-pembayaran-ui.test.js` (7/7) + `tests/alokasi-pembayaran.test.js` (25/25). Uji browser dan Supabase asli masih diperlukan. | 5.6, 5.3 |
 
+
+**Temuan task 5.7:**
+- UI penerimaan gabungan ditempatkan pada halaman Invoice & Piutang melalui tombol **Alokasi Pembayaran**, tidak mengganti alur bayar individual 5.2-5.3.
+- Invoice yang dapat dipilih adalah status `terkirim` atau `sebagian` dan sisa hitungannya lebih dari nol. Pemilihan invoice duplikat ditolak oleh `susunAlokasiPembayaran`; tiap baris menampilkan sisa terkini.
+- Total alokasi dan selisih terhadap total penerimaan diperbarui saat input berubah. Total wajib sama persis setelah pembulatan sen; nominal kosong/nol, invoice draft/lunas, tanggal invalid, periode terkunci, dan akun piutang/kas tidak valid menggagalkan validasi.
+- Satu record pembayaran dibuat per invoice dengan ID turunan dan `grupId` batch yang sama. Tiap record diposting sebagai jurnal Dr Kas/Bank, Cr Piutang dengan nomor jurnalnya sendiri, mengikuti kontrak 5.3.
+- Sebelum jurnal pertama diposting, semua alokasi diperiksa untuk periode dan validitas struktur jurnal. Jika posting di tengah batch gagal, seluruh jurnal yang sempat dibuat dibalik dengan jurnal pembalik; record pembayaran dan invoice belum disentuh. Jika sinkronisasi invoice + pembayaran gagal setelah commit memori, snapshot pembayaran/invoice dipulihkan, jurnal batch dibalik, lalu state pemulihan dicoba disinkronkan kembali.
+- Pemulihan batch mempertahankan jejak audit: jurnal asli tidak dihapus, melainkan dinetralkan oleh jurnal pembalik. Bila jurnal pembalik gagal atau sinkronisasi pemulihan juga gagal, UI memberi peringatan eksplisit agar pengguna memeriksa Jurnal Umum dan status sinkronisasi sebelum mencoba ulang.
+- Setelah seluruh jurnal berhasil dan sinkronisasi mengembalikan sukses, baru UI menutup modal, merender ulang daftar, dan menulis audit log alokasi. Setiap record pembayaran tetap memiliki `jurnalNo` unik dan `grupId` batch yang sama.
+- Uji browser nyata dan Supabase produksi tetap diperlukan; automated test mensimulasikan kegagalan posting dan kegagalan sync, bukan gangguan jaringan/Supabase live.
+
+**Regression fix 5.7.1 (selesai):**
+- Memperbaiki `statusDariPembayaran()` agar menerima status dasar, `sebagian`, dan `lunas` sebagai status yang perlu dihitung ulang. Transisi invoice: `terkirim → sebagian → lunas`, lalu saat pembayaran dihapus `lunas → sebagian → terkirim`. Bill mengikuti pola `diterima → sebagian → lunas → sebagian → diterima`.
+- Status `draft` dan status asing tetap tidak berubah. Pembayaran parsial berulang, pembayaran penuh, penghapusan satu dari beberapa cicilan, serta penghapusan pembayaran terakhir diuji.
+- Memperbarui ekspektasi tiga suite lama agar sesuai aturan status otomatis Phase 5.4 dan dukungan penghapusan bill Phase 5.5. Tidak mengubah perilaku menjadi mengikuti test usang.
+- Menambah `tests/pembayaran-integrity.test.js` (11 assertion) dan `tests/alokasi-pembayaran-atomic.test.js` (10 assertion) untuk transisi status dan pemulihan batch saat posting/sinkronisasi gagal.
+- Hasil tiga suite yang sebelumnya gagal: `pembayaran-form.test.js` 92/92, `pembayaran-hapus.test.js` 26/26, `pembayaran-jurnal.test.js` 110/110. Seluruh test suite proyek yang dijalankan melalui `node --test tests/*.test.js`: 26/26 file lulus, 0 gagal.
 
 **Temuan task 5.6:**
 - Satu penerimaan ke beberapa invoice disimpan sebagai beberapa record `pembayaran` (satu record per invoice), bukan satu record multi-dokumen. Ini mempertahankan kontrak 5.1-5.5: `dokId` tetap menunjuk satu invoice, `sisaTagihan()` tetap sederhana, dan 5.7 dapat memosting satu jurnal per alokasi tanpa mengubah mekanisme jurnal lama.

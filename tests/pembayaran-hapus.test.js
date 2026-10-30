@@ -19,7 +19,8 @@ const H = (id, dok, daftar, jr) => { ctx.__a = [id, dok, daftar, jr || []]; retu
 
 console.log('[susunHapusPembayaran] penolakan');
 ok(H('PAY_X', inv({}), [bay({})]).ok === false, 'id tidak ada: ditolak');
-ok(H('PAY_B', inv({}), [bay({ id: 'PAY_B', jenis: 'bill' })]).ok === false, 'pembayaran bill ditolak (dikerjakan 5.5)');
+const bill = { id: 'BILL_1', noBill: 'BILL-2026-001', total: 50000, sisaTagihan: 50000, status: 'diterima' };
+ok(H('PAY_B', bill, [bay({ id: 'PAY_B', jenis: 'bill', dokId: 'BILL_1' })]).ok === true, 'pembayaran bill juga dapat dihapus (Phase 5.5)');
 ok(H('PAY_A', inv({}), null).ok === false, 'daftar bukan array: ditolak, tidak error');
 
 console.log('[susunHapusPembayaran] sisa dan status dihitung ulang');
@@ -31,7 +32,7 @@ ok(r.statusBaru === 'terkirim', 'invoice terkirim tetap terkirim');
 d = [bay({ id: 'PAY_B', jumlah: 40000, jurnalNo: 'JRN-002' }), bay({ jumlah: 60000 })];
 r = H('PAY_B', inv({ sisaTagihan: 0, status: 'lunas' }), d);
 ok(r.ok && r.sisaBaru === 40000, 'invoice lunas, hapus pembayaran 40.000: sisa 40.000');
-ok(r.statusBaru === 'terkirim', 'invoice lunas yang jadi bersisa kembali berstatus terkirim');
+ok(r.statusBaru === 'sebagian', 'invoice lunas yang masih punya pembayaran tersisa kembali berstatus sebagian');
 r = H('PAY_A', inv({ sisaTagihan: 0, status: 'lunas' }), [bay({ jumlah: 100000 }), bay({ id: 'PAY_Z', jumlah: 0.0 })]);
 ok(r.sisaBaru === 100000 && r.statusBaru === 'terkirim', 'lunas satu pembayaran penuh dihapus: sisa = total');
 
@@ -62,7 +63,7 @@ ctx.__inv2 = inv({ sisaTagihan: 0, status: 'lunas' });
 ctx.__h = H('PAY_B', ctx.__inv2, ctx.pembayaranList);
 run('terapkanHapusPembayaran(__inv2, __h)');
 ok(run('pembayaranList.length') === 1 && run('pembayaranList[0].id') === 'PAY_A', 'record dibuang dari pembayaranList');
-ok(ctx.__inv2.sisaTagihan === 40000 && ctx.__inv2.status === 'terkirim', 'sisaTagihan dan status invoice diperbarui');
+ok(ctx.__inv2.sisaTagihan === 40000 && ctx.__inv2.status === 'sebagian', 'sisaTagihan dan status invoice diperbarui');
 ok(JSON.parse(ls.oas_pembayaran).length === 1, 'mode tamu: oas_pembayaran tersimpan');
 ok(run('terapkanHapusPembayaran(null, { ok:false })') instanceof Promise, 'hasil tidak ok: tidak mengubah apa pun');
 ok(run('pembayaranList.length') === 1, 'pembayaranList tidak berubah setelah hasil tidak ok');

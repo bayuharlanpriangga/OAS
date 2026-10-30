@@ -177,7 +177,7 @@ function envDenganInvoice(opsi, invOverride) {
   ok(j.length === 1 && j[0].no === 'JRN-001' && j[0].jenis === 'Invoice & Piutang' && j[0].tanggal === '2026-10-05', 'bayar 30.000: tepat 1 jurnal bernomor JRN-001, bertanggal pembayaran');
   ok(j[0].lines[0].akun === '1101' && j[0].lines[0].debit === 30000 && j[0].lines[1].akun === '1201' && j[0].lines[1].kredit === 30000, 'Dr 1101 Kas 30.000 / Cr 1201 Piutang 30.000');
   ok(e.run('pembayaranList.length') === 1 && e.run('pembayaranList[0].jurnalNo') === 'JRN-001', 'record pembayaran menyimpan jurnalNo');
-  ok(e.run('invoiceList[0].sisaTagihan') === 70000 && e.run('invoiceList[0].status') === 'terkirim', 'sisa invoice 70.000, status tetap terkirim');
+  ok(e.run('invoiceList[0].sisaTagihan') === 70000 && e.run('invoiceList[0].status') === 'sebagian', 'sisa invoice 70.000, status sebagian');
   ok(/JRN-001/.test(e.alerts[e.alerts.length - 1]) && /Sisa tagihan Rp70000/.test(e.alerts[e.alerts.length - 1]), 'alert menyebut nomor jurnal dan sisa');
   ok(e.audits.some(a => a.c === 'invoice' && /Pembayaran invoice INV-2026-001/.test(a.d) && a.m.ref === 'INV-2026-001'), 'audit log mencatat pembayaran invoice');
   ok(e.saves.length >= 1, 'saveToStorage dipanggil setelah jurnal (jurnal ikut tersimpan)');

@@ -61,9 +61,7 @@ function sisaTagihan(dok, daftar, jenis) {
 
 // ── Task 5.2: catat pembayaran ─────────────────────────────
 
-// Status dokumen yang boleh dibayar. Draft belum punya piutang/utang; lunas tidak punya sisa.
-const PEMBAYARAN_STATUS_BOLEH = { invoice: ['terkirim'], bill: ['diterima'] };
-// Dokumen yang sudah berstatus sebagian tetap boleh menerima cicilan berikutnya.
+// Status dasar dan status parsial yang boleh menerima cicilan berikutnya. Draft belum punya piutang/utang; lunas tidak punya sisa.
 const PEMBAYARAN_STATUS_LANJUT = { invoice: ['terkirim', 'sebagian'], bill: ['diterima', 'sebagian'] };
 
 function _bayarTanggalValid(s) {
@@ -90,7 +88,7 @@ function dibayarLamaTurunan(dok, daftar, jenis) {
 // Validasi isi form lalu susun record pembayaran (murni: tidak mengubah dok maupun daftar).
 // f    : { id, createdAt, tanggal 'YYYY-MM-DD', jumlah (angka), akunKas, metode?, catatan? }
 // dok  : invoice (jenis 'invoice') atau bill (jenis 'bill'); jenis kosong = 'invoice'
-// Aturan: dokumen berstatus boleh dibayar (PEMBAYARAN_STATUS_BOLEH) dan masih bersisa; tanggal valid dan tidak
+// Aturan: dokumen berstatus terkirim/diterima atau sebagian (PEMBAYARAN_STATUS_LANJUT) dan masih bersisa; tanggal valid dan tidak
 // sebelum tanggal dokumen; jumlah > 0 dan tidak melebihi sisa (dibulatkan ke sen); akun kas terisi; id tidak kembar.
 // Mengembalikan { ok:true, pembayaran, dibayarLama, sisaBaru, lunas } atau { ok:false, pesan }.
 // `dibayarLama` dan `sisaBaru` adalah nilai baru untuk dokumen; yang menuliskannya ke dokumen adalah catatPembayaran.
@@ -226,18 +224,22 @@ function statusDariPembayaran(dok, daftar, jenis) {
   if (!dok || typeof dok !== 'object') return '';
   jenis = jenis || 'invoice';
   const asal = (typeof dok.status === 'string' ? dok.status : '').trim();
-  const boleh = PEMBAYARAN_STATUS_BOLEH[jenis];
-  if (!boleh || !boleh.includes(asal)) return asal; // draft atau status lain: tidak berubah
-  
+  const dasar = jenis === 'invoice' ? 'terkirim' : jenis === 'bill' ? 'diterima' : '';
+  const statusTerhitung = PEMBAYARAN_STATUS_LANJUT[jenis];
+  // Status 'lunas' juga harus dihitung ulang: ketika pembayaran dihapus, dokumen
+  // dapat kembali menjadi 'sebagian' atau status dasar (terkirim/diterima).
+  if (!dasar || (!statusTerhitung || !statusTerhitung.includes(asal)) && asal !== 'lunas') return asal;
+
   const total = (typeof dok.total === 'number' && isFinite(dok.total)) ? dok.total : 0;
   if (total <= 0) return asal; // total tidak valid: tidak mengubah status
-  
+
   const sisa = sisaTagihan(dok, daftar, jenis);
-  
   if (sisa <= 0) return 'lunas';
+
   const dibayar = totalDibayar(dok, daftar, jenis);
   if (dibayar > 0 && sisa < total) return 'sebagian';
-  return asal; // belum dibayar: tetap terkirim/diterima
+  // Jika sebelumnya sebagian/lunas lalu pembayaran dihapus, pulihkan status dasar.
+  return dasar;
 }
 
 // Pasang hasil susunPembayaran yang ok ke state: tambah record (terbaru di atas), isi ulang dibayarLama dan
