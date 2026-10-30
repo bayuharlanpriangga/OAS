@@ -237,11 +237,11 @@ function renderBillList() {
   }
   el.style.cssText = '';
   const hariIni = new Date().toISOString().split('T')[0];
-  const warna = { draft: 'var(--muted)', diterima: 'var(--accent2)', lunas: 'var(--accent)', 'jatuh-tempo': 'var(--red)' };
+  const warna = { draft: 'var(--muted)', diterima: 'var(--accent2)', sebagian: 'var(--accent3)', lunas: 'var(--accent)', 'jatuh-tempo': 'var(--red)' };
   el.innerHTML = `<div class="table-scroll"><table id="bill-table">
     <thead><tr><th>No. Tagihan</th><th>Supplier</th><th>Tanggal</th><th>Jatuh Tempo</th><th>Total</th><th>Sisa</th><th>Status</th><th>Aksi</th></tr></thead>
     <tbody>${billList.map(b => {
-      const jt = b.status === 'diterima' && b.jatuhTempo && b.jatuhTempo < hariIni && b.sisaTagihan > 0;
+      const jt = (b.status === 'diterima' || b.status === 'sebagian') && b.jatuhTempo && b.jatuhTempo < hariIni && b.sisaTagihan > 0;
       const s = jt ? 'jatuh-tempo' : (b.status || 'draft');
       const badge = `<span style="background:${warna[s]}22;color:${warna[s]};padding:2px 8px;border-radius:6px;font-size:11px;">${s === 'jatuh-tempo' ? 'Jatuh Tempo' : escapeHtml(s.charAt(0).toUpperCase() + s.slice(1))}</span>`;
       return `<tr>
@@ -252,7 +252,7 @@ function renderBillList() {
         <td class="debit" style="font-family:var(--mono)">${rp(b.total)}</td>
         <td style="font-family:var(--mono);color:${b.sisaTagihan > 0 ? 'var(--accent3)' : 'var(--accent)'}">${rp(b.sisaTagihan)}</td>
         <td>${badge}${_billInfoJurnal(b)}</td>
-        <td style="white-space:nowrap;">${_billTombolEdit(b)}${_billTombolJurnal(b)}<button class="btn btn-danger btn-sm" onclick="hapusBill('${escapeForJsAttr(b.id)}')"><i class="ti ti-trash" style="font-size:14px;"></i></button></td>
+        <td style="white-space:nowrap;">${_billTombolEdit(b)}${_billTombolJurnal(b)}${b.status === 'diterima' || b.status === 'sebagian' ? `<button class="btn btn-sm btn-primary" style="margin-right:4px;" onclick="openModalBayarBill('${escapeForJsAttr(b.id)}')">Bayar</button>` : ''}${typeof _bayarTombolRiwayatBill === 'function' ? _bayarTombolRiwayatBill(b) : ''}<button class="btn btn-danger btn-sm" onclick="hapusBill('${escapeForJsAttr(b.id)}')"><i class="ti ti-trash" style="font-size:14px;"></i></button></td>
       </tr>`;
     }).join('')}</tbody></table></div>`;
 }

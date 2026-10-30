@@ -7,7 +7,7 @@
 // ke invoice (catatPembayaran), dan penyimpan (simpanPembayaranState); form-nya ada di 32-pembayaran-ui.js.
 // Task 5.3: jurnal pembayaran invoice (Dr Kas/Bank, Cr Piutang): buatJurnalPembayaranInvoice, jurnalPembayaranStatus dan
 // pembayaranInvoiceBelumJurnal (semuanya murni, di bawah file ini); pemostingannya ada di 32-pembayaran-ui.js.
-// Belum ada status turunan (5.4), atau pembayaran bill (5.5).
+// Task 5.5: pembayaran bill (Dr Utang Usaha, Cr Kas/Bank) + penghapusan dengan jurnal pembalik.
 //
 // Sisa tagihan DIHITUNG dari pembayaran, bukan dikurangi di tempat, supaya menghapus atau
 // mengoreksi pembayaran tidak membuat sisa tidak sinkron:
@@ -63,6 +63,8 @@ function sisaTagihan(dok, daftar, jenis) {
 
 // Status dokumen yang boleh dibayar. Draft belum punya piutang/utang; lunas tidak punya sisa.
 const PEMBAYARAN_STATUS_BOLEH = { invoice: ['terkirim'], bill: ['diterima'] };
+// Dokumen yang sudah berstatus sebagian tetap boleh menerima cicilan berikutnya.
+const PEMBAYARAN_STATUS_LANJUT = { invoice: ['terkirim', 'sebagian'], bill: ['diterima', 'sebagian'] };
 
 function _bayarTanggalValid(s) {
   if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
@@ -100,7 +102,7 @@ function susunPembayaran(f, dok, daftar, jenis) {
   const label = jenis === 'bill' ? 'Tagihan' : 'Invoice';
   if (!dok || typeof dok !== 'object' || dok.id === undefined || dok.id === null || dok.id === '') return gagal(label + ' yang dibayar tidak ditemukan.');
   if (typeof dok.total !== 'number' || !isFinite(dok.total) || dok.total <= 0) return gagal('Total ' + label.toLowerCase() + ' tidak valid.');
-  if (!PEMBAYARAN_STATUS_BOLEH[jenis].includes(dok.status)) {
+  if (!PEMBAYARAN_STATUS_LANJUT[jenis].includes(dok.status)) {
     if (dok.status === 'lunas') return gagal(label + ' ini sudah lunas.');
     if (dok.status === 'draft') return gagal(label + ' ini masih draft, belum bisa dibayar.');
     return gagal('Status ' + label.toLowerCase() + ' ini tidak bisa dibayar.');
@@ -301,6 +303,49 @@ function pembayaranInvoiceBelumJurnal(daftarPembayaran, daftarInvoice, daftarJur
   return hasil;
 }
 
+// ── Task 5.5: jurnal pembayaran bill ───────────────────────
+function buatJurnalPembayaranBill(pembayaran, bill) {
+  const gagal = pesan => ({ ok: false, pesan });
+  const teks = v => typeof v === 'string' ? v.trim() : '';
+  if (!pembayaran || pembayaran.jenis !== 'bill') return gagal('Pembayaran tagihan tidak valid.');
+  if (!bill || String(pembayaran.dokId) !== String(bill.id)) return gagal('Tagihan untuk pembayaran ini tidak ditemukan.');
+  const jumlah = typeof pembayaran.jumlah === 'number' && isFinite(pembayaran.jumlah) ? _bayarBulat(pembayaran.jumlah) : 0;
+  if (jumlah <= 0) return gagal('Jumlah pembayaran tidak valid.');
+  if (!_bayarTanggalValid(teks(pembayaran.tanggal))) return gagal('Tanggal pembayaran tidak valid.');
+  const akunKas = teks(pembayaran.akunKas), akunUtang = teks(bill.akunUtang);
+  if (!akunKas) return gagal('Akun kas/bank pembayaran kosong.');
+  if (!akunUtang) return gagal('Tagihan ini tidak punya akun utang usaha.');
+  if (akunKas === akunUtang) return gagal('Akun kas/bank dan akun utang tidak boleh sama.');
+  const no = teks(bill.noBill) || teks(pembayaran.noDok), supplier = teks(bill.supplier);
+  return { ok: true, jurnal: {
+    tanggal: pembayaran.tanggal, jenis: (typeof JENIS_JURNAL !== 'undefined' && JENIS_JURNAL.BILL) || 'Tagihan Pembelian',
+    keterangan: 'Pembayaran Tagihan ' + no + ' — ' + supplier, ref: no,
+    lines: [
+      { akun: akunUtang, ket: 'Pembayaran utang ' + no, debit: jumlah, kredit: 0 },
+      { akun: akunKas, ket: 'Pengeluaran pembayaran ' + no, debit: 0, kredit: jumlah }
+    ]
+  }};
+}
+
+function jurnalPembayaranBillStatus(pembayaran, bill, daftarJurnal, daftarPembayaran) {
+  if (!pembayaran || pembayaran.jenis !== 'bill' || !bill) return { status: 'belum', jurnal: null };
+  const jenis = (typeof JENIS_JURNAL !== 'undefined' && JENIS_JURNAL.BILL) || 'Tagihan Pembelian';
+  const js = (Array.isArray(daftarJurnal) ? daftarJurnal : []).filter(j => j && j.jenis === jenis);
+  const ketAwal = 'Pembayaran Tagihan ' + String(bill.noBill || pembayaran.noDok || '').trim() + ' — ' + String(bill.supplier || '').trim();
+  const pembalikDari = j => j.reversalOf ? String(j.reversalOf) : ((/^\[Pembalik ([^\]]+)\]/.exec(String(j.ket || j.keterangan || '')) || [])[1] || '');
+  const asal = js.filter(j => !pembalikDari(j));
+  const dibalik = j => js.some(x => pembalikDari(x) === j.no);
+  const jumlah = _bayarBulat(Number(pembayaran.jumlah) || 0);
+  const cocokIsi = j => String(j.tanggal || '').slice(0,10) === pembayaran.tanggal && (j.lines || []).some(l => l && l.akun === pembayaran.akunKas && _bayarBulat(l.kredit || 0) === jumlah);
+  let jurnal = pembayaran.jurnalNo ? asal.find(j => j.no === pembayaran.jurnalNo && String(j.ket || j.keterangan || '').startsWith(ketAwal)) : null;
+  if (!jurnal) {
+    const dipakai = new Set((Array.isArray(daftarPembayaran) ? daftarPembayaran : []).filter(x => x && x !== pembayaran && x.id !== pembayaran.id && x.jurnalNo).map(x => x.jurnalNo));
+    const temuan = asal.filter(j => String(j.ket || j.keterangan || '').startsWith(ketAwal) && cocokIsi(j) && !dipakai.has(j.no));
+    jurnal = temuan.find(j => !dibalik(j)) || temuan[0] || null;
+  }
+  return jurnal ? { status: dibalik(jurnal) ? 'dibalik' : 'aktif', jurnal } : { status: 'belum', jurnal: null };
+}
+
 // ── Task 5.3b: hapus pembayaran invoice ────────────────────
 
 // Susun penghapusan satu pembayaran invoice (murni: tidak mengubah dok, daftar, maupun jurnal).
@@ -317,16 +362,17 @@ function susunHapusPembayaran(id, dok, daftar, daftarJurnal) {
   const semua = Array.isArray(daftar) ? daftar : [];
   const p = semua.find(x => x && typeof x === 'object' && String(x.id) === String(id));
   if (!p) return gagal('Pembayaran tidak ditemukan.');
-  if (p.jenis !== 'invoice') return gagal('Hapus pembayaran tagihan pembelian dikerjakan di task 5.5.');
+  if (!PEMBAYARAN_JENIS.includes(p.jenis)) return gagal('Jenis pembayaran tidak dikenal.');
+  const jenis = p.jenis;
   const daftarBaru = semua.filter(x => x !== p);
   if (!dok || typeof dok !== 'object' || String(dok.id) !== String(p.dokId)) {
     return { ok: true, pembayaran: p, daftarBaru, dibayarLama: 0, sisaBaru: 0, statusBaru: undefined, jurnalStatus: 'belum', jurnal: null, yatim: true };
   }
-  const dibayarLama = dibayarLamaTurunan(dok, semua, 'invoice');
-  const sisaBaru = sisaTagihan(Object.assign({}, dok, { dibayarLama }), daftarBaru, 'invoice');
+  const dibayarLama = dibayarLamaTurunan(dok, semua, jenis);
+  const sisaBaru = sisaTagihan(Object.assign({}, dok, { dibayarLama }), daftarBaru, jenis);
   const dokBaru = Object.assign({}, dok, { dibayarLama, sisaTagihan: sisaBaru });
-  const statusBaru = statusDariPembayaran(dokBaru, daftarBaru, 'invoice');
-  const st = (typeof jurnalPembayaranStatus === 'function') ? jurnalPembayaranStatus(p, dok, daftarJurnal, semua) : { status: 'belum', jurnal: null };
+  const statusBaru = statusDariPembayaran(dokBaru, daftarBaru, jenis);
+  const st = jenis === 'bill' ? jurnalPembayaranBillStatus(p, dok, daftarJurnal, semua) : jurnalPembayaranStatus(p, dok, daftarJurnal, semua);
   return { ok: true, pembayaran: p, daftarBaru, dibayarLama, sisaBaru, statusBaru, jurnalStatus: st.status, jurnal: st.jurnal, yatim: false };
 }
 
@@ -339,5 +385,5 @@ function terapkanHapusPembayaran(dok, hasil) {
     dok.sisaTagihan = hasil.sisaBaru;
     if (hasil.statusBaru) dok.status = hasil.statusBaru;
   }
-  return simpanPembayaranState('invoice');
+  return simpanPembayaranState(hasil.pembayaran.jenis);
 }

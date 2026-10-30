@@ -197,3 +197,80 @@ function renderPembayaranBelumJurnal() {
   const n = pembayaranInvoiceBelumJurnal(pembayaranList, invoiceList, jurnalEntries).length;
   el.innerHTML = n ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 14px;margin-bottom:16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;font-size:12px;color:var(--accent3);"><span><i class="ti ti-alert-triangle" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ${n} pembayaran invoice belum dijurnal, jadi Kas dan Piutang di buku besar belum berubah.</span><button class="btn btn-ghost btn-sm" onclick="jurnalkanPembayaranInvoiceLama()">Buat Jurnal</button></div>` : '';
 }
+
+// ── Task 5.5: pembayaran bill (Dr Utang Usaha, Cr Kas/Bank) ──
+let _bayarBillId = null;
+function _bayarBillRingkasHtml(b) {
+  const lama = dibayarLamaTurunan(b, pembayaranList, 'bill');
+  const sisa = sisaTagihan(Object.assign({}, b, { dibayarLama: lama }), pembayaranList, 'bill');
+  const baris = (l, v, clr) => `<div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;margin-bottom:4px;"><span style="color:var(--muted);">${l}</span><span style="font-family:var(--mono);${clr ? 'color:' + clr + ';' : ''}font-weight:600;">${v}</span></div>`;
+  const riwayat = pembayaranDokumen(pembayaranList, 'bill', b.id).slice().sort((a,c) => String(a.tanggal).localeCompare(String(c.tanggal)));
+  let rw = '';
+  if (lama > 0) rw += `<div style="font-size:12px;padding:4px 0;border-top:1px solid var(--border);">Dibayar sebelumnya (tanpa rincian): ${rp(lama)}</div>`;
+  riwayat.forEach(p => { rw += `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;padding:4px 0;border-top:1px solid var(--border);"><span>${escapeHtml(p.tanggal)}${p.metode ? ' · ' + escapeHtml(p.metode) : ''}${p.jurnalNo ? '' : ' · belum dijurnal'}</span><span style="display:flex;align-items:center;gap:8px;"><span>${rp(p.jumlah)}</span><button class="btn btn-danger btn-sm" onclick="hapusPembayaranBill('${escapeForJsAttr(p.id)}')" title="Hapus pembayaran dan balik jurnal"><i class="ti ti-trash"></i></button></span></div>`; });
+  return baris('Total tagihan', rp(b.total)) + baris('Sudah dibayar', rp(Math.max(0,b.total-sisa)), 'var(--accent)') + baris('Sisa tagihan', rp(sisa), 'var(--accent3)') + (rw ? `<div style="margin-top:10px;font-size:11px;color:var(--muted);text-transform:uppercase;">Riwayat pembayaran</div>${rw}` : '');
+}
+function _bayarBillFormTampil(tampil) {
+  const f = document.getElementById('bayar-bill-form'), btn = document.getElementById('bayar-bill-simpan');
+  if (f) f.style.display = tampil ? '' : 'none'; if (btn) btn.style.display = tampil ? '' : 'none';
+}
+function _bayarTombolRiwayatBill(b) {
+  if (!pembayaranDokumen(pembayaranList, 'bill', b.id).length) return '';
+  return `<button class="btn btn-ghost btn-sm" onclick="openRiwayatPembayaranBill('${escapeForJsAttr(b.id)}')" title="Riwayat pembayaran"><i class="ti ti-history"></i> Riwayat</button>`;
+}
+function openModalBayarBill(id) {
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Pembayaran')) return;
+  const b = billList.find(x => x && String(x.id) === String(id)); if (!b) return;
+  if (b.status !== 'diterima') { showAlert(b.status === 'lunas' ? 'Tagihan ini sudah lunas.' : 'Hanya tagihan berstatus Diterima yang bisa dibayar.'); return; }
+  _bayarBillId = b.id; _bayarBillFormTampil(true);
+  const j = document.getElementById('bayar-bill-judul'); if (j) j.textContent = 'Bayar Tagihan ' + b.noBill;
+  const r = document.getElementById('bayar-bill-ringkas'); if (r) r.innerHTML = _bayarBillRingkasHtml(b);
+  const tgl = new Date().toISOString().slice(0,10);
+  _bayarSet('bayar-bill-tgl', b.tanggal && tgl < b.tanggal ? b.tanggal : tgl);
+  _bayarSet('bayar-bill-jumlah', sisaTagihan(Object.assign({},b,{dibayarLama:dibayarLamaTurunan(b,pembayaranList,'bill')}),pembayaranList,'bill'));
+  _bayarSet('bayar-bill-metode',''); _bayarSet('bayar-bill-catatan','');
+  const kas = akuns.find(a => a.kode === '1101') || akuns.find(a => a.tipe === 'Aset');
+  _bayarSet('bayar-bill-akun', kas ? kas.kode : '');
+  const btn = document.getElementById('bayar-bill-akun-btn');
+  if (btn) { if (kas) { btn.innerHTML = `<span class="picker-kode-badge">${escapeHtml(kas.kode)}</span> ${escapeHtml(kas.nama)}`; btn.classList.add('has-value'); } else { btn.textContent='Pilih Akun...'; btn.classList.remove('has-value'); } }
+  openModal('modal-bayar-bill'); setTimeout(upgradeFormPickers,80);
+}
+function simpanPembayaranBill() {
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Pembayaran')) return;
+  const b = billList.find(x => x && String(x.id) === String(_bayarBillId)); if (!b) { showAlert('Tagihan tidak ditemukan.'); return; }
+  const v = id => (document.getElementById(id) || {}).value || '';
+  let id = 'PAY_' + Date.now(), n = 1; while (pembayaranList.some(p => p && p.id === id)) id = 'PAY_' + Date.now() + '_' + n++;
+  const hasil = susunPembayaran({ id, createdAt:new Date().toISOString(), tanggal:v('bayar-bill-tgl'), jumlah:parseFloat(v('bayar-bill-jumlah')), akunKas:v('bayar-bill-akun'), metode:v('bayar-bill-metode'), catatan:v('bayar-bill-catatan') }, b, pembayaranList, 'bill');
+  if (!hasil.ok) { showAlert(hasil.pesan); return; }
+  if (!guardPeriode(hasil.pembayaran.tanggal, 'diposting')) return;
+  const r = buatJurnalPembayaranBill(hasil.pembayaran,b); if (!r.ok) { _bayarPeringatan(r.pesan); return; }
+  const entry = postJurnalLegacy(r.jurnal); if (!entry) return;
+  hasil.pembayaran.jurnalNo = entry.no;
+  catatPembayaran(b,hasil); _bayarBillId = null; closeModal('modal-bayar-bill'); renderBillList();
+  try { if (typeof auditLog === 'function') auditLog('create','bill',`Pembayaran tagihan ${b.noBill} — ${rp(hasil.pembayaran.jumlah)}`,{ref:b.noBill}); } catch(e) {}
+  showAlert(`✓ Pembayaran ${rp(hasil.pembayaran.jumlah)} untuk ${escapeHtml(b.noBill)} dicatat. ${hasil.lunas ? 'Tagihan LUNAS.' : 'Sisa tagihan ' + rp(hasil.sisaBaru) + '.'}<br><span style="font-size:12px;color:var(--muted);">Jurnal ${escapeHtml(entry.no)} dibuat (Utang berkurang, Kas/Bank berkurang).</span>`);
+}
+function openRiwayatPembayaranBill(id) {
+  const b = billList.find(x => x && String(x.id) === String(id)); if (!b) return;
+  _bayarBillId = null; const j=document.getElementById('bayar-bill-judul'); if(j) j.textContent='Riwayat Pembayaran '+b.noBill;
+  const r=document.getElementById('bayar-bill-ringkas'); if(r) r.innerHTML=_bayarBillRingkasHtml(b);
+  _bayarBillFormTampil(false); openModal('modal-bayar-bill');
+}
+function hapusPembayaranBill(payId) {
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Pembayaran')) return;
+  const p=pembayaranList.find(x=>x && x.id===payId); if(!p) return;
+  const b=billList.find(x=>x && String(x.id)===String(p.dokId)) || null;
+  const h=susunHapusPembayaran(payId,b,pembayaranList,jurnalEntries); if(!h.ok){_bayarPeringatan(h.pesan);return;}
+  const label=(b?b.noBill:(p.noDok||''))+' — '+rp(p.jumlah)+' ('+p.tanggal+')';
+  if(h.jurnalStatus==='aktif') {
+    const tgl=tanggalPembalikBill(h.jurnal.tanggal,new Date().toISOString().slice(0,10));
+    if(!confirm('Hapus pembayaran '+label+'? Jurnal '+h.jurnal.no+' akan dibalik pada '+tgl+' dan sisa utang dipulihkan.')) return;
+    if(!guardPeriode(tgl,'dibuatkan jurnal pembalik')) return;
+    let balik=null; try { balik=buatJurnalPembalik(h.jurnal,{tanggal:tgl,alasan:'Pembayaran tagihan '+label+' dihapus'}); } catch(e){if(!(e instanceof PeriodeTerkunciError)) throw e; return;}
+    if(!balik) return; if(typeof saveToStorage==='function') saveToStorage(false);
+  } else if(!confirm('Hapus pembayaran '+label+'? '+(h.jurnalStatus==='dibalik'?'Jurnalnya sudah dibalik sebelumnya.':'Pembayaran ini belum punya jurnal.'))) return;
+  terapkanHapusPembayaran(b,h);
+  try { if(typeof auditLog==='function') auditLog('delete','bill','Hapus pembayaran tagihan '+label,{ref:b?b.noBill:(p.noDok||'')}); } catch(e) {}
+  const r=document.getElementById('bayar-bill-ringkas'); if(b && r) { if(!pembayaranDokumen(pembayaranList,'bill',b.id).length && !(b.dibayarLama>0)) closeModal('modal-bayar-bill'); else r.innerHTML=_bayarBillRingkasHtml(b); }
+  renderBillList(); showAlert('✓ Pembayaran dihapus'+(h.jurnalStatus==='aktif'?' dan jurnalnya dibalik':'')+(b?'. Sisa tagihan '+escapeHtml(b.noBill)+' sekarang '+rp(h.sisaBaru)+'.':'.'));
+}

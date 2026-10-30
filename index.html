@@ -4843,6 +4843,22 @@
   </div>
 </div>
 
+<!-- MODAL: BAYAR TAGIHAN PEMBELIAN (task 5.5; js/32-pembayaran-ui.js) -->
+<div class="modal-backdrop" id="modal-bayar-bill" onclick="if(event.target===this)closeModal('modal-bayar-bill')">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-head"><div class="modal-title"><i class="ti ti-cash" style="color:var(--accent);font-size:13px;"></i> <span id="bayar-bill-judul">Bayar Tagihan</span></div><button class="modal-close" onclick="closeModal('modal-bayar-bill')">✕</button></div>
+    <div class="modal-body"><div id="bayar-bill-ringkas" style="margin-bottom:14px;"></div><div id="bayar-bill-form">
+      <div class="form-group"><label>Tanggal Pembayaran</label><input type="date" id="bayar-bill-tgl"></div>
+      <div class="form-group"><label>Jumlah Dibayar (Rp) · boleh sebagian</label><input type="number" id="bayar-bill-jumlah" min="0" step="any"></div>
+      <div class="form-group"><label>Akun Kas/Bank</label><input type="hidden" id="bayar-bill-akun"><button class="form-picker-btn" type="button" id="bayar-bill-akun-btn" onclick="openSimplePicker('bayar-bill-akun','bayar-bill-akun-btn','kas')">Pilih Akun...</button></div>
+      <div class="form-group"><label>Metode (opsional)</label><input type="text" id="bayar-bill-metode" placeholder="Transfer, Tunai, ..."></div>
+      <div class="form-group"><label>Catatan (opsional)</label><input type="text" id="bayar-bill-catatan"></div>
+      <div style="padding:10px;background:rgba(251,191,36,0.08);border-radius:8px;font-size:12px;color:var(--accent3);">Jurnal otomatis: Utang Usaha di debit, Kas/Bank di kredit.</div>
+    </div></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-bayar-bill')">Batal</button><button class="btn btn-primary" id="bayar-bill-simpan" onclick="simpanPembayaranBill()">Simpan Pembayaran</button></div>
+  </div>
+</div>
+
 <!-- MODAL: ALERT BARU -->
 <div class="modal-backdrop" id="modal-alert-baru" onclick="if(event.target===this)closeModal('modal-alert-baru')">
   <div class="modal" style="max-width:440px;">
