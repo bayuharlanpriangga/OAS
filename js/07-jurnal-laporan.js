@@ -79,8 +79,10 @@ function renderJurnalUmum() {
     return true;
   });
   const revMap = getReversedMap(); // nomor jurnal asal -> nomor jurnal pembaliknya
-  // Tampilkan entry terbaru di ATAS agar tidak perlu scroll panjang tiap ada transaksi baru
-  filtered.slice().reverse().forEach(j=>{
+  // Urutan bisa diubah lewat klik header Tanggal / No. Jurnal (33-urut-jurnal.js); tanpa klik tetap terbaru di atas.
+  const _urutan = typeof urutkanJurnalUmum === 'function' ? urutkanJurnalUmum(filtered, _urutJurnal.umum) : filtered.slice().reverse();
+  if (typeof perbaruiIndikatorUrutJurnal === 'function') perbaruiIndikatorUrutJurnal('umum');
+  _urutan.forEach(j=>{
     const idx = jurnalEntries.indexOf(j);
     // Sync attachment count from localStorage
     const attachCount = (allAttach[j.no]||[]).length;
@@ -135,19 +137,22 @@ function renderJurnalKas() {
         // Saldo berjalan tetap dihitung dari SEMUA transaksi (bukan hasil filter)
         // supaya kolom "Saldo" & total tetap akurat walau lagi mencari sesuatu.
         saldo+=masuk-keluar; totalIn+=masuk; totalOut+=keluar;
-        if((masuk||keluar) && match) rows.push(`<tr>
+        if((masuk||keluar) && match) rows.push({tanggal:j.tanggal, no:j.no, html:`<tr>
           <td>${fmtDate(j.tanggal)}</td>
           <td style="font-family:var(--mono);font-size:12px;">${j.no}</td>
           <td>${j.ket}</td>
           <td class="debit">${masuk?fmtRp(masuk):''}</td>
           <td class="kredit">${keluar?fmtRp(keluar):''}</td>
           <td class="num" style="color:${saldo>=0?'var(--accent)':'var(--red)'};">${fmtRp(saldo)}</td>
-        </tr>`);
+        </tr>`});
       }
     });
   });
   // Saldo dihitung berurutan sesuai tanggal transaksi (chronological), tapi ditampilkan terbaru di ATAS
-  body.innerHTML = rows.slice().reverse().join('') || `<tr><td colspan="6">${emptyState(search ? 'Tidak ada transaksi kas sesuai pencarian' : 'Belum ada transaksi kas')}</td></tr>`;
+  // Urutan bisa diubah lewat klik header (33-urut-jurnal.js); tanpa klik tetap terbaru di atas. Kolom Saldo = saldo berjalan
+  // menurut urutan masuk, jadi nilainya tidak berubah walau barisnya diurutkan ulang.
+  if (typeof perbaruiIndikatorUrutJurnal === 'function') perbaruiIndikatorUrutJurnal('kas');
+  body.innerHTML = (typeof urutkanBarisJurnal === 'function' ? urutkanBarisJurnal('kas', rows) : rows.slice().reverse().map(r=>r.html).join('')) || `<tr><td colspan="6">${emptyState(search ? 'Tidak ada transaksi kas sesuai pencarian' : 'Belum ada transaksi kas')}</td></tr>`;
   document.getElementById('jurnal-kas-total').innerHTML=
     `<span style="font-size:12.5px;color:var(--muted);">Total Penerimaan: <b style="color:var(--accent);font-family:var(--mono);">${fmtRp(totalIn)}</b> &nbsp;|&nbsp; Total Pengeluaran: <b style="color:var(--red);font-family:var(--mono);">${fmtRp(totalOut)}</b> &nbsp;|&nbsp; Saldo Akhir Kas: <b style="color:var(--accent2);font-family:var(--mono);">${fmtRp(saldo)}</b></span>`;
 }
@@ -162,16 +167,17 @@ function renderJurnalPenjualan() {
     if(search && !j.ket.toLowerCase().includes(search) && !(j.ref||j.no||'').toLowerCase().includes(search)) return;
     const kasLine=j.lines.find(l=>['1101','1201'].includes(l.akun));
     const jualLine=j.lines.find(l=>l.akun==='4101');
-    if(jualLine) rows.push(`<tr>
+    if(jualLine) rows.push({tanggal:j.tanggal, no:j.ref||j.no, html:`<tr>
       <td>${fmtDate(j.tanggal)}</td>
       <td style="font-family:var(--mono);font-size:12px;">${j.ref||j.no}</td>
       <td>${j.ket}</td>
       <td><span class="badge ${kasLine?.akun==='1101'?'badge-green':'badge-blue'}">${kasLine?.akun==='1101'?'Tunai':'Kredit'}</span></td>
       <td class="debit">${fmtRp(kasLine?.debit||0)}</td>
       <td class="kredit">${fmtRp(jualLine?.kredit||0)}</td>
-    </tr>`);
+    </tr>`});
   });
-  body.innerHTML = rows.join('') || `<tr><td colspan="6">${emptyState(search ? 'Tidak ada penjualan sesuai pencarian' : 'Belum ada penjualan')}</td></tr>`;
+  if (typeof perbaruiIndikatorUrutJurnal === 'function') perbaruiIndikatorUrutJurnal('jual');
+  body.innerHTML = (typeof urutkanBarisJurnal === 'function' ? urutkanBarisJurnal('jual', rows) : rows.map(r=>r.html).join('')) || `<tr><td colspan="6">${emptyState(search ? 'Tidak ada penjualan sesuai pencarian' : 'Belum ada penjualan')}</td></tr>`;
 }
 
 // RENDER JURNAL PEMBELIAN
@@ -183,16 +189,17 @@ function renderJurnalPembelian() {
   jurnalPembelianAktif().forEach(j=>{
     const rs=ringkasJurnalPembelian(j);
     if(search && !(j.ket||'').toLowerCase().includes(search) && !(rs.no||'').toLowerCase().includes(search)) return;
-    if(rs.debit.length) rows.push(`<tr>
+    if(rs.debit.length) rows.push({tanggal:j.tanggal, no:rs.no, html:`<tr>
       <td>${fmtDate(j.tanggal)}</td>
       <td style="font-family:var(--mono);font-size:12px;">${rs.no}</td>
       <td>${j.ket}</td>
       <td><span class="badge ${rs.tunai?'badge-green':'badge-yellow'}">${rs.tunai?'Tunai':'Kredit'}</span></td>
       <td>${rs.debit.map(l=>`${akunNamaTampil(l.akun)} — <span class="debit">${fmtRp(l.debit)}</span>`).join('<br>')}</td>
       <td class="kredit">${fmtRp(rs.kredit)}</td>
-    </tr>`);
+    </tr>`});
   });
-  body.innerHTML = rows.join('') || `<tr><td colspan="6">${emptyState(search ? 'Tidak ada pembelian sesuai pencarian' : 'Belum ada pembelian')}</td></tr>`;
+  if (typeof perbaruiIndikatorUrutJurnal === 'function') perbaruiIndikatorUrutJurnal('beli');
+  body.innerHTML = (typeof urutkanBarisJurnal === 'function' ? urutkanBarisJurnal('beli', rows) : rows.map(r=>r.html).join('')) || `<tr><td colspan="6">${emptyState(search ? 'Tidak ada pembelian sesuai pencarian' : 'Belum ada pembelian')}</td></tr>`;
 }
 
 // RENDER BUKU BESAR
@@ -209,24 +216,28 @@ function renderBukuBesar() {
         const n=akun?.normal;
         if(n==='D') saldo+=l.debit-(l.kredit||0);
         else saldo+=(l.kredit||0)-l.debit;
-        rows.push(`<tr>
+        rows.push({tanggal:j.tanggal, no:j.no, html:`<tr>
           <td>${fmtDate(j.tanggal)}</td>
           <td style="font-family:var(--mono);font-size:12px;">${j.no}</td>
           <td>${j.ket}</td>
           <td class="debit" style="text-align:right;">${l.debit?fmtRp(l.debit):''}</td>
           <td class="kredit" style="text-align:right;">${l.kredit?fmtRp(l.kredit):''}</td>
           <td class="num" style="text-align:right;color:${saldo>=0?'var(--accent)':'var(--red)'};">${fmtRp(Math.abs(saldo))} ${saldo>=0?(n==='D'?'D':'K'):(n==='D'?'K':'D')}</td>
-        </tr>`);
+        </tr>`});
       }
     });
   });
+  // Urutan bisa diubah lewat klik header Tanggal / No. Jurnal (33-urut-jurnal.js); tanpa klik tetap urutan masuk. Kolom Saldo =
+  // saldo berjalan menurut urutan masuk, jadi nilainya tidak berubah walau barisnya diurutkan ulang.
+  const _barisBB = typeof urutkanBarisJurnal === 'function' ? urutkanBarisJurnal('bb', rows) : rows.map(r=>r.html).join('');
   cont.innerHTML=`
     <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Akun: <b style="color:var(--text);">${escapeHtml(akun?.kode)} - ${escapeHtml(akun?.nama)}</b> &nbsp;|&nbsp; Tipe: ${akun?.tipe} &nbsp;|&nbsp; Normal: ${akun?.normal==='D'?'Debit':'Kredit'}</div>
     <div class="table-card"><div class="table-scroll"><table style="min-width:600px;">
-      <thead><tr><th>Tanggal</th><th>No. Jurnal</th><th>Keterangan</th><th style="text-align:right;">Debit</th><th style="text-align:right;">Kredit</th><th style="text-align:right;">Saldo</th></tr></thead>
-      <tbody>${rows.join('')||`<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted);">Tidak ada mutasi</td></tr>`}</tbody>
+      <thead><tr><th class="th-sort" id="urut-bb-tgl" onclick="ubahUrutJurnal('bb','tgl')" title="Klik untuk mengubah urutan tanggal">Tanggal <span class="sort-ind">↕</span></th><th class="th-sort" id="urut-bb-no" onclick="ubahUrutJurnal('bb','no')" title="Klik untuk mengurutkan nomor jurnal">No. Jurnal <span class="sort-ind">↕</span></th><th>Keterangan</th><th style="text-align:right;">Debit</th><th style="text-align:right;">Kredit</th><th style="text-align:right;">Saldo</th></tr></thead>
+      <tbody>${_barisBB||`<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted);">Tidak ada mutasi</td></tr>`}</tbody>
       <tfoot><tr class="total-row"><td colspan="5" style="text-align:right;">Saldo Akhir</td><td class="num" style="text-align:right;">${fmtRp(Math.abs(saldo))}</td></tr></tfoot>
     </table></div></div>`;
+  if (typeof perbaruiIndikatorUrutJurnal === 'function') perbaruiIndikatorUrutJurnal('bb');   // header dibuat ulang tiap render
 }
 
 function openBukuBesarPicker() {

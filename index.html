@@ -87,6 +87,7 @@
 <script defer src="js/30-aging-hutang.js"></script>
 <script defer src="js/31-pembayaran.js"></script>
 <script defer src="js/32-pembayaran-ui.js"></script>
+<script defer src="js/33-urut-jurnal.js"></script>
 <script defer src="js/99-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- Tabler webfont CDN dihapus: semua ikon "ti-*" sudah self-hosted sebagai SVG mask di css/icons.css (lihat komentar di file itu). Menghapus dependency CDN ini supaya ikon tidak pernah gagal/putus saat CDN lambat atau diblokir jaringan/ad-blocker. -->
@@ -864,7 +865,7 @@
     <div class="table-scroll">
       <table>
         <thead><tr>
-          <th>Tanggal</th><th>No. Jurnal</th><th>Keterangan</th><th>Jenis</th>
+          <th class="th-sort" id="urut-umum-tgl" onclick="ubahUrutJurnal('umum','tgl')" title="Klik untuk mengubah urutan tanggal">Tanggal <span class="sort-ind">↕</span></th><th class="th-sort" id="urut-umum-no" onclick="ubahUrutJurnal('umum','no')" title="Klik untuk mengurutkan nomor jurnal">No. Jurnal <span class="sort-ind">↕</span></th><th>Keterangan</th><th>Jenis</th>
           <th>Akun</th><th>Debit</th><th>Kredit</th><th style="width:36px"></th><th style="width:40px"></th>
         </tr></thead>
         <tbody id="jurnal-umum-body"></tbody>
@@ -957,7 +958,7 @@
     <div class="table-scroll">
       <table>
         <thead><tr>
-          <th>Tanggal</th><th>No. Jurnal</th><th>Keterangan</th>
+          <th class="th-sort" id="urut-kas-tgl" onclick="ubahUrutJurnal('kas','tgl')" title="Klik untuk mengubah urutan tanggal">Tanggal <span class="sort-ind">↕</span></th><th class="th-sort" id="urut-kas-no" onclick="ubahUrutJurnal('kas','no')" title="Klik untuk mengurutkan nomor jurnal">No. Jurnal <span class="sort-ind">↕</span></th><th>Keterangan</th>
           <th>Penerimaan</th><th>Pengeluaran</th><th>Saldo</th>
         </tr></thead>
         <tbody id="jurnal-kas-body"></tbody>
@@ -979,7 +980,7 @@
     <div class="table-scroll">
       <table>
         <thead><tr>
-          <th>Tanggal</th><th>No. Invoice</th><th>Keterangan</th><th>Metode</th>
+          <th class="th-sort" id="urut-jual-tgl" onclick="ubahUrutJurnal('jual','tgl')" title="Klik untuk mengubah urutan tanggal">Tanggal <span class="sort-ind">↕</span></th><th class="th-sort" id="urut-jual-no" onclick="ubahUrutJurnal('jual','no')" title="Klik untuk mengurutkan nomor invoice">No. Invoice <span class="sort-ind">↕</span></th><th>Keterangan</th><th>Metode</th>
           <th>Piutang/Kas Dr</th><th>Penjualan Kr</th>
         </tr></thead>
         <tbody id="jurnal-penjualan-body"></tbody>
@@ -1000,7 +1001,7 @@
     <div class="table-scroll">
       <table>
         <thead><tr>
-          <th>Tanggal</th><th>No. Faktur</th><th>Keterangan</th><th>Metode</th>
+          <th class="th-sort" id="urut-beli-tgl" onclick="ubahUrutJurnal('beli','tgl')" title="Klik untuk mengubah urutan tanggal">Tanggal <span class="sort-ind">↕</span></th><th class="th-sort" id="urut-beli-no" onclick="ubahUrutJurnal('beli','no')" title="Klik untuk mengurutkan nomor faktur">No. Faktur <span class="sort-ind">↕</span></th><th>Keterangan</th><th>Metode</th>
           <th>Akun Debit</th><th>Kas/Utang Kr</th>
         </tr></thead>
         <tbody id="jurnal-pembelian-body"></tbody>

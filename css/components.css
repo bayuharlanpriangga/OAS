@@ -1132,3 +1132,10 @@ body.role-viewer #page-transaksi .tab-content button[onclick*="save"] {
   display: none !important;
 }
 
+/* Header tabel yang bisa diklik untuk mengurutkan (Jurnal Umum: Tanggal, No. Jurnal) */
+th.th-sort { cursor: pointer; user-select: none; white-space: nowrap; }
+th.th-sort:hover { color: var(--accent); }
+th.th-sort .sort-ind { font-size: 11px; opacity: 0.4; margin-left: 2px; }
+th.th-sort.sort-aktif { color: var(--accent); }
+th.th-sort.sort-aktif .sort-ind { opacity: 1; }
+
