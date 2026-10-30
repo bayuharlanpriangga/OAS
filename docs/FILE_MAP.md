@@ -64,7 +64,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 398-401 | `escapeForJsAttr` | function |
 | 403-434 | `parseJurnalFromAI` | function |
 
-## js/03-widgets.js (2733 baris, 155.1 KB)
+## js/03-widgets.js (2733 baris, 155.4 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -110,44 +110,44 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1803-1813 | `_applyCompanyLogo` | function |
 | 2709-2732 | `updatePwaBtn` | function |
 
-## js/04-navigasi-tema.js (715 baris, 33.2 KB)
+## js/04-navigasi-tema.js (719 baris, 33.4 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 3-6 | `toggleSidebar` | function |
 | 7-10 | `closeSidebar` | function |
 | 19-21 | `inIframe` | arrow |
-| 66-169 | `showPage` | function |
-| 171-173 | `handleAddBtn` | function |
-| 176-186 | `switchTab` | function |
-| 189-200 | `populateAkunSelect` | function |
-| 203-206 | `safeHistoryPush` | function |
-| 207-210 | `safeHistoryReplace` | function |
-| 253-262 | `initTheme` | function |
-| 264-292 | `applyTheme` | function |
-| 305-314 | `syncPwaThemeChrome` | function |
-| 316-320 | `toggleTheme` | function |
-| 322-394 | `initTutDrag` | function |
-| 396-408 | `tutMinimize` | function |
-| 410-417 | `tutRestore` | function |
-| 426-430 | `dismissAndOpenPenyesuaian` | function |
-| 432-434 | `openJurnalPenyesuaian` | function |
-| 436 | `openInlineTemplatePenyesuaian` | function |
-| 437 | `toggleTemplatePenyesuaian` | function |
-| 438 | `fillPenyesuaianInline` | function |
-| 439 | `openModalPenyesuaian` | function |
-| 444-477 | `renderArusKas` | function |
-| 479-488 | `runSequential` | function |
-| 490-498 | `exitTutorial` | function |
-| 500-507 | `clearTutHighlight` | function |
-| 509-600 | `renderTutStep` | function |
-| 602-617 | `tutNext` | function |
-| 619-621 | `tutSkipSection` | function |
-| 623-645 | `positionTutTooltip` | function |
-| 647-658 | `positionTutTooltipCenter` | function |
-| 660-662 | `showTutComplete` | function |
-| 665 | `startTutorial` | function |
-| 684-709 | `openOptPicker` | function |
+| 68-173 | `showPage` | function |
+| 175-177 | `handleAddBtn` | function |
+| 180-190 | `switchTab` | function |
+| 193-204 | `populateAkunSelect` | function |
+| 207-210 | `safeHistoryPush` | function |
+| 211-214 | `safeHistoryReplace` | function |
+| 257-266 | `initTheme` | function |
+| 268-296 | `applyTheme` | function |
+| 309-318 | `syncPwaThemeChrome` | function |
+| 320-324 | `toggleTheme` | function |
+| 326-398 | `initTutDrag` | function |
+| 400-412 | `tutMinimize` | function |
+| 414-421 | `tutRestore` | function |
+| 430-434 | `dismissAndOpenPenyesuaian` | function |
+| 436-438 | `openJurnalPenyesuaian` | function |
+| 440 | `openInlineTemplatePenyesuaian` | function |
+| 441 | `toggleTemplatePenyesuaian` | function |
+| 442 | `fillPenyesuaianInline` | function |
+| 443 | `openModalPenyesuaian` | function |
+| 448-481 | `renderArusKas` | function |
+| 483-492 | `runSequential` | function |
+| 494-502 | `exitTutorial` | function |
+| 504-511 | `clearTutHighlight` | function |
+| 513-604 | `renderTutStep` | function |
+| 606-621 | `tutNext` | function |
+| 623-625 | `tutSkipSection` | function |
+| 627-649 | `positionTutTooltip` | function |
+| 651-662 | `positionTutTooltipCenter` | function |
+| 664-666 | `showTutComplete` | function |
+| 669 | `startTutorial` | function |
+| 688-713 | `openOptPicker` | function |
 
 ## js/05-akun.js (528 baris, 30.2 KB)
 
@@ -226,7 +226,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1198-1221 | `simpanSimpel` | function |
 | 1227-1322 | `renderDashBebanPajak` | function |
 
-## js/07-jurnal-laporan.js (491 baris, 32.3 KB)
+## js/07-jurnal-laporan.js (502 baris, 34.2 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -236,23 +236,23 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 25-32 | `getPpnSubBadge` | function |
 | 38-41 | `updateSaldoAwalBtnVisibility` | function |
 | 45-64 | `syncJurnalTypeFilter` | function |
-| 67-122 | `renderJurnalUmum` | function |
-| 125-153 | `renderJurnalKas` | function |
-| 156-175 | `renderJurnalPenjualan` | function |
-| 178-196 | `renderJurnalPembelian` | function |
-| 199-230 | `renderBukuBesar` | function |
-| 232-242 | `openBukuBesarPicker` | function |
-| 251-308 | `renderNeraca` | function |
-| 309-336 | `exportArusKasPDF` | function |
-| 337 | `exportPerubahanEkuitasPDF` | function |
-| 342-354 | `openModalAsetTetap` | function |
-| 356-364 | `renderReportWithPeriod` | function |
-| 369-385 | `getFilteredSaldo` | function |
-| 387-413 | `renderLabaRugiFiltered` | function |
-| 415-432 | `renderNeracaSaldoFiltered` | function |
-| 435 | `renderLabaRugi` | function |
-| 436 | `renderNeracaSaldo` | function |
-| 439-490 | `showAIConfirm` | function |
+| 67-124 | `renderJurnalUmum` | function |
+| 127-158 | `renderJurnalKas` | function |
+| 161-181 | `renderJurnalPenjualan` | function |
+| 184-203 | `renderJurnalPembelian` | function |
+| 206-241 | `renderBukuBesar` | function |
+| 243-253 | `openBukuBesarPicker` | function |
+| 262-319 | `renderNeraca` | function |
+| 320-347 | `exportArusKasPDF` | function |
+| 348 | `exportPerubahanEkuitasPDF` | function |
+| 353-365 | `openModalAsetTetap` | function |
+| 367-375 | `renderReportWithPeriod` | function |
+| 380-396 | `getFilteredSaldo` | function |
+| 398-424 | `renderLabaRugiFiltered` | function |
+| 426-443 | `renderNeracaSaldoFiltered` | function |
+| 446 | `renderLabaRugi` | function |
+| 447 | `renderNeracaSaldo` | function |
+| 450-501 | `showAIConfirm` | function |
 
 ## js/08-kartu-stock.js (3394 baris, 162.6 KB)
 
@@ -345,19 +345,19 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 2642-2657 | `_updateLockHeaderBtn` | function |
 | 2664-3375 | `_installAuditHooks` | function |
 
-## js/09-produk.js (347 baris, 16.9 KB)
+## js/09-produk.js (339 baris, 16.4 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 2-20 | `openProdukFilterKatPicker` | function |
-| 22-155 | `renderProduk` | function |
-| 160-198 | `openModalEditProdukHarga` | function |
-| 201-220 | `updateProdukPpnBreakdown` | function |
-| 222-250 | `simpanProduk` | function |
-| 252-254 | `hapusProduk` | function |
-| 258-312 | `openProdukPicker` | function |
-| 314-332 | `_applySimpelKategori` | function |
-| 333-346 | `onSimpelQtyChange` | function |
+| 22-147 | `renderProduk` | function |
+| 152-190 | `openModalEditProdukHarga` | function |
+| 193-212 | `updateProdukPpnBreakdown` | function |
+| 214-242 | `simpanProduk` | function |
+| 244-246 | `hapusProduk` | function |
+| 250-304 | `openProdukPicker` | function |
+| 306-324 | `_applySimpelKategori` | function |
+| 325-338 | `onSimpelQtyChange` | function |
 
 ## js/10-aset-tetap.js (254 baris, 22.5 KB)
 
@@ -387,7 +387,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 194-246 | `atRenderCard` | function |
 | 253 | `filterKontak` | function |
 
-## js/11-kontak-invoice.js (336 baris, 27.7 KB)
+## js/11-kontak-invoice.js (362 baris, 29.5 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -410,12 +410,14 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 178 | `tambahItemInvoice` | function |
 | 181-184 | `_invPpnTarif` | function |
 | 186-194 | `hitungTotalInvoice` | function |
-| 196-246 | `simpanInvoice` | function |
-| 248-265 | `renderInvoiceKPI` | function |
-| 267-297 | `renderInvoiceList` | function |
-| 301 | `openModalLunasInvoice` | function |
-| 303-311 | `hapusInvoice` | function |
-| 316-335 | `handleRekonCSV` | function |
+| 197-209 | `_entryJurnalKirimInvoice` | function |
+| 211-252 | `simpanInvoice` | function |
+| 256-271 | `kirimInvoice` | function |
+| 273-290 | `renderInvoiceKPI` | function |
+| 292-323 | `renderInvoiceList` | function |
+| 327 | `openModalLunasInvoice` | function |
+| 329-337 | `hapusInvoice` | function |
+| 342-361 | `handleRekonCSV` | function |
 
 ## js/12-kalkulator.js (2268 baris, 113.1 KB)
 
@@ -481,7 +483,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 2189-2205 | `hitungPPh23` | function |
 | 2207-2244 | `hitungBadan` | function |
 
-## js/13-analitik-dashboard.js (1996 baris, 98.4 KB)
+## js/13-analitik-dashboard.js (2069 baris, 101.8 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -494,46 +496,47 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 72-80 | `triggerAnalitikRefresh` | function |
 | 88-100 | `showOpSpinner` | function |
 | 101-115 | `hideOpSpinner` | function |
-| 117-312 | `renderAnalitik` | function |
-| 314-316 | `renderAnalitikEmpty` | function |
-| 326-329 | `anBaseHeight` | function |
-| 331-375 | `anDrawGroupedBar` | function |
-| 377-433 | `anDrawLine` | function |
-| 435-477 | `anDrawBarSignedColor` | function |
-| 479-524 | `anDrawBebanDonut` | function |
-| 526-549 | `anDrawRasio` | function |
-| 551-599 | `anDrawWaterfall` | function |
-| 601-644 | `anDrawTopAkun` | function |
-| 646-715 | `anDrawProyeksi` | function |
-| 717-740 | `anDrawHeatmap` | function |
-| 742-778 | `anDrawPeriodCompare` | function |
-| 780-785 | `anFmtShort` | function |
-| 786-789 | `hexToRgba` | function |
-| 792-806 | `anFillLabel2` | function |
-| 809-857 | `openAnChartModal` | function |
-| 859-863 | `closeAnChartModal` | function |
-| 881-898 | `saveFiturBaru` | function |
-| 900-920 | `hitungPPh21Otomatis` | function |
-| 922-933 | `hitungPPh23Otomatis` | function |
-| 935-962 | `buatJurnalPPh21` | function |
-| 964-991 | `buatJurnalPPh23` | function |
-| 1015-1063 | `getReminders` | function |
-| 1066-1237 | `renderDashPiutangUtang` | function |
-| 1241-1314 | `renderChart` | function |
-| 1317-1441 | `renderDashboard` | function |
-| 1453-1471 | `_cariTahunBukuBelumDitutup` | function |
-| 1473-1550 | `buatJurnalPenutup` | function |
-| 1553-1616 | `cekRekonsiliasi` | function |
-| 1621-1625 | `openGlobalSearch` | function |
-| 1626-1630 | `closeGlobalSearch` | function |
-| 1632-1737 | `doGlobalSearch` | function |
-| 1739-1745 | `handleSearchKey` | function |
-| 1746-1750 | `highlightSearch` | function |
-| 1778-1800 | `addPeriodFilterToReports` | function |
-| 1806-1826 | `initRekapPajakBulanSelect` | function |
-| 1828-1843 | `openPajakBulanPicker` | function |
-| 1845-1948 | `renderRekapSiapSetor` | function |
-| 1950-1952 | `exportRekapPajakPDF` | function |
+| 117-311 | `renderAnalitik` | function |
+| 313-315 | `renderAnalitikEmpty` | function |
+| 325-328 | `anBaseHeight` | function |
+| 330-374 | `anDrawGroupedBar` | function |
+| 376-432 | `anDrawLine` | function |
+| 434-476 | `anDrawBarSignedColor` | function |
+| 478-523 | `anDrawBebanDonut` | function |
+| 525-548 | `anDrawRasio` | function |
+| 550-598 | `anDrawWaterfall` | function |
+| 600-643 | `anDrawTopAkun` | function |
+| 645-714 | `anDrawProyeksi` | function |
+| 716-739 | `anDrawHeatmap` | function |
+| 741-777 | `anDrawPeriodCompare` | function |
+| 779-784 | `anFmtShort` | function |
+| 785-788 | `hexToRgba` | function |
+| 791-805 | `anFillLabel2` | function |
+| 808-856 | `openAnChartModal` | function |
+| 858-862 | `closeAnChartModal` | function |
+| 880-897 | `saveFiturBaru` | function |
+| 899-919 | `hitungPPh21Otomatis` | function |
+| 921-932 | `hitungPPh23Otomatis` | function |
+| 934-961 | `buatJurnalPPh21` | function |
+| 963-990 | `buatJurnalPPh23` | function |
+| 1014-1062 | `getReminders` | function |
+| 1065-1236 | `renderDashPiutangUtang` | function |
+| 1240-1313 | `renderChart` | function |
+| 1316-1440 | `renderDashboard` | function |
+| 1452-1470 | `_cariTahunBukuBelumDitutup` | function |
+| 1472-1549 | `buatJurnalPenutup` | function |
+| 1552-1615 | `cekRekonsiliasi` | function |
+| 1620-1624 | `openGlobalSearch` | function |
+| 1625-1629 | `closeGlobalSearch` | function |
+| 1631-1736 | `doGlobalSearch` | function |
+| 1738-1744 | `handleSearchKey` | function |
+| 1745-1749 | `highlightSearch` | function |
+| 1777-1799 | `addPeriodFilterToReports` | function |
+| 1805-1825 | `initRekapPajakBulanSelect` | function |
+| 1827-1842 | `openPajakBulanPicker` | function |
+| 1846-1873 | `_hitungRekapPajak` | function |
+| 1875-1954 | `renderRekapSiapSetor` | function |
+| 1958-2025 | `exportRekapPajakPDF` | function |
 
 ## js/14-export.js (3199 baris, 184.1 KB)
 
@@ -613,7 +616,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 2887-2892 | `executeAIActions` | async function |
 | 2894-3198 | `_executeAIActionsInner` | async function |
 
-## js/15-storage.js (488 baris, 21.0 KB)
+## js/15-storage.js (490 baris, 21.4 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -640,7 +643,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 315-327 | `exportBackupJSON` | function |
 | 329-362 | `importBackupJSON` | function |
 | 366-368 | `resetPilihSemua` | function |
-| 370-436 | `doResetAll` | async function |
+| 370-438 | `doResetAll` | async function |
 
 ## js/16-auth-company.js (1997 baris, 89.9 KB)
 
@@ -801,7 +804,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1169-1184 | `auditOpenAktPicker` | function |
 | 1187-1221 | `auditOpenBizPicker` | function |
 
-## js/19-fitur-tambahan.js (1851 baris, 100.0 KB)
+## js/19-fitur-tambahan.js (1851 baris, 100.1 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -989,37 +992,37 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 733-749 | `loadCachedPasswordDisplay` | function |
 | 751-763 | `copyCurrentPassword` | function |
 
-## js/22-cloud-records.js (461 baris, 23.9 KB)
+## js/22-cloud-records.js (481 baris, 25.6 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 24 | `_cloudKursDefault` | function |
 | 25-30 | `_cloudKursFromList` | function |
 | 32-34 | `_cloudKursLegacy` | function |
-| 75 | `_cloudReadOnly` | function |
-| 77 | `_cloudCacheKey` | function |
-| 79-81 | `_cloudCacheLocal` | function |
-| 83-88 | `_cloudReadCache` | function |
-| 90 | `_cloudSeenKey` | function |
-| 93-96 | `_cloudPendingOnce` | function |
-| 99-102 | `_cloudLegacyAllowed` | function |
-| 105-116 | `_cloudIndex` | function |
-| 126-130 | `_cloudHash` | function |
-| 131 | `_cloudSnapHashKey` | function |
-| 132-135 | `_cloudSnapHashRead` | function |
-| 136-143 | `_cloudSnapHashSave` | function |
-| 145-157 | `_cloudUnsynced` | function |
-| 159-167 | `_cloudApplyUnsynced` | function |
-| 171-176 | `_cloudWithTimeout` | function |
-| 180-187 | `_cloudAfterSync` | function |
-| 190-199 | `_cloudSortNewestFirst` | function |
-| 201-204 | `cloudResetRecordsState` | function |
-| 213-244 | `cloudDeleteRecords` | function |
-| 246-249 | `_cloudLoadFromCache` | function |
-| 251-319 | `cloudLoadRecords` | async function |
-| 325-400 | `cloudOfferLocalMigration` | async function |
-| 403-414 | `cloudSyncRecords` | function |
-| 416-460 | `_cloudSyncNow` | async function |
+| 78 | `_cloudReadOnly` | function |
+| 80 | `_cloudCacheKey` | function |
+| 82-84 | `_cloudCacheLocal` | function |
+| 86-91 | `_cloudReadCache` | function |
+| 93 | `_cloudSeenKey` | function |
+| 96-99 | `_cloudPendingOnce` | function |
+| 102-105 | `_cloudLegacyAllowed` | function |
+| 108-119 | `_cloudIndex` | function |
+| 129-133 | `_cloudHash` | function |
+| 134 | `_cloudSnapHashKey` | function |
+| 135-138 | `_cloudSnapHashRead` | function |
+| 139-146 | `_cloudSnapHashSave` | function |
+| 148-160 | `_cloudUnsynced` | function |
+| 162-170 | `_cloudApplyUnsynced` | function |
+| 174-179 | `_cloudWithTimeout` | function |
+| 183-190 | `_cloudAfterSync` | function |
+| 193-202 | `_cloudSortNewestFirst` | function |
+| 204-207 | `cloudResetRecordsState` | function |
+| 216-247 | `cloudDeleteRecords` | function |
+| 249-252 | `_cloudLoadFromCache` | function |
+| 254-322 | `cloudLoadRecords` | async function |
+| 328-420 | `cloudOfferLocalMigration` | async function |
+| 423-434 | `cloudSyncRecords` | function |
+| 436-480 | `_cloudSyncNow` | async function |
 
 ## js/23-penomoran.js (247 baris, 10.9 KB)
 
@@ -1063,7 +1066,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 174-183 | `exportAgingPiutangCSV` | function |
 | 185-194 | `cetakAgingPiutang` | function |
 
-## js/26-daftar-bisnis.js (111 baris, 5.3 KB)
+## js/26-daftar-bisnis.js (111 baris, 5.4 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -1101,7 +1104,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 258-266 | `perbaruiBill` | function |
 | 269-275 | `hapusBillById` | function |
 
-## js/29-bill-ui.js (280 baris, 16.8 KB)
+## js/29-bill-ui.js (280 baris, 17.2 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -1128,17 +1131,18 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 231-258 | `renderBillList` | function |
 | 260-279 | `hapusBill` | function |
 
-## js/30-aging-hutang.js (103 baris, 5.2 KB)
+## js/30-aging-hutang.js (111 baris, 5.9 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
-| 18-67 | `billUntukAging` | function |
-| 69-71 | `_agingHutangHasil` | function |
-| 75-80 | `renderAgingHutang` | function |
-| 82-91 | `exportAgingHutangCSV` | function |
-| 93-102 | `cetakAgingHutang` | function |
+| 16-60 | `pembelianKreditTanpaBill` | function |
+| 68-75 | `billUntukAging` | function |
+| 77-79 | `_agingHutangHasil` | function |
+| 83-88 | `renderAgingHutang` | function |
+| 90-99 | `exportAgingHutangCSV` | function |
+| 101-110 | `cetakAgingHutang` | function |
 
-## js/31-pembayaran.js (277 baris, 17.6 KB)
+## js/31-pembayaran.js (451 baris, 29.6 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -1150,26 +1154,88 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 67-71 | `_bayarTanggalValid` | function |
 | 79-86 | `dibayarLamaTurunan` | function |
 | 95-139 | `susunPembayaran` | function |
-| 143-154 | `simpanPembayaranState` | function |
-| 161-168 | `catatPembayaran` | function |
-| 174-176 | `_bayarJenisJurnal` | function |
-| 179-182 | `_bayarKetJurnal` | function |
-| 189-219 | `buatJurnalPembayaranInvoice` | function |
-| 231-257 | `jurnalPembayaranStatus` | function |
-| 263-276 | `pembayaranInvoiceBelumJurnal` | function |
+| 150-198 | `susunAlokasiPembayaran` | function |
+| 202-213 | `simpanPembayaranState` | function |
+| 223-243 | `statusDariPembayaran` | function |
+| 250-257 | `catatPembayaran` | function |
+| 263-265 | `_bayarJenisJurnal` | function |
+| 268-271 | `_bayarKetJurnal` | function |
+| 278-308 | `buatJurnalPembayaranInvoice` | function |
+| 320-346 | `jurnalPembayaranStatus` | function |
+| 352-365 | `pembayaranInvoiceBelumJurnal` | function |
+| 368-389 | `buatJurnalPembayaranBill` | function |
+| 391-408 | `jurnalPembayaranBillStatus` | function |
+| 421-438 | `susunHapusPembayaran` | function |
+| 441-450 | `terapkanHapusPembayaran` | function |
 
-## js/32-pembayaran-ui.js (142 baris, 11.4 KB)
+## js/32-pembayaran-ui.js (419 baris, 33.6 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 17 | `_bayarSet` | function |
 | 20-31 | `_bayarInvRingkasHtml` | function |
-| 33-57 | `openModalBayarInvoice` | function |
-| 59-83 | `simpanPembayaranInvoice` | function |
-| 85-87 | `_bayarPeringatan` | function |
-| 93-110 | `postingJurnalPembayaranInvoice` | function |
-| 114-134 | `jurnalkanPembayaranInvoiceLama` | function |
-| 137-141 | `renderPembayaranBelumJurnal` | function |
+| 35-38 | `_bayarFormTampil` | function |
+| 41-44 | `_bayarTombolRiwayat` | function |
+| 47-54 | `openRiwayatPembayaranInvoice` | function |
+| 59-88 | `hapusPembayaranInvoice` | function |
+| 90-115 | `openModalBayarInvoice` | function |
+| 117-141 | `simpanPembayaranInvoice` | function |
+| 143-145 | `_bayarPeringatan` | function |
+| 151-168 | `postingJurnalPembayaranInvoice` | function |
+| 172-192 | `jurnalkanPembayaranInvoiceLama` | function |
+| 195-199 | `renderPembayaranBelumJurnal` | function |
+| 205-211 | `_alokasiInvoiceTersedia` | function |
+| 212 | `_alokasiFmt` | function |
+| 213-229 | `_alokasiRender` | function |
+| 230-235 | `_alokasiUpdateRingkasan` | function |
+| 236-243 | `ubahAlokasiInvoice` | function |
+| 244-248 | `tambahBarisAlokasi` | function |
+| 249 | `hapusBarisAlokasi` | function |
+| 250-262 | `openModalAlokasiPembayaran` | function |
+| 263-341 | `simpanAlokasiPembayaran` | function |
+| 345-354 | `_bayarBillRingkasHtml` | function |
+| 355-358 | `_bayarBillFormTampil` | function |
+| 359-362 | `_bayarTombolRiwayatBill` | function |
+| 363-379 | `openModalBayarBill` | function |
+| 380-394 | `simpanPembayaranBill` | function |
+| 395-400 | `openRiwayatPembayaranBill` | function |
+| 401-418 | `hapusPembayaranBill` | function |
+
+## js/33-urut-jurnal.js (105 baris, 6.0 KB)
+
+| Baris | Nama | Jenis |
+| --- | --- | --- |
+| 17-20 | `_nomorJurnalAngka` | function |
+| 28-55 | `urutkanJurnalUmum` | function |
+| 71-85 | `ubahUrutJurnal` | function |
+| 89-91 | `urutkanBarisJurnal` | function |
+| 94-104 | `perbaruiIndikatorUrutJurnal` | function |
+
+## js/34-kartu-kontak.js (144 baris, 10.4 KB)
+
+| Baris | Nama | Jenis |
+| --- | --- | --- |
+| 31 | `_kartuNama` | function |
+| 32 | `_kartuTgl` | function |
+| 36-45 | `daftarKontakKartu` | function |
+| 49-54 | `dokumenHutangKartu` | function |
+| 65-99 | `susunKartuKontak` | function |
+| 102-123 | `kartuKontakHtml` | function |
+| 126-128 | `_kartuDokumen` | function |
+| 130-141 | `_renderKartu` | function |
+| 142 | `renderKartuPiutang` | function |
+| 143 | `renderKartuHutang` | function |
+
+## js/35-dok.js (150 baris, 9.7 KB)
+
+| Baris | Nama | Jenis |
+| --- | --- | --- |
+| 40 | `_dokBulat` | function |
+| 43-46 | `dokStatusBerikut` | function |
+| 51-67 | `transisiDok` | function |
+| 71-75 | `nomorDokBerikut` | function |
+| 78-85 | `totalDok` | function |
+| 96-149 | `susunDok` | function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 

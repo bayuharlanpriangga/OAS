@@ -9,25 +9,18 @@
 // Dipanggil dari showPage('umur-hutang') (04-navigasi-tema.js). Dimuat setelah 29-bill-ui.js.
 // ═══════════════════════════════════════════════════════════
 
-// Bill yang dihitung sebagai utang: status `diterima` dan jurnal tidak berstatus 'dibalik'.
-// Bill `diterima` yang belum dijurnal ('belum') tetap dihitung: tagihannya sah dan masih harus dibayar,
-// dan tombol Buat Jurnal di Tagihan Pembelian yang akan melengkapi jurnalnya.
-// Bill yang jurnalnya sudah dibalik manual dari Jurnal Umum ('dibalik') tidak lagi menjadi utang,
-// jadi tidak ikut (konsisten dengan hapusBill dan jurnalPembelianAktif).
-// daftarBill/daftarJurnal bukan array -> []. Mengembalikan array record bill asli (tidak disalin).
-function billUntukAging(daftarBill, daftarJurnal) {
+// Pembelian kredit lama yang hanya ada sebagai jurnal (jenis 'Pembelian', kredit akun Utang 21xx) dan belum punya
+// record bill (task 4.7). Jurnal yang sudah punya record bill, APA PUN statusnya (termasuk lunas/sebagian), tidak
+// ikut: kalau tidak, pembelian kredit yang sudah dibayar muncul lagi sebagai utang penuh (temuan 6.2).
+// Murni. Mengembalikan array record seperti bill { id, noBill, supplier, tanggal, jatuhTempo, total, sisaTagihan, status, jurnalNo }.
+function pembelianKreditTanpaBill(daftarBill, daftarJurnal) {
   const bills = (Array.isArray(daftarBill) ? daftarBill : []).filter(b => b && typeof b === 'object');
   const jurnal = Array.isArray(daftarJurnal) ? daftarJurnal : [];
-  const aktifBills = bills.filter(b => b.status === 'diterima' && jurnalBillStatus(b, jurnal, bills).status !== 'dibalik');
-
-  // Sertakan juga pembelian produk kredit langsung lewat jurnal (jenis 'Pembelian' dengan kredit Utang)
-  // yang belum ada di billList (task 4.7)
   const noBillSet = new Set();
-  aktifBills.forEach(b => {
-    if (b.noBill) noBillSet.add(b.noBill.toLowerCase());
-    if (b.jurnalNo) noBillSet.add(b.jurnalNo.toLowerCase());
+  bills.forEach(b => {
+    if (b.noBill) noBillSet.add(String(b.noBill).toLowerCase());
+    if (b.jurnalNo) noBillSet.add(String(b.jurnalNo).toLowerCase());
   });
-
   const extraKredit = [];
   jurnal.forEach(j => {
     if (!j || j.jenis !== 'Pembelian') return;
@@ -63,6 +56,21 @@ function billUntukAging(daftarBill, daftarJurnal) {
     });
   });
 
+  return extraKredit;
+}
+
+// Bill yang dihitung sebagai utang: status `diterima` atau `sebagian` (task 5.4) dan jurnal tidak berstatus 'dibalik'.
+// Bill `diterima` yang belum dijurnal ('belum') tetap dihitung: tagihannya sah dan masih harus dibayar,
+// dan tombol Buat Jurnal di Tagihan Pembelian yang akan melengkapi jurnalnya.
+// Bill yang jurnalnya sudah dibalik manual dari Jurnal Umum ('dibalik') tidak lagi menjadi utang,
+// jadi tidak ikut (konsisten dengan hapusBill dan jurnalPembelianAktif).
+// daftarBill/daftarJurnal bukan array -> []. Mengembalikan array record bill asli (tidak disalin).
+function billUntukAging(daftarBill, daftarJurnal) {
+  const bills = (Array.isArray(daftarBill) ? daftarBill : []).filter(b => b && typeof b === 'object');
+  const jurnal = Array.isArray(daftarJurnal) ? daftarJurnal : [];
+  const aktifBills = bills.filter(b => (b.status === 'diterima' || b.status === 'sebagian') && jurnalBillStatus(b, jurnal, bills).status !== 'dibalik');
+
+  const extraKredit = pembelianKreditTanpaBill(bills, jurnal);
   return extraKredit.length ? aktifBills.concat(extraKredit) : aktifBills;
 }
 

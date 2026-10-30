@@ -54,7 +54,7 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true, pe
   };
   vm.createContext(ctx);
   // list global di 01-state.js adalah `let`; di sini disediakan lewat script yang sama
-  vm.runInContext('let invoiceList=[],kontakList=[],asetTetapList=[],produkList=[],jurnalBerulangList=[],anggaranList=[],notifAlerts=[],counterList=[],billList=[],pembayaranList=[],kursData={USD:1,IDR:16200,SGD:12100,EUR:18300,MYR:3500,JPY:107,updatedAt:null};', ctx);
+  vm.runInContext('let invoiceList=[],kontakList=[],asetTetapList=[],produkList=[],jurnalBerulangList=[],anggaranList=[],notifAlerts=[],counterList=[],billList=[],pembayaranList=[],dokList=[],kursData={USD:1,IDR:16200,SGD:12100,EUR:18300,MYR:3500,JPY:107,updatedAt:null};', ctx);
   vm.runInContext(srcBisnis, ctx);
   ctx.isReadOnly = () => vm.runInContext('bisnisHanyaBaca', ctx)(ctx.currentCompany, ctx.currentUser.id, null); // sama dengan isReadOnly() di 18
   vm.runInContext(src, ctx);
@@ -368,6 +368,39 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true, pe
     e.run("billList.push({ id: 'BILL_V' })");
     await e.run('cloudSyncRecords(["bill"])');
     ok(!e.store.some(r => r.kind === 'bill'), 'viewer: bill tidak ditulis ke cloud');
+  }
+
+  console.log('[dok] kind dok (task 6.3)');
+  {
+    const dok = { id: 'DOK_1', jenis: 'pesanan_jual', no: 'SO-2026-001', tanggal: '2026-10-20', kontak: 'PT Maju', status: 'draft', items: [{ nama: 'Kopi', qty: 2, harga: 5000 }], createdAt: '2026-10-20T01:00:00.000Z' };
+    const e = makeEnv();
+    e.store.push({ company_id: 'c1', kind: 'dok', rec_id: 'DOK_1', data: dok });
+    e.ls['oas_rec_seen_c1'] = '1';
+    await e.run('cloudLoadRecords()');
+    ok(e.run('dokList.length') === 1 && e.run('dokList[0].no') === 'SO-2026-001', 'dok dimuat dari cloud ke dokList');
+    e.run("dokList.push({ id: 'DOK_2', jenis: 'penawaran', no: 'QUO-2026-001' })");
+    await e.run('cloudSyncRecords(["dok"])');
+    ok(e.store.some(r => r.kind === 'dok' && r.rec_id === 'DOK_2'), 'dok baru tersimpan ke cloud (upsert, rec_id = id)');
+    ok(JSON.parse(e.ls['oas_rec_dok_c1']).length === 2, 'cache lokal dok ikut ditulis');
+    ok(!e.store.some(r => r.kind === 'invoice' || r.kind === 'bill' || r.kind === 'pembayaran'), 'dok tidak tercampur dengan invoice/bill/pembayaran');
+    e.run("dokList = dokList.filter(d => d.id !== 'DOK_1')");
+    await e.run('cloudSyncRecords(["dok"])');
+    ok(!e.store.some(r => r.rec_id === 'DOK_1') && e.store.some(r => r.rec_id === 'DOK_2'), 'dok yang dihapus di app ikut terhapus di cloud');
+    await e.run('cloudDeleteRecords(["dok"])');
+    ok(!e.store.some(r => r.kind === 'dok') && e.run('dokList.length') === 0, 'reset dok menghapus di cloud dan state');
+  }
+  {
+    // belum ada key mode tamu: data lama di localStorage tidak ada yang ditawarkan untuk kind dok
+    const e = makeEnv();
+    await e.run('cloudLoadRecords()');
+    ok(e.run('CLOUD_RECORD_KINDS.dok.legacyKey') === null, 'dok: belum punya key mode tamu (menyusul di 7.2)');
+  }
+  {
+    const e = makeEnv({ peran: 'viewer' });
+    await e.run('cloudLoadRecords()');
+    e.run("dokList.push({ id: 'DOK_V' })");
+    await e.run('cloudSyncRecords(["dok"])');
+    ok(!e.store.some(r => r.kind === 'dok'), 'viewer: dok tidak ditulis ke cloud');
   }
 
   console.log('[pembayaran] kind pembayaran (task 5.1)');

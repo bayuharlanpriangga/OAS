@@ -88,6 +88,8 @@
 <script defer src="js/31-pembayaran.js"></script>
 <script defer src="js/32-pembayaran-ui.js"></script>
 <script defer src="js/33-urut-jurnal.js"></script>
+<script defer src="js/34-kartu-kontak.js"></script>
+<script defer src="js/35-dok.js"></script>
 <script defer src="js/99-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- Tabler webfont CDN dihapus: semua ikon "ti-*" sudah self-hosted sebagai SVG mask di css/icons.css (lihat komentar di file itu). Menghapus dependency CDN ini supaya ikon tidak pernah gagal/putus saat CDN lambat atau diblokir jaringan/ad-blocker. -->
@@ -248,6 +250,12 @@
       </div>
       <div class="nav-card" onclick="showPage('umur-hutang')" data-page="umur-hutang">
         <span class="nav-card-icon"><i class="ti ti-clock"></i></span>Umur Hutang
+      </div>
+      <div class="nav-card" onclick="showPage('kartu-piutang')" data-page="kartu-piutang">
+        <span class="nav-card-icon"><i class="ti ti-file-invoice"></i></span>Kartu Piutang
+      </div>
+      <div class="nav-card" onclick="showPage('kartu-hutang')" data-page="kartu-hutang">
+        <span class="nav-card-icon"><i class="ti ti-file-invoice"></i></span>Kartu Hutang
       </div>
       <div class="nav-card" onclick="showPage('rekonsiliasi')" data-page="rekonsiliasi">
         <span class="nav-card-icon"><i class="ti ti-git-compare"></i></span>Rekonsiliasi
@@ -2251,6 +2259,50 @@
   </div>
 </div>
 
+<!-- KARTU PIUTANG (js/34-kartu-kontak.js, task 6.1) -->
+<div class="page" id="page-kartu-piutang">
+  <div class="section-header">
+    <div><div class="section-title"><i class="ti ti-file-invoice" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Kartu Piutang</div>
+    <div class="section-sub">Invoice, pembayaran, dan saldo berjalan per pelanggan</div></div>
+  </div>
+  <div class="table-card" style="margin-bottom:16px;">
+    <div class="aging-toolbar" style="flex-wrap:wrap;">
+      <label class="aging-acuan-wrap">Pelanggan
+        <select id="kartu-piutang-kontak" onchange="renderKartuPiutang()" aria-label="Pelanggan" style="flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;font-family:var(--sans);"></select>
+      </label>
+      <label class="aging-acuan-wrap">Dari
+        <input type="date" id="kartu-piutang-dari" onchange="renderKartuPiutang()" aria-label="Dari tanggal">
+      </label>
+      <label class="aging-acuan-wrap">Sampai
+        <input type="date" id="kartu-piutang-sampai" onchange="renderKartuPiutang()" aria-label="Sampai tanggal">
+      </label>
+    </div>
+    <div id="kartu-piutang-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada data untuk ditampilkan.</div>
+  </div>
+</div>
+
+<!-- KARTU HUTANG (js/34-kartu-kontak.js, task 6.2) -->
+<div class="page" id="page-kartu-hutang">
+  <div class="section-header">
+    <div><div class="section-title"><i class="ti ti-file-invoice" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Kartu Hutang</div>
+    <div class="section-sub">Tagihan, pembayaran, dan saldo berjalan per supplier</div></div>
+  </div>
+  <div class="table-card" style="margin-bottom:16px;">
+    <div class="aging-toolbar" style="flex-wrap:wrap;">
+      <label class="aging-acuan-wrap">Supplier
+        <select id="kartu-hutang-kontak" onchange="renderKartuHutang()" aria-label="Supplier" style="flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;font-family:var(--sans);"></select>
+      </label>
+      <label class="aging-acuan-wrap">Dari
+        <input type="date" id="kartu-hutang-dari" onchange="renderKartuHutang()" aria-label="Dari tanggal">
+      </label>
+      <label class="aging-acuan-wrap">Sampai
+        <input type="date" id="kartu-hutang-sampai" onchange="renderKartuHutang()" aria-label="Sampai tanggal">
+      </label>
+    </div>
+    <div id="kartu-hutang-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada data untuk ditampilkan.</div>
+  </div>
+</div>
+
 <!-- TAGIHAN PEMBELIAN / BILL (form: task 4.3; daftar + simpan: task 4.4) -->
 <div class="page" id="page-bill">
   <div class="section-header">
@@ -3105,6 +3157,7 @@
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="invoice" data-label="Invoice" style="accent-color:var(--red);width:15px;height:15px;"> Invoice</label>
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="bill" data-label="Tagihan Pembelian" style="accent-color:var(--red);width:15px;height:15px;"> Tagihan Pembelian</label>
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="pembayaran" data-label="Pembayaran" style="accent-color:var(--red);width:15px;height:15px;"> Pembayaran</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="dok" data-label="Dokumen Penjualan/Pembelian" style="accent-color:var(--red);width:15px;height:15px;"> Dokumen (penawaran, pesanan, dll.)</label>
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="kontak" data-label="Kontak" style="accent-color:var(--red);width:15px;height:15px;"> Kontak</label>
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="aset_tetap" data-label="Aset Tetap" style="accent-color:var(--red);width:15px;height:15px;"> Aset Tetap</label>
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="produk" data-label="Produk" style="accent-color:var(--red);width:15px;height:15px;"> Produk</label>

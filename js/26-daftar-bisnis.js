@@ -22,7 +22,7 @@ const MODUL_HALAMAN = {
   'jurnal-berulang': 'jurnal', 'buku-besar': 'jurnal', 'neraca-saldo': 'jurnal',
   'laba-rugi': 'laba-rugi', neraca: 'neraca', 'perubahan-ekuitas': 'neraca', 'arus-kas': 'arus-kas',
   akun: 'akun', 'aset-tetap': 'akun', kontak: 'kontak',
-  invoice: 'invoice', bill: 'invoice', 'umur-piutang': 'invoice', 'umur-hutang': 'invoice', produk: 'invoice',
+  invoice: 'invoice', bill: 'invoice', 'umur-piutang': 'invoice', 'umur-hutang': 'invoice', 'kartu-piutang': 'invoice', 'kartu-hutang': 'invoice', produk: 'invoice',
   anggaran: 'anggaran', pajak: 'pajak', 'kalk-ppn': 'pajak', rekonsiliasi: 'rekonsiliasi',
   analitik: 'analitik', 'kalk-rasio': 'analitik', 'kalk-bep': 'analitik', 'kalk-bunga': 'analitik',
   'kalk-penyusutan': 'analitik', 'kalk-persediaan': 'analitik',

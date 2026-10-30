@@ -200,7 +200,7 @@ Satu baris = satu record, dipisah per bisnis. Dipakai oleh `js/22-cloud-records.
 | Kolom | Tipe | Isi |
 |---|---|---|
 | `company_id` | uuid, FK `companies` | Pemilik data (ON DELETE CASCADE) |
-| `kind` | text | `invoice` \| `bill` \| `pembayaran` \| `kontak` \| `aset_tetap` \| `produk` \| `jurnal_berulang` \| `anggaran` \| `alert` \| `kurs` \| `counter` |
+| `kind` | text | `invoice` \| `bill` \| `pembayaran` \| `dok` \| `kontak` \| `aset_tetap` \| `produk` \| `jurnal_berulang` \| `anggaran` \| `alert` \| `kurs` \| `counter` |
 | `rec_id` | text | id record di app (`INV_..`, `BILL_..`, `PAY_..`, `KTK_..`, `AT_..`, `jb_..`, `ang_..`, `alert_..`, `kurs` (satu record), `INV-2026` untuk counter penomoran (`{ id, jenis, tahun, terakhir }`), atau `ksId` untuk produk) |
 | `data` | jsonb | isi record apa adanya |
 | `updated_at` | timestamptz | waktu sync terakhir |
@@ -257,7 +257,7 @@ di akhir), sisanya global per-browser/device.
 | `oas_alerts` | Global | JSON array | `notifAlerts` — aturan notifikasi (arus kas negatif, jatuh tempo, dst) |
 | `oas_notif_hist` | Global | JSON array | `notifHistory` — riwayat notifikasi yang sudah muncul |
 | `oas_anggaran` | Global | JSON array | `anggaranList` — anggaran vs aktual per periode |
-| `oas_rec_<kind>_<companyId>` | Per company | JSON array | Cache lokal invoice/bill/pembayaran/kontak/aset_tetap/produk/jurnal_berulang/anggaran/alert/kurs/counter; dipakai bila cloud gagal dimuat atau ditulis |
+| `oas_rec_<kind>_<companyId>` | Per company | JSON array | Cache lokal invoice/bill/pembayaran/dok/kontak/aset_tetap/produk/jurnal_berulang/anggaran/alert/kurs/counter; dipakai bila cloud gagal dimuat atau ditulis |
 | `oas_rec_snaph_<companyId>` | Per company | JSON object | `{ kind: { recId: hash } }` — hash tiap record pada keadaan cloud terakhir yang terkonfirmasi (selesai dimuat / sync sukses). Saat memuat, selisihnya dengan cache = perubahan yang belum tersinkron; diterapkan di atas data cloud lalu dikirim ulang, jadi tidak hilang walau halaman di-refresh saat offline |
 | `oas_rec_seen_<companyId>` / `oas_rec_legacy_claimed` | Per company / global | `'1'` / companyId | Penanda migrasi data lama: data global hanya boleh dipindah ke satu bisnis dan tidak ditawarkan ulang |
 | `oas_mks_<companyId>` / `oas_mks_guest` | Per company | JSON object | Fallback lokal untuk `multiKartuStock` bila gagal sync ke cloud |
@@ -435,6 +435,37 @@ Pencatatan (task 5.2, `js/31-pembayaran.js` + form `js/32-pembayaran-ui.js`): `s
 
 Jurnal pembayaran invoice (task 5.3, `js/31-pembayaran.js` murni + `js/32-pembayaran-ui.js`): `buatJurnalPembayaranInvoice(pembayaran, inv, opsi)` menyusun jurnal berjenis `Invoice & Piutang` (`JENIS_JURNAL.INVOICE`, sama seperti jurnal kirim invoice), bertanggal pembayaran, ket `Pembayaran <noInvoice> — <pelanggan>`: Debit `pembayaran.akunKas`, Kredit `inv.akunPiutang` (cadangan: 1201, atau akun pertama yang namanya memuat "piutang"), sebesar `jumlah`. `postingJurnalPembayaranInvoice` memostingnya lewat `postJurnalLegacy` (kunci periode, nomor JRN, sync cloud, audit log) dan mengisi `pembayaran.jurnalNo`; di `simpanPembayaranInvoice` jurnal dibuat LEBIH DULU, jadi bila gagal (mis. periode terkunci) tidak ada pembayaran yang dicatat. Penaut pembayaran ke jurnal: `jurnalNo` + ket jurnal (`jurnalPembayaranStatus` → `belum` / `aktif` / `dibalik`), karena `id`/`ref` jurnal tidak tersimpan ke `jurnal_entries`; tanpa `jurnalNo` dicari dari ket + tanggal + akun kas + jumlah, melewati jurnal yang `jurnalNo`-nya sudah dipakai pembayaran lain. `pembayaranInvoiceBelumJurnal` (record yang belum pernah dijurnal, tanpa yang sengaja dibalik atau yang invoicenya sudah dihapus) dipakai banner `#inv-belum-jurnal` dan `jurnalkanPembayaranInvoiceLama`. Tidak ada perubahan skema database (`jurnalNo` hanyalah field di record `pembayaran`, `company_records.kind` berupa teks bebas).
 
+### 4.5d Dokumen generik — `dokList[]`
+State di `js/35-dok.js`; disinkron lewat `company_records` (`kind='dok'`, `rec_id` = `id`). Satu bentuk untuk penawaran, pesanan penjualan, surat jalan, pesanan pembelian, penerimaan barang, retur penjualan, dan retur pembelian (Fase 7-10). Task 6.3: model, tabel jenis/alur status, dan fungsi murni; belum ada form, simpan, jurnal, atau efek stok.
+```ts
+{
+  id: string;              // "DOK_<timestamp>", bukan nomor (nomor bisa berulang setelah Reset Data)
+  jenis: 'penawaran' | 'pesanan_jual' | 'surat_jalan' | 'pesanan_beli' | 'penerimaan' | 'retur_jual' | 'retur_beli';
+  no: string;              // <AWALAN>-<TAHUN>-<URUT>, mis. "SO-2026-001"; awalan per jenis di DOK_JENIS (QUO, SO, SJ, PO, GRN, RJ, RB); counter kind `counter` id mis. "SO-2026"
+  tanggal: string;         // "YYYY-MM-DD"
+  kontak: string;          // nama kontak (bukan FK id), sama seperti invoice.pelanggan / bill.supplier
+  status: string;          // dari alur jenisnya (DOK_JENIS[jenis].transisi); dokumen baru selalu 'draft'
+  items: { nama: string; qty: number; harga: number; satuan?: string }[];   // qty > 0; harga >= 0 (kosong = 0, mis. surat jalan tanpa harga)
+  catatan?: string;
+  refJenis?: string;       // ref asal: salah satu jenis dokumen di atas, atau 'invoice' / 'bill' (record lama)
+  refId?: string;          // id dokumen asal (selalu berpasangan dengan refJenis)
+  refNo?: string;          // salinan nomor dokumen asal, hanya untuk tampilan
+  riwayat?: { dari: string; ke: string; waktu?: string }[];   // ditambah tiap `transisiDok`
+  createdAt: string;       // ISO datetime
+}
+```
+Alur status (`DOK_JENIS[jenis].transisi`; status tanpa tujuan = final):
+| Jenis | Alur |
+| --- | --- |
+| penawaran | draft → terkirim → disetujui → selesai; terkirim → ditolak; draft/terkirim/disetujui → batal |
+| pesanan_jual | draft → dikonfirmasi → sebagian → selesai; dikonfirmasi → selesai; draft/dikonfirmasi/sebagian → batal |
+| surat_jalan | draft → dikirim → selesai; draft → batal (dikirim tidak bisa dibatalkan: efek stoknya diputuskan di 8.3) |
+| pesanan_beli | draft → dipesan → sebagian → selesai; dipesan → selesai; draft/dipesan/sebagian → batal |
+| penerimaan | draft → diterima; draft → batal |
+| retur_jual, retur_beli | draft → diproses → selesai; draft → batal |
+
+Fungsi (semua murni): `dokStatusBerikut(jenis, status)`, `transisiDok(dok, statusBaru, opsi)` (mengembalikan dokumen baru + entri `riwayat`, atau `{ ok:false, pesan }`), `nomorDokBerikut(jenis, tahun, daftar, counterList)`, `susunDok(f, daftar)` (validasi isi form, nomor/id unik per jenis, ref asal lengkap dan, bila menunjuk dokumen model ini, harus ada di daftar), `totalDok(dok)`. Yang sengaja belum diputuskan: qty terpenuhi/terkirim per item (7.6), efek ke stok dan jurnal (8.3, 9.4, 10.x), dan jenis mana boleh menunjuk jenis mana lewat ref asal.
+
 ### 4.6 Aset Tetap — `asetTetapList[]`
 ```ts
 {
@@ -527,6 +558,7 @@ Tidak semua state runtime disinkronkan ke Supabase. Berdasarkan pemetaan
 | `invoiceList` | ✅ Ya | `company_records` (`kind='invoice'`) |
 | `billList` | ✅ Ya | `company_records` (`kind='bill'`) |
 | `pembayaranList` | ✅ Ya | `company_records` (`kind='pembayaran'`). Mode tamu: `oas_pembayaran` (sejak 5.2) |
+| `dokList` | ✅ Ya (login) | `company_records` (`kind='dok'`). Mode tamu belum menyimpan (key menyusul di 7.2) |
 | `kontakList` | ✅ Ya | `company_records` (`kind='kontak'`) |
 | `asetTetapList` | ✅ Ya | `company_records` (`kind='aset_tetap'`) |
 | `jurnalBerulangList` | ✅ Ya | `company_records` (`kind='jurnal_berulang'`) |

@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 30 Oktober 2026 · 25 fase · 139 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 35/139 task selesai.**
+**Progres: 38/139 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -71,7 +71,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | 3 | Akses anggota tim | 7/7 |
 | 4 | Tagihan pembelian (bill) | 8/9 |
 | 5 | Pembayaran | 7/7 |
-| 6 | Kartu piutang/hutang dan model dokumen | 0/3 |
+| 6 | Kartu piutang/hutang dan model dokumen | 3/3 |
 | 7 | Penawaran sampai faktur | 0/6 |
 | 8 | Surat jalan | 0/3 |
 | 9 | Pesanan dan penerimaan pembelian | 0/5 |
@@ -232,7 +232,7 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 **Temuan task 4.7:**
 - Yang dihitung sebagai utang: bill berstatus `diterima` dengan `sisaTagihan > 0`. Draft dan lunas tidak ikut (aturan `hitungAging`). Bill `diterima` yang belum dijurnal tetap ikut, karena tagihannya sah dan masih harus dibayar. Bill yang jurnalnya sudah dibalik manual dari Jurnal Umum (`jurnalBillStatus` = `dibalik`) tidak ikut, karena utangnya sudah dibatalkan; ini konsisten dengan `hapusBill` dan `jurnalPembelianAktif` (4.6b).
 - Umur dihitung dari jatuh tempo, sama seperti Umur Piutang. Bill tanpa jatuh tempo memakai tanggal bill; kalau keduanya tidak valid, bill dikeluarkan dan jumlahnya diberitahukan di bawah tabel.
-- `sisaTagihan` bill belum berkurang sebelum 5.5 (bayar bill), jadi untuk sementara Umur Hutang menampilkan total bill `diterima`. Setelah 5.5, halaman ini otomatis ikut tanpa perubahan.
+- `sisaTagihan` bill belum berkurang sebelum 5.5 (bayar bill), jadi untuk sementara Umur Hutang menampilkan total bill `diterima`. Setelah 5.5, halaman ini otomatis ikut tanpa perubahan. (~~Ternyata tidak:~~ bill berstatus `sebagian` dari 5.4 sempat hilang dari halaman ini; diperbaiki di 6.2, lihat temuan 6.2.)
 - ~~Cakupan: hanya tagihan pembelian (bill).~~ Selesai: diputuskan pembelian produk kredit di `06-transaksi.js` otomatis dibuatkan record bill diterima (lengkap dengan jatuh tempo +30 hari dan nomor jurnal). Selain itu, fungsi `billUntukAging` di `js/30-aging-hutang.js` kini juga membaca jurnal pembelian kredit lama (jenis `Pembelian` dengan kredit akun Utang `21xx`) yang belum punya record bill, sehingga seluruh pembelian kredit otomatis masuk ke Umur Hutang.
 - Dua halaman umur ada di DOM bersamaan, jadi id rincian hutang diberi awalan `h` (`aging-det-h0`, dst.) dan `toggleAgingDetail(i, 'h')`; id dan onclick piutang tidak berubah. Tes memastikan tidak ada id yang bertabrakan.
 - Teks halaman: Supplier, Total utang, "No Tagihan", "Rincian Tagihan", dan CSV `UMUR HUTANG per <tanggal>`; nama berkas `umur-hutang-<tanggal>.csv`.
@@ -325,9 +325,24 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 
 | ✓ | ID | Tugas | Lampirkan |
 | :---: | --- | --- | --- |
-| ☐ | 6.1 | Kartu piutang per kontak: invoice, pembayaran, saldo berjalan | 5.1, 2.3 |
-| ☐ | 6.2 | Kartu hutang per kontak | 6.1, 4.7 |
-| ☐ | 6.3 | Model dokumen generik (kind `dok`: jenis, nomor, status, ref asal, item) + fungsi transisi status + tes | CR, 23-penomoran.js |
+| ☑ | 6.1 | Kartu piutang per kontak: invoice, pembayaran, saldo berjalan. Halaman baru `#page-kartu-piutang` (kartu "Kartu Piutang" di grup Fitur Baru, judul di `pageTitles`, izin mengikuti Invoice): pilih pelanggan + filter dari/sampai tanggal, tabel Tanggal · No · Keterangan · Invoice · Pembayaran · Saldo. Modul baru `js/34-kartu-kontak.js`: fungsi murni `susunKartuKontak(jenis, kontak, dokumen, pembayaran, opsi)`, `daftarKontakKartu`, `kartuKontakHtml`; `renderKartuPiutang`. Hook ke file lama: `index.html` (script, kartu, halaman), `04-navigasi-tema.js` (4 baris), `26-daftar-bisnis.js` (1 baris). Tes: `tests/kartu-kontak.test.js`. Perlu uji manual di browser | 5.1, 2.3 |
+| ☑ | 6.2 | Kartu hutang per kontak. Memakai fungsi yang sama dengan 6.1 (`jenis` `'hutang'`): halaman `#page-kartu-hutang`, `renderKartuHutang`, dan `dokumenHutangKartu(daftarBill, daftarJurnal)` di `js/34-kartu-kontak.js`. Dua bug Umur Hutang ditemukan dan diperbaiki di `js/30-aging-hutang.js` (lihat temuan 6.2); `pembelianKreditTanpaBill` dipisah sebagai fungsi murni. Tes: `tests/kartu-kontak.test.js`, bagian [temuan 6.2] `tests/aging-hutang.test.js`. Perlu uji manual di browser | 6.1, 4.7 |
+| ☑ | 6.3 | Model dokumen generik (kind `dok`: jenis, nomor, status, ref asal, item) + fungsi transisi status + tes. Modul baru `js/35-dok.js`: tabel `DOK_JENIS` (7 jenis, awalan nomor, alur status), `dokStatusBerikut`, `transisiDok`, `nomorDokBerikut`, `susunDok`, `totalDok` (semua murni), state `dokList`. Kind `dok` di `22-cloud-records.js` (tanpa key mode tamu) + label dialog migrasi, checkbox "Dokumen" di modal Reset Data, bentuk record di `docs/SCHEMA.md` §4.5d. Belum ada form, simpan, jurnal, atau efek stok. Tes: `tests/dok.test.js`, bagian [dok] `tests/cloud-records.test.js` | CR, 23-penomoran.js |
+
+**Temuan task 6.1 dan 6.2:**
+- Satu fungsi (`susunKartuKontak`) melayani kartu piutang dan hutang; yang beda hanya tabel `KARTU_CFG` (status yang dihitung, nama field kontak, label). Kolom kartu bukan Debit/Kredit tetapi "Invoice/Tagihan", "Pembayaran", dan "Saldo", supaya tidak membingungkan antara sisi piutang dan hutang.
+- Saldo akhir sebuah dokumen sama dengan `sisaTagihan()` (31-pembayaran.js), jadi total kartu sama dengan Umur Piutang/Hutang untuk kontak itu (diuji untuk hutang terhadap `hitungAging`). Pembayaran yang dicatat lewat alur lama (`dibayarLama`, "Tandai Lunas" sebelum 5.3) tampil sebagai satu baris "Pembayaran sebelum pencatatan (alur lama)" bertanggal sama dengan dokumennya, karena tanggal aslinya memang tidak tersimpan.
+- Yang masuk kartu: invoice terkirim/sebagian/lunas; tagihan diterima/sebagian/lunas yang jurnalnya tidak dibalik; plus pembelian kredit lama yang hanya ada sebagai jurnal (sama dengan Umur Hutang). Draft tidak masuk. Kontak dicocokkan lewat nama tanpa beda huruf besar/kecil (invoice.pelanggan dan bill.supplier bukan FK).
+- Pembayaran milik dokumen yang sudah dihapus (yatim) tidak tampil, sama seperti aturan `sisaTagihan`. `hapusInvoice` tidak membalik jurnal invoice (perilaku lama, temuan 5.3), jadi invoice yang dihapus hilang dari kartu piutang tetapi jurnal Piutang-nya tetap ada di buku besar.
+- Belum ada ekspor CSV/cetak kartu (tidak ada di rencana 6.1/6.2; bisa jadi task kecil mengikuti pola 2.4). Retur ikut tampil di kartu lewat task 10.7.
+- **Bug Umur Hutang, ditemukan saat 6.2 dan sudah diperbaiki di `js/30-aging-hutang.js`:** (a) `billUntukAging` hanya menghitung bill berstatus `diterima`, padahal sejak 5.4 bill yang dibayar sebagian berstatus `sebagian`; bill itu hilang dari Umur Hutang begitu dibayar cicilan pertama (tes 4.7 memakai `diterima` dengan sisa 400.000, kondisi sebelum 5.4). (b) Pembelian kredit lewat Transaksi membuat record bill berstatus diterima dengan `jurnalNo` jurnal Pembelian-nya, dan jurnal itu juga dibaca sebagai "pembelian kredit lama tanpa bill" kalau bill-nya tidak berstatus `diterima`. Akibatnya bill yang sudah `lunas` muncul lagi di Umur Hutang sebesar utang penuh, dan yang `sebagian` muncul dengan nilai penuh (bukan sisanya). Sekarang penaut ke jurnal dibangun dari SEMUA bill (apa pun statusnya) dan logikanya jadi fungsi murni `pembelianKreditTanpaBill`. Tes regresi gagal pada kode lama dan lulus pada kode baru.
+
+**Temuan task 6.3:**
+- Satu bentuk record untuk tujuh jenis (`penawaran`, `pesanan_jual`, `surat_jalan`, `pesanan_beli`, `penerimaan`, `retur_jual`, `retur_beli`), dengan awalan nomor sendiri (QUO, SO, SJ, PO, GRN, RJ, RB) dan alur status per jenis di satu tabel (`DOK_JENIS`). Nomor memakai `nomorBerikut` yang sudah ada, jadi counter jenis+tahun (`SO-2026`) bekerja tanpa perubahan di 23-penomoran.js.
+- `transisiDok` murni: mengembalikan dokumen baru dengan `status` baru dan entri `riwayat` (dari, ke, waktu opsional); fungsi murni tidak membaca jam, jadi waktu diberikan pemanggil. Lompat status dan mengubah status final ditolak dengan pesan yang menyebut tujuan yang boleh.
+- Ref asal (`refJenis` + `refId`) hanya diperiksa bentuknya: harus lengkap, tidak menunjuk dirinya sendiri, dan bila menunjuk dokumen model ini harus ada di daftar. Jenis mana boleh menunjuk jenis mana sengaja belum dikunci; tiap task Fase 7-10 menambahkan aturannya sendiri. Ref ke `invoice`/`bill` diterima tanpa cek keberadaan karena record itu ada di daftar lain.
+- Kind `dok` belum punya key mode tamu (`legacyKey: null`); 7.2 menambahkannya bersama simpan dan daftar, dengan pola `legacyOnce` seperti bill dan pembayaran. Kind ini ikut Reset Data lewat checkbox baru. Reset Data > Dokumen juga membuang counter semua awalan dokumen (QUO, SO, SJ, PO, GRN, RJ, RB; 1 baris di `doResetAll`), jadi nomor mulai lagi dari 001; counter INV/BILL tidak ikut. Reset Invoice tetap membuang semua counter seperti sebelumnya.
+- Efek ke stok dan jurnal, serta qty terpenuhi/terkirim per item, belum dimodelkan (di 7.6, 8.x, 9.x, 10.x).
 
 ## Fase 7 — Penawaran sampai faktur (6 task)
 
@@ -547,6 +562,7 @@ Selesai fase 21-25 = Rilis E.
 4. **Aturan pajak dan payroll** harus dicek ulang dari sumber resmi saat 11.1 dan 18.2 dikerjakan; jangan memakai angka dari ingatan model.
 5. ~~**Jurnal bill di laporan pembelian**~~ — diputuskan: jurnal bill tetap berjenis `Tagihan Pembelian`, dan laporan pembelian dibuat membaca kedua jenis lewat fungsi bantu di task 4.6b.
 
+6. **Alur status dokumen** (6.3): alur tiap jenis di `DOK_JENIS` adalah usulan (tabel di `docs/SCHEMA.md` §4.5d). Yang paling perlu dikonfirmasi: surat jalan yang sudah `dikirim` tidak bisa dibatalkan (hanya `selesai`), karena efek stoknya baru diputuskan di 8.3; dan penawaran yang `disetujui` bisa menjadi `selesai` setelah dibuatkan pesanan. Ubah bila tidak setuju sebelum 7.1 dikerjakan.
 
 ### UI polish 5.7.2 (perbaikan berdasarkan uji browser)
 - [x] Memperbaiki input nominal alokasi agar tidak kehilangan fokus/kursor saat mengetik; ringkasan total diperbarui tanpa menggambar ulang baris input.

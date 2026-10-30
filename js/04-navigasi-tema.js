@@ -49,6 +49,8 @@ const pageTitles = {
   'bill':['Tagihan Pembelian','Tagihan dari supplier · Utang usaha · Jatuh tempo'],
   'umur-piutang':['Umur Piutang','Piutang belum lunas per pelanggan · Bucket 0-30, 31-60, 61-90, >90 hari'],
   'umur-hutang':['Umur Hutang','Utang usaha belum lunas per supplier · Bucket 0-30, 31-60, 61-90, >90 hari'],
+  'kartu-piutang':['Kartu Piutang','Invoice, pembayaran, dan saldo berjalan per pelanggan'],
+  'kartu-hutang':['Kartu Hutang','Tagihan, pembayaran, dan saldo berjalan per supplier'],
   'rekonsiliasi':['Rekonsiliasi Bank','Cocokkan mutasi bank dengan jurnal · Upload CSV'],
   'kurs':['Multi Mata Uang','Kurs otomatis · Konversi transaksi · History kurs'],
   'notifikasi':['Notifikasi & Alert','Peringatan otomatis · Batas anggaran · Jatuh tempo'],
@@ -161,6 +163,8 @@ function showPage(id) {
   if(id==='bill') renderBillList();
   if(id==='umur-piutang') renderAgingPiutang();
   if(id==='umur-hutang') renderAgingHutang();
+  if(id==='kartu-piutang') renderKartuPiutang();
+  if(id==='kartu-hutang') renderKartuHutang();
   if(id==='rekonsiliasi') setTimeout(upgradeFormPickers, 80);
   if(id==='kurs') setTimeout(()=>{ renderKursPage(); upgradeFormPickers(); }, 80);
   if(id==='notifikasi') setTimeout(()=>{ renderNotifikasiPage(); upgradeFormPickers(); }, 80);

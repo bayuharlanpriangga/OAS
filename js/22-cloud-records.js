@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// CLOUD RECORDS — sinkron invoice, bill, pembayaran, kontak, aset tetap, produk, jurnal berulang,
+// CLOUD RECORDS — sinkron invoice, bill, pembayaran, dokumen, kontak, aset tetap, produk, jurnal berulang,
 // anggaran, alert notifikasi, kurs, dan counter penomoran ke Supabase (tabel company_records), terpisah per bisnis.
 //
 // Kenapa ada: sebelumnya data ini hanya di localStorage dengan key
@@ -55,6 +55,9 @@ const CLOUD_RECORD_KINDS = {
   // pembayaran: pembayaran atas invoice/bill (task 5.1). State-nya (pembayaranList) dan fungsi hitungnya ada di 31-pembayaran.js.
   // Sejak 5.2 mode tamu menyimpan pembayaran di key `oas_pembayaran`, jadi data itu ditawarkan sekali ke bisnis pemilik (legacyOnce, seperti bill).
   pembayaran:      { get: () => pembayaranList,     set: v => { pembayaranList = v; },     idOf: r => r && r.id, legacyKey: 'oas_pembayaran', legacyOnce: true },
+  // dok: dokumen penjualan/pembelian generik (penawaran, pesanan, surat jalan, penerimaan, retur) (task 6.3). State (dokList) dan
+  // fungsi model/transisi ada di 35-dok.js. Belum ada UI, jadi belum ada key mode tamu; Fase 7 menambahkannya bersama form.
+  dok:             { get: () => dokList,            set: v => { dokList = v; },            idOf: r => r && r.id, legacyKey: null },
   // counter: nomor tertinggi yang pernah dipakai per jenis+tahun ({ id:'INV-2026', terakhir:7 }).
   // State-nya (counterList) dan logikanya ada di 23-penomoran.js.
   counter:         { get: () => counterList,        set: v => { counterList = v; },        idOf: r => r && r.id, legacyKey: 'oas_counter', legacyOnce: true,
@@ -384,7 +387,7 @@ async function cloudOfferLocalMigration(cid) {
   const _kunciBatal = 'oas_rec_dismiss_' + cid;
   if (localStorage.getItem(_kunciBatal) === _sidik) return;
   if (typeof hideOpSpinner === 'function') hideOpSpinner(); // spinner jangan menutupi dialog
-  const label = { invoice: 'Invoice', bill: 'Tagihan pembelian', pembayaran: 'Pembayaran', kontak: 'Kontak', aset_tetap: 'Aset tetap', produk: 'Produk', jurnal_berulang: 'Jurnal berulang', anggaran: 'Anggaran', alert: 'Alert notifikasi', kurs: 'Kurs', counter: 'Penomoran dokumen' };
+  const label = { invoice: 'Invoice', bill: 'Tagihan pembelian', pembayaran: 'Pembayaran', dok: 'Dokumen penjualan/pembelian', kontak: 'Kontak', aset_tetap: 'Aset tetap', produk: 'Produk', jurnal_berulang: 'Jurnal berulang', anggaran: 'Anggaran', alert: 'Alert notifikasi', kurs: 'Kurs', counter: 'Penomoran dokumen' };
   const ok = await showCustomConfirmGeneral({
     icon: '☁️', iconColor: 'rgba(34,211,238,0.12)', iconBorder: 'rgba(34,211,238,0.3)',
     title: 'Unggah Data Lokal ke Cloud?',

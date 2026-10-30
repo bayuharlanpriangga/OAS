@@ -121,5 +121,21 @@ ok(/'umur-hutang': 'invoice'/.test(dbs), 'izin modul mengikuti Invoice');
 ok(!/jenis\s*===\s*'Pembelian'/.test(src30), 'tidak menambah pembaca jenis === Pembelian');
 ok(!/umur-hutang|aging-hutang|billUntukAging/.test(rd('js/28-bill.js') + rd('js/29-bill-ui.js') + rd('js/24-aging.js')), 'tidak ada hook ke 24/28/29 (batas task)');
 
+console.log('[temuan 6.2] status sebagian dan pembelian kredit yang sudah punya bill');
+{
+  const bl = (o) => Object.assign({ id: 'B_' + o.noBill, supplier: 'PT Sebagian', tanggal: '2026-09-01', jatuhTempo: '2026-10-01', total: 1000000, sisaTagihan: 1000000, status: 'diterima' }, o);
+  const pk = (no, nilai) => ({ no, jenis: 'Pembelian', tanggal: '2026-09-01', ket: 'Beli — PT Sebagian', lines: [{ akun: '1301', debit: nilai, kredit: 0 }, { akun: '2101', debit: 0, kredit: nilai }] });
+  ctx.__bl = [bl({ noBill: 'S-1', status: 'sebagian', sisaTagihan: 400000 }),                                      // dibayar sebagian lewat alur 5.x
+              bl({ noBill: 'S-2', status: 'sebagian', sisaTagihan: 300000, jurnalNo: 'JRN-50', total: 500000 }),    // pembelian kredit (jurnal Pembelian) yang dibayar sebagian
+              bl({ noBill: 'S-3', status: 'lunas', sisaTagihan: 0, jurnalNo: 'JRN-51', total: 90000 })];            // pembelian kredit yang sudah lunas
+  ctx.__jr = [pk('JRN-50', 500000), pk('JRN-51', 90000)];
+  const dipilih2 = run('billUntukAging(__bl, __jr)');
+  ok(dipilih2.length === 2 && dipilih2.every(b => b.status === 'sebagian'), 'bill sebagian ikut dihitung (dulu hilang dari Umur Hutang)');
+  const h2 = run('hitungAging(billUntukAging(__bl, __jr), "2026-10-12")');
+  ok(h2.total.total === 700000, 'yang dihitung sisa bill sebagian (400.000 + 300.000); jurnal pembelian yang sudah punya bill tidak muncul lagi sebagai utang penuh');
+  ok(run('pembelianKreditTanpaBill(__bl, __jr)').length === 0, 'pembelianKreditTanpaBill: jurnal yang sudah punya bill (sebagian atau lunas) tidak ikut');
+  ok(run('pembelianKreditTanpaBill([], __jr)').length === 2, 'pembelianKreditTanpaBill: tanpa bill, kedua jurnal kredit ikut');
+}
+
 console.log('\nHasil: ' + pass + ' lulus, ' + fail + ' gagal');
 process.exit(fail ? 1 : 0);

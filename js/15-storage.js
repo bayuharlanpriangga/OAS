@@ -415,6 +415,8 @@ async function doResetAll() {
       failedKinds.forEach(k => { const l = label[k] || label.invoice; if (!gagal.includes(l)) gagal.push(l); });
       // Bill saja yang direset: counter BILL ikut dibuang (counter INV dibiarkan). Kalau Invoice ikut, semua counter sudah terhapus di atas.
       if (kinds.includes('bill') && !kinds.includes('invoice') && !failedKinds.includes('bill') && typeof resetCounterJenis === 'function') resetCounterJenis('BILL');
+      // Dokumen (penawaran, pesanan, dll.) saja yang direset: counter semua awalan dokumen (QUO, SO, SJ, ...) ikut dibuang, counter INV/BILL tidak.
+      if (kinds.includes('dok') && !kinds.includes('invoice') && !failedKinds.includes('dok') && typeof resetCounterJenis === 'function' && typeof DOK_JENIS !== 'undefined') Object.keys(DOK_JENIS).forEach(j => resetCounterJenis(DOK_JENIS[j].awalan));
     }
   } finally { hideOpSpinner(); }
 
