@@ -36,7 +36,7 @@ function renderProduk() {
   });
 
   if(!ksList.length) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:40px;">
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:40px;">
       <i class="ti ti-package" style="font-size:28px;display:block;margin-bottom:10px;opacity:0.4;"></i>
       Belum ada kartu stock persediaan.<br>
       <span style="font-size:12px;">Tambahkan di menu <b>Persediaan → + Kartu Stock</b> terlebih dahulu.</span>
@@ -60,7 +60,7 @@ function renderProduk() {
   };
 
   if(!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:32px;">Tidak ada produk yang cocok</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">Tidak ada produk yang cocok</td></tr>`;
     return;
   }
 
@@ -70,11 +70,7 @@ function renderProduk() {
     const override   = produkList.find(p => p.ksId === ks.id || p.ksId === ks._cardId);
     const hargaJual  = override?.hargaJual || 0;
     const ppnTarif   = (override?.ppn != null && override.ppn > 0) ? override.ppn : null;
-    const akunPend   = override?.akunPend  || '4101';
     const akunHpp    = override?.akunHpp   || '5101';
-    const akunPers   = override?.akunPers  || guessAkunPersediaanDefault(`${escapeHtml(ks.nama||'')} ${ks._cardNama||''}`);
-    const akunPendNm = akuns.find(a=>a.kode===akunPend)?.nama || akunPend;
-    const akunPersNm = akuns.find(a=>a.kode===akunPers)?.nama || akunPers;
 
     const stokColor  = saldo.totalQty <= 0 ? 'var(--red)' : saldo.totalQty <= 5 ? 'var(--accent3)' : 'var(--accent)';
 
@@ -141,10 +137,6 @@ function renderProduk() {
         ${hargaJualCell}
       </td>
       <td style="text-align:center;">${ppnBadge}</td>
-      <td style="font-size:11px;color:var(--muted);">
-        ${akunPendNm}
-        <div style="font-size:10px;color:var(--muted);opacity:.8;margin-top:2px;">Persediaan: ${akunPersNm}</div>
-      </td>
       <td>
         <button class="btn btn-ghost btn-sm" onclick="openModalEditProdukHarga('${ks.id}','${ks._cardId}')" title="Edit harga jual & akun">
           <i class="ti ti-pencil" style="font-size:12px;"></i> Edit

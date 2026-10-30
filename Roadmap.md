@@ -559,3 +559,11 @@ Selesai fase 21-25 = Rilis E.
 - [x] Mempertahankan informasi sisa tagihan pada setiap opsi invoice di dropdown picker.
 - [x] Menambahkan regression assertion bahwa teks sisa tidak dirender di bawah field nominal dan tetap tersedia pada opsi invoice.
 - [ ] Verifikasi visual ulang di browser desktop dan mobile setelah deploy.
+
+### UI polish 5.7.5 (penyederhanaan Master Produk & KPI Analitik)
+- [x] Menghapus kolom `Akun Pend.` beserta detail akun terkait dari tabel Master Produk; pengaturan akun transaksi tetap berada di Settings > Transaksi > Penjualan.
+- [x] Menyesuaikan `colspan` tabel Master Produk dari 9 menjadi 8 setelah kolom dihapus.
+- [x] Menghapus ikon dekoratif dari seluruh kartu KPI di bagian atas halaman Analitik; kartu kini hanya menampilkan label dan nilai.
+- [x] Pemeriksaan sintaks JavaScript untuk `js/09-produk.js` dan `js/13-analitik-dashboard.js`.
+- [x] Seluruh automated test: 27/27 lulus.
+- [ ] Verifikasi visual setelah deploy pada browser desktop dan mobile.

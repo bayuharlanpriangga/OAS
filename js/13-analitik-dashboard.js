@@ -207,18 +207,17 @@ function renderAnalitik() {
   const totKas = months.reduce((s,m)=>s+m.aruKas,0);
   const lastM = months[months.length-1] || {};
   const kpiData = [
-    { label:'Total Pendapatan', val: rp(totPend), icon:'<i class="ti ti-trending-up" style="font-size:14px;"></i>', clr:'var(--accent)' },
-    { label:'Laba Bersih Periode', val: rp(totLaba), icon:'<i class="ti ti-trending-up" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i>', clr: totLaba>=0?'var(--accent)':'var(--red)' },
-    { label:'Arus Kas Bersih', val: rp(totKas), icon:'<i class="ti ti-cash" style="font-size:14px;"></i>', clr: totKas>=0?'var(--accent)':'var(--red)' },
-    { label:'Aset Akhir', val: rp(lastM.aset||0), icon:'<i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i>', clr:'var(--accent2)' },
-    { label:'Liabilitas Akhir', val: rp(lastM.liabilitas||0), icon:'<i class="ti ti-clipboard-list ti-inline"></i>', clr:'var(--accent3)' },
-    { label:'Ekuitas Akhir', val: rp(lastM.ekuitas||0), icon:'<i class="ti ti-diamond" style="font-size:14px;"></i>', clr:'var(--accent2)' },
-    { label:'Margin Bersih Rata²', val: (months.filter(m=>m.pendapatan).reduce((s,m)=>s+m.marginBersih,0)/(months.filter(m=>m.pendapatan).length||1)).toFixed(1)+'%', icon:'%', clr:'var(--accent3)' },
-    { label:'Jumlah Jurnal', val: jurnalEntries.length, icon:'<i class="ti ti-notebook" style="font-size:14px;"></i>', clr:'var(--muted)' },
+    { label:'Total Pendapatan', val: rp(totPend), clr:'var(--accent)' },
+    { label:'Laba Bersih Periode', val: rp(totLaba), clr: totLaba>=0?'var(--accent)':'var(--red)' },
+    { label:'Arus Kas Bersih', val: rp(totKas), clr: totKas>=0?'var(--accent)':'var(--red)' },
+    { label:'Aset Akhir', val: rp(lastM.aset||0), clr:'var(--accent2)' },
+    { label:'Liabilitas Akhir', val: rp(lastM.liabilitas||0), clr:'var(--accent3)' },
+    { label:'Ekuitas Akhir', val: rp(lastM.ekuitas||0), clr:'var(--accent2)' },
+    { label:'Margin Bersih Rata²', val: (months.filter(m=>m.pendapatan).reduce((s,m)=>s+m.marginBersih,0)/(months.filter(m=>m.pendapatan).length||1)).toFixed(1)+'%', clr:'var(--accent3)' },
+    { label:'Jumlah Jurnal', val: jurnalEntries.length, clr:'var(--muted)' },
   ];
   document.getElementById('analitik-kpi').innerHTML = kpiData.map(k=>`
     <div class="stat-card" style="padding:14px 16px;">
-      <div style="font-size:22px;margin-bottom:4px;">${k.icon}</div>
       <div class="stat-label">${escapeHtml(k.label)}</div>
       <div style="font-size:16px;font-weight:700;color:${k.clr};font-family:var(--mono);margin-top:4px;">${k.val}</div>
     </div>`).join('');
