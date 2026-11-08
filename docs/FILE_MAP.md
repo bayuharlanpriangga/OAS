@@ -1291,6 +1291,13 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 64-75 | `ubahStatusPesanan` | function |
 | 77-87 | `hapusPesanan` | function |
 
+## js/39-pesanan-invoice.js (82 baris, 5.2 KB)
+
+| Baris | Nama | Jenis |
+| --- | --- | --- |
+| 18-22 | `_pinvTanggalValid` | function |
+| 24-81 | `pesananKeInvoice` | function |
+
 ## js/99-init.js (15 baris, 0.6 KB)
 
 _tidak ada deklarasi top-level_

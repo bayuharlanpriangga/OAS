@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 30 Oktober 2026 · 25 fase · 139 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 41/139 task selesai.**
+**Progres: 42/139 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -72,7 +72,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | 4 | Tagihan pembelian (bill) | 8/9 |
 | 5 | Pembayaran | 7/7 |
 | 6 | Kartu piutang/hutang dan model dokumen | 3/3 |
-| 7 | Penawaran sampai faktur | 3/6 |
+| 7 | Penawaran sampai faktur | 4/6 |
 | 8 | Surat jalan | 0/3 |
 | 9 | Pesanan dan penerimaan pembelian | 0/5 |
 | 10 | Retur | 0/7 |
@@ -353,9 +353,16 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 | ☑ | 7.2b | Ubah status penawaran dari daftar (Kirim, Setujui, Tolak, Batal) memakai `transisiDok`. Tidak ada di rencana awal, tetapi 7.3 butuh penawaran berstatus `disetujui`. Tombol per status di kolom Aksi daftar penawaran (dari `aksiStatusPenawaran`, murni, mengikuti alur `DOK_JENIS`); `ubahStatusPenawaran(id, status)` di `js/36-penawaran-ui.js` memanggil `transisiDok` (riwayat berwaktu tercatat) lalu `perbaruiDok` (baru, `js/35-dok.js`: ganti di posisi yang sama + simpan). Tolak dan Batal minta konfirmasi karena status final. Tanpa hook ke file lama. Tes: bagian [6] `tests/penawaran-ui.test.js`. Perlu uji manual di browser | 7.2 |
 | ☑ | 7.3 | Penawaran → Pesanan Penjualan (salin item, tautkan ref). Modul baru `js/37-pesanan-jual.js`: fungsi murni `pesananDariPenawaran(penawaran, daftar, opsi)` (hanya penawaran `disetujui` tanpa pesanan aktif; item, kontak, PPN, catatan disalin dalam; nomor SO lewat `nomorDokBerikut`; ref `refJenis:'penawaran'` + `refId` + `refNo`; penawaran jadi `selesai` lewat `transisiDok`) dan `pesananDariRef`; `buatPesananDariPenawaran(id)` menyimpan pesanan baru + penawaran selesai + counter dalam satu kali `simpanDokState`. Tombol "Buat Pesanan" di daftar penawaran disetujui, nomor pesanan tampil di baris penawaran, `hapusPenawaran` menolak penawaran yang sudah dirujuk pesanan. Hook ke file lama: `index.html` (1 baris script), `36-penawaran-ui.js` (±5 baris). Pesanan baru berstatus draft; belum ada halaman/daftar pesanan. Tes: `tests/pesanan-jual.test.js`. Perlu uji manual di browser | 6.3, 7.2 |
 | ☑ | 7.3b | Halaman + daftar + ubah status Pesanan Penjualan (celah 7.3, tidak ada di rencana awal; tidak mengubah hitungan 139). Halaman `#page-pesanan-jual` (kartu "Pesanan Jual" di grup Fitur Baru, judul di `pageTitles`, izin mengikuti Invoice): tabel No · Pelanggan · Tanggal · Dari Penawaran · Total (termasuk PPN) · Status · Aksi. Tombol Konfirmasi (draft → dikonfirmasi) dan Batal (konfirmasi dulu) lewat `transisiDok`; hapus hanya untuk draft/batal. Modul baru `js/38-pesanan-jual-ui.js`: fungsi murni `aksiStatusPesanan`, `bolehHapusPesanan`; `renderPesananList`, `ubahStatusPesanan`, `hapusPesanan`. Hook ke file lama: `index.html` (script, kartu, halaman), `04-navigasi-tema.js` (2 baris), `26-daftar-bisnis.js` (1 baris), `15-storage.js` (1 nama), `37-pesanan-jual.js` (render ulang daftar pesanan setelah dibuat). Tes: `tests/pesanan-jual-ui.test.js`. Perlu uji manual di browser | 7.3 |
-| ☐ | 7.4 | Fungsi murni pesananKeInvoice(pesanan) yang menyalin item jadi objek invoice + tes (belum dipasang) | 7.3, INV |
+| ☑ | 7.4 | Fungsi murni pesananKeInvoice(pesanan) yang menyalin item jadi objek invoice + tes (belum dipasang). `pesananKeInvoice(pesanan, opsi)` di modul baru `js/39-pesanan-invoice.js` (dimuat di index.html, 1 baris; belum dipanggil dari mana pun): hanya pesanan `dikonfirmasi`; hasil `{ ok, invoice }` atau `{ ok:false, pesan }`, invoice berstatus `draft` dengan bentuk SCHEMA §4.5 (item nama/qty/harga, subtotal/ppn/ppnTarif/total lewat `hitungPpn`, `sisaTagihan` = total, jatuh tempo default +30 hari) plus penaut `refJenis:'pesanan_jual'`, `refId`, `refNo`. `opsi` membawa id, nomor, tanggal, akun piutang/pendapatan, waktu, daftar invoice (cek kembar) supaya tetap murni. Tanpa hook ke file lama. Tes: `tests/pesanan-invoice.test.js` (termasuk jurnal kirim asli `_entryJurnalKirimInvoice` seimbang untuk invoice hasil) | 7.3, INV |
 | ☐ | 7.5 | Tombol 'Buat faktur' di pesanan: pakai 7.4, tandai terpenuhi | 7.4, INV |
 | ☐ | 7.6 | Pesanan sebagian: qty dipesan vs terkirim | 7.5 |
+
+**Temuan task 7.4:**
+- Invoice hasil sengaja berstatus `draft`, tanpa jurnal: jurnal piutang dibuat saat dikirim (`kirimInvoice`, yang sudah memeriksa periode dan akun), jadi 7.5 tidak perlu menyentuh jurnal dan pesanan yang difakturkan tidak langsung mengubah buku besar. Kalau 7.5 mau langsung `terkirim`, ia memanggil jalur kirim yang sama, bukan membuat jurnal sendiri.
+- Hanya pesanan `dikonfirmasi` yang bisa difakturkan. `sebagian` ditolak dengan pesan khusus sampai 7.6: faktur sisa butuh qty terkirim per item, dan fungsi ini memfakturkan semua item penuh (7.6 menambah opsi qty).
+- Nomor invoice, id, tanggal, akun, dan waktu datang dari pemanggil (`opsi`), bukan dibaca dari state/jam, supaya fungsi murni. 7.5 mengisinya dari `nomorInvoiceBerikut()`, `Date`, dan setting akun, lalu memanggil `catatNomorInvoice` setelah simpan (pola `simpanInvoice`).
+- Item invoice hanya `nama`, `qty`, `harga`; `satuan` milik model dok tidak dibawa karena bentuk invoice lama tidak punya (ditambah bila nanti ada task satuan untuk invoice). Pesanan bertotal Rp 0 ditolak (sama dengan `simpanInvoice` yang menolak nominal 0).
+- Field penaut `refJenis/refId/refNo` di invoice adalah field BARU; `docs/SCHEMA.md` §4.5 ditambah saat 7.5 memasangnya (7.4 belum menyimpan data apa pun). 7.5 juga wajib: menandai pesanan `selesai` di langkah simpan yang sama, menolak faktur kedua untuk pesanan yang sudah punya invoice (cek `refId` di `invoiceList`), dan melarang hapus pesanan/invoice yang saling merujuk.
 
 **Temuan task 7.3b:**
 - `sebagian` dan `selesai` sengaja tanpa tombol manual: `selesai` diisi saat faktur dibuat (7.5) dan `sebagian` oleh qty terkirim (7.6), supaya status pesanan tidak bisa bohong terhadap faktur. Karena itu pesanan `dikonfirmasi` baru bisa dibatalkan (bukan diselesaikan) dari daftar sampai 7.5 ada.
