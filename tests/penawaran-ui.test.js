@@ -245,5 +245,67 @@ console.log('[5] penyimpan dok, daftar, hapus');
   ok(vm.runInContext('dokList.length', ctx3) === 0, 'oas_dok rusak -> daftar kosong, tidak error');
 }
 
+console.log('[6] ubah status penawaran (7.2b)');
+{
+  const J2 = o => JSON.parse(JSON.stringify(o));
+  const aksi = st => J2(run("aksiStatusPenawaran('" + st + "')")).map(a => a.ke).join();
+  ok(aksi('draft') === 'terkirim,batal', 'draft: Kirim, Batal');
+  ok(aksi('terkirim') === 'disetujui,ditolak,batal', 'terkirim: Setujui, Tolak, Batal');
+  ok(aksi('disetujui') === 'batal', "disetujui: hanya Batal ('selesai' diisi otomatis oleh 7.3, tanpa tombol manual)");
+  ok(aksi('ditolak') === '' && aksi('selesai') === '' && aksi('batal') === '' && aksi('ngawur') === '', 'status final/tidak dikenal: tanpa tombol');
+  ok(J2(run("aksiStatusPenawaran('draft')")).every(a => a.konfirmasi === (a.ke === 'batal')) && J2(run("aksiStatusPenawaran('terkirim')")).find(a => a.ke === 'ditolak').konfirmasi === true && J2(run("aksiStatusPenawaran('terkirim')")).find(a => a.ke === 'disetujui').konfirmasi === false, 'konfirmasi hanya untuk Tolak dan Batal');
+
+  run("dokList = [{id:'X',jenis:'pesanan_jual',no:'SO-2026-001',kontak:'Lain',status:'draft',items:[]},{id:'A',jenis:'penawaran',no:'QUO-2026-001',kontak:'PT Maju',tanggal:'2026-11-08',status:'draft',items:[{nama:'x',qty:1,harga:1000}]},{id:'B',jenis:'penawaran',no:'QUO-2026-002',kontak:'CV Dua',tanggal:'2026-11-08',status:'draft',items:[{nama:'y',qty:1,harga:500}]}]");
+  run('renderPenawaranList()');
+  let h = el('penawaran-body').innerHTML;
+  ok(h.includes("ubahStatusPenawaran('A','terkirim')") && h.includes("ubahStatusPenawaran('A','batal')"), 'daftar: tombol Kirim dan Batal untuk draft');
+  ok(!h.includes("ubahStatusPenawaran('X'"), 'dokumen jenis lain tidak punya tombol penawaran');
+
+  alerts.length = 0;
+  run("ubahStatusPenawaran('A','terkirim')");
+  let a = J2(run("dokList.find(d => d.id==='A')"));
+  ok(a.status === 'terkirim' && a.riwayat.length === 1 && a.riwayat[0].dari === 'draft' && a.riwayat[0].ke === 'terkirim' && !isNaN(Date.parse(a.riwayat[0].waktu)), 'draft -> terkirim: status berubah, riwayat berwaktu tercatat');
+  ok(run("dokList.map(d => d.id).join()") === 'X,A,B', 'posisi dokumen di daftar tidak berubah');
+  ok(JSON.parse(ctx.localStorage._s['oas_dok']).find(d => d.id === 'A').status === 'terkirim', 'mode tamu: perubahan tersimpan di oas_dok');
+  ok(alerts.length === 1 && /terkirim/.test(alerts[0]), 'pemberitahuan tampil');
+  h = el('penawaran-body').innerHTML;
+  ok(h.includes("ubahStatusPenawaran('A','disetujui')") && h.includes("ubahStatusPenawaran('A','ditolak')") && !h.includes("ubahStatusPenawaran('A','terkirim')"), 'daftar dirender ulang dengan tombol status baru');
+
+  alerts.length = 0;
+  run("ubahStatusPenawaran('B','disetujui')");
+  ok(run("dokList.find(d => d.id==='B').status") === 'draft' && alerts.length === 1 && /tidak bisa/.test(alerts[0]), 'lompat draft -> disetujui ditolak, status tetap');
+  run("ubahStatusPenawaran('A','selesai')");
+  ok(run("dokList.find(d => d.id==='A').status") === 'terkirim', "'selesai' tidak bisa diset manual");
+  run("ubahStatusPenawaran('X','batal')");
+  ok(run("dokList.find(d => d.id==='X').status") === 'draft', 'dokumen jenis lain tidak bisa diubah lewat fungsi penawaran');
+  run("ubahStatusPenawaran('tidak-ada','batal')");
+
+  konfirmasi = false;
+  run("ubahStatusPenawaran('A','ditolak')");
+  ok(run("dokList.find(d => d.id==='A').status") === 'terkirim', 'Tolak dibatalkan di konfirmasi: status tetap');
+  konfirmasi = true;
+  run("ubahStatusPenawaran('A','disetujui')");
+  run("ubahStatusPenawaran('A','batal')");
+  a = J2(run("dokList.find(d => d.id==='A')"));
+  ok(a.status === 'batal' && a.riwayat.map(r => r.ke).join() === 'terkirim,disetujui,batal', 'alur penuh draft -> terkirim -> disetujui -> batal tercatat di riwayat');
+  run("ubahStatusPenawaran('A','terkirim')");
+  ok(run("dokList.find(d => d.id==='A').status") === 'batal', 'status final tidak bisa diubah lagi');
+  ok(/Batal/.test(el('penawaran-body').innerHTML), 'badge status Batal tampil');
+
+  ctx.guardHanyaBaca = () => true;
+  run("ubahStatusPenawaran('B','terkirim')");
+  ok(run("dokList.find(d => d.id==='B').status") === 'draft', 'viewer: tidak bisa mengubah status');
+  ctx.guardHanyaBaca = () => false;
+
+  const dikirim = [];
+  ctx.currentCompany = { id: 'c1' }; ctx.cloudSyncRecords = k => { dikirim.push(k.join()); return Promise.resolve(true); };
+  run("ubahStatusPenawaran('B','terkirim')");
+  ok(dikirim.length === 1 && /^dok/.test(dikirim[0]), 'bisnis login: perubahan status disinkron ke cloud (kind dok)');
+  delete ctx.currentCompany; delete ctx.cloudSyncRecords;
+  ok(run("perbaruiDok({id:'tidak-ada'})") === false && run('perbaruiDok(null)') === false, 'perbaruiDok: id tidak ada / bukan objek -> false');
+  const kode = rd('js/36-penawaran-ui.js').replace(/^\s*\/\/.*$/gm, '');
+  ok(/transisiDok\(/.test(kode) && !/postJurnalLegacy|addJurnal|buatJurnal/.test(kode), 'status lewat transisiDok; tetap tanpa jurnal');
+}
+
 console.log(`\nHasil: ${pass} lulus, ${fail} gagal`);
 process.exit(fail ? 1 : 0);

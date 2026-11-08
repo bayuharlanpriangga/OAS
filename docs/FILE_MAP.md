@@ -1226,7 +1226,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 142 | `renderKartuPiutang` | function |
 | 143 | `renderKartuHutang` | function |
 
-## js/35-dok.js (220 baris, 13.3 KB)
+## js/35-dok.js (231 baris, 13.7 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -1242,28 +1242,32 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 194-203 | `simpanDokState` | function |
 | 206-210 | `tambahDok` | function |
 | 213-219 | `hapusDokById` | function |
+| 223-230 | `perbaruiDok` | function |
 
-## js/36-penawaran-ui.js (166 baris, 9.6 KB)
+## js/36-penawaran-ui.js (195 baris, 11.7 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
-| 21-24 | `nomorPenawaranBerikut` | function |
-| 27-32 | `berlakuDefaultPenawaran` | function |
-| 34-36 | `formPenawaranBaru` | function |
-| 38-40 | `susunPenawaranBaru` | function |
-| 42-44 | `periksaFormPenawaran` | function |
-| 46 | `_pnwRp` | function |
-| 48-52 | `_pnwPpnTarif` | function |
-| 54-59 | `hitungTotalPenawaranForm` | function |
-| 62-77 | `renderPenawaranItems` | function |
-| 79-82 | `tambahItemPenawaran` | function |
-| 84-87 | `hapusItemPenawaran` | function |
-| 89-104 | `openModalPenawaran` | function |
-| 106-110 | `_pnwBacaForm` | function |
-| 112-114 | `_pnwAlertPeringatan` | function |
-| 117-125 | `simpanPenawaran` | function |
-| 130-156 | `renderPenawaranList` | function |
-| 158-165 | `hapusPenawaran` | function |
+| 23-26 | `nomorPenawaranBerikut` | function |
+| 29-34 | `berlakuDefaultPenawaran` | function |
+| 36-38 | `formPenawaranBaru` | function |
+| 40-42 | `susunPenawaranBaru` | function |
+| 44-46 | `periksaFormPenawaran` | function |
+| 48 | `_pnwRp` | function |
+| 50-54 | `_pnwPpnTarif` | function |
+| 56-61 | `hitungTotalPenawaranForm` | function |
+| 64-79 | `renderPenawaranItems` | function |
+| 81-84 | `tambahItemPenawaran` | function |
+| 86-89 | `hapusItemPenawaran` | function |
+| 91-106 | `openModalPenawaran` | function |
+| 108-112 | `_pnwBacaForm` | function |
+| 117-120 | `aksiStatusPenawaran` | function |
+| 122-124 | `_pnwAlertPeringatan` | function |
+| 127-135 | `simpanPenawaran` | function |
+| 140-166 | `renderPenawaranList` | function |
+| 169-180 | `ubahStatusPenawaran` | function |
+| 182-185 | `_pnwTombolStatus` | function |
+| 187-194 | `hapusPenawaran` | function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 

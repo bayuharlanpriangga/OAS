@@ -4,12 +4,14 @@
 // Form di #modal-penawaran (jenis dokumen `penawaran` dari model 35-dok.js): nomor, tanggal, pelanggan, item
 // (nama, qty, satuan, harga), catatan, dan total langsung. Simpan (7.2): isi form disusun lewat susunDok, penawaran
 // baru berstatus draft masuk dokList lewat tambahDok (35-dok.js: cloud untuk bisnis login, localStorage untuk mode tamu),
-// daftar di #penawaran-body, hapus lewat hapusPenawaran. Belum ada jurnal (penawaran memang tidak menjurnal), belum ada
-// ubah status dan belum ada edit draft.
+// daftar di #penawaran-body, hapus lewat hapusPenawaran. Penawaran tidak menjurnal. Ubah status dari daftar (7.2b):
+// Kirim, Setujui, Tolak, Batal lewat transisiDok; 'selesai' tidak punya tombol karena diisi otomatis saat penawaran
+// dibuatkan pesanan (7.3). Belum ada edit draft.
 // Pola mengikuti form bill (29-bill-ui.js). Dimuat setelah 35-dok.js.
 //
 // Field PPN dan masa berlaku adalah field opsional model dok (ppnTarif, berlakuSampai; ditambahkan di 7.1).
 // Fungsi murni (tanpa DOM/state), diuji di tests/penawaran-ui.test.js:
+//   aksiStatusPenawaran(status)                         tombol status yang tampil: [{ ke, label, konfirmasi }]
 //   berlakuDefaultPenawaran(tanggal)                    tanggal + 14 hari
 //   nomorPenawaranBerikut(tahun, daftar, counterList)   nomor QUO-<tahun>-NNN dari model dok
 //   formPenawaranBaru(tanggal, no)                      isi awal form
@@ -109,6 +111,14 @@ function _pnwBacaForm() {
     ppnTarif: _pnwPpnTarif(), items: _pnwItems.map(it => ({ ...it })) };
 }
 
+// Tombol ubah status per status penawaran (7.2b). Tujuan diambil dari alur DOK_JENIS lewat dokStatusBerikut; 'selesai'
+// tidak ditawarkan manual (diisi otomatis oleh 7.3). konfirmasi = true untuk tujuan final yang tidak bisa dibatalkan.
+const PENAWARAN_AKSI = { terkirim: 'Kirim', disetujui: 'Setujui', ditolak: 'Tolak', batal: 'Batal' };
+function aksiStatusPenawaran(status) {
+  return dokStatusBerikut('penawaran', status).filter(ke => PENAWARAN_AKSI[ke])
+    .map(ke => ({ ke, label: PENAWARAN_AKSI[ke], konfirmasi: ke === 'ditolak' || ke === 'batal' }));
+}
+
 function _pnwAlertPeringatan(pesan) {
   showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ' + escapeHtml(pesan));
 }
@@ -150,9 +160,28 @@ function renderPenawaranList() {
         <td style="font-size:12px;${lewat ? 'color:var(--red);font-weight:600;' : ''}">${escapeHtml(d.berlakuSampai || '-')}</td>
         <td class="debit" style="font-family:var(--mono)">${rp(hitungTotalDok(d).total)}</td>
         <td><span style="background:${w}22;color:${w};padding:2px 8px;border-radius:6px;font-size:11px;">${escapeHtml(s.charAt(0).toUpperCase() + s.slice(1))}</span></td>
-        <td style="white-space:nowrap;"><button class="btn btn-danger btn-sm" title="Hapus" onclick="hapusPenawaran('${escapeForJsAttr(d.id)}')"><i class="ti ti-trash" style="font-size:14px;"></i></button></td>
+        <td style="white-space:nowrap;">${_pnwTombolStatus(d)}<button class="btn btn-danger btn-sm" title="Hapus" onclick="hapusPenawaran('${escapeForJsAttr(d.id)}')"><i class="ti ti-trash" style="font-size:14px;"></i></button></td>
       </tr>`;
     }).join('')}</tbody></table></div>`;
+}
+
+// Ubah status penawaran lewat transisiDok (alur tidak bisa dilompati). Gagal = tidak ada yang berubah.
+function ubahStatusPenawaran(id, statusBaru) {
+  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Penawaran')) return;
+  const d = dokList.find(x => x && x.id === id && x.jenis === 'penawaran'); if (!d) return;
+  const aksi = aksiStatusPenawaran(d.status).find(a => a.ke === statusBaru);
+  if (!aksi) { _pnwAlertPeringatan('Penawaran ' + d.no + ' berstatus ' + d.status + ' tidak bisa diubah menjadi ' + statusBaru + '.'); return; }
+  if (aksi.konfirmasi && !confirm(aksi.label + ' penawaran ' + d.no + ' (' + d.kontak + ')? Status ' + statusBaru + ' tidak bisa diubah lagi.')) return;
+  const r = transisiDok(d, statusBaru, { waktu: new Date().toISOString() });
+  if (!r.ok) { _pnwAlertPeringatan(r.pesan); return; }
+  perbaruiDok(r.dok);
+  renderPenawaranList();
+  showAlert('✓ Penawaran ' + escapeHtml(d.no) + ' kini berstatus ' + escapeHtml(statusBaru) + '.');
+}
+
+function _pnwTombolStatus(d) {
+  return aksiStatusPenawaran(d.status).map(a =>
+    `<button class="btn btn-sm${a.ke === 'terkirim' || a.ke === 'disetujui' ? ' btn-primary' : ''}" style="margin-right:4px;" onclick="ubahStatusPenawaran('${escapeForJsAttr(d.id)}','${a.ke}')">${a.label}</button>`).join('');
 }
 
 function hapusPenawaran(id) {

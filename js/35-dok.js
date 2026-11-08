@@ -15,7 +15,7 @@
 //   totalDok(dok)                          Σ qty × harga item, dibulatkan ke sen (sebelum PPN)
 //   hitungTotalDok(dok)                    { subtotal, ppn, total } memakai dok.ppnTarif (task 7.1)
 //   idDokBaru(daftar, waktuMs)             id unik "DOK_<ms>" (task 7.2)
-// Penyimpan (efek samping, task 7.2): simpanDokState, tambahDok, hapusDokById.
+// Penyimpan (efek samping, task 7.2): simpanDokState, tambahDok, hapusDokById, perbaruiDok (7.2b).
 // Diuji di tests/dok.test.js. Dimuat setelah 34-kartu-kontak.js.
 //
 // Yang SENGAJA belum diputuskan di sini (tiap task Fase 7-10 memutuskan untuk jenisnya sendiri):
@@ -214,6 +214,17 @@ function hapusDokById(id) {
   const n = dokList.length;
   dokList = dokList.filter(d => d && d.id !== id);
   if (dokList.length === n) return false;
+  simpanDokState();
+  return true;
+}
+
+// Ganti satu dokumen (dicocokkan lewat id) dengan versi barunya di posisi yang sama, lalu simpan (task 7.2b).
+// Dipakai setelah transisiDok. true bila dokumen ditemukan.
+function perbaruiDok(dok) {
+  if (!dok || typeof dok !== 'object') return false;
+  const i = dokList.findIndex(d => d && d.id === dok.id);
+  if (i < 0) return false;
+  dokList[i] = dok;
   simpanDokState();
   return true;
 }
