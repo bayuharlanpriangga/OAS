@@ -110,44 +110,44 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1803-1813 | `_applyCompanyLogo` | function |
 | 2709-2732 | `updatePwaBtn` | function |
 
-## js/04-navigasi-tema.js (721 baris, 33.6 KB)
+## js/04-navigasi-tema.js (723 baris, 33.7 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 3-6 | `toggleSidebar` | function |
 | 7-10 | `closeSidebar` | function |
 | 19-21 | `inIframe` | arrow |
-| 69-175 | `showPage` | function |
-| 177-179 | `handleAddBtn` | function |
-| 182-192 | `switchTab` | function |
-| 195-206 | `populateAkunSelect` | function |
-| 209-212 | `safeHistoryPush` | function |
-| 213-216 | `safeHistoryReplace` | function |
-| 259-268 | `initTheme` | function |
-| 270-298 | `applyTheme` | function |
-| 311-320 | `syncPwaThemeChrome` | function |
-| 322-326 | `toggleTheme` | function |
-| 328-400 | `initTutDrag` | function |
-| 402-414 | `tutMinimize` | function |
-| 416-423 | `tutRestore` | function |
-| 432-436 | `dismissAndOpenPenyesuaian` | function |
-| 438-440 | `openJurnalPenyesuaian` | function |
-| 442 | `openInlineTemplatePenyesuaian` | function |
-| 443 | `toggleTemplatePenyesuaian` | function |
-| 444 | `fillPenyesuaianInline` | function |
-| 445 | `openModalPenyesuaian` | function |
-| 450-483 | `renderArusKas` | function |
-| 485-494 | `runSequential` | function |
-| 496-504 | `exitTutorial` | function |
-| 506-513 | `clearTutHighlight` | function |
-| 515-606 | `renderTutStep` | function |
-| 608-623 | `tutNext` | function |
-| 625-627 | `tutSkipSection` | function |
-| 629-651 | `positionTutTooltip` | function |
-| 653-664 | `positionTutTooltipCenter` | function |
-| 666-668 | `showTutComplete` | function |
-| 671 | `startTutorial` | function |
-| 690-715 | `openOptPicker` | function |
+| 70-177 | `showPage` | function |
+| 179-181 | `handleAddBtn` | function |
+| 184-194 | `switchTab` | function |
+| 197-208 | `populateAkunSelect` | function |
+| 211-214 | `safeHistoryPush` | function |
+| 215-218 | `safeHistoryReplace` | function |
+| 261-270 | `initTheme` | function |
+| 272-300 | `applyTheme` | function |
+| 313-322 | `syncPwaThemeChrome` | function |
+| 324-328 | `toggleTheme` | function |
+| 330-402 | `initTutDrag` | function |
+| 404-416 | `tutMinimize` | function |
+| 418-425 | `tutRestore` | function |
+| 434-438 | `dismissAndOpenPenyesuaian` | function |
+| 440-442 | `openJurnalPenyesuaian` | function |
+| 444 | `openInlineTemplatePenyesuaian` | function |
+| 445 | `toggleTemplatePenyesuaian` | function |
+| 446 | `fillPenyesuaianInline` | function |
+| 447 | `openModalPenyesuaian` | function |
+| 452-485 | `renderArusKas` | function |
+| 487-496 | `runSequential` | function |
+| 498-506 | `exitTutorial` | function |
+| 508-515 | `clearTutHighlight` | function |
+| 517-608 | `renderTutStep` | function |
+| 610-625 | `tutNext` | function |
+| 627-629 | `tutSkipSection` | function |
+| 631-653 | `positionTutTooltip` | function |
+| 655-666 | `positionTutTooltipCenter` | function |
+| 668-670 | `showTutComplete` | function |
+| 673 | `startTutorial` | function |
+| 692-717 | `openOptPicker` | function |
 
 ## js/05-akun.js (528 baris, 30.2 KB)
 
@@ -1269,7 +1269,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 183-187 | `_pnwTombolStatus` | function |
 | 189-198 | `hapusPenawaran` | function |
 
-## js/37-pesanan-jual.js (95 baris, 5.9 KB)
+## js/37-pesanan-jual.js (96 baris, 6.0 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -1277,8 +1277,19 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 29-54 | `pesananDariPenawaran` | function |
 | 58-72 | `buatPesananDariPenawaran` | function |
 | 76-79 | `_pnwNoPesanan` | function |
-| 81-88 | `buatPesananPenawaran` | function |
-| 91-94 | `_pnwTombolPesanan` | function |
+| 81-89 | `buatPesananPenawaran` | function |
+| 92-95 | `_pnwTombolPesanan` | function |
+
+## js/38-pesanan-jual-ui.js (88 baris, 5.8 KB)
+
+| Baris | Nama | Jenis |
+| --- | --- | --- |
+| 18-21 | `aksiStatusPesanan` | function |
+| 24-29 | `bolehHapusPesanan` | function |
+| 31-33 | `_psnAlertPeringatan` | function |
+| 35-61 | `renderPesananList` | function |
+| 64-75 | `ubahStatusPesanan` | function |
+| 77-87 | `hapusPesanan` | function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 

@@ -52,6 +52,7 @@ const pageTitles = {
   'kartu-piutang':['Kartu Piutang','Invoice, pembayaran, dan saldo berjalan per pelanggan'],
   'kartu-hutang':['Kartu Hutang','Tagihan, pembayaran, dan saldo berjalan per supplier'],
   'penawaran':['Penawaran','Penawaran harga ke pelanggan · Dasar pesanan penjualan'],
+  'pesanan-jual':['Pesanan Penjualan','Dibuat dari penawaran disetujui · Dasar faktur penjualan'],
   'rekonsiliasi':['Rekonsiliasi Bank','Cocokkan mutasi bank dengan jurnal · Upload CSV'],
   'kurs':['Multi Mata Uang','Kurs otomatis · Konversi transaksi · History kurs'],
   'notifikasi':['Notifikasi & Alert','Peringatan otomatis · Batas anggaran · Jatuh tempo'],
@@ -163,6 +164,7 @@ function showPage(id) {
   if(id==='invoice') setTimeout(()=>{ renderInvoiceList(); renderInvoiceKPI(); upgradeFormPickers(); }, 80);
   if(id==='bill') renderBillList();
   if(id==='penawaran') renderPenawaranList();
+  if(id==='pesanan-jual') renderPesananList();
   if(id==='umur-piutang') renderAgingPiutang();
   if(id==='umur-hutang') renderAgingHutang();
   if(id==='kartu-piutang') renderKartuPiutang();

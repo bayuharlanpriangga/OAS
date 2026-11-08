@@ -84,6 +84,7 @@ function buatPesananPenawaran(id) {
   const r = buatPesananDariPenawaran(id);
   if (!r.ok) { _pnwAlertPeringatan(r.pesan); return; }
   renderPenawaranList();
+  if (typeof renderPesananList === 'function') renderPesananList();
   showAlert('✓ Pesanan penjualan ' + escapeHtml(r.pesanan.no) + ' dibuat dari penawaran ' + escapeHtml(d.no) + ' (draft).');
 }
 

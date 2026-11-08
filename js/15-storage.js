@@ -428,7 +428,7 @@ async function doResetAll() {
   updateSaveIndicator('saved');
   renderDashboard();
   renderJurnalUmum();
-  ['renderInvoiceList', 'renderInvoiceKPI', 'renderBillList', 'renderPenawaranList', 'renderKontak', 'renderKontakKPI', 'renderAsetTetap', 'renderAsetTetapKPI', 'renderProduk', 'renderJurnalBerulang']
+  ['renderInvoiceList', 'renderInvoiceKPI', 'renderBillList', 'renderPenawaranList', 'renderPesananList', 'renderKontak', 'renderKontakKPI', 'renderAsetTetap', 'renderAsetTetapKPI', 'renderProduk', 'renderJurnalBerulang']
     .forEach(fn => { try { if (typeof window[fn] === 'function') window[fn](); } catch (e) {} });
 
   const berhasil = Object.keys(label).map(k => label[k]).filter(l => !gagal.includes(l));

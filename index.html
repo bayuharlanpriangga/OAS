@@ -92,6 +92,7 @@
 <script defer src="js/35-dok.js"></script>
 <script defer src="js/36-penawaran-ui.js"></script>
 <script defer src="js/37-pesanan-jual.js"></script>
+<script defer src="js/38-pesanan-jual-ui.js"></script>
 <script defer src="js/99-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- Tabler webfont CDN dihapus: semua ikon "ti-*" sudah self-hosted sebagai SVG mask di css/icons.css (lihat komentar di file itu). Menghapus dependency CDN ini supaya ikon tidak pernah gagal/putus saat CDN lambat atau diblokir jaringan/ad-blocker. -->
@@ -261,6 +262,9 @@
       </div>
       <div class="nav-card" onclick="showPage('penawaran')" data-page="penawaran">
         <span class="nav-card-icon"><i class="ti ti-file-text"></i></span>Penawaran
+      </div>
+      <div class="nav-card" onclick="showPage('pesanan-jual')" data-page="pesanan-jual">
+        <span class="nav-card-icon"><i class="ti ti-clipboard-list"></i></span>Pesanan Jual
       </div>
       <div class="nav-card" onclick="showPage('rekonsiliasi')" data-page="rekonsiliasi">
         <span class="nav-card-icon"><i class="ti ti-git-compare"></i></span>Rekonsiliasi
@@ -2335,6 +2339,20 @@
       <button class="btn btn-primary" onclick="openModalPenawaran()">+ Buat Penawaran</button>
     </div>
     <div id="penawaran-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada penawaran.</div>
+  </div>
+</div>
+
+<!-- PESANAN PENJUALAN (task 7.3b; js/38-pesanan-jual-ui.js) -->
+<div class="page" id="page-pesanan-jual">
+  <div class="section-header">
+    <div><div class="section-title"><i class="ti ti-clipboard-list" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Pesanan Penjualan</div>
+    <div class="section-sub">Dibuat dari penawaran disetujui · Dasar faktur penjualan</div></div>
+  </div>
+  <div class="table-card" style="margin-bottom:16px;">
+    <div class="table-header">
+      <div class="table-title"><i class="ti ti-clipboard-list ti-inline"></i> Daftar Pesanan Penjualan</div>
+    </div>
+    <div id="pesanan-jual-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada pesanan penjualan.</div>
   </div>
 </div>
 
