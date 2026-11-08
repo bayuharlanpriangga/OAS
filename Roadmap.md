@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 30 Oktober 2026 · 25 fase · 139 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 38/139 task selesai.**
+**Progres: 40/139 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -72,7 +72,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | 4 | Tagihan pembelian (bill) | 8/9 |
 | 5 | Pembayaran | 7/7 |
 | 6 | Kartu piutang/hutang dan model dokumen | 3/3 |
-| 7 | Penawaran sampai faktur | 0/6 |
+| 7 | Penawaran sampai faktur | 2/6 |
 | 8 | Surat jalan | 0/3 |
 | 9 | Pesanan dan penerimaan pembelian | 0/5 |
 | 10 | Retur | 0/7 |
@@ -348,12 +348,29 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 
 | ✓ | ID | Tugas | Lampirkan |
 | :---: | --- | --- | --- |
-| ☐ | 7.1 | Penawaran: form input (belum menyimpan) | 6.3, IDX |
-| ☐ | 7.2 | Penawaran: simpan + daftar (belum ada jurnal) | 7.1 |
+| ☑ | 7.1 | Penawaran: form input (belum menyimpan). Halaman `#page-penawaran` (kartu "Penawaran" di grup Fitur Baru, judul di `pageTitles`, izin mengikuti Invoice) dengan tombol "+ Buat Penawaran" yang membuka `#modal-penawaran`: nomor otomatis, tanggal, pelanggan (saran dari Kontak), berlaku sampai (default +14 hari), item (nama, qty, satuan, harga), subtotal + PPN (opsional 11%/12%) + total langsung, catatan. Modul baru `js/36-penawaran-ui.js`: fungsi murni `nomorPenawaranBerikut`, `berlakuDefaultPenawaran`, `formPenawaranBaru`, `periksaFormPenawaran` (memakai `susunDok` dari 6.3); `openModalPenawaran`, `tambahItemPenawaran`, `hapusItemPenawaran`, `simpanPenawaran` (hanya memeriksa isi lalu memberi tahu "belum disimpan"). Model `js/35-dok.js` mendapat dua field opsional (`ppnTarif`, `berlakuSampai`) + `hitungTotalDok`; `susunDok` memvalidasinya. Hook ke file lama: `index.html` (script, kartu, halaman, modal), `04-navigasi-tema.js` (1 baris), `26-daftar-bisnis.js` (1 baris). Tes: `tests/penawaran-ui.test.js`, `tests/dok.test.js`. Perlu uji manual di browser | 6.3, IDX |
+| ☑ | 7.2 | Penawaran: simpan + daftar (belum ada jurnal). Tombol "Simpan Draft" menyusun penawaran lewat `susunDok` (status awal draft, id `DOK_<ms>`), menyimpannya lewat `tambahDok` dan menaikkan counter QUO; daftar di `#penawaran-body` (no, pelanggan, tanggal, berlaku sampai merah bila lewat, total termasuk PPN, status, hapus) dan `hapusPenawaran`. Penyimpan model di `js/35-dok.js`: state `dokList` kini dimuat dari `oas_dok` (mode tamu), `simpanDokState` (bisnis login: cloud `['dok','counter']`; tamu: `oas_dok` + `oas_counter`), `tambahDok`, `hapusDokById`, `idDokBaru`. UI di `js/36-penawaran-ui.js`: `susunPenawaranBaru`, `simpanPenawaran`, `renderPenawaranList`, `hapusPenawaran`. Hook ke file lama: `22-cloud-records.js` (kind `dok` jadi `legacyKey: 'oas_dok'` + `legacyOnce`), `04-navigasi-tema.js` (1 baris), `15-storage.js` (render ulang setelah reset, 1 nama). Tes: `tests/penawaran-ui.test.js`, `tests/dok.test.js`, bagian [dok] `tests/cloud-records.test.js`. Perlu uji manual di browser | 7.1 |
+| ☐ | 7.2b | Ubah status penawaran dari daftar (Kirim, Setujui, Tolak, Batal) memakai `transisiDok`. Tidak ada di rencana awal, tetapi 7.3 butuh penawaran berstatus `disetujui` | 7.2 |
 | ☐ | 7.3 | Penawaran → Pesanan Penjualan (salin item, tautkan ref) | 6.3, 7.2 |
 | ☐ | 7.4 | Fungsi murni pesananKeInvoice(pesanan) yang menyalin item jadi objek invoice + tes (belum dipasang) | 7.3, INV |
 | ☐ | 7.5 | Tombol 'Buat faktur' di pesanan: pakai 7.4, tandai terpenuhi | 7.4, INV |
 | ☐ | 7.6 | Pesanan sebagian: qty dipesan vs terkirim | 7.5 |
+
+**Temuan task 7.2:**
+- Semua penawaran baru berstatus `draft` dan belum ada tombol yang mengubah statusnya, padahal 7.3 (Penawaran → Pesanan) butuh penawaran `disetujui`. Itu celah rencana, bukan bug: ditambahkan task 7.2b (ubah status lewat `transisiDok`) sebelum 7.3, tanpa mengubah hitungan 139 task (pola yang sama dengan 5.3b dan 4.6c).
+- Penawaran belum bisa diedit; koreksi lewat hapus lalu buat ulang (nomornya tidak dipakai ulang karena counter tidak diturunkan). Edit draft sengaja ditunda; kalau diperlukan, jadikan task kecil dengan pola 4.6c (form yang sama, `susunDok` dengan daftar tanpa dokumen itu sendiri).
+- Hapus penawaran belum memeriksa keterkaitan. Begitu 7.3 membuat pesanan dengan `refJenis: 'penawaran'`, `hapusPenawaran` harus menolak (atau memperingatkan) penawaran yang sudah dirujuk pesanan, supaya ref tidak menggantung. Dicatat sebagai syarat 7.3.
+- Penawaran tidak membuat jurnal dan tidak menyentuh stok, jadi hapus tidak butuh jurnal pembalik (beda dengan bill di 4.6). Tes menjaga modul UI tidak memanggil fungsi jurnal.
+- Mode tamu mulai menulis `oas_dok`. Seperti bill dan pembayaran, kind `dok` diubah ke `legacyKey: 'oas_dok'` + `legacyOnce`: data itu ditawarkan sekali ke bisnis pemilik (tidak ke bisnis tempat user menjadi anggota) dan ikut terhapus oleh Reset Data mode tamu. Tes lama 6.3 "belum punya key mode tamu" diganti sesuai perilaku baru.
+- Satu antrean sinkron untuk `dok` + `counter` (bukan `saveFiturBaru`, yang ikut menyinkronkan kind lain), supaya nomor dan dokumen tidak berpisah di tengah jalan.
+- Daftar `renderPenawaranList` hanya menampilkan jenis `penawaran`; dokumen jenis lain di `dokList` (pesanan dll. di fase berikutnya) tidak tercampur. Ditemukan saat menulis tes dan sudah ditutup: stub DOM tes tidak punya `style`, sehingga render daftar gagal di tes; tidak ada bug di kode aplikasi.
+
+**Temuan task 7.1:**
+- Keputusan (diambil Claude atas permintaan pemilik): penawaran mendapat **PPN** dan **masa berlaku**, **tanpa diskon** (invoice dan bill juga belum punya diskon; tambahkan nanti sebagai task tersendiri untuk semua dokumen). Keduanya field opsional model `dok` (`ppnTarif`, `berlakuSampai`), jadi record 6.3 lama tetap valid dan jenis dokumen lain tidak terpengaruh. `ppnTarif` tidak ada atau 0 = tanpa PPN; `totalDok` tetap berarti subtotal, total dengan PPN lewat `hitungTotalDok` (pembulatan sama dengan `hitungPpn`). `berlakuSampai` tidak boleh sebelum tanggal penawaran; default form +14 hari dan boleh dikosongkan.
+- Tombol di form bernama "Periksa Isi", bukan "Simpan", supaya tidak menyesatkan: ia menjalankan `susunDok` (aturan yang sama dengan simpan nanti) dan hanya menampilkan hasilnya. 7.2 mengganti isinya jadi simpan + daftar, lalu tombol bisa diberi nama "Simpan Draft".
+- Nomor memakai `nomorDokBerikut('penawaran', ...)` dengan counter, jadi menghapus penawaran terakhir kelak tidak memakai ulang nomornya. Pencatatan counter saat simpan dikerjakan di 7.2.
+- Tidak ada perubahan SCHEMA.md dan tidak ada data baru yang tersimpan. Tes memastikan modul belum menyentuh `dokList`, cloud sync, atau jurnal (jaga batas 7.1 dan 7.2).
+- Keputusan terbuka no. 6 (alur status penawaran) diputuskan memakai usulan apa adanya: draft → terkirim → disetujui/ditolak → selesai (atau batal); penawaran `disetujui` menjadi `selesai` setelah dibuatkan pesanan (7.3). Alur jenis lain tetap usulan sampai tasknya dikerjakan.
 
 ## Fase 8 — Surat jalan (3 task)
 
@@ -562,7 +579,7 @@ Selesai fase 21-25 = Rilis E.
 4. **Aturan pajak dan payroll** harus dicek ulang dari sumber resmi saat 11.1 dan 18.2 dikerjakan; jangan memakai angka dari ingatan model.
 5. ~~**Jurnal bill di laporan pembelian**~~ — diputuskan: jurnal bill tetap berjenis `Tagihan Pembelian`, dan laporan pembelian dibuat membaca kedua jenis lewat fungsi bantu di task 4.6b.
 
-6. **Alur status dokumen** (6.3): alur tiap jenis di `DOK_JENIS` adalah usulan (tabel di `docs/SCHEMA.md` §4.5d). Yang paling perlu dikonfirmasi: surat jalan yang sudah `dikirim` tidak bisa dibatalkan (hanya `selesai`), karena efek stoknya baru diputuskan di 8.3; dan penawaran yang `disetujui` bisa menjadi `selesai` setelah dibuatkan pesanan. Ubah bila tidak setuju sebelum 7.1 dikerjakan.
+6. ~~**Alur status dokumen** (6.3)~~ — untuk penawaran diputuskan memakai usulan (lihat temuan 7.1); jenis lain tetap diperiksa saat tasknya dikerjakan. Catatan lama: alur tiap jenis di `DOK_JENIS` adalah usulan (tabel di `docs/SCHEMA.md` §4.5d). Yang paling perlu dikonfirmasi: surat jalan yang sudah `dikirim` tidak bisa dibatalkan (hanya `selesai`), karena efek stoknya baru diputuskan di 8.3; dan penawaran yang `disetujui` bisa menjadi `selesai` setelah dibuatkan pesanan. Ubah bila tidak setuju sebelum 7.1 dikerjakan.
 
 ### UI polish 5.7.2 (perbaikan berdasarkan uji browser)
 - [x] Memperbaiki input nominal alokasi agar tidak kehilangan fokus/kursor saat mengetik; ringkasan total diperbarui tanpa menggambar ulang baris input.

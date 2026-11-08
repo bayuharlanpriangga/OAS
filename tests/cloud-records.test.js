@@ -390,10 +390,20 @@ function makeEnv({ failLoad = false, failWrite = false, confirmAnswer = true, pe
     ok(!e.store.some(r => r.kind === 'dok') && e.run('dokList.length') === 0, 'reset dok menghapus di cloud dan state');
   }
   {
-    // belum ada key mode tamu: data lama di localStorage tidak ada yang ditawarkan untuk kind dok
+    // sejak 7.2 mode tamu menyimpan dokumen di oas_dok: ditawarkan sekali ke bisnis pemilik (legacyOnce)
     const e = makeEnv();
+    e.ls['oas_dok'] = JSON.stringify([{ id: 'DOK_X', jenis: 'penawaran', no: 'QUO-2026-001' }]);
     await e.run('cloudLoadRecords()');
-    ok(e.run('CLOUD_RECORD_KINDS.dok.legacyKey') === null, 'dok: belum punya key mode tamu (menyusul di 7.2)');
+    ok(e.run('CLOUD_RECORD_KINDS.dok.legacyKey') === 'oas_dok', 'dok: key mode tamu oas_dok');
+    ok(e.store.some(r => r.kind === 'dok' && r.rec_id === 'DOK_X'), 'dok: data mode tamu (oas_dok) diunggah lewat migrasi');
+    ok(e.confirms.length === 1 && e.confirms[0].rows.some(r => r.label === 'Dokumen penjualan/pembelian'), 'dialog migrasi memberi label dok (bukan undefined)');
+  }
+  {
+    // bisnis tempat user hanya anggota: dokumen pribadi tidak ditawarkan
+    const e = makeEnv({ peran: 'member' });
+    e.ls['oas_dok'] = JSON.stringify([{ id: 'DOK_PRIBADI' }]);
+    await e.run('cloudLoadRecords()');
+    ok(e.confirms.length === 0 && !e.store.some(r => r.kind === 'dok'), 'dokumen pribadi tidak ditawarkan ke bisnis tempat user menjadi anggota');
   }
   {
     const e = makeEnv({ peran: 'viewer' });

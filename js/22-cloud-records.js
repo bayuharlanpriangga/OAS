@@ -56,8 +56,8 @@ const CLOUD_RECORD_KINDS = {
   // Sejak 5.2 mode tamu menyimpan pembayaran di key `oas_pembayaran`, jadi data itu ditawarkan sekali ke bisnis pemilik (legacyOnce, seperti bill).
   pembayaran:      { get: () => pembayaranList,     set: v => { pembayaranList = v; },     idOf: r => r && r.id, legacyKey: 'oas_pembayaran', legacyOnce: true },
   // dok: dokumen penjualan/pembelian generik (penawaran, pesanan, surat jalan, penerimaan, retur) (task 6.3). State (dokList) dan
-  // fungsi model/transisi ada di 35-dok.js. Belum ada UI, jadi belum ada key mode tamu; Fase 7 menambahkannya bersama form.
-  dok:             { get: () => dokList,            set: v => { dokList = v; },            idOf: r => r && r.id, legacyKey: null },
+  // fungsi model/transisi ada di 35-dok.js. Sejak 7.2 mode tamu menyimpan dokumen di key `oas_dok`, jadi data itu ditawarkan sekali ke bisnis pemilik (legacyOnce, seperti bill).
+  dok:             { get: () => dokList,            set: v => { dokList = v; },            idOf: r => r && r.id, legacyKey: 'oas_dok', legacyOnce: true },
   // counter: nomor tertinggi yang pernah dipakai per jenis+tahun ({ id:'INV-2026', terakhir:7 }).
   // State-nya (counterList) dan logikanya ada di 23-penomoran.js.
   counter:         { get: () => counterList,        set: v => { counterList = v; },        idOf: r => r && r.id, legacyKey: 'oas_counter', legacyOnce: true,

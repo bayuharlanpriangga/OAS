@@ -4,15 +4,18 @@
 // Satu bentuk record untuk semua dokumen alur dagang di luar invoice/bill: penawaran, pesanan penjualan,
 // surat jalan, pesanan pembelian, penerimaan barang, retur penjualan, retur pembelian. Fase 7-10 memakai model
 // ini, jadi tiap fase cukup menambah form dan pemasangan, bukan model baru. Bentuk record: docs/SCHEMA.md §4.5d.
-// State dokList disinkron lewat cloud-records (kind `dok`, 22-cloud-records.js). Belum ada UI dan belum ada key
-// mode tamu; keduanya menyusul di 7.1-7.2 bersama form.
+// State dokList disinkron lewat cloud-records (kind `dok`, 22-cloud-records.js); mode tamu memakai key localStorage
+// `oas_dok` (sejak task 7.2). Form dan daftar tiap jenis ada di modul UI-nya (penawaran: 36-penawaran-ui.js).
 //
 // Isi file: tabel jenis (awalan nomor, nama, alur status), dan fungsi murni (tanpa DOM, state, localStorage):
 //   dokStatusBerikut(jenis, status)        status yang boleh dituju dari status sekarang
 //   transisiDok(dok, statusBaru, opsi)     dokumen baru dengan status berpindah, atau { ok:false, pesan }
 //   nomorDokBerikut(jenis, tahun, daftar, counterList)   nomor berikutnya (23-penomoran.js)
 //   susunDok(f, daftar)                    validasi isi form lalu susun record (status awal selalu 'draft')
-//   totalDok(dok)                          Σ qty × harga item, dibulatkan ke sen
+//   totalDok(dok)                          Σ qty × harga item, dibulatkan ke sen (sebelum PPN)
+//   hitungTotalDok(dok)                    { subtotal, ppn, total } memakai dok.ppnTarif (task 7.1)
+//   idDokBaru(daftar, waktuMs)             id unik "DOK_<ms>" (task 7.2)
+// Penyimpan (efek samping, task 7.2): simpanDokState, tambahDok, hapusDokById.
 // Diuji di tests/dok.test.js. Dimuat setelah 34-kartu-kontak.js.
 //
 // Yang SENGAJA belum diputuskan di sini (tiap task Fase 7-10 memutuskan untuk jenisnya sendiri):
@@ -20,7 +23,10 @@
 // lewat ref asal (di sini ref hanya diperiksa bentuknya, lihat susunDok).
 // ═══════════════════════════════════════════════════════════
 
-let dokList = [];
+let dokList = (() => {
+  try { const a = JSON.parse(localStorage.getItem('oas_dok') || '[]'); return Array.isArray(a) ? a : []; }
+  catch (e) { return []; }
+})();
 
 // Awalan nomor (huruf/angka saja, syarat nomorBerikut), label, dan alur status. `transisi` memetakan status ->
 // status tujuan yang diizinkan; status tanpa tujuan (kosong) adalah status akhir. Dokumen baru selalu 'draft'.
@@ -84,8 +90,18 @@ function totalDok(dok) {
   }, 0));
 }
 
+// Total dengan PPN (task 7.1): ppn = round(subtotal × ppnTarif / 100) bila dok.ppnTarif > 0, selain itu 0
+// (pembulatan sama dengan hitungPpn di 02-utils.js). Dokumen tanpa ppnTarif = tanpa PPN.
+function hitungTotalDok(dok) {
+  const subtotal = totalDok(dok);
+  const t = dok && typeof dok.ppnTarif === 'number' && isFinite(dok.ppnTarif) && dok.ppnTarif > 0 ? dok.ppnTarif : 0;
+  const ppn = t ? Math.round(subtotal * t / 100) : 0;
+  return { subtotal, ppn, total: subtotal + ppn };
+}
+
 // Validasi isi form lalu susun record dokumen baru (murni).
 // f      : { id, jenis, no, tanggal 'YYYY-MM-DD', kontak, items:[{ nama, qty, harga?, satuan? }], catatan?,
+//            ppnTarif? (angka 0-100; kosong/0 = tanpa PPN), berlakuSampai? ('YYYY-MM-DD', tidak boleh sebelum tanggal),
 //            refJenis?, refId?, refNo?, createdAt }
 // daftar : dokList yang sudah ada (cek nomor/id kembar dan ref)
 // Aturan: jenis dikenal; nomor terisi dan unik dalam jenis yang sama (tanpa beda huruf besar/kecil); id terisi dan unik;
@@ -132,6 +148,18 @@ function susunDok(f, daftar) {
   }
   if (!items.length) return gagal('Isi minimal 1 item dengan jumlah lebih dari 0.');
 
+  let ppnTarif = 0;
+  if (f.ppnTarif !== undefined && f.ppnTarif !== null && f.ppnTarif !== '' && f.ppnTarif !== 0) {
+    if (typeof f.ppnTarif !== 'number' || !isFinite(f.ppnTarif) || f.ppnTarif < 0 || f.ppnTarif > 100) return gagal('Tarif PPN tidak valid.');
+    ppnTarif = f.ppnTarif;
+  }
+  const berlakuSampai = teks(f.berlakuSampai);
+  if (berlakuSampai) {
+    const b0 = /^\d{4}-\d{2}-\d{2}$/.test(berlakuSampai) ? new Date(berlakuSampai + 'T00:00:00Z') : null;
+    if (!b0 || isNaN(b0.getTime()) || b0.toISOString().slice(0, 10) !== berlakuSampai) return gagal('Isi tanggal berlaku sampai yang valid.');
+    if (berlakuSampai < tanggal) return gagal('Tanggal berlaku sampai tidak boleh sebelum tanggal ' + J.label.toLowerCase() + '.');
+  }
+
   const refJenis = teks(f.refJenis), refId = teks(f.refId), refNo = teks(f.refNo);
   if (refJenis || refId) {
     if (!refJenis || !refId) return gagal('Ref asal harus berisi jenis dan id.');
@@ -143,7 +171,49 @@ function susunDok(f, daftar) {
   const dok = { id, jenis: f.jenis, no, tanggal, kontak, status: 'draft', items };
   const catatan = teks(f.catatan);
   if (catatan) dok.catatan = catatan;
+  if (ppnTarif) dok.ppnTarif = ppnTarif;
+  if (berlakuSampai) dok.berlakuSampai = berlakuSampai;
   if (refJenis && refId) { dok.refJenis = refJenis; dok.refId = refId; if (refNo) dok.refNo = refNo; }
   dok.createdAt = createdAt;
   return { ok: true, dok };
+}
+
+// ── Penyimpan (task 7.2) ──────────────────────────────────────────────────
+
+// Id dokumen baru: "DOK_<ms>", ditambah akhiran _2, _3, ... bila id itu sudah dipakai (murni).
+function idDokBaru(daftar, waktuMs) {
+  const ada = new Set((Array.isArray(daftar) ? daftar : []).map(d => d && d.id));
+  const dasar = 'DOK_' + (Number.isFinite(waktuMs) ? Math.floor(waktuMs) : Date.now());
+  let id = dasar, n = 1;
+  while (ada.has(id)) { n++; id = dasar + '_' + n; }
+  return id;
+}
+
+// Simpan state dokumen + counter. Bisnis login: cloud (kind `dok` dan `counter`, satu antrean). Mode tamu: localStorage
+// `oas_dok` + `oas_counter`. Mengembalikan Promise<boolean>.
+function simpanDokState() {
+  if (typeof currentCompany !== 'undefined' && currentCompany && typeof cloudSyncRecords === 'function') {
+    return cloudSyncRecords(['dok', 'counter']);
+  }
+  try {
+    localStorage.setItem('oas_dok', JSON.stringify(dokList));
+    localStorage.setItem('oas_counter', JSON.stringify(counterList));
+  } catch (e) { return Promise.resolve(false); }
+  return Promise.resolve(true);
+}
+
+// Tambah dokumen baru ke daftar (terbaru di atas), naikkan counter nomornya, lalu simpan.
+function tambahDok(dok) {
+  dokList.unshift(dok);
+  if (typeof counterSetelahPakai === 'function') counterList = counterSetelahPakai(counterList, dok.no);
+  return simpanDokState();
+}
+
+// Hapus dokumen lewat id (counter tidak diturunkan, jadi nomornya tidak dipakai lagi). true bila ada yang dihapus.
+function hapusDokById(id) {
+  const n = dokList.length;
+  dokList = dokList.filter(d => d && d.id !== id);
+  if (dokList.length === n) return false;
+  simpanDokState();
+  return true;
 }

@@ -110,44 +110,44 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 1803-1813 | `_applyCompanyLogo` | function |
 | 2709-2732 | `updatePwaBtn` | function |
 
-## js/04-navigasi-tema.js (719 baris, 33.4 KB)
+## js/04-navigasi-tema.js (721 baris, 33.6 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
 | 3-6 | `toggleSidebar` | function |
 | 7-10 | `closeSidebar` | function |
 | 19-21 | `inIframe` | arrow |
-| 68-173 | `showPage` | function |
-| 175-177 | `handleAddBtn` | function |
-| 180-190 | `switchTab` | function |
-| 193-204 | `populateAkunSelect` | function |
-| 207-210 | `safeHistoryPush` | function |
-| 211-214 | `safeHistoryReplace` | function |
-| 257-266 | `initTheme` | function |
-| 268-296 | `applyTheme` | function |
-| 309-318 | `syncPwaThemeChrome` | function |
-| 320-324 | `toggleTheme` | function |
-| 326-398 | `initTutDrag` | function |
-| 400-412 | `tutMinimize` | function |
-| 414-421 | `tutRestore` | function |
-| 430-434 | `dismissAndOpenPenyesuaian` | function |
-| 436-438 | `openJurnalPenyesuaian` | function |
-| 440 | `openInlineTemplatePenyesuaian` | function |
-| 441 | `toggleTemplatePenyesuaian` | function |
-| 442 | `fillPenyesuaianInline` | function |
-| 443 | `openModalPenyesuaian` | function |
-| 448-481 | `renderArusKas` | function |
-| 483-492 | `runSequential` | function |
-| 494-502 | `exitTutorial` | function |
-| 504-511 | `clearTutHighlight` | function |
-| 513-604 | `renderTutStep` | function |
-| 606-621 | `tutNext` | function |
-| 623-625 | `tutSkipSection` | function |
-| 627-649 | `positionTutTooltip` | function |
-| 651-662 | `positionTutTooltipCenter` | function |
-| 664-666 | `showTutComplete` | function |
-| 669 | `startTutorial` | function |
-| 688-713 | `openOptPicker` | function |
+| 69-175 | `showPage` | function |
+| 177-179 | `handleAddBtn` | function |
+| 182-192 | `switchTab` | function |
+| 195-206 | `populateAkunSelect` | function |
+| 209-212 | `safeHistoryPush` | function |
+| 213-216 | `safeHistoryReplace` | function |
+| 259-268 | `initTheme` | function |
+| 270-298 | `applyTheme` | function |
+| 311-320 | `syncPwaThemeChrome` | function |
+| 322-326 | `toggleTheme` | function |
+| 328-400 | `initTutDrag` | function |
+| 402-414 | `tutMinimize` | function |
+| 416-423 | `tutRestore` | function |
+| 432-436 | `dismissAndOpenPenyesuaian` | function |
+| 438-440 | `openJurnalPenyesuaian` | function |
+| 442 | `openInlineTemplatePenyesuaian` | function |
+| 443 | `toggleTemplatePenyesuaian` | function |
+| 444 | `fillPenyesuaianInline` | function |
+| 445 | `openModalPenyesuaian` | function |
+| 450-483 | `renderArusKas` | function |
+| 485-494 | `runSequential` | function |
+| 496-504 | `exitTutorial` | function |
+| 506-513 | `clearTutHighlight` | function |
+| 515-606 | `renderTutStep` | function |
+| 608-623 | `tutNext` | function |
+| 625-627 | `tutSkipSection` | function |
+| 629-651 | `positionTutTooltip` | function |
+| 653-664 | `positionTutTooltipCenter` | function |
+| 666-668 | `showTutComplete` | function |
+| 671 | `startTutorial` | function |
+| 690-715 | `openOptPicker` | function |
 
 ## js/05-akun.js (528 baris, 30.2 KB)
 
@@ -992,7 +992,7 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 733-749 | `loadCachedPasswordDisplay` | function |
 | 751-763 | `copyCurrentPassword` | function |
 
-## js/22-cloud-records.js (481 baris, 25.6 KB)
+## js/22-cloud-records.js (481 baris, 25.7 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
@@ -1226,16 +1226,44 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 142 | `renderKartuPiutang` | function |
 | 143 | `renderKartuHutang` | function |
 
-## js/35-dok.js (150 baris, 9.7 KB)
+## js/35-dok.js (220 baris, 13.3 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
-| 40 | `_dokBulat` | function |
-| 43-46 | `dokStatusBerikut` | function |
-| 51-67 | `transisiDok` | function |
-| 71-75 | `nomorDokBerikut` | function |
-| 78-85 | `totalDok` | function |
-| 96-149 | `susunDok` | function |
+| 26-29 | `dokList` | arrow |
+| 46 | `_dokBulat` | function |
+| 49-52 | `dokStatusBerikut` | function |
+| 57-73 | `transisiDok` | function |
+| 77-81 | `nomorDokBerikut` | function |
+| 84-91 | `totalDok` | function |
+| 95-100 | `hitungTotalDok` | function |
+| 112-179 | `susunDok` | function |
+| 184-190 | `idDokBaru` | function |
+| 194-203 | `simpanDokState` | function |
+| 206-210 | `tambahDok` | function |
+| 213-219 | `hapusDokById` | function |
+
+## js/36-penawaran-ui.js (166 baris, 9.6 KB)
+
+| Baris | Nama | Jenis |
+| --- | --- | --- |
+| 21-24 | `nomorPenawaranBerikut` | function |
+| 27-32 | `berlakuDefaultPenawaran` | function |
+| 34-36 | `formPenawaranBaru` | function |
+| 38-40 | `susunPenawaranBaru` | function |
+| 42-44 | `periksaFormPenawaran` | function |
+| 46 | `_pnwRp` | function |
+| 48-52 | `_pnwPpnTarif` | function |
+| 54-59 | `hitungTotalPenawaranForm` | function |
+| 62-77 | `renderPenawaranItems` | function |
+| 79-82 | `tambahItemPenawaran` | function |
+| 84-87 | `hapusItemPenawaran` | function |
+| 89-104 | `openModalPenawaran` | function |
+| 106-110 | `_pnwBacaForm` | function |
+| 112-114 | `_pnwAlertPeringatan` | function |
+| 117-125 | `simpanPenawaran` | function |
+| 130-156 | `renderPenawaranList` | function |
+| 158-165 | `hapusPenawaran` | function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 

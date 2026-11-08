@@ -90,6 +90,7 @@
 <script defer src="js/33-urut-jurnal.js"></script>
 <script defer src="js/34-kartu-kontak.js"></script>
 <script defer src="js/35-dok.js"></script>
+<script defer src="js/36-penawaran-ui.js"></script>
 <script defer src="js/99-init.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- Tabler webfont CDN dihapus: semua ikon "ti-*" sudah self-hosted sebagai SVG mask di css/icons.css (lihat komentar di file itu). Menghapus dependency CDN ini supaya ikon tidak pernah gagal/putus saat CDN lambat atau diblokir jaringan/ad-blocker. -->
@@ -256,6 +257,9 @@
       </div>
       <div class="nav-card" onclick="showPage('kartu-hutang')" data-page="kartu-hutang">
         <span class="nav-card-icon"><i class="ti ti-file-invoice"></i></span>Kartu Hutang
+      </div>
+      <div class="nav-card" onclick="showPage('penawaran')" data-page="penawaran">
+        <span class="nav-card-icon"><i class="ti ti-file-text"></i></span>Penawaran
       </div>
       <div class="nav-card" onclick="showPage('rekonsiliasi')" data-page="rekonsiliasi">
         <span class="nav-card-icon"><i class="ti ti-git-compare"></i></span>Rekonsiliasi
@@ -2315,6 +2319,21 @@
       <button class="btn btn-primary" onclick="openModalBill()">+ Buat Tagihan</button>
     </div>
     <div id="bill-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada tagihan pembelian.</div>
+  </div>
+</div>
+
+<!-- PENAWARAN (form: task 7.1; simpan + daftar: task 7.2) -->
+<div class="page" id="page-penawaran">
+  <div class="section-header">
+    <div><div class="section-title"><i class="ti ti-file-text" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Penawaran</div>
+    <div class="section-sub">Penawaran harga ke pelanggan · Dasar pesanan penjualan</div></div>
+  </div>
+  <div class="table-card" style="margin-bottom:16px;">
+    <div class="table-header">
+      <div class="table-title"><i class="ti ti-file-text ti-inline"></i> Daftar Penawaran</div>
+      <button class="btn btn-primary" onclick="openModalPenawaran()">+ Buat Penawaran</button>
+    </div>
+    <div id="penawaran-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada penawaran.</div>
   </div>
 </div>
 
@@ -4821,6 +4840,44 @@
       <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1;justify-content:flex-end;">
         <button class="btn btn-ghost" onclick="simpanInvoice('draft')" style="flex-shrink:0;white-space:nowrap;"><i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Simpan Draft</button>
         <button class="btn btn-primary" onclick="simpanInvoice('terkirim')" style="flex-shrink:0;white-space:nowrap;"><i class="ti ti-upload" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i> Simpan & Terkirim</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PENAWARAN (form: task 7.1; simpan: task 7.2) -->
+<div class="modal-backdrop" id="modal-penawaran" onclick="if(event.target===this)closeModal('modal-penawaran')">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-head"><div class="modal-title"><i class="ti ti-file-text" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> <span id="pnw-modal-judul">Buat Penawaran</span></div><button class="modal-close" onclick="closeModal('modal-penawaran')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>No. Penawaran</label><input type="text" id="pnw-no" placeholder="QUO-2026-001"></div>
+        <div class="form-group"><label>Tanggal</label><input type="date" id="pnw-tgl"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Pelanggan</label><input type="text" id="pnw-kontak" list="pnw-kontak-list" placeholder="PT. Maju Jaya"><datalist id="pnw-kontak-list"></datalist></div>
+        <div class="form-group"><label>Berlaku Sampai</label><input type="date" id="pnw-berlaku"></div>
+      </div>
+      <label style="font-size:11px;color:var(--muted);font-weight:600;display:block;margin-bottom:6px;">ITEM PENAWARAN <span style="font-weight:400;">· nama, jumlah, satuan, harga satuan</span></label>
+      <div id="pnw-items-list"></div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:4px;" onclick="tambahItemPenawaran()">+ Tambah Item</button>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="color:var(--muted);font-size:13px;">Subtotal</span><span id="pnw-subtotal" style="font-family:var(--mono);font-size:13px;">Rp 0</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label style="color:var(--muted);font-size:13px;">PPN <input type="checkbox" id="pnw-ppn-check" onchange="hitungTotalPenawaranForm()" style="accent-color:var(--accent);cursor:pointer;">
+            <select id="pnw-ppn-tarif" onchange="hitungTotalPenawaranForm()" style="background:var(--surface);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;padding:2px 4px;">
+              <option value="11">11% (non-mewah)</option><option value="12">12% (mewah)</option>
+            </select></label>
+          <span id="pnw-ppn-val" style="font-family:var(--mono);font-size:13px;">Rp 0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px;"><span style="font-weight:700;">Total</span><span id="pnw-total" style="font-family:var(--mono);font-weight:700;color:var(--accent);font-size:16px;">Rp 0</span></div>
+      </div>
+      <div class="form-group" style="margin-top:12px;"><label>Catatan</label><textarea id="pnw-catatan" rows="2" placeholder="Syarat pembayaran, masa berlaku penawaran, dll."></textarea></div>
+    </div>
+    <div class="modal-footer" style="flex-wrap:wrap;gap:6px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-penawaran')" style="flex-shrink:0;">Batal</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1;justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="simpanPenawaran()" style="flex-shrink:0;white-space:nowrap;"><i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i> Simpan Draft</button>
       </div>
     </div>
   </div>

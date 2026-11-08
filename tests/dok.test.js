@@ -118,11 +118,11 @@ console.log('[4] susunDok');
 console.log('[5] pemasangan');
 {
   const idx = rd('index.html'), cr = rd('js/22-cloud-records.js'), src = rd('js/35-dok.js');
-  ok(/dok:\s+\{ get: \(\) => dokList,\s+set: v => \{ dokList = v; \},\s+idOf: r => r && r\.id, legacyKey: null \}/.test(cr), 'kind dok di CLOUD_RECORD_KINDS (tanpa key mode tamu)');
+  ok(/dok:\s+\{ get: \(\) => dokList,\s+set: v => \{ dokList = v; \},\s+idOf: r => r && r\.id, legacyKey: 'oas_dok', legacyOnce: true \}/.test(cr), 'kind dok di CLOUD_RECORD_KINDS (key mode tamu oas_dok sejak 7.2)');
   ok(/dok: 'Dokumen penjualan\/pembelian'/.test(cr), 'label dialog migrasi untuk kind dok');
   ok(/data-reset="dok" data-label="[^"]+"/.test(idx), 'checkbox Dokumen di modal Reset Data');
   ok(idx.includes('js/35-dok.js') && idx.indexOf('js/34-kartu-kontak.js') < idx.indexOf('js/35-dok.js') && idx.indexOf('js/23-penomoran.js') < idx.indexOf('js/35-dok.js'), 'script dimuat setelah 23-penomoran.js dan 34-kartu-kontak.js');
-  ok(!/localStorage|document\.|window\./.test(src.replace(/\/\/.*$/gm, '')), 'file tidak menyentuh DOM atau localStorage');
+  ok(!/document\.|window\./.test(src.replace(/\/\/.*$/gm, '')), 'file tidak menyentuh DOM (localStorage hanya untuk mode tamu, sejak 7.2)');
   const sto = rd('js/15-storage.js');
   ok(/kinds\.includes\('dok'\) && !kinds\.includes\('invoice'\)[^\n]*resetCounterJenis\(DOK_JENIS\[j\]\.awalan\)/.test(sto), 'doResetAll: reset Dokumen membuang counter semua awalan dokumen');
   // perilaku nyata: counter dokumen terbuang, counter INV/BILL tetap
