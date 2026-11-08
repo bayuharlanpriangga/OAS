@@ -6,7 +6,7 @@ Disusun 9 Oktober 2026, direvisi 30 Oktober 2026 · 25 fase · 139 task kecil (s
 
 Prinsip: **satu task = satu chat baru = satu commit.** Semua task berukuran kecil. Task yang dulu berukuran M sudah dipecah jadi dua task S (biasanya: fungsi murni + tes dulu, lalu dipasang ke alur lama). Kalau sebuah task tetap terasa besar waktu dikerjakan, pecah dulu sebelum lanjut.
 
-**Progres: 40/139 task selesai.**
+**Progres: 41/139 task selesai.**
 
 Checklist: kolom ✓ di tiap tabel. Setelah task lulus definisi selesai dan di-commit, ganti ☐ menjadi ☑ (boleh diminta ke Claude di akhir task).
 
@@ -72,7 +72,7 @@ Task [ID] dari docs/ROADMAP.md: [salin baris tugas]. Konteks terlampir. Aturan: 
 | 4 | Tagihan pembelian (bill) | 8/9 |
 | 5 | Pembayaran | 7/7 |
 | 6 | Kartu piutang/hutang dan model dokumen | 3/3 |
-| 7 | Penawaran sampai faktur | 2/6 |
+| 7 | Penawaran sampai faktur | 3/6 |
 | 8 | Surat jalan | 0/3 |
 | 9 | Pesanan dan penerimaan pembelian | 0/5 |
 | 10 | Retur | 0/7 |
@@ -351,10 +351,17 @@ Independen: boleh dikerjakan kapan saja setelah Fase 1.
 | ☑ | 7.1 | Penawaran: form input (belum menyimpan). Halaman `#page-penawaran` (kartu "Penawaran" di grup Fitur Baru, judul di `pageTitles`, izin mengikuti Invoice) dengan tombol "+ Buat Penawaran" yang membuka `#modal-penawaran`: nomor otomatis, tanggal, pelanggan (saran dari Kontak), berlaku sampai (default +14 hari), item (nama, qty, satuan, harga), subtotal + PPN (opsional 11%/12%) + total langsung, catatan. Modul baru `js/36-penawaran-ui.js`: fungsi murni `nomorPenawaranBerikut`, `berlakuDefaultPenawaran`, `formPenawaranBaru`, `periksaFormPenawaran` (memakai `susunDok` dari 6.3); `openModalPenawaran`, `tambahItemPenawaran`, `hapusItemPenawaran`, `simpanPenawaran` (hanya memeriksa isi lalu memberi tahu "belum disimpan"). Model `js/35-dok.js` mendapat dua field opsional (`ppnTarif`, `berlakuSampai`) + `hitungTotalDok`; `susunDok` memvalidasinya. Hook ke file lama: `index.html` (script, kartu, halaman, modal), `04-navigasi-tema.js` (1 baris), `26-daftar-bisnis.js` (1 baris). Tes: `tests/penawaran-ui.test.js`, `tests/dok.test.js`. Perlu uji manual di browser | 6.3, IDX |
 | ☑ | 7.2 | Penawaran: simpan + daftar (belum ada jurnal). Tombol "Simpan Draft" menyusun penawaran lewat `susunDok` (status awal draft, id `DOK_<ms>`), menyimpannya lewat `tambahDok` dan menaikkan counter QUO; daftar di `#penawaran-body` (no, pelanggan, tanggal, berlaku sampai merah bila lewat, total termasuk PPN, status, hapus) dan `hapusPenawaran`. Penyimpan model di `js/35-dok.js`: state `dokList` kini dimuat dari `oas_dok` (mode tamu), `simpanDokState` (bisnis login: cloud `['dok','counter']`; tamu: `oas_dok` + `oas_counter`), `tambahDok`, `hapusDokById`, `idDokBaru`. UI di `js/36-penawaran-ui.js`: `susunPenawaranBaru`, `simpanPenawaran`, `renderPenawaranList`, `hapusPenawaran`. Hook ke file lama: `22-cloud-records.js` (kind `dok` jadi `legacyKey: 'oas_dok'` + `legacyOnce`), `04-navigasi-tema.js` (1 baris), `15-storage.js` (render ulang setelah reset, 1 nama). Tes: `tests/penawaran-ui.test.js`, `tests/dok.test.js`, bagian [dok] `tests/cloud-records.test.js`. Perlu uji manual di browser | 7.1 |
 | ☑ | 7.2b | Ubah status penawaran dari daftar (Kirim, Setujui, Tolak, Batal) memakai `transisiDok`. Tidak ada di rencana awal, tetapi 7.3 butuh penawaran berstatus `disetujui`. Tombol per status di kolom Aksi daftar penawaran (dari `aksiStatusPenawaran`, murni, mengikuti alur `DOK_JENIS`); `ubahStatusPenawaran(id, status)` di `js/36-penawaran-ui.js` memanggil `transisiDok` (riwayat berwaktu tercatat) lalu `perbaruiDok` (baru, `js/35-dok.js`: ganti di posisi yang sama + simpan). Tolak dan Batal minta konfirmasi karena status final. Tanpa hook ke file lama. Tes: bagian [6] `tests/penawaran-ui.test.js`. Perlu uji manual di browser | 7.2 |
-| ☐ | 7.3 | Penawaran → Pesanan Penjualan (salin item, tautkan ref) | 6.3, 7.2 |
+| ☑ | 7.3 | Penawaran → Pesanan Penjualan (salin item, tautkan ref). Modul baru `js/37-pesanan-jual.js`: fungsi murni `pesananDariPenawaran(penawaran, daftar, opsi)` (hanya penawaran `disetujui` tanpa pesanan aktif; item, kontak, PPN, catatan disalin dalam; nomor SO lewat `nomorDokBerikut`; ref `refJenis:'penawaran'` + `refId` + `refNo`; penawaran jadi `selesai` lewat `transisiDok`) dan `pesananDariRef`; `buatPesananDariPenawaran(id)` menyimpan pesanan baru + penawaran selesai + counter dalam satu kali `simpanDokState`. Tombol "Buat Pesanan" di daftar penawaran disetujui, nomor pesanan tampil di baris penawaran, `hapusPenawaran` menolak penawaran yang sudah dirujuk pesanan. Hook ke file lama: `index.html` (1 baris script), `36-penawaran-ui.js` (±5 baris). Pesanan baru berstatus draft; belum ada halaman/daftar pesanan. Tes: `tests/pesanan-jual.test.js`. Perlu uji manual di browser | 6.3, 7.2 |
 | ☐ | 7.4 | Fungsi murni pesananKeInvoice(pesanan) yang menyalin item jadi objek invoice + tes (belum dipasang) | 7.3, INV |
 | ☐ | 7.5 | Tombol 'Buat faktur' di pesanan: pakai 7.4, tandai terpenuhi | 7.4, INV |
 | ☐ | 7.6 | Pesanan sebagian: qty dipesan vs terkirim | 7.5 |
+
+**Temuan task 7.3:**
+- Pesanan dibuat dengan status `draft`, tanpa jurnal dan tanpa efek stok. Penawaran langsung `selesai` begitu pesanan dibuat (sesuai keputusan 7.2b); pembuatan keduanya satu langkah dan satu kali simpan, jadi tidak ada penawaran selesai tanpa pesanan atau sebaliknya.
+- Tanggal pesanan = hari pembuatan (bukan tanggal penawaran), dan nomornya memakai tahun tanggal itu. Masa berlaku (`berlakuSampai`) tidak disalin karena hanya milik penawaran. Item disalin dalam, jadi pesanan bisa berbeda dari penawaran di 7.6 (qty terkirim) tanpa mengubah penawaran.
+- Syarat dari 7.2 ditutup: `hapusPenawaran` menolak penawaran yang sudah punya pesanan aktif (ref tidak menggantung). Pesanan berstatus `batal` tidak dihitung, jadi (bila penawaran kembali bisa diproses) ia tidak menghalangi; saat ini penawaran `selesai` sudah final, jadi penawaran yang pesanannya dibatalkan tidak bisa dibuatkan pesanan lagi dan harus dibuat ulang.
+- **Celah rencana untuk 7.5:** belum ada halaman/daftar pesanan penjualan, jadi pesanan baru hanya terlihat sebagai nomor di baris penawaran. Tidak ada juga tombol Konfirmasi (`draft → dikonfirmasi`), padahal `sebagian`/`selesai` di alur `DOK_JENIS` baru bisa dicapai dari `dikonfirmasi`. Usul: tambahkan task kecil sebelum 7.5 (halaman + daftar + tombol ubah status pesanan, pola 7.2/7.2b) tanpa mengubah hitungan 139 task.
+- Hapus/batalkan pesanan belum ada di UI; begitu ada, harus memeriksa apakah pesanan sudah dirujuk faktur (7.5).
 
 **Temuan task 7.2b:**
 - Status `selesai` sengaja tidak punya tombol manual: ia diisi otomatis saat penawaran dibuatkan pesanan (7.3, lewat `transisiDok(d, 'selesai')`), supaya penawaran tidak bisa ditandai selesai tanpa pesanan. Penawaran `disetujui` yang tidak jadi dipesan cukup dibatalkan.

@@ -1244,30 +1244,41 @@ Berisi deklarasi top-level tiap file di `js/` beserta rentang barisnya.
 | 213-219 | `hapusDokById` | function |
 | 223-230 | `perbaruiDok` | function |
 
-## js/36-penawaran-ui.js (195 baris, 11.7 KB)
+## js/36-penawaran-ui.js (199 baris, 12.2 KB)
 
 | Baris | Nama | Jenis |
 | --- | --- | --- |
-| 23-26 | `nomorPenawaranBerikut` | function |
-| 29-34 | `berlakuDefaultPenawaran` | function |
-| 36-38 | `formPenawaranBaru` | function |
-| 40-42 | `susunPenawaranBaru` | function |
-| 44-46 | `periksaFormPenawaran` | function |
-| 48 | `_pnwRp` | function |
-| 50-54 | `_pnwPpnTarif` | function |
-| 56-61 | `hitungTotalPenawaranForm` | function |
-| 64-79 | `renderPenawaranItems` | function |
-| 81-84 | `tambahItemPenawaran` | function |
-| 86-89 | `hapusItemPenawaran` | function |
-| 91-106 | `openModalPenawaran` | function |
-| 108-112 | `_pnwBacaForm` | function |
-| 117-120 | `aksiStatusPenawaran` | function |
-| 122-124 | `_pnwAlertPeringatan` | function |
-| 127-135 | `simpanPenawaran` | function |
-| 140-166 | `renderPenawaranList` | function |
-| 169-180 | `ubahStatusPenawaran` | function |
-| 182-185 | `_pnwTombolStatus` | function |
-| 187-194 | `hapusPenawaran` | function |
+| 24-27 | `nomorPenawaranBerikut` | function |
+| 30-35 | `berlakuDefaultPenawaran` | function |
+| 37-39 | `formPenawaranBaru` | function |
+| 41-43 | `susunPenawaranBaru` | function |
+| 45-47 | `periksaFormPenawaran` | function |
+| 49 | `_pnwRp` | function |
+| 51-55 | `_pnwPpnTarif` | function |
+| 57-62 | `hitungTotalPenawaranForm` | function |
+| 65-80 | `renderPenawaranItems` | function |
+| 82-85 | `tambahItemPenawaran` | function |
+| 87-90 | `hapusItemPenawaran` | function |
+| 92-107 | `openModalPenawaran` | function |
+| 109-113 | `_pnwBacaForm` | function |
+| 118-121 | `aksiStatusPenawaran` | function |
+| 123-125 | `_pnwAlertPeringatan` | function |
+| 128-136 | `simpanPenawaran` | function |
+| 141-167 | `renderPenawaranList` | function |
+| 170-181 | `ubahStatusPenawaran` | function |
+| 183-187 | `_pnwTombolStatus` | function |
+| 189-198 | `hapusPenawaran` | function |
+
+## js/37-pesanan-jual.js (95 baris, 5.9 KB)
+
+| Baris | Nama | Jenis |
+| --- | --- | --- |
+| 18-22 | `pesananDariRef` | function |
+| 29-54 | `pesananDariPenawaran` | function |
+| 58-72 | `buatPesananDariPenawaran` | function |
+| 76-79 | `_pnwNoPesanan` | function |
+| 81-88 | `buatPesananPenawaran` | function |
+| 91-94 | `_pnwTombolPesanan` | function |
 
 ## js/99-init.js (15 baris, 0.6 KB)
 

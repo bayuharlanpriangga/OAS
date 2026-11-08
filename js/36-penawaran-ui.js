@@ -6,7 +6,8 @@
 // baru berstatus draft masuk dokList lewat tambahDok (35-dok.js: cloud untuk bisnis login, localStorage untuk mode tamu),
 // daftar di #penawaran-body, hapus lewat hapusPenawaran. Penawaran tidak menjurnal. Ubah status dari daftar (7.2b):
 // Kirim, Setujui, Tolak, Batal lewat transisiDok; 'selesai' tidak punya tombol karena diisi otomatis saat penawaran
-// dibuatkan pesanan (7.3). Belum ada edit draft.
+// dibuatkan pesanan (7.3, js/37-pesanan-jual.js; tombol "Buat Pesanan" untuk penawaran disetujui, hapus ditolak bila sudah
+// dirujuk pesanan). Belum ada edit draft.
 // Pola mengikuti form bill (29-bill-ui.js). Dimuat setelah 35-dok.js.
 //
 // Field PPN dan masa berlaku adalah field opsional model dok (ppnTarif, berlakuSampai; ditambahkan di 7.1).
@@ -159,7 +160,7 @@ function renderPenawaranList() {
         <td style="font-size:12px">${escapeHtml(d.tanggal)}</td>
         <td style="font-size:12px;${lewat ? 'color:var(--red);font-weight:600;' : ''}">${escapeHtml(d.berlakuSampai || '-')}</td>
         <td class="debit" style="font-family:var(--mono)">${rp(hitungTotalDok(d).total)}</td>
-        <td><span style="background:${w}22;color:${w};padding:2px 8px;border-radius:6px;font-size:11px;">${escapeHtml(s.charAt(0).toUpperCase() + s.slice(1))}</span></td>
+        <td><span style="background:${w}22;color:${w};padding:2px 8px;border-radius:6px;font-size:11px;">${escapeHtml(s.charAt(0).toUpperCase() + s.slice(1))}</span>${typeof _pnwNoPesanan === 'function' ? _pnwNoPesanan(d) : ''}</td>
         <td style="white-space:nowrap;">${_pnwTombolStatus(d)}<button class="btn btn-danger btn-sm" title="Hapus" onclick="hapusPenawaran('${escapeForJsAttr(d.id)}')"><i class="ti ti-trash" style="font-size:14px;"></i></button></td>
       </tr>`;
     }).join('')}</tbody></table></div>`;
@@ -180,13 +181,16 @@ function ubahStatusPenawaran(id, statusBaru) {
 }
 
 function _pnwTombolStatus(d) {
-  return aksiStatusPenawaran(d.status).map(a =>
+  const pesan = typeof _pnwTombolPesanan === 'function' ? _pnwTombolPesanan(d) : '';
+  return pesan + aksiStatusPenawaran(d.status).map(a =>
     `<button class="btn btn-sm${a.ke === 'terkirim' || a.ke === 'disetujui' ? ' btn-primary' : ''}" style="margin-right:4px;" onclick="ubahStatusPenawaran('${escapeForJsAttr(d.id)}','${a.ke}')">${a.label}</button>`).join('');
 }
 
 function hapusPenawaran(id) {
   if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Penawaran')) return;
   const d = dokList.find(x => x && x.id === id && x.jenis === 'penawaran'); if (!d) return;
+  const dirujuk = typeof pesananDariRef === 'function' ? pesananDariRef(dokList, id) : null;
+  if (dirujuk) { _pnwAlertPeringatan('Penawaran ' + d.no + ' sudah dibuatkan pesanan ' + dirujuk.no + ' dan tidak bisa dihapus.'); return; }
   if (!confirm('Hapus penawaran ' + d.no + ' (' + d.kontak + ')?')) return;
   hapusDokById(id);
   renderPenawaranList();
