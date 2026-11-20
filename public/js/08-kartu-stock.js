@@ -2401,26 +2401,7 @@ function buildHppJurnalLines(hppLayers, akunHpp, akunPersediaan) {
   ])).flat();
 }
 
-/**
- * Render tabel Master Produk — baca dari multiKartuStock
- */
-function openProdukFilterCardPicker() {
-  const cards = Object.values(multiKartuStock || {});
-  openOptPicker({
-    title: 'Filter Kartu Stock',
-    options: [
-      { value: '', label: 'Semua Kartu', sub: 'Tampilkan semua kategori' },
-      ...cards.map(c => ({ value: c.id, label: c.nama, sub: `${Object.keys(c.kategori||{}).length} kategori` }))
-    ],
-    currentValue: document.getElementById('produk-filter-card')?.value || '',
-    onSelect: (val, label) => {
-      document.getElementById('produk-filter-card').value = val;
-      document.getElementById('produk-filter-card-label').textContent = label || 'Semua Kartu';
-
-      renderProduk();
-    }
-  });
-}
+// Master Produk filter picker migrated to src/components/produk/ProdukPage.tsx
 
 // ══════════════════════════════════════════════════════════
 // FIFO/LIFO METHOD PICKER — ganti tab button jadi opt-picker
@@ -3381,3 +3362,19 @@ if (document.readyState === 'loading') {
 } else {
   _installAuditHooks();
 }
+
+// Bridge multiKartuStock & kartuStockTab for migrated React pages (Produk, Kalkulator Persediaan)
+window.__oasKsStore = {
+  getMultiKartuStock: () => multiKartuStock,
+  setKartuStockTab: (metode) => { kartuStockTab = metode; },
+};
+
+// Kartu Stock jurnal popup button wiring (relocated from retired 12-kalkulator.js)
+(function wireKsJurnalPopup() {
+  var jurnalClose = document.getElementById('ks-jurnal-popup-close');
+  if (jurnalClose) jurnalClose.addEventListener('click', function(){ document.getElementById('ks-jurnal-popup').style.display='none'; });
+  var jurnalBatal = document.getElementById('ks-jurnal-popup-batal');
+  if (jurnalBatal) jurnalBatal.addEventListener('click', function(){ document.getElementById('ks-jurnal-popup').style.display='none'; });
+  var jurnalOk = document.getElementById('ks-jurnal-popup-ok');
+  if (jurnalOk) jurnalOk.addEventListener('click', konfirmasiInputJurnalKartu);
+})();

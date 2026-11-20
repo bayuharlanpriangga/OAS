@@ -225,3 +225,16 @@ let _authReady = false;
 
 let isGuestMode = false;
 let _afterLoginRunning = false; // Cegah double-call
+
+// Bridge state accessors so migrated React pages share live legacy stores
+window.__oasStore = {
+  getAkuns: () => akuns,
+  setAkuns: (next) => { akuns = next; },
+  getAkunsTrash: () => akunsTrash,
+  setAkunsTrash: (next) => { akunsTrash = next; },
+  getJurnalEntries: () => jurnalEntries,
+  getProdukList: () => produkList,
+  setProdukList: (next) => { produkList = next; },
+  getAsetTetapList: () => asetTetapList,
+  setAsetTetapList: (next) => { asetTetapList = next; },
+};

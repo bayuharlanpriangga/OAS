@@ -1,3 +1,7 @@
+// MASTER KONTAK FILTER (relocated from retired 10-aset-tetap.js)
+let _kontakFilter = 'semua';
+function filterKontak(tipe){_kontakFilter=tipe;document.querySelectorAll('.kontak-tab').forEach(b=>b.classList.remove('oas-active-tab'));document.getElementById('kontak-tab-'+tipe)?.classList.add('oas-active-tab');renderKontak();}
+
 function openModalKontak(editId=null){
   if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Kontak')) return;
   try {

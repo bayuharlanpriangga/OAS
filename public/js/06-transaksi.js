@@ -1,4 +1,197 @@
 
+// AKUN PICKER BOTTOM SHEET & SIMPLE PICKER (relocated from retired 05-akun.js)
+let _simplePickerHiddenId = null;
+let _simplePickerBtnId = null;
+let _simplePickerFilter = null;
+let _pickerTriggerBtn = null;
+
+const PICKER_FILTERS = {
+  'kas': a => !['1101','1102','1103','1104'].includes(a.kode),
+  'beli': a => ['Beban','Aset','HPP'].includes(a.tipe),
+  'utang': a => a.tipe === 'Liabilitas',
+  'persediaan': a => a.tipe === 'Aset' && (a.nama.toLowerCase().includes('persediaan') || a.kode.startsWith('13')),
+};
+
+function openSimplePicker(hiddenInputId, btnId, mode) {
+  _simplePickerHiddenId = hiddenInputId;
+  _simplePickerBtnId = btnId;
+  _simplePickerFilter = PICKER_FILTERS[mode] || null;
+  document.getElementById('akun-picker-search').value = '';
+  const currentVal = document.getElementById(hiddenInputId)?.value || '';
+  renderFilteredPickerList('', currentVal, _simplePickerFilter);
+  document.getElementById('akun-picker-backdrop').classList.add('open');
+  setTimeout(() => document.getElementById('akun-picker-search').focus(), 200);
+}
+
+function openAkunPicker(triggerBtn) {
+  _simplePickerHiddenId = null;
+  _simplePickerBtnId = null;
+  _simplePickerFilter = null;
+  _pickerTriggerBtn = triggerBtn;
+  const row = triggerBtn.closest('.jurnal-line-row');
+  const sel = row.querySelector('select');
+  document.getElementById('akun-picker-search').value = '';
+  renderAkunPickerList('', sel?.value || '');
+  document.getElementById('akun-picker-backdrop').classList.add('open');
+  setTimeout(() => document.getElementById('akun-picker-search').focus(), 200);
+}
+
+function closeAkunPicker(e) {
+  if (e && e.target !== document.getElementById('akun-picker-backdrop')) return;
+  document.getElementById('akun-picker-backdrop').classList.remove('open');
+  _pickerTriggerBtn = null;
+  _simplePickerHiddenId = null;
+  _simplePickerBtnId = null;
+  _simplePickerFilter = null;
+}
+
+function filterAkunPicker(q) {
+  if (_simplePickerHiddenId) {
+    const currentVal = document.getElementById(_simplePickerHiddenId)?.value || '';
+    renderFilteredPickerList(q, currentVal, _simplePickerFilter);
+  } else if (_pickerTriggerBtn) {
+    const row = _pickerTriggerBtn?.closest('.jurnal-line-row');
+    const sel = row?.querySelector('select');
+    renderAkunPickerList(q, sel?.value || '');
+  }
+}
+
+function renderAkunPickerList(query, selectedKode) {
+  const q = query.toLowerCase();
+  const filtered = akuns.filter(a =>
+    !q || a.kode.includes(q) || a.nama.toLowerCase().includes(q) || a.tipe.toLowerCase().includes(q)
+  );
+  const list = document.getElementById('akun-picker-list');
+  if (!filtered.length) {
+    list.innerHTML = `<div id="akun-picker-empty"><i class="ti ti-mood-empty" style="font-size:20px;display:block;margin:0 auto 6px;"></i> Akun tidak ditemukan<br><small>Coba kata kunci lain</small></div>`;
+    return;
+  }
+  const groups = {};
+  filtered.forEach(a => {
+    if (!groups[a.tipe]) groups[a.tipe] = [];
+    groups[a.tipe].push(a);
+  });
+  const tipeColor = t => ({Aset:'aset',Liabilitas:'liabilitas',Ekuitas:'ekuitas',Pendapatan:'pendapatan',Beban:'beban',HPP:'beban'})[t] || 'beban';
+  let html = '';
+  Object.entries(groups).forEach(([tipe, items]) => {
+    html += `<div class="akun-picker-group-label">${tipe}</div>`;
+    items.forEach(a => {
+      const sel = a.kode === selectedKode ? ' selected' : '';
+      html += `<div class="akun-picker-item${sel}" onclick="_simplePickerHiddenId?selectSimplePicker('${escapeForJsAttr(a.kode)}','${escapeForJsAttr(a.nama)}'):selectAkunFromPicker('${escapeForJsAttr(a.kode)}','${escapeForJsAttr(a.nama)}')">
+        <span class="akun-picker-kode">${a.kode}</span>
+        <span class="akun-picker-nama">${a.nama}</span>
+        <span class="akun-picker-tipe ${tipeColor(a.tipe)}">${tipe}</span>
+      </div>`;
+    });
+  });
+  list.innerHTML = html;
+}
+
+function selectAkunFromPicker(kode, nama) {
+  if (!_pickerTriggerBtn) return;
+  const row = _pickerTriggerBtn.closest('.jurnal-line-row');
+  if (!row) return;
+  const sel = row.querySelector('select');
+  if (sel) sel.value = kode;
+  _pickerTriggerBtn.textContent = kode + ' — ' + nama;
+  document.getElementById('akun-picker-backdrop').classList.remove('open');
+  _pickerTriggerBtn = null;
+}
+
+function syncAkunTrigger(sel) {
+  const row = sel.closest('.jurnal-line-row');
+  const btn = row?.querySelector('.akun-trigger-btn');
+  if (!btn) return;
+  const a = akuns.find(x => x.kode === sel.value);
+  if (a) btn.textContent = a.kode + ' — ' + a.nama;
+}
+
+// PRODUK PICKER UNTUK MODE CEPAT (relocated from retired 09-produk.js)
+let _produkPickerCallback = null;
+function openProdukPicker() {
+  const allCards = Object.values(multiKartuStock || {});
+  const cards = allCards.filter(c => !c.lockedFromTrx);
+  if (!allCards.length && !produkList.length) {
+    showAlert('Belum ada produk. Tambahkan di Master Produk terlebih dahulu.');
+    return;
+  }
+  if (!cards.length) {
+    showAlert('Tidak ada produk tersedia. Aktifkan kartu stock di menu Persediaan (klik ikon gembok).');
+    return;
+  }
+  if (cards.length === 1) {
+    const card = cards[0];
+    const kats = Object.values(card.kategori || {});
+    if (!kats.length) { showAlert('Kartu stock belum punya barang.'); return; }
+    if (kats.length === 1) { _applySimpelKategori(kats[0].id, kats[0].nama); return; }
+    openOptPicker({
+      title: 'Pilih Barang — ' + card.nama,
+      options: kats.map(kat => {
+        const override = produkList.find(p => p.ksId === kat.id);
+        const hJual = override?.hargaJual || 0;
+        return { value: kat.id, label: kat.nama, sub: `Harga: ${hJual ? fmtRp(hJual) : 'Belum diset'}` };
+      }),
+      currentValue: document.getElementById('simpel-produk-id')?.value || '',
+      onSelect: (katId, label) => { _applySimpelKategori(katId, label); }
+    });
+    return;
+  }
+  openOptPicker({
+    title: 'Pilih Kartu Stock',
+    options: cards.map(card => ({
+      value: card.id, label: card.nama,
+      sub: `${Object.keys(card.kategori || {}).length} barang`,
+    })),
+    currentValue: '',
+    onSelect: (cardId) => {
+      const card = multiKartuStock[cardId]; if (!card) return;
+      const kats = Object.values(card.kategori || {});
+      if (!kats.length) { showAlert('Kartu stock ini belum punya barang.'); return; }
+      if (kats.length === 1) { _applySimpelKategori(kats[0].id, kats[0].nama); return; }
+      openOptPicker({
+        title: 'Pilih Barang — ' + card.nama,
+        options: kats.map(kat => {
+          const override = produkList.find(p => p.ksId === kat.id);
+          const hJual = override?.hargaJual || 0;
+          return { value: kat.id, label: kat.nama, sub: `Harga: ${hJual ? fmtRp(hJual) : 'Belum diset'}` };
+        }),
+        currentValue: document.getElementById('simpel-produk-id')?.value || '',
+        onSelect: (katId, label) => { _applySimpelKategori(katId, label); }
+      });
+    }
+  });
+}
+
+function _applySimpelKategori(katId, label) {
+  const found = _findKatById(katId);
+  const override = produkList.find(p => p.ksId === katId);
+  document.getElementById('simpel-produk-id').value = katId;
+  document.getElementById('simpel-produk-btn').textContent = label || found?.kat?.nama || katId;
+  if (_simpelTipe === 'jual') {
+    if (!override?.hargaJual) {
+      showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Harga jual belum diset untuk produk ini. Silakan set harga di Master Produk terlebih dahulu.');
+    }
+  } else if (_simpelTipe === 'beli') {
+    document.getElementById('simpel-jumlah').value = '';
+  }
+  if (!document.getElementById('simpel-ket').value)
+    document.getElementById('simpel-ket').value = found?.kat?.nama || label || '';
+  _updateSimpelJumlahLabel();
+}
+
+function onSimpelQtyChange() {
+  const katId = document.getElementById('simpel-produk-id')?.value;
+  if (!katId) return;
+  if (_simpelTipe === 'jual') {
+    const override = produkList.find(p => p.ksId === katId);
+    if (!override?.hargaJual) return;
+    const qty = parseFloat(document.getElementById('simpel-qty')?.value) || 1;
+    document.getElementById('simpel-jumlah').value = override.hargaJual * qty;
+  } else if (_simpelTipe === 'beli') {
+    _updateSimpelJumlahLabel();
+  }
+}
+
 function renderFilteredPickerList(query, selectedKode, filterFn) {
   const q = query.toLowerCase();
   const base = filterFn ? akuns.filter(filterFn) : akuns;

@@ -347,22 +347,7 @@ function renderPerubahanEkuitas(){
 }
 function exportPerubahanEkuitasPDF(){const el=document.getElementById('pe-content');if(!el||!el.innerHTML.trim()){showAlert('Tidak ada data.');return;}const profil=JSON.parse(localStorage.getItem('oas_profil')||localStorage.getItem('oas_profil_v1')||'{}');const win=window.open('','_blank');win.document.write(`<!DOCTYPE html><html><head><title>Laporan Perubahan Ekuitas</title>\u003cstyle\u003ebody{font-family:Arial,sans-serif;font-size:13px;color:#111;margin:32px;}table{width:100%;border-collapse:collapse;margin-bottom:16px;}td,th{padding:7px 10px;}th{background:#f5f5f5;font-weight:600;}.total-row td{font-weight:700;border-top:2px solid #333;}\u003c/style\u003e</head><body><h2 style="text-align:center">${escapeHtml(profil.nama||'Perusahaan')}</h2><p style="text-align:center;color:#666;font-size:11px;">Laporan Perubahan Ekuitas (PSAK 1)</p>${el.innerHTML}</body></html>`);win.document.close();setTimeout(()=>win.print(),500);}
 
-// ══════════════════════════════════════════════════════════════
-// REGISTER ASET TETAP (UPGRADED: card view, foto, auto-penyusutan)
-// ══════════════════════════════════════════════════════════════
-function openModalAsetTetap(editId=null){
-  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Aset tetap')) return;
-  try{
-    const f=editId?asetTetapList.find(a=>a.id===editId):null;
-    const setVal=(id,v)=>{const el=document.getElementById(id);if(el){el.value=v;el.dispatchEvent(new Event('change',{bubbles:true}));}};
-    setVal('at-edit-id',editId||'');setVal('at-nama',f?.nama||'');setVal('at-kategori',f?.kategori||'Kendaraan');
-    setVal('at-tgl-perolehan',f?.tglPerolehan||new Date().toISOString().split('T')[0]);
-    setVal('at-harga',f?.hargaPerolehan||'');setVal('at-residu',f?.nilaiResidu||0);
-    setVal('at-umur',f?.umurEkonomis||5);setVal('at-metode',f?.metode||'garis-lurus');setVal('at-lokasi',f?.lokasi||'');
-    const chk=document.getElementById('at-buat-jurnal');if(chk)chk.checked=!editId;
-    openModal('modal-aset-tetap');setTimeout(upgradeFormPickers,80);
-  }catch(e){console.error('openModalAsetTetap:',e);}
-}
+// Register Aset Tetap migrated to src/components/aset/AsetTetapPage.tsx
 
 function renderReportWithPeriod(pageId, periodVal) {
   // Temporarily set dashboard filter and call render

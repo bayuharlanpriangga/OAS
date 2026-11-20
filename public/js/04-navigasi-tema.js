@@ -326,6 +326,10 @@ function toggleTheme() {
   // No alert — switch is self-explanatory
 }
 
+// TUTORIAL DRAG & MINIMIZE state (relocated from retired 12-kalkulator.js)
+let tutIsDragging = false, tutDragStartX, tutDragStartY, tutInitLeft, tutInitTop;
+let tutIsMinimized = false;
+
 function initTutDrag() {
   const titlebar = document.getElementById('tut-titlebar');
   const tt = document.getElementById('tut-tooltip');

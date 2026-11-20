@@ -1,10 +1,14 @@
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import OasWorkspace from "./OasWorkspace";
+import CoaPage from "./coa/CoaPage";
+import ProdukPage from "./produk/ProdukPage";
+import AsetTetapPage from "./aset/AsetTetapPage";
 import {
   KalkBepPage,
   KalkBungaPage,
   KalkPenyusutanPage,
+  KalkPersediaanPage,
   KalkRasioPage,
 } from "./calculators";
 
@@ -26,7 +30,11 @@ export default function OasShell({ pagesHtml, overlaysHtml }: OasShellProps) {
             suppressHydrationWarning
             dangerouslySetInnerHTML={{ __html: pagesHtml }}
           />
+          <CoaPage />
+          <ProdukPage />
+          <AsetTetapPage />
           <KalkPenyusutanPage />
+          <KalkPersediaanPage />
           <KalkBungaPage />
           <KalkRasioPage />
           <KalkBepPage />

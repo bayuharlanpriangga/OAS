@@ -80,6 +80,30 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
   max-height: 90vh; overflow: hidden;
   display: flex; flex-direction: column;
 }
+dialog.oas-dialog {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: calc(100% - 32px);
+  max-width: 560px;
+  max-height: 90vh;
+  overflow: hidden;
+  padding: 0;
+  margin: auto;
+}
+dialog.oas-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+dialog:modal {
+  overscroll-behavior: contain;
+}
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
 .modal-head {
   padding: 18px 22px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;

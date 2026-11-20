@@ -1,4 +1,28 @@
 
+// EXPORT SYSTEM STATE & MODAL OPENER (relocated from retired 05-akun.js)
+let exportFmt = 'excel';
+let excelTemplate = 'data'; // 'data' or 'formula'
+let exportLogoDataUrl = null; // base64 logo for PDF
+
+function openExportModal() {
+  if (typeof isAdmin === 'function' && !isAdmin() && typeof hasPerm === 'function' && !hasPerm('export', 'read')) { showAlert('⛔ Kamu tidak punya izin untuk mengekspor laporan.'); return; }
+  document.getElementById('exp-status').style.display = 'none';
+  document.getElementById('exp-btn').disabled = false;
+  document.getElementById('exp-btn').innerHTML = '<i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Sekarang';
+  exportFmt = 'excel';
+  ['excel','pdf','csv'].forEach(f => {
+    document.getElementById('exp-opt-'+f)?.classList.toggle('exp-fmt-active', f === 'excel');
+  });
+  const _p = typeof getProfil === 'function' ? getProfil() : {};
+  const namaEl = document.getElementById('exp-nama-perusahaan');
+  const periodeEl = document.getElementById('exp-periode');
+  if(namaEl && !namaEl.value && _p.nama) namaEl.value = _p.nama;
+  if(periodeEl && !periodeEl.value) periodeEl.value = new Date().toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+  document.getElementById('modal-export').classList.add('open');
+  updateExportSections();
+  _pvUpdateExportModalBadge();
+}
+
 function selectExportFmt(fmt) {
   exportFmt = fmt;
   ['excel','pdf','csv'].forEach(f => {

@@ -9,10 +9,11 @@ export interface Produk {
   hpp?: number;
   stok?: number;
   stokMin?: number;
-  akunPend: string;
-  akunHpp: string;
-  akunPers: string;
+  akunPend?: string;
+  akunHpp?: string;
+  akunPers?: string;
   ppn: number | null;
+  ppnInclusive?: boolean;
   deskripsi?: string;
 }
 
@@ -53,6 +54,7 @@ export interface AsetTetap {
   metode: AsetTetapMetode;
   lokasi?: string;
   status: AsetTetapStatus;
+  tglDisposal?: string;
   createdAt: string;
 }
 

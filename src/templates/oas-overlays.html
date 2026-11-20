@@ -591,68 +591,7 @@
 
 
 
-<div class="modal-backdrop" id="modal-aset-tetap" onclick="if(event.target===this)closeModal('modal-aset-tetap')">
-  <div class="modal" style="max-width:520px;">
-    <div class="modal-head"><div class="modal-title"><i class="ti ti-building-factory ti-btn"></i> Tambah / Edit Aset Tetap</div><button class="modal-close" onclick="closeModal('modal-aset-tetap')"><i class="ti ti-x"></i></button></div>
-    <div class="modal-body">
-      <input type="hidden" id="at-edit-id">
-      <div class="form-row">
-        <div class="form-group"><label>Nama Aset *</label><input type="text" id="at-nama" placeholder="Kendaraan Operasional"></div>
-        <div class="form-group"><label>Kategori</label>
-          <select id="at-kategori" style="width:100%"><option value="Kendaraan">Kendaraan</option><option value="Bangunan">Bangunan</option><option value="Peralatan">Peralatan Kantor</option><option value="Mesin">Mesin & Produksi</option><option value="Komputer">Komputer & IT</option><option value="Inventaris">Inventaris & Furnitur</option><option value="Tanah">Tanah</option><option value="Lainnya">Lainnya</option></select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Tanggal Perolehan *</label><div class="date-input-wrap"><input type="date" id="at-tgl-perolehan"><span class="date-input-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span></div></div>
-        <div class="form-group"><label>Harga Perolehan (Rp) *</label><input type="number" id="at-harga" placeholder="0"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Nilai Residu (Rp)</label><input type="number" id="at-residu" placeholder="0" value="0"></div>
-        <div class="form-group"><label>Umur Ekonomis (Tahun) *</label><input type="number" id="at-umur" placeholder="5" min="1"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Metode Penyusutan</label>
-          <select id="at-metode" style="width:100%"><option value="garis-lurus">Garis Lurus (Straight-Line)</option><option value="saldo-menurun">Saldo Menurun (Double Declining)</option></select>
-        </div>
-        <div class="form-group"><label>Lokasi / Keterangan</label><input type="text" id="at-lokasi" placeholder="Kantor Pusat"></div>
-      </div>
-      <div class="form-group">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text);">
-          <input type="checkbox" id="at-buat-jurnal" checked style="accent-color:var(--accent);flex-shrink:0;">
-          Buat Jurnal Perolehan Otomatis (Aset Tetap/Kredit Kas)
-        </label>
-      </div>
-    </div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-aset-tetap')">Batal</button><button class="btn btn-primary" onclick="simpanAsetTetap()"><i class="ti ti-device-floppy ti-btn"></i> Simpan Aset</button></div>
-  </div>
-</div>
-
-<!-- MODAL: FOTO LAMPIRAN ASET -->
-<div class="modal-backdrop" id="modal-aset-foto" onclick="if(event.target===this)closeModal('modal-aset-foto')">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-head">
-      <div class="modal-title"><i class="ti ti-camera ti-btn"></i> <span id="at-foto-title">Foto Aset</span></div>
-      <button class="modal-close" onclick="closeModal('modal-aset-foto')"><i class="ti ti-x"></i></button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="at-foto-aset-id">
-      <input type="file" id="at-foto-input" accept="image/*" capture="environment" style="display:none" onchange="handleAtFotoUpload(this)">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Foto tampil sebagai thumbnail kartu aset. Maks 5MB per foto.</div>
-      <div id="at-foto-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
-        <div onclick="document.getElementById('at-foto-input').click()" style="aspect-ratio:1;border-radius:10px;border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:6px;background:var(--surface);color:var(--muted);font-size:11px;">
-          <i class="ti ti-camera-plus" style="font-size:24px;"></i><span>Tambah Foto</span>
-        </div>
-      </div>
-      <div id="at-foto-empty" style="text-align:center;padding:20px;color:var(--muted);font-size:13px;display:none;">
-        <i class="ti ti-photo-off" style="font-size:28px;display:block;margin-bottom:8px;opacity:0.4;"></i>Belum ada foto
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-aset-foto')">Tutup</button>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('at-foto-input').click()" style="gap:5px;"><i class="ti ti-plus" style="font-size:12px;"></i> Tambah</button>
-    </div>
-  </div>
-</div>
+<!-- MODAL ASET TETAP & FOTO LAMPIRAN ASET migrated to src/components/aset/AsetTetapPage.tsx -->
 
 <!-- MODAL: KONTAK -->
 <div class="modal-backdrop" id="modal-kontak" onclick="if(event.target===this)closeModal('modal-kontak')">
@@ -1073,4 +1012,36 @@
   </div>
   <div style="font-size:10px;color:var(--muted);margin-bottom:5px;">Preset:</div>
   <div class="pv-swatches" id="pv-swatches"></div>
+</div>
+
+<!-- POPUP: Pilih transaksi keluar untuk input ke jurnal (Kartu Stock) -->
+<div id="ks-jurnal-popup" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;">
+  <div class="modal" style="max-width:560px;width:95%;max-height:85vh;overflow-y:auto;border-radius:16px;padding:0;">
+    <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:16px;font-weight:700;"><i class="ti ti-download ti-inline"></i> Pilih Transaksi untuk Input Jurnal</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Pilih transaksi keluar dari Kartu Stock yang ingin diinput ke Jurnal</div>
+      </div>
+      <button id="ks-jurnal-popup-close" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;">✕</button>
+    </div>
+    <div id="ks-jurnal-popup-list" style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+      <div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Tidak ada transaksi keluar di kartu stock.</div>
+    </div>
+    <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
+      <button id="ks-jurnal-popup-batal" class="btn btn-ghost btn-sm">Batal</button>
+      <button id="ks-jurnal-popup-ok" class="btn btn-primary btn-sm"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Input Jurnal Terpilih</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM CONFIRM MODAL untuk Kartu Stock -->
+<div id="ks-confirm-modal" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.65);align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 28px 20px;max-width:340px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <div id="ks-confirm-icon" style="font-size:32px;text-align:center;margin-bottom:12px;"><i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i></div>
+    <div id="ks-confirm-msg" style="font-size:14px;font-weight:600;text-align:center;color:var(--text);margin-bottom:20px;line-height:1.5;"></div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button id="ks-confirm-cancel" class="btn btn-ghost" style="flex:1;max-width:120px;">Batal</button>
+      <button id="ks-confirm-ok" class="btn btn-danger" style="flex:1;max-width:120px;">Hapus</button>
+    </div>
+  </div>
 </div>
