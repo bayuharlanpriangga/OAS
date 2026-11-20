@@ -1,0 +1,8 @@
+node_modules/
+.next/
+out/
+build/
+tsconfig.tsbuildinfo
+bun.lock
+next-env.d.ts
+.DS_Store
