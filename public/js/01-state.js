@@ -210,6 +210,28 @@ let notifHistory = JSON.parse(localStorage.getItem('oas_notif_hist') || '[]');
 let anggaranList = JSON.parse(localStorage.getItem('oas_anggaran') || '[]');
 let asetTetapList = JSON.parse(localStorage.getItem('oas_aset_tetap') || '[]');
 let kontakList = JSON.parse(localStorage.getItem('oas_kontak') || '[]');
+let billList = (() => {
+  try { const a = JSON.parse(localStorage.getItem('oas_bill') || '[]'); return Array.isArray(a) ? a : []; }
+  catch (e) { return []; }
+})();
+let pembayaranList = (() => {
+  try { const a = JSON.parse(localStorage.getItem('oas_pembayaran') || '[]'); return Array.isArray(a) ? a : []; }
+  catch (e) { return []; }
+})();
+let dokList = (() => {
+  try { const a = JSON.parse(localStorage.getItem('oas_dok') || '[]'); return Array.isArray(a) ? a : []; }
+  catch (e) { return []; }
+})();
+let counterList = (() => {
+  try { const a = JSON.parse(localStorage.getItem('oas_counter') || '[]'); return Array.isArray(a) ? a : []; }
+  catch (e) { return []; }
+})();
+let kartuStockData = { fifo:[], lifo:[], wa:[], mwa:[] };
+let kartuStockTab = 'fifo';
+let multiKartuStock = {};
+let activeKartuStockId = null;
+let activeKategoriId = null;
+let _ksJustWroteDirectly = false;
 
 // AI ASSISTANT
 let aiHistory = [];
@@ -237,4 +259,34 @@ window.__oasStore = {
   setProdukList: (next) => { produkList = next; },
   getAsetTetapList: () => asetTetapList,
   setAsetTetapList: (next) => { asetTetapList = next; },
+  getKontakList: () => kontakList,
+  setKontakList: (next) => { kontakList = next; },
+  getInvoiceList: () => invoiceList,
+  setInvoiceList: (next) => { invoiceList = next; },
+  getBillList: () => billList,
+  setBillList: (next) => { billList = next; },
+  getPembayaranList: () => pembayaranList,
+  setPembayaranList: (next) => { pembayaranList = next; },
+  getDokList: () => dokList,
+  setDokList: (next) => { dokList = next; },
+  getCounterList: () => (typeof counterList !== 'undefined' && Array.isArray(counterList) ? counterList : []),
+  setCounterList: (next) => { if (typeof counterList !== 'undefined') counterList = next; },
+  getTransaksiAkunSettings: () => transaksiAkunSettings,
+  getCurrentCompany: () => currentCompany,
+};
+
+window.__oasKsStore = {
+  getMultiKartuStock: () => multiKartuStock,
+  setMultiKartuStock: (next) => { multiKartuStock = next || {}; },
+  getActiveIds: () => ({ cardId: activeKartuStockId, katId: activeKategoriId }),
+  setActiveKartuStock: (cardId, katId) => {
+    activeKartuStockId = cardId || null;
+    activeKategoriId = katId || null;
+  },
+  getKartuStockTab: () => kartuStockTab,
+  setKartuStockTab: (m) => { if (m) kartuStockTab = m; },
+  getKartuStockData: () => kartuStockData,
+  setKartuStockData: (d) => { kartuStockData = d || { fifo:[], lifo:[], wa:[], mwa:[] }; },
+  getKsJustWroteDirectly: () => _ksJustWroteDirectly,
+  setKsJustWroteDirectly: (v) => { _ksJustWroteDirectly = !!v; },
 };

@@ -2454,3 +2454,381 @@ function updatePwaBtn() {
     txt.textContent = 'Install App';
   }
 }
+
+// LEGACY AKUN PICKER BOTTOM SHEET (relocated for remaining Domain 3 legacy modals: 08-kartu-stock, 29-bill-ui)
+let _simplePickerHiddenId = null;
+let _simplePickerBtnId = null;
+let _simplePickerFilter = null;
+let _pickerTriggerBtn = null;
+
+const PICKER_FILTERS = {
+  'kas': a => !['1101','1102','1103','1104'].includes(a.kode),
+  'beli': a => ['Beban','Aset','HPP'].includes(a.tipe),
+  'utang': a => a.tipe === 'Liabilitas',
+  'persediaan': a => a.tipe === 'Aset' && (a.nama.toLowerCase().includes('persediaan') || a.kode.startsWith('13')),
+};
+
+function openSimplePicker(hiddenInputId, btnId, mode) {
+  _simplePickerHiddenId = hiddenInputId;
+  _simplePickerBtnId = btnId;
+  _simplePickerFilter = PICKER_FILTERS[mode] || null;
+  document.getElementById('akun-picker-search').value = '';
+  const currentVal = document.getElementById(hiddenInputId)?.value || '';
+  renderFilteredPickerList('', currentVal, _simplePickerFilter);
+  document.getElementById('akun-picker-backdrop').classList.add('open');
+  setTimeout(() => document.getElementById('akun-picker-search').focus(), 200);
+}
+
+function openAkunPicker(triggerBtn) {
+  _simplePickerHiddenId = null;
+  _simplePickerBtnId = null;
+  _simplePickerFilter = null;
+  _pickerTriggerBtn = triggerBtn;
+  const row = triggerBtn.closest('.jurnal-line-row');
+  const sel = row?.querySelector('select');
+  document.getElementById('akun-picker-search').value = '';
+  renderAkunPickerList('', sel?.value || '');
+  document.getElementById('akun-picker-backdrop').classList.add('open');
+  setTimeout(() => document.getElementById('akun-picker-search').focus(), 200);
+}
+
+function closeAkunPicker(e) {
+  if (e && e.target !== document.getElementById('akun-picker-backdrop')) return;
+  document.getElementById('akun-picker-backdrop').classList.remove('open');
+  _pickerTriggerBtn = null;
+  _simplePickerHiddenId = null;
+  _simplePickerBtnId = null;
+  _simplePickerFilter = null;
+}
+
+function filterAkunPicker(q) {
+  if (_simplePickerHiddenId) {
+    const currentVal = document.getElementById(_simplePickerHiddenId)?.value || '';
+    renderFilteredPickerList(q, currentVal, _simplePickerFilter);
+  } else if (_pickerTriggerBtn) {
+    const row = _pickerTriggerBtn?.closest('.jurnal-line-row');
+    const sel = row?.querySelector('select');
+    renderAkunPickerList(q, sel?.value || '');
+  }
+}
+
+function renderAkunPickerList(query, selectedKode) {
+  const q = query.toLowerCase();
+  const filtered = akuns.filter(a =>
+    !q || a.kode.includes(q) || a.nama.toLowerCase().includes(q) || a.tipe.toLowerCase().includes(q)
+  );
+  const list = document.getElementById('akun-picker-list');
+  if (!filtered.length) {
+    list.innerHTML = `<div id="akun-picker-empty"><i class="ti ti-mood-empty" style="font-size:20px;display:block;margin:0 auto 6px;"></i> Akun tidak ditemukan<br><small>Coba kata kunci lain</small></div>`;
+    return;
+  }
+  const groups = {};
+  filtered.forEach(a => {
+    if (!groups[a.tipe]) groups[a.tipe] = [];
+    groups[a.tipe].push(a);
+  });
+  const tipeColor = t => ({Aset:'aset',Liabilitas:'liabilitas',Ekuitas:'ekuitas',Pendapatan:'pendapatan',Beban:'beban',HPP:'beban'})[t] || 'beban';
+  let html = '';
+  Object.entries(groups).forEach(([tipe, items]) => {
+    html += `<div class="akun-picker-group-label">${tipe}</div>`;
+    items.forEach(a => {
+      const sel = a.kode === selectedKode ? ' selected' : '';
+      html += `<div class="akun-picker-item${sel}" onclick="_simplePickerHiddenId?selectSimplePicker('${escapeForJsAttr(a.kode)}','${escapeForJsAttr(a.nama)}'):selectAkunFromPicker('${escapeForJsAttr(a.kode)}','${escapeForJsAttr(a.nama)}')">
+        <span class="akun-picker-kode">${a.kode}</span>
+        <span class="akun-picker-nama">${a.nama}</span>
+        <span class="akun-picker-tipe ${tipeColor(a.tipe)}">${tipe}</span>
+      </div>`;
+    });
+  });
+  list.innerHTML = html;
+}
+
+function renderFilteredPickerList(query, selectedKode, filterFn) {
+  const q = query.toLowerCase();
+  const base = filterFn ? akuns.filter(filterFn) : akuns;
+  const filtered = base.filter(a =>
+    !q || a.kode.includes(q) || a.nama.toLowerCase().includes(q) || a.tipe.toLowerCase().includes(q)
+  );
+  const list = document.getElementById('akun-picker-list');
+  if (!filtered.length) {
+    list.innerHTML = `<div id="akun-picker-empty"><i class="ti ti-mood-empty" style="font-size:20px;display:block;margin:0 auto 6px;"></i> Akun tidak ditemukan</div>`;
+    return;
+  }
+  const groups = {};
+  filtered.forEach(a => { if (!groups[a.tipe]) groups[a.tipe] = []; groups[a.tipe].push(a); });
+  const tipeColor = t => ({Aset:'aset',Liabilitas:'liabilitas',Ekuitas:'ekuitas',Pendapatan:'pendapatan',Beban:'beban',HPP:'beban'})[t] || 'beban';
+  let html = '';
+  Object.entries(groups).forEach(([tipe, items]) => {
+    html += `<div class="akun-picker-group-label">${tipe}</div>`;
+    items.forEach(a => {
+      const sel = a.kode === selectedKode ? ' selected' : '';
+      html += `<div class="akun-picker-item${sel}" onclick="selectSimplePicker('${escapeForJsAttr(a.kode)}','${escapeForJsAttr(a.nama)}')">
+        <span class="akun-picker-kode">${a.kode}</span>
+        <span class="akun-picker-nama">${a.nama}</span>
+        <span class="akun-picker-tipe ${tipeColor(a.tipe)}">${tipe}</span>
+      </div>`;
+    });
+  });
+  list.innerHTML = html;
+}
+
+function selectSimplePicker(kode, nama) {
+  if (_simplePickerHiddenId) {
+    const hidden = document.getElementById(_simplePickerHiddenId);
+    const btn = document.getElementById(_simplePickerBtnId);
+    if (hidden) hidden.value = kode;
+    if (btn) {
+      btn.classList.add('has-value');
+      if (_simplePickerHiddenId === 'bb-akun-filter-val') {
+        btn.innerHTML = `<span class="picker-kode-badge" style="font-family:var(--mono);font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;margin-right:6px;">${escapeHtml(kode)}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(nama)}</span>`;
+      } else {
+        btn.innerHTML = `<span class="picker-kode-badge">${escapeHtml(kode)}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(nama)}</span>`;
+      }
+    }
+    const isBukuBesar = _simplePickerHiddenId === 'bb-akun-filter-val';
+    _simplePickerHiddenId = null;
+    _simplePickerBtnId = null;
+    _simplePickerFilter = null;
+    document.getElementById('akun-picker-backdrop').classList.remove('open');
+    if (isBukuBesar) setTimeout(renderBukuBesar, 50);
+  } else {
+    selectAkunFromPicker(kode, nama);
+  }
+}
+
+function selectAkunFromPicker(kode, nama) {
+  if (!_pickerTriggerBtn) return;
+  const row = _pickerTriggerBtn.closest('.jurnal-line-row');
+  if (!row) return;
+  const sel = row.querySelector('select');
+  if (sel) sel.value = kode;
+  _pickerTriggerBtn.textContent = kode + ' — ' + nama;
+  document.getElementById('akun-picker-backdrop').classList.remove('open');
+  _pickerTriggerBtn = null;
+}
+
+function syncAkunTrigger(sel) {
+  const row = sel.closest('.jurnal-line-row');
+  const btn = row?.querySelector('.akun-trigger-btn');
+  if (!btn) return;
+  const a = akuns.find(x => x.kode === sel.value);
+  if (a) btn.textContent = a.kode + ' — ' + a.nama;
+}
+
+// Relocated spinner & global search from retired 13-analitik-dashboard.js (Domain 4B)
+
+// ── GLOBAL OPERATION SPINNER + NOTIFIKASI SUKSES (morph spinner → checklist) ──
+let _opSpinnerDepth = 0;
+let _opSpinnerTimer = null;
+let _successLock = false;   // true selama checklist sukses sedang tampil — hideOpSpinner() tidak boleh menutup paksa
+let _successTimer = null;
+
+function showOpSpinner(label, sub) {
+  if (_successLock) return; // sedang menampilkan checklist sukses, jangan dibuka ulang jadi spinner
+  _opSpinnerDepth++;
+  if (_opSpinnerTimer) { clearTimeout(_opSpinnerTimer); _opSpinnerTimer = null; }
+  const overlay = document.getElementById('op-spinner-overlay');
+  const card = document.getElementById('op-spinner-card');
+  const labelEl = document.getElementById('op-spinner-label');
+  const subEl = document.getElementById('op-spinner-sub');
+  if(card) card.classList.remove('success');
+  if(labelEl) labelEl.textContent = label || 'Memproses...';
+  if(subEl) subEl.textContent = sub || '';
+  if(overlay) overlay.classList.add('active');
+}
+function hideOpSpinner() {
+  if (_successLock) return; // biarkan showAlert() yang mengatur penutupan
+  _opSpinnerDepth = Math.max(0, _opSpinnerDepth - 1);
+  if(_opSpinnerDepth > 0) return;
+  const overlay = document.getElementById('op-spinner-overlay');
+  if(overlay) {
+    const card = document.getElementById('op-spinner-card');
+    if(card) card.style.animation = 'opSpinnerIn 0.15s ease reverse both';
+    _opSpinnerTimer = setTimeout(() => {
+      if(overlay) overlay.classList.remove('active');
+      if(card) { card.style.animation = ''; card.classList.remove('success'); }
+      _opSpinnerTimer = null;
+    }, 150);
+  }
+}
+
+
+function openGlobalSearch() {
+  document.getElementById('global-search-wrap').classList.add('open');
+  setTimeout(() => document.getElementById('global-search-input').focus(), 100);
+  doGlobalSearch('');
+}
+function closeGlobalSearch() {
+  document.getElementById('global-search-wrap').classList.remove('open');
+  document.getElementById('global-search-input').value = '';
+  searchIdx = -1;
+}
+
+function doGlobalSearch(q) {
+  const res = document.getElementById('global-search-results');
+  const query = q.toLowerCase().trim();
+  const items = [];
+
+  // Menu pages — icon classes mirror the sidebar nav exactly (same icon, no inline color)
+  const ic = name => `<i class="ti ti-${name} ti-inline"></i>`;
+  const pages = [
+    { icon:ic('layout-dashboard'), title:'Dashboard', sub:'Ringkasan keuangan', page:'dashboard' },
+    { icon:ic('circle-plus'), title:'Transaksi', sub:'Input transaksi baru', page:'transaksi' },
+    { icon:ic('book'), title:'Jurnal Umum', sub:'Semua entri jurnal', page:'jurnal-umum' },
+    { icon:ic('cash'), title:'Jurnal Kas', sub:'Mutasi kas', page:'jurnal-kas' },
+    { icon:ic('receipt'), title:'Jurnal Penjualan', sub:'Transaksi penjualan', page:'jurnal-penjualan' },
+    { icon:ic('shopping-cart'), title:'Jurnal Pembelian', sub:'Transaksi pembelian', page:'jurnal-pembelian' },
+    { icon:ic('books'), title:'Buku Besar', sub:'Mutasi per akun', page:'buku-besar' },
+    { icon:ic('scale'), title:'Neraca Saldo', sub:'Saldo semua akun', page:'neraca-saldo' },
+    { icon:ic('trending-up'), title:'Laba Rugi', sub:'Laporan laba rugi', page:'laba-rugi' },
+    { icon:ic('building-bank'), title:'Neraca', sub:'Balance sheet', page:'neraca' },
+    { icon:ic('arrows-exchange'), title:'Arus Kas', sub:'Laporan arus kas', page:'arus-kas' },
+    { icon:ic('chart-area'), title:'Perubahan Ekuitas', sub:'Laporan perubahan ekuitas', page:'perubahan-ekuitas' },
+    { icon:ic('chart-bar'), title:'Analitik', sub:'Grafik analitik bisnis', page:'analitik' },
+    { icon:ic('package'), title:'Master Produk', sub:'Daftar produk', page:'produk' },
+    { icon:ic('list'), title:'Chart of Accounts', sub:'Daftar akun', page:'akun' },
+    { icon:ic('building-factory'), title:'Aset Tetap', sub:'Daftar aset tetap', page:'aset-tetap' },
+    { icon:ic('users'), title:'Kontak', sub:'Pelanggan & pemasok', page:'kontak' },
+    { icon:ic('building-factory-2'), title:'Kalkulator Penyusutan', sub:'Hitung depresiasi aset', page:'kalk-penyusutan' },
+    { icon:ic('package'), title:'Kalkulator Persediaan', sub:'FIFO/LIFO/WA', page:'kalk-persediaan' },
+    { icon:ic('chart-candle'), title:'Kalkulator Bunga', sub:'Anuitas, cicilan, PV/FV', page:'kalk-bunga' },
+    { icon:ic('ruler'), title:'Kalkulator Rasio', sub:'Analisis rasio keuangan', page:'kalk-rasio' },
+    { icon:ic('bolt'), title:'Kalkulator BEP', sub:'Break even point', page:'kalk-bep' },
+    { icon:ic('refresh'), title:'Jurnal Berulang', sub:'Template transaksi otomatis', page:'jurnal-berulang' },
+    { icon:ic('file-invoice'), title:'Invoice', sub:'Invoice & piutang', page:'invoice' },
+    { icon:ic('git-compare'), title:'Rekonsiliasi', sub:'Rekonsiliasi bank', page:'rekonsiliasi' },
+    { icon:ic('currency-dollar'), title:'Kurs', sub:'Kurs & multi mata uang', page:'kurs' },
+    { icon:ic('bell'), title:'Notifikasi', sub:'Pemberitahuan', page:'notifikasi' },
+    { icon:ic('target'), title:'Anggaran', sub:'Anggaran vs aktual', page:'anggaran' },
+    { icon:ic('receipt-tax'), title:'Pajak Auto', sub:'Kalkulasi pajak otomatis', page:'pajak' },
+    { icon:ic('robot'), title:'Orias Assisten', sub:'AI akuntansi', page:'ai-assistant' },
+    { icon:ic('school'), title:'Tutorial', sub:'Panduan penggunaan', page:'tutorial' },
+    { icon:ic('shield-check'), title:'Audit Trail', sub:'Riwayat aktivitas', page:'audit-trail' },
+  ];
+
+  pages.forEach(p => {
+    if(!query || p.title.toLowerCase().includes(query) || p.sub.toLowerCase().includes(query)) {
+      items.push({ ...p, type:'page', action: () => { showPage(p.page); closeGlobalSearch(); } });
+    }
+  });
+
+  // Quick actions — not full pages, trigger a modal/behavior directly
+  const actions = [
+    { icon:ic('upload'), title:'Export', sub:'Export laporan keuangan', action: () => { openExportModal(); closeGlobalSearch(); } },
+    { icon:ic('users'), title:'Kelola Tim', sub:'Manajemen pengguna & izin akses', action: () => { openUserMgmtModal(); closeGlobalSearch(); } },
+    { icon:ic('login'), title:'Gabung Bisnis', sub:'Gabung dengan kode undangan', action: () => { openJoinWithCodeModal(); closeGlobalSearch(); } },
+  ];
+  actions.forEach(a => {
+    if(!query || a.title.toLowerCase().includes(query) || a.sub.toLowerCase().includes(query)) {
+      items.push({ ...a, type:'aksi' });
+    }
+  });
+
+  // Journals
+  if(query.length >= 2) {
+    jurnalEntries.filter(j => j.ket.toLowerCase().includes(query) || j.no.toLowerCase().includes(query))
+      .slice(0, 5).forEach(j => {
+        const tot = j.lines.reduce((s,l)=>s+(l.debit||0),0);
+        items.push({
+          icon: jeninsBadge(j.jenis) === 'badge-green' ? '<i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>' : '<i class="ti ti-book" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>',
+          title: j.ket, sub: `${j.tanggal} · ${j.no} · ${fmtRp(tot)}`,
+          type: 'jurnal', badge: j.jenis,
+          action: () => { showPage('jurnal-umum'); closeGlobalSearch(); setTimeout(() => { const f=document.getElementById('filter-ju'); if(f){f.value=j.ket.split(' ')[0]; renderJurnalUmum();} }, 100); }
+        });
+      });
+
+    // Akun
+    akuns.filter(a => a.nama.toLowerCase().includes(query) || a.kode.includes(query))
+      .slice(0, 4).forEach(a => {
+        items.push({
+          icon: ic('list'), title: `${a.kode} — ${a.nama}`, sub: `${a.tipe} · ${a.kat}`,
+          type: 'akun',
+          action: () => { showPage('buku-besar'); closeGlobalSearch(); setTimeout(() => { const h=document.getElementById('bb-akun-filter-val'); const b=document.getElementById('bb-akun-filter-btn'); if(h){h.value=a.kode; if(b){b.innerHTML=`<span class="picker-kode-badge" style="font-family:var(--mono);font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;margin-right:6px;">${escapeHtml(a.kode)}</span><span style="flex:1;">${escapeHtml(a.nama)}</span>`;} renderBukuBesar();} }, 100); }
+        });
+      });
+  }
+
+  if(!items.length) {
+    res.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px;">Tidak ada hasil untuk "${escapeHtml(q)}"</div>`;
+    return;
+  }
+
+  searchIdx = -1;
+  res.innerHTML = items.map((item, i) => `
+    <div class="search-result-item" data-idx="${i}" onclick="searchItems[${i}].action()">
+      <span class="sri-icon">${item.icon}</span>
+      <div class="sri-text">
+        <div class="sri-title">${escapeHtml(item.title)}</div>
+        <div class="sri-sub">${item.sub}</div>
+      </div>
+      ${item.badge ? `<span class="badge ${jeninsBadge(item.badge)} sri-badge">${item.badge}</span>` : ''}
+      ${item.type==='page' ? '<span style="font-size:10px;color:var(--muted);">Halaman</span>' : ''}
+      ${item.type==='aksi' ? '<span style="font-size:10px;color:var(--muted);">Aksi</span>' : ''}
+    </div>`).join('');
+
+  // Store items for keyboard nav
+  window.searchItems = items;
+}
+
+function handleSearchKey(e) {
+  const items = document.querySelectorAll('.search-result-item');
+  if(e.key === 'ArrowDown') { searchIdx = Math.min(searchIdx+1, items.length-1); highlightSearch(); e.preventDefault(); }
+  else if(e.key === 'ArrowUp') { searchIdx = Math.max(searchIdx-1, 0); highlightSearch(); e.preventDefault(); }
+  else if(e.key === 'Enter') { if(searchIdx >= 0 && window.searchItems?.[searchIdx]) window.searchItems[searchIdx].action(); }
+  else if(e.key === 'Escape') closeGlobalSearch();
+}
+function highlightSearch() {
+  document.querySelectorAll('.search-result-item').forEach((el,i) => el.classList.toggle('active', i===searchIdx));
+  const active = document.querySelector('.search-result-item.active');
+  if(active) active.scrollIntoView({ block:'nearest' });
+}
+
+// KEYBOARD SHORTCUTS
+document.addEventListener('keydown', (e) => {
+  // Ctrl+K or Cmd+K — Global search
+  if((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); openGlobalSearch(); }
+  // Ctrl+S — Save
+  if((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); manualSave(); }
+  // Ctrl+N — New transaction
+  if((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); showPage('transaksi'); }
+  // Escape — close search if open
+  if(e.key === 'Escape') {
+    if(document.getElementById('global-search-wrap')?.classList.contains('open')) closeGlobalSearch();
+    // Tutup tutorial selesai dengan Escape
+    const tutComplete = document.getElementById('tut-complete');
+    if(tutComplete && tutComplete.style.display !== 'none') tutComplete.style.display = 'none';
+  }
+});
+
+// PERIOD FILTER SHOW/HIDE
+document.getElementById('dash-filter-period')?.addEventListener('change', function() {
+  const cr = document.getElementById('dash-custom-range');
+  if(this.value === 'custom') cr?.classList.add('show');
+  else cr?.classList.remove('show');
+});
+
+// FILTER PERIOD ON REPORTS
+// Add period filter to laporan pages
+function addPeriodFilterToReports() {
+  ['laba-rugi','neraca-saldo','neraca'].forEach(id => {
+    const page = document.getElementById('page-'+id);
+    if(!page || page.dataset.reactManaged === '1' || page.querySelector('.report-period-filter')) return;
+    const filterDiv = document.createElement('div');
+    filterDiv.className = 'filter-bar report-period-filter';
+    filterDiv.style.marginBottom = '14px';
+    filterDiv.innerHTML = `
+      <select class="report-period-sel" onchange="renderReportWithPeriod('${id}', this.value)"
+        style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;font-family:var(--sans);">
+        <option value="all">Semua Periode</option>
+        <option value="this-month">Bulan Ini</option>
+        <option value="last-month">Bulan Lalu</option>
+        <option value="this-quarter">Kuartal Ini</option>
+        <option value="this-year">Tahun Ini</option>
+      </select>
+      <span class="report-period-label" style="font-size:12px;color:var(--accent2);font-family:var(--mono);"></span>
+    `;
+    const header = page.querySelector('.section-header');
+    if(header) header.after(filterDiv);
+    else page.prepend(filterDiv);
+  });
+}

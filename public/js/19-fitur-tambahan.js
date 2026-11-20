@@ -192,37 +192,28 @@ function toggleAktifJB(id) {
   if(j) { j.aktif = !j.aktif; saveFiturBaru(); renderJurnalBerulang(); }
 }
 
-// INVOICE & PIUTANG
-let _invItems = [];
+// Invoice & Piutang migrated to src/components/piutang/InvoicePage.tsx
 
-function openModalInvoice(editId) {
-  if (typeof guardHanyaBaca === 'function' && guardHanyaBaca('Invoice')) return;
-  _invItems = [{ nama:'', qty:1, harga:0 }];
-  const tgl = new Date().toISOString().split('T')[0];
-  const due = new Date(Date.now()+30*86400000).toISOString().split('T')[0];
-  document.getElementById('inv-tgl').value = tgl;
-  document.getElementById('inv-jatuh-tempo').value = due;
-  document.getElementById('inv-no').value = nomorInvoiceBerikut(); // 23-penomoran.js
-  document.getElementById('inv-pelanggan').value = '';
-  document.getElementById('inv-deskripsi').value = '';
-
-  // Set default akun via hidden inputs + update btn label
-  const setPickerDefault = (hiddenId, btnId, kode) => {
-    const h=document.getElementById(hiddenId); if(h) h.value=kode;
-    const akun=akuns.find(a=>a.kode===kode);
-    const btn=document.getElementById(btnId);
-    if(btn&&akun){btn.innerHTML=`<span class="picker-kode-badge">${escapeHtml(akun.kode)}</span> ${escapeHtml(akun.nama)}`;btn.classList.add('has-value');}
+// Relocated from retired 11-kontak-invoice.js (Domain 3A)
+function handleRekonCSV(input) {
+  const file = input.files[0]; if(!file) return;
+  document.getElementById('rekon-file-name').textContent = file.name;
+  showOpSpinner('Membaca File CSV...', 'Memparse data mutasi bank');
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.split('\n').filter(l=>l.trim());
+    const bank = document.getElementById('rekon-bank').value;
+    rekonData.baris = parseCSVBank(lines, bank);
+    hideOpSpinner();
+    document.getElementById('rekon-summary').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="stat-card" style="padding:14px;"><div style="font-size:20px"><i class="ti ti-chart-bar ti-inline"></i></div><div class="stat-label">Total Baris</div><div style="font-size:18px;font-weight:700;color:var(--accent2);font-family:var(--mono);">${rekonData.baris.length}</div></div>
+        <div class="stat-card" style="padding:14px;"><div style="font-size:20px">💰</div><div class="stat-label">Total Mutasi</div><div style="font-size:16px;font-weight:700;color:var(--accent);font-family:var(--mono);">${rp(rekonData.baris.reduce((s,b)=>s+Math.abs(b.nominal),0))}</div></div>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:rgba(74,222,128,0.08);border-radius:8px;font-size:12px;color:var(--accent);"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ${rekonData.baris.length} baris siap diproses. Klik "Proses Rekonsiliasi".</div>`;
+    showAlert(`✓ File ${file.name} berhasil dibaca: ${rekonData.baris.length} transaksi`);
   };
-  const piutangDefault = akuns.find(a=>a.tipe==='Aset'&&a.nama.toLowerCase().includes('piutang'));
-  const pendDefault = akuns.find(a=>a.tipe==='Pendapatan');
-  if(piutangDefault) setPickerDefault('inv-akun-piutang','inv-akun-piutang-btn',piutangDefault.kode);
-  if(pendDefault) setPickerDefault('inv-akun-pend','inv-akun-pend-btn',pendDefault.kode);
-
-  const _sel = document.getElementById('inv-ppn-tarif');
-  if(_sel) _sel.value = String(PPN_TARIF_STANDAR);
-  renderInvoiceItems();
-  openModal('modal-invoice');
-  setTimeout(upgradeFormPickers, 80);
+  reader.readAsText(file);
 }
 
 function parseCSVBank(lines, bank) {
@@ -1848,3 +1839,857 @@ function showOrgMembersSQL() {
 // Auto-cek notifikasi saat load — DIPINDAH dari 13-analitik-dashboard.js
 // (harus dipanggil SETELAH function cekNotifikasi() di atas selesai didefinisikan)
 setTimeout(cekNotifikasi, 2000);
+
+// Relocated Auto-Penyesuaian from retired 08-kartu-stock.js (Domain 3B)
+
+
+function deteksiPenyesuaianOtomatis() {
+  if (!jurnalEntries.length) {
+    showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Belum ada jurnal yang tercatat. Input transaksi dulu!');
+    return;
+  }
+  showOpSpinner('Menganalisis Jurnal...', 'Memindai & mendeteksi yang perlu disesuaikan');
+
+  setTimeout(() => {
+    _autoDetectResults = [];
+    const today = new Date();
+    const periodeAktif = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+    const idSet = new Set(); // FIX BUG 1: dedup — satu ID hanya boleh muncul sekali
+
+    // ── Helpers ─────────────────────────────────────────────
+    /** Saldo bersih akun dari semua jurnal (debit - kredit) */
+    function getSaldoDebit(kode) {
+      let s = 0;
+      jurnalEntries.forEach(j => j.lines.forEach(l => {
+        if (l.akun === kode) s += (l.debit||0) - (l.kredit||0);
+      }));
+      return s;
+    }
+    /** Saldo kredit bersih (untuk akun liabilitas) */
+    function getSaldoKredit(kode) {
+      let s = 0;
+      jurnalEntries.forEach(j => j.lines.forEach(l => {
+        if (l.akun === kode) s += (l.kredit||0) - (l.debit||0);
+      }));
+      return s;
+    }
+    /** Cek apakah sudah ada jurnal penyesuaian bulan ini yang menyentuh akun tertentu */
+    function sudahAdaAdjAkun(kodeAkun) {
+      return jurnalEntries.some(j =>
+        j.tanggal?.startsWith(periodeAktif) &&
+        (j.jenis === 'Penyesuaian' || j.no?.startsWith('ADJ') || j.ket?.toLowerCase().includes('penyesuaian')) &&
+        j.lines.some(l => l.akun === kodeAkun)
+      );
+    }
+    /** Tambah hasil hanya jika ID unik */
+    function push(item) {
+      if (idSet.has(item.id)) return;
+      idSet.add(item.id);
+      _autoDetectResults.push(item);
+    }
+
+    // ── 1. BEBAN DIBAYAR DIMUKA (akun 1601) ─────────────────
+    const saldoBDD = getSaldoDebit('1601');
+    if (saldoBDD > 10000 && !sudahAdaAdjAkun('1601')) {
+      // Cari semua jurnal masuk ke akun 1601
+      const masukList = jurnalEntries.filter(j => j.lines.some(l => l.akun==='1601' && (l.debit||0)>0));
+      // Ambil yang paling besar (kemungkinan pembayaran terbaru)
+      const jTerbaru = masukList.sort((a,b) => (b.tanggal||'') > (a.tanggal||'') ? 1:-1)[0];
+      if (jTerbaru) {
+        const nilaiAwal = jTerbaru.lines.find(l=>l.akun==='1601'&&l.debit>0)?.debit || saldoBDD;
+        const tglMasuk = new Date(jTerbaru.tanggal);
+        const bulanBerlalu = Math.max(1,
+          (today.getFullYear()-tglMasuk.getFullYear())*12 + (today.getMonth()-tglMasuk.getMonth())
+        );
+        const perBulan = Math.round(nilaiAwal / 12);
+        const nilaiSesuaikan = Math.min(perBulan, saldoBDD); // hanya 1 bulan, bukan kumulatif
+        if (nilaiSesuaikan > 0) {
+          push({
+            id: 'adj_bdd',
+            tipe: 'beban_dibayar_dimuka',
+            level: 'warning',
+            judul: '📅 Beban Dibayar Dimuka Belum Diakui',
+            deskripsi: `Akun <b>1601 — Biaya Dibayar Dimuka</b> saldo <b>${rp(saldoBDD)}</b>. Dibayar ${jTerbaru.tanggal} senilai <b>${rp(nilaiAwal)}</b>. Estimasi beban bulan ini: <b>${rp(nilaiSesuaikan)}</b> (1/12 nilai).`,
+            alasan: 'Biaya dibayar dimuka diakui sebagai beban pada periode yang dinikmati (matching principle).',
+            nilaiSuggested: nilaiSesuaikan,
+            lines: [
+              { akun:'6201', ket:'Beban Dibayar Dimuka (terpakai)', debit: nilaiSesuaikan, kredit: 0 },
+              { akun:'1601', ket:'Biaya Dibayar Dimuka (dikurangi)', debit: 0, kredit: nilaiSesuaikan }
+            ],
+            checked: false, perluInput: true
+          });
+        }
+      }
+    }
+
+    // ── 2. PENDAPATAN DITERIMA DIMUKA (2201, 2202) ───────────
+    [
+      {kode:'2201', nama:'Pendapatan Diterima Dimuka'},
+      {kode:'2202', nama:'Uang Muka Penjualan'},
+    ].forEach(({kode, nama}) => {
+      const saldo = getSaldoKredit(kode);
+      if (saldo > 10000 && !sudahAdaAdjAkun(kode)) {
+        const perBulan = Math.round(saldo / 12);
+        const nilaiEarned = Math.min(perBulan, saldo);
+        if (nilaiEarned > 0) {
+          push({
+            id: 'adj_pdd_' + kode,
+            tipe: 'pendapatan_diterima_dimuka',
+            level: 'info',
+            judul: `💰 ${nama} Harus Diakui`,
+            deskripsi: `Akun <b>${kode} — ${nama}</b> saldo <b>${rp(saldo)}</b>. Estimasi yang sudah earned bulan ini: <b>${rp(nilaiEarned)}</b>.`,
+            alasan: 'Pendapatan diterima dimuka dipindahkan ke akun pendapatan saat jasa/produk sudah diserahkan.',
+            nilaiSuggested: nilaiEarned,
+            lines: [
+              { akun: kode,   ket: nama + ' (diakui bulan ini)', debit: nilaiEarned, kredit: 0 },
+              { akun: '4101', ket: 'Pendapatan Jasa/Penjualan',  debit: 0, kredit: nilaiEarned }
+            ],
+            checked: false, perluInput: true
+          });
+        }
+      }
+    });
+
+    // ── 3. PENYUSUTAN ASET TETAP ─────────────────────────────
+    // FIX BUG 2: akun beban penyusutan harus sesuai aset, bukan hardcode 6303
+    // FIX BUG 2: penyusutan hanya dari aset tetap sesungguhnya, BUKAN dari perlengkapan
+    const asetTetapPairs = [
+      {aset:'1702', akum:'1703', beban:'6301', nama:'Bangunan',            umur:20},
+      {aset:'1711', akum:'1712', beban:'6302', nama:'Kendaraan',           umur:5},
+      {aset:'1721', akum:'1722', beban:'6303', nama:'Peralatan Kantor',    umur:5},
+      {aset:'1731', akum:'1732', beban:'6304', nama:'Mesin & Produksi',    umur:10},
+      {aset:'1741', akum:'1742', beban:'6305', nama:'Inventaris & Furnitur',umur:8},
+      {aset:'1751', akum:'1752', beban:'6305', nama:'Komputer & Laptop',   umur:4},
+    ];
+    asetTetapPairs.forEach(({aset, akum, beban, nama, umur}) => {
+      const nilaiAset = getSaldoDebit(aset);
+      if (nilaiAset < 500000) return; // skip jika tidak ada aset ini
+      if (sudahAdaAdjAkun(akum)) return; // sudah ada penyusutan bulan ini untuk aset ini
+      const penyBulan = Math.round(nilaiAset / (umur * 12));
+      if (penyBulan <= 0) return;
+      push({
+        id: 'adj_peny_' + aset,
+        tipe: 'penyusutan',
+        level: 'warning',
+        judul: `<i class="ti ti-trending-down" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Penyusutan ${nama} Belum Dicatat`,
+        deskripsi: `Aset <b>${aset} — ${nama}</b> senilai <b>${rp(nilaiAset)}</b>. Umur ${umur} tahun → penyusutan garis lurus <b>${rp(penyBulan)}/bulan</b>. Bulan ${periodeAktif} belum ada.`,
+        alasan: 'Penyusutan dicatat tiap bulan agar nilai aset di neraca akurat (accrual basis).',
+        nilaiSuggested: penyBulan,
+        lines: [
+          { akun: beban, ket: `Beban Penyusutan ${nama}`,        debit: penyBulan, kredit: 0 },
+          { akun: akum,  ket: `Akumulasi Penyusutan ${nama}`,    debit: 0,         kredit: penyBulan }
+        ],
+        checked: true
+      });
+    });
+
+    // ── 4. PEMAKAIAN PERLENGKAPAN (1401, 1402) ───────────────
+    // FIX BUG 2: akun beban perlengkapan = 6205, BUKAN 6302
+    [
+      {kode:'1401', beban:'6205', nama:'Perlengkapan Kantor'},
+      {kode:'1402', beban:'6205', nama:'Perlengkapan Toko'},
+    ].forEach(({kode, beban, nama}) => {
+      const saldo = getSaldoDebit(kode);
+      if (saldo < 10000) return;
+      if (sudahAdaAdjAkun(kode)) return;
+      const estimasi = Math.round(saldo * 0.3); // estimasi 30%, perlu diisi manual
+      push({
+        id: 'adj_perlengkapan_' + kode,
+        tipe: 'perlengkapan',
+        level: 'info',
+        judul: `<i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Pemakaian ${nama} Belum Disesuaikan`,
+        deskripsi: `Akun <b>${kode} — ${nama}</b> saldo <b>${rp(saldo)}</b>. Perlengkapan yang terpakai harus diakui sebagai beban. Isi nilai yang benar-benar terpakai bulan ini.`,
+        alasan: 'Perlengkapan yang sudah digunakan dipindahkan ke Beban Perlengkapan agar saldo neraca akurat.',
+        nilaiSuggested: estimasi,
+        lines: [
+          { akun: beban, ket: `Beban Perlengkapan Terpakai`,  debit: estimasi, kredit: 0 },
+          { akun: kode,  ket: `${nama} (terpakai)`,           debit: 0,        kredit: estimasi }
+        ],
+        checked: false, perluInput: true
+      });
+    });
+
+    // ── 5. BEBAN AKRUAL (gaji/listrik/sewa belum dicatat) ────
+    const bebanRutin = [
+      { kode:'6101', nama:'Beban Gaji & Upah',   utang:'2101' },
+      { kode:'6201', nama:'Beban Listrik & Air',  utang:'2104' },
+      { kode:'6205', nama:'Beban Sewa',           utang:'2104' },
+    ];
+    bebanRutin.forEach(({kode, nama, utang}) => {
+      const pernahAda = jurnalEntries.some(j =>
+        j.tanggal && !j.tanggal.startsWith(periodeAktif) &&
+        j.lines.some(l => l.akun===kode && (l.debit||0)>0)
+      );
+      const sudahBulanIni = jurnalEntries.some(j =>
+        j.tanggal?.startsWith(periodeAktif) &&
+        j.lines.some(l => l.akun===kode && (l.debit||0)>0)
+      );
+      if (!pernahAda || sudahBulanIni) return;
+      // Rata-rata dari entri sebelumnya (maks 6 bulan, bagi 3)
+      const totalHistori = jurnalEntries
+        .filter(j => !j.tanggal?.startsWith(periodeAktif) && j.lines.some(l=>l.akun===kode))
+        .slice(-6)
+        .reduce((s,j)=>s+j.lines.filter(l=>l.akun===kode).reduce((ss,l)=>ss+(l.debit||0),0),0);
+      const rataRata = Math.round(totalHistori / 3) || 0;
+      if (rataRata <= 0) return;
+      push({
+        id: 'adj_akrual_' + kode,
+        tipe: 'beban_akrual',
+        level: 'warning',
+        judul: `💼 ${nama} Bulan Ini Belum Dicatat`,
+        deskripsi: `Akun <b>${kode} — ${nama}</b> biasanya ada setiap bulan tapi bulan <b>${periodeAktif}</b> belum ada. Rata-rata historis: <b>${rp(rataRata)}</b>.`,
+        alasan: 'Beban yang sudah terjadi tapi belum dibayar dicatat sebagai utang akrual agar laporan laba rugi akurat.',
+        nilaiSuggested: rataRata,
+        lines: [
+          { akun: kode,  ket: nama + ' (akrual)',                   debit: rataRata, kredit: 0 },
+          { akun: utang, ket: 'Utang ' + nama.replace('Beban ',''), debit: 0,        kredit: rataRata }
+        ],
+        checked: false, perluInput: true
+      });
+    });
+
+    // ── 6. CADANGAN KERUGIAN PIUTANG ─────────────────────────
+    const saldoPiutang = getSaldoDebit('1201');
+    const saldoCadangan = getSaldoKredit('1203');
+    if (saldoPiutang > 1000000 && !sudahAdaAdjAkun('1203')) {
+      const cadanganIdeal = Math.round(saldoPiutang * 0.02);
+      const selisih = cadanganIdeal - saldoCadangan;
+      if (selisih > 0) {
+        push({
+          id: 'adj_cadangan_piutang',
+          tipe: 'cadangan_piutang',
+          level: 'info',
+          judul: '<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Cadangan Kerugian Piutang Kurang',
+          deskripsi: `Piutang <b>${rp(saldoPiutang)}</b>, cadangan baru <b>${rp(saldoCadangan)}</b>. Standar 2% = <b>${rp(cadanganIdeal)}</b>. Perlu tambah: <b>${rp(selisih)}</b>.`,
+          alasan: 'Konservatisme: estimasi piutang tak tertagih dicatat sebagai beban kerugian.',
+          nilaiSuggested: selisih,
+          lines: [
+            { akun:'6401', ket:'Beban Kerugian Piutang',    debit: selisih, kredit: 0 },
+            { akun:'1203', ket:'Cadangan Kerugian Piutang', debit: 0,       kredit: selisih }
+          ],
+          checked: false
+        });
+      }
+    }
+
+    hideOpSpinner();
+    renderAutoDetectModal(_autoDetectResults);
+    openModal('modal-auto-penyesuaian');
+  }, 900);
+}
+
+function renderAutoDetectModal(results) {
+  const body = document.getElementById('auto-peny-result-body');
+  const btn  = document.getElementById('auto-peny-input-all-btn');
+
+  if (!results.length) {
+    body.innerHTML = `<div style="text-align:center;padding:40px 20px;">
+      <div style="font-size:48px;margin-bottom:12px;"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i></div>
+      <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;">Tidak Ada Penyesuaian Terdeteksi</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;">Semua akun sudah tercatat dengan baik untuk periode ini.<br>Tidak ada beban dibayar dimuka, penyusutan, pendapatan dimuka, atau akrual yang tertinggal.</div>
+    </div>`;
+    btn.style.display = 'none';
+    return;
+  }
+
+  btn.style.display = '';
+  const colorMap  = { warning:'rgba(245,158,11,0.08)',  info:'rgba(34,211,238,0.06)',  danger:'rgba(248,113,113,0.08)' };
+  const borderMap = { warning:'rgba(245,158,11,0.3)',   info:'rgba(34,211,238,0.2)',   danger:'rgba(248,113,113,0.25)' };
+
+  body.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:0 0 14px;line-height:1.6;">
+    Ditemukan <b style="color:var(--text)">${results.length} item</b> yang perlu disesuaikan.
+    Centang item yang ingin diinput, edit nilainya jika perlu, lalu klik <b>Input Semua yang Dipilih</b>.
+    <span style="color:var(--accent3);"><i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Item bertanda "Edit nilai" perlu diisi nominal aktual.</span>
+  </div>` +
+  results.map((r, i) => `
+  <div style="background:${colorMap[r.level]||colorMap.info};border:1px solid ${borderMap[r.level]||borderMap.info};border-radius:12px;padding:14px 16px;margin-bottom:10px;" id="adj-card-${i}">
+    <div style="display:flex;align-items:flex-start;gap:10px;">
+      <input type="checkbox" id="adj-check-${i}" ${r.checked?'checked':''}
+        style="width:17px;height:17px;accent-color:var(--accent);flex-shrink:0;margin-top:3px;cursor:pointer;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px;">${r.judul}</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:8px;">${r.deskripsi}</div>
+        <div style="font-size:11px;padding:6px 10px;background:rgba(0,0,0,0.15);border-radius:6px;color:var(--muted);margin-bottom:10px;font-style:italic;">
+          💡 ${r.alasan}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;color:var(--muted);">Nilai:</span>
+            <input type="number" id="adj-nilai-${i}" value="${r.nilaiSuggested}" min="1"
+              style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 9px;color:var(--text);font-size:12px;font-family:var(--mono);width:150px;outline:none;"
+              oninput="_autoDetectResults[${i}].nilaiSuggested=parseFloat(this.value)||0;_syncAdjLines(${i})">
+            ${r.perluInput?'<span style="color:var(--accent3);font-size:10px;font-weight:600;">← Edit nilai aktual</span>':''}
+          </div>
+          <button onclick="_toggleAdjPreview(${i})" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 9px;font-size:11px;color:var(--muted);cursor:pointer;"><i class="ti ti-eye" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Preview</button>
+          <button onclick="inputSatuAutoDetect(${i})" style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:6px;padding:4px 12px;font-size:11px;color:var(--accent);cursor:pointer;font-weight:600;">
+            ▶ Input Ini
+          </button>
+        </div>
+        <div id="adj-preview-${i}" style="display:none;margin-top:10px;border-radius:8px;overflow:hidden;border:1px solid var(--border);">
+          <table style="width:100%;font-size:11px;border-collapse:collapse;">
+            <thead><tr style="background:var(--surface2);">
+              <th style="padding:5px 9px;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);">Akun</th>
+              <th style="padding:5px 9px;text-align:right;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);">Debit</th>
+              <th style="padding:5px 9px;text-align:right;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);">Kredit</th>
+            </tr></thead>
+            <tbody id="adj-preview-tbody-${i}">
+              ${r.lines.map(l=>{
+                const nama = akuns.find(a=>a.kode===l.akun)?.nama||l.akun;
+                return `<tr>
+                  <td style="padding:5px 9px;">${l.akun} — ${nama}</td>
+                  <td style="padding:5px 9px;text-align:right;font-family:var(--mono);color:${l.debit?'var(--accent3)':'var(--muted)'};">${l.debit?rp(l.debit):'—'}</td>
+                  <td style="padding:5px 9px;text-align:right;font-family:var(--mono);color:${l.kredit?'var(--accent)':'var(--muted)'};">${l.kredit?rp(l.kredit):'—'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>`).join('');
+}
+
+function _syncAdjLines(idx) {
+  const r = _autoDetectResults[idx]; if (!r) return;
+  const nominal = r.nilaiSuggested;
+  r.lines.forEach(l => {
+    if (l.debit  > 0) l.debit  = nominal;
+    if (l.kredit > 0) l.kredit = nominal;
+  });
+  // Update preview table jika terbuka
+  const tbody = document.getElementById('adj-preview-tbody-' + idx);
+  if (tbody) {
+    tbody.querySelectorAll('tr').forEach((tr, li) => {
+      const l = r.lines[li]; if (!l) return;
+      const tds = tr.querySelectorAll('td');
+      if (tds[1]) tds[1].textContent = l.debit  ? rp(l.debit)  : '—';
+      if (tds[2]) tds[2].textContent = l.kredit ? rp(l.kredit) : '—';
+    });
+  }
+}
+
+function _toggleAdjPreview(idx) {
+  const el = document.getElementById('adj-preview-' + idx);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function inputSatuAutoDetect(idx) {
+  const r = _autoDetectResults[idx];
+  if (!r) return;
+  if (r._done) { showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Item ini sudah diinput sebelumnya'); return; }
+  if (!r.nilaiSuggested || r.nilaiSuggested <= 0) { showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Isi nilai yang valid (lebih dari 0)'); return; }
+  // Sync nilai ke lines dulu
+  _syncAdjLines(idx);
+  _buatJurnalPenyesuaianAuto([r]);
+  r._done = true;
+  // Visual feedback: redup card
+  const card = document.getElementById('adj-card-' + idx);
+  if (card) {
+    card.style.opacity = '0.45';
+    card.style.pointerEvents = 'none';
+    card.insertAdjacentHTML('beforeend', '<div style="text-align:center;padding:6px;font-size:12px;color:var(--accent);font-weight:700;"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Sudah diinput ke Jurnal Umum</div>');
+  }
+  showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Jurnal penyesuaian berhasil dibuat!');
+}
+
+function inputSemuaAutoDetect() {
+  // Kumpulkan yang di-centang, belum done, dan nilai valid
+  const terpilih = _autoDetectResults.filter((r, i) => {
+    const chk = document.getElementById('adj-check-' + i);
+    return chk?.checked && !r._done && (r.nilaiSuggested||0) > 0;
+  });
+  if (!terpilih.length) {
+    showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Pilih minimal 1 penyesuaian dan pastikan nilainya terisi (lebih dari 0)');
+    return;
+  }
+  // Sync semua nilai dulu
+  _autoDetectResults.forEach((r, i) => _syncAdjLines(i));
+  showOpSpinner(`Membuat ${terpilih.length} Jurnal Penyesuaian...`, 'Menyimpan ke Jurnal Umum');
+  setTimeout(() => {
+    _buatJurnalPenyesuaianAuto(terpilih);
+    // Tandai done
+    _autoDetectResults.forEach((r, i) => {
+      const chk = document.getElementById('adj-check-' + i);
+      if (chk?.checked && !r._done) {
+        r._done = true;
+        const card = document.getElementById('adj-card-' + i);
+        if (card) { card.style.opacity='0.45'; card.style.pointerEvents='none'; }
+      }
+    });
+    hideOpSpinner();
+    closeModal('modal-auto-penyesuaian');
+    showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ${terpilih.length} jurnal penyesuaian berhasil dibuat dan disimpan ke Jurnal Umum!`);
+  }, 700);
+}
+
+function _buatJurnalPenyesuaianAuto(items) {
+  const today = new Date().toISOString().split('T')[0];
+  items.forEach(r => {
+    const kode = nextKode('ADJ');
+    // FIX BUG 1: Pastikan lines memakai nilai terbaru (bukan stale dari saat render)
+    const lines = r.lines.map(l => ({
+      akun: l.akun,
+      ket:  l.ket,
+      debit:  l.debit  || 0,
+      kredit: l.kredit || 0
+    }));
+    postJurnalLegacy({
+      no: kode,
+      tanggal: today,
+      ket: 'J. Penyesuaian — ' + r.judul.replace(/[^\w\s\-]/gu,'').trim().slice(0,60),
+      jenis: 'Penyesuaian',
+      lines
+    });
+  });
+  saveToStorage(false);
+  cekNotifikasi();
+}
+
+function fillPenyesuaian(type) {
+  closeModal('modal-penyesuaian');
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('man-tanggal').value = today;
+
+  const templates = {
+    penyusutan: {
+      ket: 'Jurnal Penyesuaian — Penyusutan Aset',
+      no: 'ADJ-PEN',
+      lines: [
+        { akun: '6303', def: 0, label: 'Beban Penyusutan Peralatan' },
+        { akun: '1722', def: 0, label: 'Akum. Penyusutan Peralatan' },
+      ],
+      hint: 'Isi nilai penyusutan dari Kalkulator Penyusutan'
+    },
+    perlengkapan: {
+      ket: 'Jurnal Penyesuaian — Pemakaian Perlengkapan',
+      no: 'ADJ-PRL',
+      lines: [
+        { akun: '6205', def: 0, label: 'Beban Perlengkapan Kantor' },
+        { akun: '1401', def: 0, label: 'Perlengkapan Kantor' },
+      ]
+    },
+    beban_akrual: {
+      ket: 'Jurnal Penyesuaian — Beban Terutang (Akrual)',
+      no: 'ADJ-AKR',
+      lines: [
+        { akun: '6101', def: 0, label: 'Beban Gaji (belum dibayar)' },
+        { akun: '2201', def: 0, label: 'Utang Gaji' },
+      ]
+    },
+    beban_dibayar_dimuka: {
+      ket: 'Jurnal Penyesuaian — Beban Dibayar Dimuka (terpakai)',
+      no: 'ADJ-BDD',
+      lines: [
+        { akun: '6504', def: 0, label: 'Beban Asuransi (terpakai)' },
+        { akun: '1601', def: 0, label: 'Biaya Dibayar Dimuka' },
+      ]
+    },
+    pendapatan_diterima_dimuka: {
+      ket: 'Jurnal Penyesuaian — Pendapatan Diterima Dimuka (diakui)',
+      no: 'ADJ-PDD',
+      lines: [
+        { akun: '2401', def: 0, label: 'Pendapatan Diterima di Muka' },
+        { akun: '4102', def: 0, label: 'Pendapatan Jasa (diakui)' },
+      ]
+    },
+    pendapatan_akrual: {
+      ket: 'Jurnal Penyesuaian — Pendapatan Masih Harus Diterima',
+      no: 'ADJ-PAK',
+      lines: [
+        { akun: '1201', def: 0, label: 'Piutang Usaha (akrual)' },
+        { akun: '4102', def: 0, label: 'Pendapatan Jasa' },
+      ]
+    },
+    koreksi_persediaan: {
+      ket: 'Jurnal Penyesuaian — Koreksi Persediaan Akhir',
+      no: 'ADJ-PSR',
+      lines: [
+        { akun: '1301', def: 0, label: 'Persediaan Barang Dagangan' },
+        { akun: '5101', def: 0, label: 'HPP (penyesuaian)' },
+      ]
+    },
+    cadangan_piutang: {
+      ket: 'Jurnal Penyesuaian — Cadangan Kerugian Piutang',
+      no: 'ADJ-CKP',
+      lines: [
+        { akun: '6701', def: 0, label: 'Beban Kerugian Piutang' },
+        { akun: '1203', def: 0, label: 'Cadangan Kerugian Piutang' },
+      ]
+    },
+  };
+
+  const tmpl = templates[type];
+  if(!tmpl) return;
+
+  document.getElementById('man-ket').value = tmpl.ket;
+  document.getElementById('man-no').value = nextKode(tmpl.no);
+
+  // Clear and fill manual lines
+  const linesEl = document.getElementById('manual-lines');
+  linesEl.innerHTML = '';
+
+  tmpl.lines.forEach((line, i) => {
+    let manualLineId_local = i;
+    const div = document.createElement('div');
+    div.className = 'jurnal-line-row';
+    div.id = `ml-adj-${i}`;
+    const akunOpts = akuns.map(a =>
+      `<option value="${escapeHtml(a.kode)}" ${a.kode===line.akun?'selected':''}>${escapeHtml(a.kode)} - ${escapeHtml(a.nama)}</option>`
+    ).join('');
+    const isDebit = i === 0;
+    const selAkun = akuns.find(a=>a.kode===line.akun);
+    const btnLabel = selAkun ? escapeHtml(selAkun.kode+' — '+selAkun.nama) : 'Pilih Akun...';
+    div.innerHTML = `
+      <select onchange="syncAkunTrigger(this)">${akunOpts}</select>
+      <button class="akun-trigger-btn" type="button" onclick="openAkunPicker(this)" data-line-id="ml-adj-${i}">${btnLabel}</button>
+      <input type="text" value="${escapeHtml(line.label)}" placeholder="Keterangan">
+      <input type="number" placeholder="0" ${isDebit?'':'readonly'} oninput="updateBalance()">
+      <input type="number" placeholder="0" ${!isDebit?'':'readonly'} oninput="updateBalance()">
+      <button class="remove-line" onclick="document.getElementById('ml-adj-${i}').remove();updateBalance()">✕</button>`;
+    linesEl.appendChild(div);
+  });
+
+  updateBalance();
+  showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Template "${tmpl.ket}" sudah diisi. Masukkan nilainya lalu klik Simpan.`);
+}
+
+// Relocated saveFiturBaru & Pajak helpers from retired 13-analitik-dashboard.js (Domain 4B)
+
+function saveFiturBaru() {
+  localStorage.setItem('oas_jb_hist', JSON.stringify(jurnalBerulangHistory));
+  localStorage.setItem('oas_notif_hist', JSON.stringify(notifHistory));
+  // Invoice, kontak, aset tetap, jurnal berulang, anggaran, alert, dan kurs: bisnis login -> cloud (per company_id, lihat
+  // 22-cloud-records.js). Key global hanya untuk mode tamu; kalau login ikut menulis
+  // ke sana, data satu bisnis bocor ke tamu/bisnis lain di browser yang sama.
+  if (typeof currentCompany !== 'undefined' && currentCompany && typeof cloudSyncRecords === 'function') {
+    cloudSyncRecords(['invoice', 'kontak', 'aset_tetap', 'jurnal_berulang', 'anggaran', 'alert', 'kurs']);
+  } else {
+    localStorage.setItem('oas_invoices', JSON.stringify(invoiceList));
+    localStorage.setItem('oas_aset_tetap', JSON.stringify(asetTetapList));
+    localStorage.setItem('oas_kontak', JSON.stringify(kontakList));
+    localStorage.setItem('oas_jb', JSON.stringify(jurnalBerulangList));
+    localStorage.setItem('oas_anggaran', JSON.stringify(anggaranList));
+    localStorage.setItem('oas_kurs', JSON.stringify(kursData));
+    localStorage.setItem('oas_alerts', JSON.stringify(notifAlerts));
+  }
+}
+
+function hitungPPh21Otomatis() {
+  const gajiBruto=parseFloat(document.getElementById('pph21-gaji')?.value)||0;
+  const jmlKaryawan=parseInt(document.getElementById('pph21-karyawan')?.value)||1;
+  const el=document.getElementById('pph21-result'); if(!el) return;
+  if(!gajiBruto) { el.innerHTML=''; return; }
+  // Simplified PPh 21
+  const setahun=gajiBruto*12;
+  const biayaJabatan=Math.min(setahun*0.05,6000000);
+  const ptkp=54000000;
+  const pkp=Math.max(0,setahun-biayaJabatan-ptkp);
+  let pph=0;
+  if(pkp<=60000000) pph=pkp*0.05;
+  else if(pkp<=250000000) pph=3000000+(pkp-60000000)*0.15;
+  else if(pkp<=500000000) pph=31500000+(pkp-250000000)*0.25;
+  else pph=93500000+(pkp-500000000)*0.30;
+  const pphBulan=pph/12;
+  el.innerHTML=`<div style="background:var(--surface2);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;">
+    ${[['PKP Setahun',rp(pkp)],['PPh 21 Setahun',rp(pph)],['PPh 21/Bulan/Karyawan',rp(pphBulan)],['Total PPh 21/Bulan',rp(pphBulan*jmlKaryawan)]].map(([l,v])=>`
+    <div style="display:flex;justify-content:space-between;"><span style="font-size:12px;color:var(--muted)">${l}</span><span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent3)">${v}</span></div>`).join('')}
+  </div>`;
+}
+
+function hitungPPh23Otomatis() {
+  const jenis=document.getElementById('pph23-jenis')?.value;
+  const bruto=parseFloat(document.getElementById('pph23-bruto')?.value)||0;
+  const el=document.getElementById('pph23-result'); if(!el) return;
+  const tarifMap={jasa:0.02,royalti:0.15,sewa:0.02,dividen:0.15,bunga:0.15};
+  const tarif=tarifMap[jenis]||0.02;
+  const pph=bruto*tarif;
+  el.innerHTML=`<div style="background:var(--surface2);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
+    <div><div style="font-size:11px;color:var(--muted);">PPh 23 (${(tarif*100).toFixed(0)}%)</div><div style="font-size:18px;font-weight:700;color:var(--accent3);font-family:var(--mono);">${rp(pph)}</div></div>
+    <div><div style="font-size:11px;color:var(--muted);">Neto Diterima</div><div style="font-size:16px;font-weight:700;color:var(--accent);font-family:var(--mono);">${rp(bruto-pph)}</div></div>
+  </div>`;
+}
+
+function buatJurnalPPh21() {
+  const gajiBruto=parseFloat(document.getElementById('pph21-gaji')?.value)||0;
+  const jmlKaryawan=parseInt(document.getElementById('pph21-karyawan')?.value)||1;
+  if(!gajiBruto){showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Masukkan gaji bruto terlebih dahulu');return;}
+  showOpSpinner('Membuat Jurnal PPh 21...','Memvalidasi kalkulasi pajak');
+  setTimeout(()=>{
+    const pphBulan=(gajiBruto*12-(Math.min(gajiBruto*12*0.05,6000000))-54000000);
+    const pphReal=Math.max(0,pphBulan)*jmlKaryawan;
+    const totalGaji=gajiBruto*jmlKaryawan;
+    const bebanAkun=akuns.find(a=>a.tipe==='Beban'&&a.nama.toLowerCase().includes('gaji'))||akuns.find(a=>a.tipe==='Beban');
+    const hutangAkun=akuns.find(a=>a.tipe==='Liabilitas')||akuns.find(a=>a.kode==='2101');
+    const kasAkun=akuns.find(a=>a.kode==='1101');
+    if(!bebanAkun||!kasAkun){hideOpSpinner();showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Akun beban gaji / kas tidak ditemukan');return;}
+    const entry={
+      id:'JRN_PPH21_'+Date.now(), tanggal:new Date().toISOString().split('T')[0],
+      jenis:JENIS_JURNAL.GAJI_PPH21, keterangan:`Gaji & PPh 21 — ${jmlKaryawan} karyawan`,
+      lines:[
+        {akun:bebanAkun.kode,debit:totalGaji,kredit:0},
+        ...(hutangAkun&&pphReal?[{akun:hutangAkun.kode,debit:0,kredit:pphReal}]:[]),
+        {akun:kasAkun.kode,debit:0,kredit:totalGaji-(pphReal||0)}
+      ]
+    };
+    if(!postJurnalLegacy(entry)) { hideOpSpinner(); return; }
+    saveToStorage(false);
+    showAlert(`✓ Jurnal PPh 21 dibuat! Gaji bersih: ${rp(totalGaji-(pphReal||0))}, PPh 21: ${rp(pphReal||0)}`);
+    hideOpSpinner();
+  }, 900);
+}
+
+function buatJurnalPPh23() {
+  const jenis=document.getElementById('pph23-jenis')?.value;
+  const bruto=parseFloat(document.getElementById('pph23-bruto')?.value)||0;
+  if(!bruto){showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Masukkan nilai bruto');return;}
+  showOpSpinner('Membuat Jurnal PPh 23...','');
+  setTimeout(()=>{
+    const tarifMap={jasa:0.02,royalti:0.15,sewa:0.02,dividen:0.15,bunga:0.15};
+    const tarif=tarifMap[jenis]||0.02;
+    const pph=bruto*tarif;
+    const kasAkun=akuns.find(a=>a.kode==='1101');
+    const pendAkun=akuns.find(a=>a.tipe==='Pendapatan');
+    const hutangAkun=akuns.find(a=>a.tipe==='Liabilitas');
+    if(!kasAkun||!pendAkun){hideOpSpinner();showAlert('<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Akun tidak ditemukan');return;}
+    const entry={
+      id:'JRN_PPH23_'+Date.now(), tanggal:new Date().toISOString().split('T')[0],
+      jenis:JENIS_JURNAL.PPH23, keterangan:`PPh 23 — ${jenis} (${(tarif*100).toFixed(0)}%)`,
+      lines:[
+        {akun:kasAkun.kode,debit:bruto-pph,kredit:0},
+        ...(hutangAkun?[{akun:hutangAkun.kode,debit:pph,kredit:0}]:[]),
+        {akun:pendAkun.kode,debit:0,kredit:bruto}
+      ]
+    };
+    if(!postJurnalLegacy(entry)) { hideOpSpinner(); return; }
+    saveToStorage(false);
+    showAlert(`✓ Jurnal PPh 23 dibuat! Bruto: ${rp(bruto)}, PPh: ${rp(pph)}, Neto: ${rp(bruto-pph)}`);
+    hideOpSpinner();
+  }, 800);
+}
+
+
+// ══════════════════════════════════════════════════════════
+// PRIORITAS 5 — REKAP PAJAK SIAP SETOR
+// ══════════════════════════════════════════════════════════
+
+function initRekapPajakBulanSelect() {
+  const sel = document.getElementById('pajak-setor-bulan');
+  if(!sel) return;
+  const now = new Date();
+  sel.innerHTML = '';
+  const monthNames = [];
+  for(let i=0; i<12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const lbl = d.toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = lbl;
+    if(i===0) opt.selected = true;
+    sel.appendChild(opt);
+    monthNames.push({ val, lbl });
+  }
+  // Sync label to opt-picker button
+  const btnLbl = document.getElementById('pajak-setor-bulan-label');
+  if(btnLbl && monthNames.length) btnLbl.textContent = monthNames[0].lbl;
+  renderRekapSiapSetor();
+}
+
+function openPajakBulanPicker() {
+  const sel = document.getElementById('pajak-setor-bulan');
+  if(!sel) return;
+  const options = Array.from(sel.options).map(o => ({ value: o.value, label: o.textContent }));
+  openOptPicker({
+    title: 'Pilih Periode Pajak',
+    options,
+    currentValue: sel.value,
+    onSelect: (val, lbl) => {
+      sel.value = val;
+      const btnLbl = document.getElementById('pajak-setor-bulan-label');
+      if(btnLbl) btnLbl.textContent = lbl;
+      renderRekapSiapSetor();
+    }
+  });
+}
+
+// Hitung rekap pajak satu bulan ('YYYY-MM'). Dipakai tampilan (renderRekapSiapSetor) dan cetak PDF (exportRekapPajakPDF),
+// supaya angka di layar dan di PDF pasti sama. Mengembalikan null bila bulan tidak valid.
+function _hitungRekapPajak(bln) {
+  if(!bln) return null;
+  const [y,m] = bln.split('-').map(Number);
+  if(!y || !m) return null;
+  const fromStr = `${y}-${String(m).padStart(2,'0')}-01`;
+  const toStr   = new Date(y, m, 0).toISOString().split('T')[0];
+  const blnLabel = new Date(y, m-1, 1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+
+  // PPN aktual dari jurnal (bukan estimasi tarif x total penjualan/pembelian)
+  const rekapPpn   = rekapPpnJurnal(fromStr, toStr);
+  const ppnKeluar  = rekapPpn.keluaran;
+  const ppnMasuk   = rekapPpn.masukan;
+  const kurangBayar = ppnKeluar - ppnMasuk;
+
+  // Penghasilan bruto, biaya, dan laba dihitung dari SELURUH jurnal bulan itu (kecuali jurnal penutup), per tipe akun,
+  // supaya konsisten satu sama lain: laba = bruto - biaya. Sebelumnya bruto hanya dari jurnal berjenis "Penjualan" dan biaya
+  // hanya dari jurnal pembelian, sehingga invoice (jenis "Invoice & Piutang") dan beban lain tidak ikut, tetapi laba menghitungnya.
+  // Jurnal pembalik ikut dihitung: ia meniadakan jurnal asalnya.
+  let bruto = 0, biaya = 0;
+  jurnalEntries.filter(j=>j.tanggal>=fromStr&&j.tanggal<=toStr&&!isJurnalPenutup(j)).forEach(j=>(j.lines||[]).forEach(l=>{
+    const a=akuns.find(x=>x.kode===l.akun);
+    if(a?.tipe==='Pendapatan') bruto += (l.kredit||0) - (l.debit||0);
+    if(['Beban','HPP'].includes(a?.tipe)) biaya += (l.debit||0) - (l.kredit||0);
+  }));
+  const laba = bruto - biaya;
+  const pphBadan = Math.max(0, laba * 0.22);   // estimasi 22% dari laba bersih bulan itu
+  return { fromStr, toStr, blnLabel, bruto, biaya, rekapPpn, ppnKeluar, ppnMasuk, kurangBayar, laba, pphBadan };
+}
+
+function renderRekapSiapSetor() {
+  const bln = document.getElementById('pajak-setor-bulan')?.value;
+  const el  = document.getElementById('rekap-setor-content');
+  if(!el || !bln) return;
+  const { blnLabel, bruto, biaya, rekapPpn, ppnKeluar, ppnMasuk, kurangBayar, laba, pphBadan } = _hitungRekapPajak(bln);
+
+  el.innerHTML = `
+    <div style="border:2px solid var(--accent2);border-radius:12px;overflow:hidden;margin-bottom:16px;">
+      <div style="background:rgba(34,211,238,0.08);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:14px;font-weight:700;">SPT Masa PPN · ${blnLabel}</div>
+        <span style="font-size:11px;color:var(--muted);">Formulir 1111</span>
+      </div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600;">BAGIAN I — PENYERAHAN BKP/JKP</div>
+            <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:12px;color:var(--muted);">Jumlah Transaksi</span>
+                <span style="font-weight:600;">${rekapPpn.rowsKeluaran.length} faktur</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:12px;color:var(--muted);">DPP</span>
+                <span style="font-family:var(--mono);font-size:13px;">${fmtRp(rekapPpn.dppKeluaran)}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--border);">
+                <span style="font-size:12px;font-weight:700;">PPN Keluaran</span>
+                <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--red);">${fmtRp(ppnKeluar)}</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600;">BAGIAN II — PEROLEHAN BKP/JKP</div>
+            <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:12px;color:var(--muted);">Jumlah Transaksi</span>
+                <span style="font-weight:600;">${rekapPpn.rowsMasukan.length} faktur</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:12px;color:var(--muted);">DPP</span>
+                <span style="font-family:var(--mono);font-size:13px;">${fmtRp(rekapPpn.dppMasukan)}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--border);">
+                <span style="font-size:12px;font-weight:700;">PPN Masukan</span>
+                <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);">${fmtRp(ppnMasuk)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="background:${kurangBayar>0?'rgba(248,113,113,0.08)':'rgba(74,222,128,0.08)'};border:1px solid ${kurangBayar>0?'rgba(248,113,113,0.3)':'rgba(74,222,128,0.3)'};border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:2px;">${kurangBayar>0?'PPN KURANG BAYAR (WAJIB SETOR)':'PPN LEBIH BAYAR (DAPAT DIKOMPENSASI)'}</div>
+            <div style="font-size:11px;color:var(--muted);">Batas setor: tgl 15 bulan berikutnya</div>
+          </div>
+          <div style="font-family:var(--mono);font-size:22px;font-weight:800;color:${kurangBayar>0?'var(--red)':'var(--accent)'};">${fmtRp(Math.abs(kurangBayar))}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;">
+      <div style="background:var(--surface2);padding:10px 16px;">
+        <div style="font-size:14px;font-weight:700;">Estimasi PPh Badan · ${blnLabel}</div>
+      </div>
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
+        ${[
+          ['Penghasilan Bruto', bruto, 'var(--accent)'],
+          ['Biaya-biaya', biaya, 'var(--red)'],
+          ['Laba Bersih Estimasi', laba, laba>=0?'var(--text)':'var(--red)'],
+          ['Estimasi PPh Badan (22%)', pphBadan, 'var(--accent3)'],
+        ].map(([l,v,clr])=>`
+          <div style="display:flex;justify-content:space-between;">
+            <span style="font-size:13px;color:var(--muted);">${l}</span>
+            <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:${clr};">${fmtRp(v)}</span>
+          </div>`).join('')}
+        <div style="margin-top:4px;font-size:11px;color:var(--muted);background:rgba(245,158,11,0.07);border-radius:6px;padding:8px 10px;">
+          ⚠️ Estimasi saja. Konsultasikan dengan akuntan/konsultan pajak untuk perhitungan resmi.
+        </div>
+      </div>
+    </div>`;
+}
+
+// Cetak rekap pajak bulan terpilih sebagai laporan (jendela baru berlayout cetak, lalu dialog cetak/Simpan sebagai PDF).
+// Angka dari _hitungRekapPajak, sama dengan yang tampil di layar. Layout terang dan terpisah dari tema aplikasi.
+function exportRekapPajakPDF() {
+  const bln = document.getElementById('pajak-setor-bulan')?.value;
+  const d = bln ? _hitungRekapPajak(bln) : null;
+  if(!d) { showAlert('Pilih bulan rekap pajak dulu.'); return; }
+  const profil = (typeof getProfil === 'function' ? getProfil() : null) || JSON.parse(localStorage.getItem('oas_profil_v1') || '{}');
+  const e = typeof escapeHtml === 'function' ? escapeHtml : (x => String(x));
+  const rp = n => 'Rp ' + Math.round(n || 0).toLocaleString('id-ID');
+  const tgl = new Date().toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+  const baris = (rows, tipe) => rows.length ? rows.map(r => `<tr>
+      <td>${e(fmtDate(r.j.tanggal))}</td><td>${e(r.j.no || '-')}</td><td>${e(r.j.ket || r.j.keterangan || '-')}</td>
+      <td class="n">${rp(r.dpp)}</td><td class="n">${r.tarifPct ? e(r.tarifPct) + '%' : '-'}</td><td class="n">${rp(r.ppnVal)}</td></tr>`).join('')
+    : `<tr><td colspan="6" class="kosong">Tidak ada transaksi PPN ${tipe} pada periode ini.</td></tr>`;
+  const kb = d.kurangBayar;
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Rekap Pajak ${e(d.blnLabel)}</title><style>
+    @page{size:A4;margin:18mm 16mm}
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#111;margin:0;line-height:1.45}
+    .kop{border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:16px}
+    .kop h1{font-size:18px;margin:0 0 2px}.kop .sub{color:#555;font-size:11px}
+    h2{font-size:15px;margin:0 0 2px}.periode{color:#444;margin-bottom:14px}
+    h3{font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:18px 0 6px;color:#333}
+    table{width:100%;border-collapse:collapse;margin-bottom:6px}
+    th{background:#f0f0f0;text-align:left;font-size:11px}
+    th,td{border:1px solid #bbb;padding:5px 8px;vertical-align:top}
+    td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+    td.kosong{color:#777;text-align:center;font-style:italic}
+    tr.total td{font-weight:700;background:#fafafa}
+    .hasil{border:2px solid #111;padding:10px 14px;margin:14px 0;display:flex;justify-content:space-between;align-items:center;break-inside:avoid}
+    .hasil .l{font-weight:700}.hasil .v{font-size:18px;font-weight:800}
+    .catatan{font-size:10.5px;color:#555;border-left:3px solid #bbb;padding:4px 10px;margin-top:14px}
+    .ttd{margin-top:36px;display:flex;justify-content:flex-end;break-inside:avoid}.ttd div{width:200px;text-align:center}.ttd .garis{border-top:1px solid #111;margin-top:56px;padding-top:4px}
+    table,tr{break-inside:avoid}
+  </style></head><body>
+    <div class="kop"><h1>${e(profil.nama || 'Perusahaan')}</h1><div class="sub">${profil.npwp ? 'NPWP ' + e(profil.npwp) + ' · ' : ''}${e(profil.alamat || '')}</div></div>
+    <h2>Rekap Pajak Siap Setor</h2>
+    <div class="periode">Masa pajak: ${e(d.blnLabel)} (${e(fmtDate(d.fromStr))} – ${e(fmtDate(d.toStr))})</div>
+
+    <h3>Ringkasan SPT Masa PPN (Formulir 1111)</h3>
+    <table>
+      <tr><th></th><th class="n">Jumlah Faktur</th><th class="n">DPP</th><th class="n">PPN</th></tr>
+      <tr><td>Penyerahan BKP/JKP (PPN Keluaran)</td><td class="n">${d.rekapPpn.rowsKeluaran.length}</td><td class="n">${rp(d.rekapPpn.dppKeluaran)}</td><td class="n">${rp(d.ppnKeluar)}</td></tr>
+      <tr><td>Perolehan BKP/JKP (PPN Masukan)</td><td class="n">${d.rekapPpn.rowsMasukan.length}</td><td class="n">${rp(d.rekapPpn.dppMasukan)}</td><td class="n">${rp(d.ppnMasuk)}</td></tr>
+    </table>
+    <div class="hasil"><div><div class="l">${kb > 0 ? 'PPN KURANG BAYAR (WAJIB SETOR)' : 'PPN LEBIH BAYAR (DAPAT DIKOMPENSASI)'}</div><div style="font-size:11px;color:#555">Batas setor: tanggal 15 bulan berikutnya</div></div><div class="v">${rp(Math.abs(kb))}</div></div>
+
+    <h3>Rincian PPN Keluaran</h3>
+    <table><tr><th>Tanggal</th><th>No Jurnal</th><th>Keterangan</th><th class="n">DPP</th><th class="n">Tarif</th><th class="n">PPN</th></tr>${baris(d.rekapPpn.rowsKeluaran, 'Keluaran')}
+      <tr class="total"><td colspan="3">Total</td><td class="n">${rp(d.rekapPpn.dppKeluaran)}</td><td></td><td class="n">${rp(d.ppnKeluar)}</td></tr></table>
+    <h3>Rincian PPN Masukan</h3>
+    <table><tr><th>Tanggal</th><th>No Jurnal</th><th>Keterangan</th><th class="n">DPP</th><th class="n">Tarif</th><th class="n">PPN</th></tr>${baris(d.rekapPpn.rowsMasukan, 'Masukan')}
+      <tr class="total"><td colspan="3">Total</td><td class="n">${rp(d.rekapPpn.dppMasukan)}</td><td></td><td class="n">${rp(d.ppnMasuk)}</td></tr></table>
+
+    <h3>Estimasi PPh Badan</h3>
+    <table>
+      <tr><td>Penghasilan bruto</td><td class="n">${rp(d.bruto)}</td></tr>
+      <tr><td>Biaya-biaya</td><td class="n">${rp(d.biaya)}</td></tr>
+      <tr><td>Laba bersih estimasi</td><td class="n">${rp(d.laba)}</td></tr>
+      <tr class="total"><td>Estimasi PPh Badan (22%)</td><td class="n">${rp(d.pphBadan)}</td></tr>
+    </table>
+    <div class="catatan">Estimasi PPh Badan hanya perkiraan dari laba bulan ini. Konsultasikan dengan akuntan/konsultan pajak untuk perhitungan dan pelaporan resmi.</div>
+    <div class="ttd"><div>${e(profil.kota ? profil.kota + ', ' : '')}${e(tgl)}<div class="garis">${e(profil.nama || 'Penanggung jawab')}</div></div></div>
+  </body></html>`;
+  const win = window.open('', '_blank');
+  if(!win) { showAlert('Pop-up diblokir browser. Izinkan pop-up untuk situs ini, lalu klik Cetak PDF lagi.'); return; }
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => { try { win.focus(); win.print(); } catch(err) {} }, 400);
+}

@@ -1,536 +1,13 @@
-<!-- DASHBOARD -->
-<div class="page active" id="page-dashboard">
-  <!-- Top controls -->
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
-    <!-- Period filter -->
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      <select id="dash-filter-period" onchange="renderDashboard()" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;font-family:var(--sans);">
-        <option value="all">Semua Periode</option>
-        <option value="this-month" selected>Bulan Ini</option>
-        <option value="last-month">Bulan Lalu</option>
-        <option value="this-quarter">Kuartal Ini</option>
-        <option value="this-year">Tahun Ini</option>
-        <option value="custom">Rentang Kustom</option>
-      </select>
-      <div id="dash-custom-range" style="display:none;gap:6px;align-items:center;" class="flex-row">
-        <input type="date" id="dash-from" onchange="renderDashboard()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;">
-        <span style="color:var(--muted);font-size:12px;">s/d</span>
-        <input type="date" id="dash-to" onchange="renderDashboard()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;">
-      </div>
-      <span id="dash-period-label" style="font-size:12px;color:var(--accent2);font-family:var(--mono);"></span>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-ghost btn-sm" onclick="openModalSaldoAwal()"><i class="ti ti-settings ti-btn"></i> Saldo Awal</button>
-      <button class="btn btn-ghost btn-sm" onclick="openModal('modal-profil');loadProfil()"><i class="ti ti-building ti-btn"></i> Profil</button>
-      <button class="btn btn-ghost btn-sm" onclick="openAccountSettings()"><i class="ti ti-user ti-btn"></i> Akun</button>
-    </div>
-  </div>
+﻿<!-- DASHBOARD migrated to src/components/dashboard/DashboardPage.tsx -->
 
-  <!-- Reminders bar -->
-  <div id="dash-reminders" style="display:none;margin-bottom:12px;"></div>
-
-  <!-- KPI Cards -->
-  <div class="stats-grid" style="margin-bottom:16px;">
-    <div class="stat-card green">
-      <div class="stat-label">Total Aset</div>
-      <div class="stat-value" id="stat-aset">Rp 0</div>
-      <div class="stat-sub" id="stat-aset-sub">Semua periode</div>
-    </div>
-    <div class="stat-card blue">
-      <div class="stat-label">Pendapatan</div>
-      <div class="stat-value" id="stat-pendapatan">Rp 0</div>
-      <div class="stat-sub" id="stat-pend-sub">Periode dipilih</div>
-    </div>
-    <div class="stat-card yellow">
-      <div class="stat-label">Total Beban</div>
-      <div class="stat-value" id="stat-beban">Rp 0</div>
-      <div class="stat-sub" id="stat-beban-sub">Periode dipilih</div>
-    </div>
-    <div class="stat-card red">
-      <div class="stat-label">Laba Bersih</div>
-      <div class="stat-value" id="stat-laba">Rp 0</div>
-      <div class="stat-sub" id="stat-laba-sub">Periode dipilih</div>
-    </div>
-  </div>
-
-  <!-- Chart + Aktivitas -->
-  <div class="grid-2" style="margin-bottom:16px;">
-    <div class="table-card">
-      <div class="table-header">
-        <div>
-          <div class="table-title"><i class="ti ti-arrow-up-right ti-inline"></i> Piutang Usaha</div>
-          <div class="table-subtitle" id="dash-piutang-sub">Tagihan belum diterima</div>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="showPage('jurnal-penjualan')">Lihat Semua</button>
-      </div>
-      <div id="dash-piutang-content" class="dash-card-scroll"></div>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <div>
-          <div class="table-title"><i class="ti ti-arrow-down-left ti-inline"></i> Utang Usaha & Bank</div>
-          <div class="table-subtitle" id="dash-utang-sub">Kewajiban yang harus dibayar</div>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="showPage('neraca')">Lihat Semua</button>
-      </div>
-      <div id="dash-utang-content" class="dash-card-scroll"></div>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <div><div class="table-title"><i class="ti ti-bolt ti-inline"></i> Aksi Cepat</div></div>
-      </div>
-      <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button onclick="showPage('transaksi')" class="quick-action-btn"><i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Input Transaksi</button>
-        <button onclick="openJurnalPenyesuaian()" class="quick-action-btn"><i class="ti ti-adjustments" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Jurnal Penyesuaian</button>
-        <button onclick="showPage('laba-rugi')" class="quick-action-btn"><i class="ti ti-trending-up" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Laba Rugi</button>
-        <button onclick="showPage('neraca')" class="quick-action-btn"><i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Neraca</button>
-        <button onclick="buatJurnalPenutup()" class="quick-action-btn" style="border-color:rgba(245,158,11,0.3);color:var(--accent3);"><i class="ti ti-book-off" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Jurnal Penutup</button>
-        <button onclick="cekRekonsiliasi()" class="quick-action-btn" style="border-color:rgba(34,211,238,0.3);color:var(--accent2);"><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Rekonsiliasi Kas</button>
-        <button onclick="showPage('ai-assistant')" class="quick-action-btn" style="border-color:rgba(34,211,238,0.3);color:var(--accent2);"><i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Orias Assisten</button>
-        <button onclick="openExportModal()" class="quick-action-btn"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Laporan</button>
-      </div>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <div>
-          <div class="table-title"><i class="ti ti-receipt ti-inline"></i> Informasi Penjualan</div>
-          <div class="table-subtitle" id="dash-penjualan-sub">Ringkasan penjualan periode ini</div>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="showPage('jurnal-penjualan')">Detail</button>
-      </div>
-      <div id="dash-penjualan-content" class="dash-card-scroll"></div>
-    </div>
-  </div>
-
-  <!-- Pajak Panel -->
-  <div id="dash-pajak-panel" style="display:none;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;"></div>
-
-  <!-- Beban Usaha + Laba Summary -->
-  <div class="grid-2" style="margin-bottom:16px;">
-    <div class="table-card">
-      <div class="table-header">
-        <div>
-          <div class="table-title"><i class="ti ti-trending-down ti-inline"></i> Beban Usaha</div>
-          <div class="table-subtitle" id="dash-beban-sub">Pengeluaran operasional</div>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="showPage('laba-rugi')">Detail</button>
-      </div>
-      <div id="dash-beban-content" class="dash-card-scroll"></div>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <div>
-          <div class="table-title"><i class="ti ti-receipt-tax ti-inline"></i> Rekap Pajak Bulan Ini</div>
-          <div class="table-subtitle" id="dash-pajak-sub">PPN & estimasi kewajiban</div>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="showPage('pajak')">Detail</button>
-      </div>
-      <div id="dash-pajak-rekap" class="dash-card-scroll"></div>
-    </div>
-  </div>
-
-  <!-- Recent + Saldo -->
-  <div class="grid-2">
-    <div class="table-card">
-      <div class="table-header">
-        <div><div class="table-title"><i class="ti ti-clock ti-inline"></i> Transaksi Terbaru</div><div class="table-subtitle" id="dash-recent-sub">5 entri terakhir</div></div>
-        <button class="btn btn-ghost btn-sm" onclick="showPage('jurnal-umum')">Lihat Semua</button>
-      </div>
-      <div id="dash-recent" class="dash-card-scroll"></div>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <div><div class="table-title"><i class="ti ti-scale ti-inline"></i> Neraca Saldo Utama</div><div class="table-subtitle">Saldo akun dengan transaksi</div></div>
-        <button class="btn btn-ghost btn-sm" onclick="showPage('neraca-saldo')">Lengkap</button>
-      </div>
-      <div id="dash-saldo" class="dash-card-scroll"></div>
-    </div>
-  </div>
-</div>
-
-<!-- TRANSAKSI -->
-<div class="page" id="page-transaksi">
-  <div class="section-header">
-    <div>
-      <div class="section-title">Input Transaksi</div>
-      <div class="section-sub">Masukkan transaksi — jurnal dibuat otomatis</div>
-    </div>
-  </div>
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('trx','simpel')" style="color:var(--accent);font-weight:700;">⚡ Mode Cepat</div>
-    <div class="tab" onclick="switchTab('trx','kas')">Penerimaan/Pengeluaran Kas</div>
-    <div class="tab" onclick="switchTab('trx','penjualan')">Penjualan</div>
-    <div class="tab" onclick="switchTab('trx','pembelian')">Pembelian</div>
-    <div class="tab" onclick="switchTab('trx','umum')">Jurnal Manual</div>
-  </div>
-
-  <!-- KAS -->
-  <!-- MODE CEPAT / KASIR -->
-  <div id="trx-simpel" class="trx-tab">
-    <div class="table-card">
-      <div class="table-header">
-        <div>
-          <div class="table-title">⚡ Mode Cepat</div>
-          <div class="table-subtitle">Input transaksi tanpa perlu tahu jurnal · Otomatis dijurnalkan</div>
-        </div>
-      </div>
-      <div class="modal-body">
-        <!-- Jenis Transaksi picker -->
-        <div class="form-row full" style="margin-bottom:4px;">
-          <div class="form-group">
-            <label>Jenis Transaksi</label>
-            <button class="opt-picker-btn" type="button" id="simpel-tipe-btn" onclick="openSimpelTipePicker()">
-              <span class="opt-picker-label" id="simpel-tipe-label">Uang Masuk</span>
-              <span class="opt-picker-arrow">▾</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Tanggal + Jumlah -->
-        <div class="form-row">
-          <div class="form-group">
-            <label>Tanggal</label>
-            <input type="date" id="simpel-tanggal">
-          </div>
-          <div class="form-group">
-            <label>Jumlah (Rp)</label>
-            <input type="number" id="simpel-jumlah" placeholder="0" inputmode="numeric">
-          </div>
-        </div>
-
-        <div class="form-row full">
-          <div class="form-group">
-            <label>Keterangan</label>
-            <input type="text" id="simpel-ket" placeholder="Contoh: Bayar listrik, Terima modal, Jual baju...">
-          </div>
-        </div>
-
-        <div id="simpel-jurnal-preview" style="display:none;margin-bottom:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;font-family:var(--mono);color:var(--muted);"></div>
-
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-          <button class="btn btn-ghost btn-sm" onclick="previewSimpel()"><i class="ti ti-eye ti-btn"></i> Preview Jurnal</button>
-          <button class="btn btn-primary" onclick="simpanSimpel()">Simpan Transaksi</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="trx-kas" class="trx-tab" style="display:none;">
-    <div class="table-card">
-      <div class="table-header"><div class="table-title">Penerimaan / Pengeluaran Kas</div></div>
-      <div class="modal-body">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Tanggal</label>
-            <input type="date" id="kas-tanggal">
-          </div>
-          <div class="form-group">
-            <label>Jenis</label>
-            <select id="kas-jenis">
-              <option value="masuk">Penerimaan Kas</option>
-              <option value="keluar">Pengeluaran Kas</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Akun Lawan</label>
-            <input type="hidden" id="kas-akun-lawan" value="">
-            <button class="form-picker-btn" type="button" id="kas-akun-lawan-btn" onclick="openSimplePicker('kas-akun-lawan','kas-akun-lawan-btn','kas')">Pilih Akun...</button>
-          </div>
-          <div class="form-group">
-            <label>Jumlah (Rp)</label>
-            <input type="number" id="kas-jumlah" placeholder="0" inputmode="numeric" onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)">
-          </div>
-        </div>
-        <div class="form-row full">
-          <div class="form-group">
-            <label>Keterangan</label>
-            <input type="text" id="kas-ket" placeholder="Keterangan transaksi...">
-          </div>
-        </div>
-        <div id="kas-preview" style="display:none;margin-bottom:12px;"></div>
-        <div style="margin-top:10px;">
-          <button class="btn btn-ghost btn-sm" onclick="previewKas()" style="margin-right:8px;"><i class="ti ti-eye ti-btn"></i> Preview Jurnal</button>
-          <button class="btn btn-primary" onclick="simpanKas()">Simpan &amp; Buat Jurnal</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PENJUALAN -->
-  <div id="trx-penjualan" class="trx-tab" style="display:none;">
-    <div class="table-card">
-      <div class="table-header"><div class="table-title">Transaksi Penjualan</div></div>
-      <div class="modal-body">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Tanggal</label>
-            <input type="date" id="jual-tanggal">
-          </div>
-          <div class="form-group">
-            <label>No. Invoice</label>
-            <input type="text" id="jual-inv" placeholder="INV-001">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Metode Pembayaran</label>
-            <select id="jual-metode">
-              <option value="tunai">Tunai (Kas)</option>
-              <option value="kredit">Kredit (Piutang)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Jenis Penjualan</label>
-            <input type="hidden" id="jual-akun-pendapatan" value="4101">
-            <button class="opt-picker-btn" type="button" id="jual-akun-pendapatan-btn" onclick="openJualAkunPicker()" data-value="4101">
-              <span class="opt-picker-label" id="jual-akun-pendapatan-label">Penjualan Barang</span>
-              <span class="opt-picker-arrow">▾</span>
-            </button>
-          </div>
-        </div>
-        <div class="form-row" id="jual-produk-row">
-          <div class="form-group">
-            <label>Produk</label>
-            <input type="hidden" id="jual-produk-id" value="">
-            <button class="opt-picker-btn" type="button" id="jual-produk-btn" onclick="openProdukPickerJual()">
-              <span class="opt-picker-label" id="jual-produk-label" style="color:var(--muted);">Pilih produk...</span>
-              <span class="opt-picker-arrow">▾</span>
-            </button>
-          </div>
-          <div class="form-group">
-            <label>Qty</label>
-            <input type="number" id="jual-produk-qty" placeholder="1" value="1" inputmode="numeric" oninput="onJualQtyChange()">
-          </div>
-        </div>
-        <div class="form-row" id="jual-jumlah-row">
-          <div class="form-group" id="jual-jumlah-group">
-            <label>Harga Jual</label>
-            <div id="jual-harga-display" style="
-              background:var(--surface2,#1e1e2e);
-              border:1px solid var(--border,#2a2a3a);
-              border-radius:8px;
-              padding:8px 12px;
-              font-size:13px;
-              font-weight:400;
-              color:var(--text);
-              cursor:not-allowed;
-              user-select:none;
-              height:38px;
-              display:flex;
-              align-items:center;
-            ">
-              <span id="jual-harga-display-text" style="color:var(--muted);">—</span>
-            </div>
-            <!-- hidden input tetap ada untuk kalkulasi internal -->
-            <input type="hidden" id="jual-jumlah" value="0">
-          </div>
-          <div class="form-group">
-            <label>
-              <i class="ti ti-users" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i>
-              Kontak <span style="color:var(--muted);font-weight:400;font-size:11px;">(opsional)</span>
-            </label>
-            <input type="hidden" id="jual-kontak-id" value="">
-            <button class="form-picker-btn" type="button" id="jual-kontak-btn" onclick="openKontakPicker('jual-kontak-id','jual-kontak-btn')">Pilih kontak...</button>
-          </div>
-        </div>
-        <!-- HPP dihitung otomatis dari kartu stock, tidak ditampilkan ke user -->
-        <input type="hidden" id="jual-hpp" value="0">
-        <div class="form-row full">
-          <div class="form-group">
-            <label>Keterangan</label>
-            <input type="text" id="jual-ket" placeholder="Penjualan barang/jasa...">
-          </div>
-        </div>
-        <div id="jual-preview" style="display:none;margin-top:10px;"></div>
-        <div style="margin-top:10px;">
-          <button class="btn btn-ghost btn-sm" onclick="previewJual()" style="margin-right:8px;"><i class="ti ti-eye ti-btn"></i> Preview Jurnal</button>
-          <button class="btn btn-primary" onclick="simpanPenjualan()">Simpan &amp; Buat Jurnal</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PEMBELIAN -->
-  <div id="trx-pembelian" class="trx-tab" style="display:none;">
-    <div class="table-card">
-      <div class="table-header"><div class="table-title">Transaksi Pembelian</div></div>
-      <div class="modal-body">
-
-        <!-- Baris 1: Tanggal + No. Faktur -->
-        <div class="form-row">
-          <div class="form-group">
-            <label>Tanggal</label>
-            <input type="date" id="beli-tanggal">
-          </div>
-          <div class="form-group">
-            <label>No. Faktur</label>
-            <input type="text" id="beli-faktur" placeholder="PO-001">
-          </div>
-        </div>
-
-        <!-- Baris 2: Metode Pembayaran + Jenis Pembelian -->
-        <div class="form-row">
-          <div class="form-group">
-            <label>Metode Pembayaran</label>
-            <select id="beli-metode">
-              <option value="tunai">Tunai (Kas)</option>
-              <option value="kredit">Kredit (Utang)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Jenis Pembelian</label>
-            <input type="hidden" id="beli-akun" value="1301">
-            <button class="opt-picker-btn" type="button" id="beli-akun-btn" onclick="openBeliAkunPicker()">
-              <span class="opt-picker-label" id="beli-akun-label">Persediaan Barang Dagangan</span>
-              <span class="opt-picker-arrow">▾</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Baris 3: Produk + Qty -->
-        <div class="form-row" id="beli-produk-row">
-          <div class="form-group">
-            <label id="beli-produk-label-text">Produk</label>
-            <input type="hidden" id="beli-produk-id" value="">
-            <button class="opt-picker-btn" type="button" id="beli-produk-btn" onclick="openBeliProdukPicker()">
-              <span class="opt-picker-label" id="beli-produk-label" style="color:var(--muted);">Pilih produk...</span>
-              <span class="opt-picker-arrow">▾</span>
-            </button>
-          </div>
-          <div class="form-group">
-            <label>Qty</label>
-            <input type="number" id="beli-produk-qty" placeholder="1" value="1" min="1" inputmode="numeric" oninput="onBeliQtyChange()">
-          </div>
-        </div>
-
-        <!-- Baris 3b: Bahan Baku (khusus produksi Barang Jadi) -->
-        <div class="form-row full" id="beli-bahanbaku-wrap" style="display:none;">
-          <div class="form-group">
-            <label>
-              Bahan Baku yang Digunakan
-            </label>
-            <div id="beli-bahanbaku-list"></div>
-            <button class="btn btn-ghost btn-sm" type="button" onclick="addBeliBahanBakuRow()" style="margin-top:4px;">
-              <i class="ti ti-plus ti-btn"></i> Tambah Bahan Baku
-            </button>
-            <div id="beli-bahanbaku-total-hint" style="display:none;font-size:11.5px;color:var(--accent);margin-top:8px;padding:8px 10px;background:rgba(74,222,128,0.06);border-radius:6px;"></div>
-          </div>
-        </div>
-
-        <!-- Baris 4: Harga/Unit + Total hint -->
-        <div class="form-row">
-          <div class="form-group" id="beli-harga-group">
-            <label id="beli-jumlah-label">Harga per Unit (Rp)</label>
-            <input type="number" id="beli-jumlah" placeholder="0" inputmode="numeric"
-              onkeydown="blockNonNumeric(event)" onpaste="sanitizePaste(event,this)" oninput="onBeliJumlahChange()">
-            <div id="beli-total-hint" style="display:none;font-size:11px;color:var(--accent);margin-top:3px;"></div>
-          </div>
-          <div class="form-group">
-            <label>
-              <i class="ti ti-users" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i>
-              Kontak <span style="color:var(--muted);font-weight:400;font-size:11px;">(opsional)</span>
-            </label>
-            <input type="hidden" id="beli-kontak-id" value="">
-            <button class="form-picker-btn" type="button" id="beli-kontak-btn" onclick="openKontakPicker('beli-kontak-id','beli-kontak-btn')">Pilih kontak...</button>
-          </div>
-        </div>
-
-        <!-- Baris 5: Keterangan -->
-        <div class="form-row full">
-          <div class="form-group">
-            <label>Keterangan</label>
-            <input type="text" id="beli-ket" placeholder="Pembelian persediaan/aset...">
-          </div>
-        </div>
-
-        <div id="beli-preview" style="display:none;margin-top:10px;"></div>
-        <div style="margin-top:10px;">
-          <button class="btn btn-ghost btn-sm" onclick="previewBeli()" style="margin-right:8px;"><i class="ti ti-eye ti-btn"></i> Preview Jurnal</button>
-          <button class="btn btn-primary" onclick="simpanPembelian()">Simpan &amp; Buat Jurnal</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- JURNAL MANUAL -->
-  <div id="trx-umum" class="trx-tab" style="display:none;">
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-pencil ti-inline"></i> Jurnal Manual</div></div>
-      <div class="modal-body">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Tanggal</label>
-            <input type="date" id="man-tanggal">
-          </div>
-          <div class="form-group">
-            <label>No. Jurnal</label>
-            <input type="text" id="man-no" placeholder="JU-001">
-          </div>
-        </div>
-        <div class="form-row full">
-          <div class="form-group">
-            <label>Keterangan</label>
-            <input type="text" id="man-ket" placeholder="Keterangan jurnal...">
-          </div>
-        </div>
-        <div class="jurnal-lines">
-          <div class="jurnal-lines-head">
-            <span>Akun</span>
-            <span>Keterangan</span>
-            <span>Debit</span>
-            <span>Kredit</span>
-            <span></span>
-          </div>
-          <div id="manual-lines"></div>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="addManualLine()" style="margin-top:10px;">+ Tambah Baris</button>
-        <div id="manual-balance" style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:10px;margin-bottom:0;"></div>
-        <button class="btn btn-primary" onclick="simpanManual()" style="margin-top:10px;">Simpan Jurnal</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- JURNAL UMUM -->
-<div class="page" id="page-jurnal-umum">
-  <div class="section-header">
-    <div><div class="section-title">Jurnal Umum</div><div class="section-sub">Semua entri jurnal</div></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button id="btn-setting-saldo-awal" class="btn btn-ghost btn-sm" onclick="openModalSaldoAwal()" data-tooltip="Hanya bisa diatur sebelum ada transaksi apapun"><i class="ti ti-settings ti-inline"></i> Setting Saldo Awal</button>
-    </div>
-  </div>
-  <div class="filter-bar">
-    <input type="text" id="filter-ju" placeholder="Cari keterangan..." oninput="renderJurnalUmum()">
-    <select id="filter-ju-type" onchange="renderJurnalUmum()">
-      <option value="">Semua Jenis</option>
-      <option value="Kas">Kas</option>
-      <option value="Penjualan">Penjualan</option>
-      <option value="Pembelian">Pembelian</option>
-      <option value="Manual">Manual</option>
-      <option value="Penutup">Penutup</option>
-    </select>
-  </div>
-  <div class="table-card">
-    <div class="table-scroll">
-      <table>
-        <thead><tr>
-          <th class="th-sort" id="urut-umum-tgl" onclick="ubahUrutJurnal('umum','tgl')" title="Klik untuk mengubah urutan tanggal">Tanggal <span class="sort-ind">↕</span></th><th class="th-sort" id="urut-umum-no" onclick="ubahUrutJurnal('umum','no')" title="Klik untuk mengurutkan nomor jurnal">No. Jurnal <span class="sort-ind">↕</span></th><th>Keterangan</th><th>Jenis</th>
-          <th>Akun</th><th>Debit</th><th>Kredit</th><th style="width:36px"></th><th style="width:40px"></th>
-        </tr></thead>
-        <tbody id="jurnal-umum-body"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
+<!-- TRANSAKSI & JURNAL UMUM migrated to React components -->
 
 <!-- REKONSILIASI BANK -->
 <div class="page" id="page-rekonsiliasi-bank">
   <div class="section-header">
     <div>
       <div class="section-title"><i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Rekonsiliasi Bank</div>
-      <div class="section-sub">Upload mutasi rekening → Orias otomatis cocokkan dengan jurnal</div>
+      <div class="section-sub">Upload mutasi rekening â†’ Orias otomatis cocokkan dengan jurnal</div>
     </div>
     <button class="btn btn-primary btn-sm" onclick="document.getElementById('bank-file-input').click()"><i class="ti ti-folder-open" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Upload Mutasi</button>
     <input type="file" id="bank-file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="parseBankStatement(this)">
@@ -555,10 +32,10 @@
   <!-- Bank format guide -->
   <div id="bank-format-guide" style="background:rgba(34,211,238,0.05);border:1px solid rgba(34,211,238,0.15);border-radius:10px;padding:14px;margin-bottom:16px;font-size:12.5px;color:var(--muted);line-height:1.8;">
     <b style="color:var(--accent2)"><i class="ti ti-clipboard-list ti-inline"></i> Cara export mutasi dari m-banking:</b><br>
-    • <b>BCA</b>: myBCA → Rekening → Mutasi → Download CSV<br>
-    • <b>Mandiri</b>: Livin → History → Export Excel<br>
-    • <b>BNI</b>: BNI Mobile → Mutasi Rekening → Unduh<br>
-    • Atau buat file CSV manual dengan kolom: <code style="background:var(--bg);padding:1px 5px;border-radius:3px;">Tanggal, Keterangan, Debit, Kredit, Saldo</code>
+    â€¢ <b>BCA</b>: myBCA â†’ Rekening â†’ Mutasi â†’ Download CSV<br>
+    â€¢ <b>Mandiri</b>: Livin â†’ History â†’ Export Excel<br>
+    â€¢ <b>BNI</b>: BNI Mobile â†’ Mutasi Rekening â†’ Unduh<br>
+    â€¢ Atau buat file CSV manual dengan kolom: <code style="background:var(--bg);padding:1px 5px;border-radius:3px;">Tanggal, Keterangan, Debit, Kredit, Saldo</code>
   </div>
 
   <!-- Results -->
@@ -597,287 +74,15 @@
   </div>
 </div>
 
-<!-- JURNAL KAS -->
-<div class="page" id="page-jurnal-kas">
-  <div class="section-header">
-    <div><div class="section-title">Jurnal Kas</div><div class="section-sub">Penerimaan dan pengeluaran kas</div></div>
-  </div>
-  <div class="filter-bar">
-    <input type="text" id="filter-jk" placeholder="Cari keterangan, no. jurnal..." oninput="renderJurnalKas()">
-  </div>
-  <div class="table-card">
-    <div class="table-scroll">
-      <table>
-        <thead><tr>
-          <th class="th-sort" id="urut-kas-tgl" onclick="ubahUrutJurnal('kas','tgl')" title="Klik untuk mengubah urutan tanggal">Tanggal <span class="sort-ind">↕</span></th><th class="th-sort" id="urut-kas-no" onclick="ubahUrutJurnal('kas','no')" title="Klik untuk mengurutkan nomor jurnal">No. Jurnal <span class="sort-ind">↕</span></th><th>Keterangan</th>
-          <th>Penerimaan</th><th>Pengeluaran</th><th>Saldo</th>
-        </tr></thead>
-        <tbody id="jurnal-kas-body"></tbody>
-      </table>
-    </div>
-    <div id="jurnal-kas-total" style="padding:12px 16px;background:var(--surface2);border-top:1px solid var(--border);"></div>
-  </div>
-</div>
-
-<!-- JURNAL PENJUALAN -->
-<div class="page" id="page-jurnal-penjualan">
-  <div class="section-header">
-    <div><div class="section-title">Jurnal Penjualan</div><div class="section-sub">Semua transaksi penjualan</div></div>
-  </div>
-  <div class="filter-bar">
-    <input type="text" id="filter-jp" placeholder="Cari keterangan, no. invoice..." oninput="renderJurnalPenjualan()">
-  </div>
-  <div class="table-card">
-    <div class="table-scroll">
-      <table>
-        <thead><tr>
-          <th class="th-sort" id="urut-jual-tgl" onclick="ubahUrutJurnal('jual','tgl')" title="Klik untuk mengubah urutan tanggal">Tanggal <span class="sort-ind">↕</span></th><th class="th-sort" id="urut-jual-no" onclick="ubahUrutJurnal('jual','no')" title="Klik untuk mengurutkan nomor invoice">No. Invoice <span class="sort-ind">↕</span></th><th>Keterangan</th><th>Metode</th>
-          <th>Piutang/Kas Dr</th><th>Penjualan Kr</th>
-        </tr></thead>
-        <tbody id="jurnal-penjualan-body"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- JURNAL PEMBELIAN -->
-<div class="page" id="page-jurnal-pembelian">
-  <div class="section-header">
-    <div><div class="section-title">Jurnal Pembelian</div><div class="section-sub">Semua transaksi pembelian</div></div>
-  </div>
-  <div class="filter-bar">
-    <input type="text" id="filter-jb" placeholder="Cari keterangan, no. faktur..." oninput="renderJurnalPembelian()">
-  </div>
-  <div class="table-card">
-    <div class="table-scroll">
-      <table>
-        <thead><tr>
-          <th class="th-sort" id="urut-beli-tgl" onclick="ubahUrutJurnal('beli','tgl')" title="Klik untuk mengubah urutan tanggal">Tanggal <span class="sort-ind">↕</span></th><th class="th-sort" id="urut-beli-no" onclick="ubahUrutJurnal('beli','no')" title="Klik untuk mengurutkan nomor faktur">No. Faktur <span class="sort-ind">↕</span></th><th>Keterangan</th><th>Metode</th>
-          <th>Akun Debit</th><th>Kas/Utang Kr</th>
-        </tr></thead>
-        <tbody id="jurnal-pembelian-body"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- BUKU BESAR -->
-<div class="page" id="page-buku-besar">
-  <div class="section-header">
-    <div><div class="section-title">Buku Besar</div><div class="section-sub">Mutasi per akun</div></div>
-  </div>
-  <div class="filter-bar">
-    <input type="hidden" id="bb-akun-filter-val">
-    <button type="button" id="bb-akun-filter-btn" class="form-picker-btn" onclick="openBukuBesarPicker()" style="min-width:220px;max-width:340px;">
-      <span class="opt-picker-label" style="color:var(--muted);">-- Pilih Akun --</span>
-      <span class="opt-picker-arrow">▾</span>
-    </button>
-  </div>
-  <div id="buku-besar-content"></div>
-</div>
-
-<!-- NERACA SALDO -->
-<div class="page" id="page-neraca-saldo">
-  <div class="section-header">
-    <div><div class="section-title">Neraca Saldo</div><div class="section-sub">Saldo semua akun</div></div>
-  </div>
-  <div class="table-card">
-    <div class="table-scroll">
-      <table style="min-width:560px; width:100%;">
-        <thead><tr><th>Kode</th><th>Nama Akun</th><th>Tipe</th><th style="text-align:right">Debit</th><th style="text-align:right;padding-right:20px;">Kredit</th></tr></thead>
-        <tbody id="neraca-saldo-body"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- LABA RUGI -->
-<div class="page" id="page-laba-rugi">
-  <div class="section-header">
-    <div><div class="section-title">Laporan Laba Rugi</div><div class="section-sub">Pendapatan dan beban periode berjalan</div></div>
-  </div>
-  <div id="laba-rugi-content"></div>
-</div>
-
-<!-- NERACA -->
-<div class="page" id="page-neraca">
-  <div class="section-header">
-    <div><div class="section-title">Neraca (Balance Sheet)</div><div class="section-sub">Posisi keuangan perusahaan</div></div>
-  </div>
-  <div id="neraca-content"></div>
-</div>
-
-<!-- LAPORAN ARUS KAS -->
-<div class="page" id="page-arus-kas">
-  <div class="section-header">
-    <div><div class="section-title">Laporan Arus Kas</div><div class="section-sub">Metode Tidak Langsung · PSAK 2</div></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-ghost btn-sm" onclick="exportArusKasPDF()"><i class="ti ti-printer ti-btn"></i> Cetak PDF</button>
-    </div>
-  </div>
-  <div class="filter-bar" style="margin-bottom:16px;">
-    <select id="arus-kas-period" onchange="renderArusKas()" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;font-family:var(--sans);">
-      <option value="all">Semua Periode</option><option value="this-month">Bulan Ini</option>
-      <option value="last-month">Bulan Lalu</option><option value="this-quarter">Kuartal Ini</option>
-      <option value="this-year">Tahun Ini</option>
-    </select>
-  </div>
-  <div id="arus-kas-content"></div>
-</div>
-
-<!-- LAPORAN PERUBAHAN EKUITAS -->
-<div class="page" id="page-perubahan-ekuitas">
-  <div class="section-header">
-    <div><div class="section-title">Laporan Perubahan Ekuitas</div><div class="section-sub">Mutasi modal pemilik · PSAK 1</div></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-ghost btn-sm" onclick="exportPerubahanEkuitasPDF()"><i class="ti ti-printer ti-btn"></i> Cetak PDF</button>
-    </div>
-  </div>
-  <div class="filter-bar" style="margin-bottom:16px;">
-    <select id="pe-period" onchange="renderPerubahanEkuitas()" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;font-family:var(--sans);">
-      <option value="all">Semua Periode</option><option value="this-month">Bulan Ini</option>
-      <option value="last-month">Bulan Lalu</option><option value="this-quarter">Kuartal Ini</option>
-      <option value="this-year">Tahun Ini</option>
-    </select>
-  </div>
-  <div id="pe-content"></div>
-</div>
+<!-- JURNAL KHUSUS, BUKU BESAR & LAPORAN KEUANGAN migrated to React components -->
 
 <!-- REGISTER ASET TETAP migrated to src/components/aset/AsetTetapPage.tsx -->
 
-<!-- MASTER KONTAK -->
-<div class="page" id="page-kontak">
-  <div class="section-header">
-    <div><div class="section-title">Master Kontak</div><div class="section-sub">Pelanggan & Supplier · Histori transaksi</div></div>
-    <button class="btn btn-primary btn-sm" onclick="openModalKontak()"><i class="ti ti-plus ti-btn"></i> Tambah Kontak</button>
-  </div>
-  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-    <button id="kontak-tab-semua" class="btn btn-ghost btn-sm kontak-tab oas-active-tab" onclick="filterKontak('semua')">Semua</button>
-    <button id="kontak-tab-pelanggan" class="btn btn-ghost btn-sm kontak-tab" onclick="filterKontak('pelanggan')">Pelanggan</button>
-    <button id="kontak-tab-supplier" class="btn btn-ghost btn-sm kontak-tab" onclick="filterKontak('supplier')">Supplier</button>
-    <input type="text" id="kontak-search" placeholder="Cari nama / telepon..." oninput="renderKontak()" style="margin-left:auto;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;">
-  </div>
-  <div id="kontak-kpi" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;"></div>
-  <div class="table-card"><div class="table-scroll"><table>
-    <thead><tr><th>Nama</th><th>Tipe</th><th>Telepon</th><th>Email</th><th>Alamat</th><th style="text-align:right">Total Transaksi</th><th style="width:90px"></th></tr></thead>
-    <tbody id="kontak-tbody"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px;">Belum ada kontak. Klik Tambah Kontak untuk mulai.</td></tr></tbody>
-  </table></div></div>
-</div>
+<!-- MASTER KONTAK migrated to src/components/kontak/KontakPage.tsx -->
 
 <!-- MASTER PRODUK & CHART OF ACCOUNTS migrated to React components -->
 
-<!-- ANALITIK -->
-<div class="page" id="page-analitik">
-  <div class="section-header" style="flex-wrap:wrap;gap:12px;">
-    <div>
-      <div class="section-title"><i class="ti ti-chart-bar ti-inline"></i> Analitik & Tren Bisnis</div>
-      <div class="section-sub">Pendapatan · Laba · Arus Kas · Aset · Rasio · Perbandingan Periode</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <button id="an-period-btn" onclick="openAnPeriodPopup()" style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:7px 14px;color:var(--text);font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;min-width:170px;justify-content:space-between;transition:border-color 0.2s,box-shadow 0.2s;" onmouseover="this.style.borderColor='var(--accent2)';this.style.boxShadow='0 0 0 3px rgba(34,211,238,0.12)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
-          <span id="an-period-label">12 Bulan Terakhir</span>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="opacity:0.6;flex-shrink:0;"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      <input type="hidden" id="analitik-period" value="12">
-    </div>
-  </div>
-
-  <!-- KPI Summary Row -->
-  <div id="analitik-kpi" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;"></div>
-
-  <!-- Row 1: Pendapatan vs Beban + Laba Bersih Trend -->
-  <div style="grid-template-columns:1fr 1fr;" class="kalk-grid">
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-chart-bar ti-inline"></i> Pendapatan vs Beban per Bulan</div><div id="an-pend-legend" style="font-size:11px;color:var(--muted);display:flex;gap:10px;"></div></div>
-      <div style="padding:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;" class="chart-scroll-wrap"><div style="min-width:520px;"><canvas id="an-chart-pend-beban" height="180" class="an-chart-clickable" title="Klik untuk memperbesar"></canvas></div></div>
-    </div>
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-trending-up" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Tren Laba Bersih</div></div>
-      <div style="padding:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;" class="chart-scroll-wrap"><div style="min-width:520px;"><canvas id="an-chart-laba" height="180" class="an-chart-clickable" title="Klik untuk memperbesar"></canvas></div></div>
-    </div>
-  </div>
-
-  <!-- Row 2: Arus Kas + Komposisi Pendapatan -->
-  <div style="grid-template-columns:1fr 1fr;" class="kalk-grid">
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-cash ti-inline"></i> Arus Kas Bersih per Bulan</div></div>
-      <div style="padding:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;" class="chart-scroll-wrap"><div style="min-width:520px;"><canvas id="an-chart-kas" height="180" class="an-chart-clickable" title="Klik untuk memperbesar"></canvas></div></div>
-    </div>
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-chart-pie ti-inline"></i> Komposisi Beban</div></div>
-      <div style="padding:12px;position:relative;height:220px;" class="chart-scroll-wrap"><canvas id="an-chart-beban-donut" class="an-chart-clickable" title="Klik untuk memperbesar"></canvas></div>
-    </div>
-  </div>
-
-  <!-- Row 3: Akumulasi Aset + Ekuitas + Liabilitas -->
-  <div style="grid-template-columns:1fr 1fr;" class="kalk-grid">
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Tren Posisi Keuangan (Aset · Liabilitas · Ekuitas)</div></div>
-      <div style="padding:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;" class="chart-scroll-wrap"><div style="min-width:520px;"><canvas id="an-chart-posisi" height="180" class="an-chart-clickable" title="Klik untuk memperbesar"></canvas></div></div>
-    </div>
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-ruler ti-inline"></i> Rasio Keuangan Otomatis</div></div>
-      <div style="padding:16px;" id="an-rasio-grid"></div>
-    </div>
-  </div>
-
-  <!-- Row 4: Waterfall Laba + Pertumbuhan MoM -->
-  <div style="grid-template-columns:1fr 1fr;" class="kalk-grid">
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-chart-bar ti-inline"></i> Waterfall Laba Rugi (Periode Ini)</div></div>
-      <div style="padding:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;" class="chart-scroll-wrap"><div style="min-width:520px;"><canvas id="an-chart-waterfall" height="200" class="an-chart-clickable" title="Klik untuk memperbesar"></canvas></div></div>
-    </div>
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-trending-up ti-inline"></i> Pertumbuhan MoM (%)</div></div>
-      <div style="padding:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;" class="chart-scroll-wrap"><div style="min-width:520px;"><canvas id="an-chart-growth" height="200" class="an-chart-clickable" title="Klik untuk memperbesar"></canvas></div></div>
-    </div>
-  </div>
-
-  <!-- Row 5: Heatmap Aktivitas + Top Akun -->
-  <div style="grid-template-columns:1fr 1fr;" class="kalk-grid">
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-calendar-stats ti-inline"></i> Heatmap Aktivitas Jurnal per Hari</div></div>
-      <div style="padding:12px;" id="an-heatmap"></div>
-    </div>
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-trophy ti-inline"></i> Top 8 Akun Terbesar (Saldo)</div></div>
-      <div style="padding:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;" class="chart-scroll-wrap"><div style="min-width:520px;"><canvas id="an-chart-top-akun" height="220" class="an-chart-clickable" title="Klik untuk memperbesar"></canvas></div></div>
-    </div>
-  </div>
-
-  <!-- Row 6: Margin Analysis + Proyeksi -->
-  <div style="grid-template-columns:1fr 1fr;" class="kalk-grid">
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-chart-area ti-inline"></i> Margin Laba Kotor & Bersih per Bulan (%)</div></div>
-      <div style="padding:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;" class="chart-scroll-wrap"><div style="min-width:520px;"><canvas id="an-chart-margin" height="180" class="an-chart-clickable" title="Klik untuk memperbesar"></canvas></div></div>
-    </div>
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-crystal-ball ti-inline"></i> Proyeksi 3 Bulan ke Depan (Linear Regression)</div></div>
-      <div style="padding:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;" class="chart-scroll-wrap"><div style="min-width:520px;"><canvas id="an-chart-proyeksi" height="180" class="an-chart-clickable" title="Klik untuk memperbesar"></canvas></div></div>
-    </div>
-  </div>
-
-  <!-- Row 7: Cashflow Kumulatif + Perbandingan Periode -->
-  <div style="grid-template-columns:1fr 1fr;" class="kalk-grid">
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-cash ti-inline"></i> Kas Kumulatif Sepanjang Waktu</div></div>
-      <div style="padding:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;" class="chart-scroll-wrap"><div style="min-width:520px;"><canvas id="an-chart-kas-kumulatif" height="180" class="an-chart-clickable" title="Klik untuk memperbesar"></canvas></div></div>
-    </div>
-    <div class="table-card">
-      <div class="table-header"><div class="table-title"><i class="ti ti-scale ti-inline"></i> Perbandingan Periode: Sekarang vs Sebelumnya</div></div>
-      <div style="padding:16px;" id="an-period-compare"></div>
-    </div>
-  </div>
-
-  <!-- Tabel ringkasan per bulan -->
-  <div class="table-card">
-    <div class="table-header"><div class="table-title"><i class="ti ti-clipboard-list ti-inline"></i> Tabel Ringkasan Per Bulan</div></div>
-    <div class="table-scroll"><table>
-      <thead><tr><th>Bulan</th><th>Pendapatan</th><th>HPP</th><th>Laba Kotor</th><th>Beban</th><th>Laba Bersih</th><th>Kas Masuk</th><th>Kas Keluar</th><th>Arus Kas</th><th>Margin%</th></tr></thead>
-      <tbody id="an-tabel-bulan"></tbody>
-    </table></div>
-  </div>
-</div>
+<!-- ANALITIK migrated to src/components/analitik/AnalitikPage.tsx -->
 
 <!-- KALKULATOR: PERSEDIAAN migrated to src/components/calculators/KalkPersediaanPage.tsx -->
 
@@ -891,7 +96,7 @@
         <div class="section-title" style="display:flex;align-items:center;gap:10px;">
           <span style="font-size:22px;"><i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></span> Orias Assisten
         </div>
-        <div class="section-sub" style="margin-top:4px;">Ceritakan transaksi atau pertanyaan akuntansi Anda — AI akan mengerjakan & membimbing Anda</div>
+        <div class="section-sub" style="margin-top:4px;">Ceritakan transaksi atau pertanyaan akuntansi Anda â€” AI akan mengerjakan & membimbing Anda</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
         <button class="btn btn-ghost btn-sm" onclick="clearAIChat()" style="flex-shrink:0"><i class="ti ti-trash" style="font-size:13px;vertical-align:-2px;margin-right:3px;"></i> Clear</button>
@@ -907,11 +112,11 @@
           <div style="font-weight:600;color:var(--accent2);margin-bottom:6px;">Orias Assisten siap membantu!</div>
           <div>Saya bisa membantu Anda:</div>
           <ul style="margin:8px 0 0 16px;line-height:1.8;">
-            <li><i class="ti ti-book" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Catat transaksi</b> — cukup ceritakan, saya buatkan jurnal otomatis</li>
-            <li><i class="ti ti-calculator" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Hitung kalkulasi</b> — penyusutan, BEP, PPh, rasio, bunga</li>
-            <li><i class="ti ti-chart-bar ti-inline"></i> <b>Analisis laporan</b> — saya baca data keuangan Anda & berikan insight</li>
-            <li><i class="ti ti-info-circle" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Bimbingan penggunaan</b> — tanya cara pakai fitur apapun</li>
-            <li><i class="ti ti-school" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Edukasi akuntansi</b> — jelaskan konsep, standar PSAK, dll</li>
+            <li><i class="ti ti-book" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Catat transaksi</b> â€” cukup ceritakan, saya buatkan jurnal otomatis</li>
+            <li><i class="ti ti-calculator" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Hitung kalkulasi</b> â€” penyusutan, BEP, PPh, rasio, bunga</li>
+            <li><i class="ti ti-chart-bar ti-inline"></i> <b>Analisis laporan</b> â€” saya baca data keuangan Anda & berikan insight</li>
+            <li><i class="ti ti-info-circle" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Bimbingan penggunaan</b> â€” tanya cara pakai fitur apapun</li>
+            <li><i class="ti ti-school" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Edukasi akuntansi</b> â€” jelaskan konsep, standar PSAK, dll</li>
           </ul>
           <div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--muted);">
             <i class="ti ti-bulb" style="font-size:12px;vertical-align:-1px;margin-right:4px;"></i>Contoh: <i>"Kemarin saya beli laptop Rp 15jt untuk kantor, bayar tunai. Tolong buatkan jurnalnya dan hitung penyusutannya 4 tahun metode garis lurus."</i>
@@ -930,10 +135,10 @@
           oninput="this.style.height='44px';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
         <button onclick="sendAI()" id="ai-send-btn"
           style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;font-size:14px;font-family:var(--sans);height:44px;white-space:nowrap;flex-shrink:0;">
-          Kirim ↑
+          Kirim â†‘
         </button>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px;">Enter untuk kirim · Shift+Enter untuk baris baru · AI punya akses ke data jurnal Anda</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;">Enter untuk kirim Â· Shift+Enter untuk baris baru Â· AI punya akses ke data jurnal Anda</div>
     </div>
 
   </div>
@@ -944,7 +149,7 @@
 <div class="page" id="page-jurnal-berulang">
   <div class="section-header">
     <div><div class="section-title"><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Jurnal Berulang</div>
-    <div class="section-sub">Otomasi transaksi rutin · Gaji · Sewa · Cicilan · Langganan</div></div>
+    <div class="section-sub">Otomasi transaksi rutin Â· Gaji Â· Sewa Â· Cicilan Â· Langganan</div></div>
     <button class="btn btn-primary" onclick="openModalJurnalBerulang()">+ Tambah Berulang</button>
   </div>
   <div id="jb-list-container">
@@ -969,166 +174,13 @@
   </div>
 </div>
 
-<!-- UMUR PIUTANG (tabel: js/25-aging-ui.js; ekspor: task 2.4) -->
-<div class="page" id="page-umur-piutang">
-  <div class="section-header">
-    <div><div class="section-title"><i class="ti ti-clock" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Umur Piutang</div>
-    <div class="section-sub">Piutang belum lunas per pelanggan</div></div>
-  </div>
-  <div class="table-card" style="margin-bottom:16px;">
-    <div class="aging-toolbar">
-      <label class="aging-acuan-wrap">Per
-        <input type="date" id="aging-acuan" onchange="renderAgingPiutang()" aria-label="Per tanggal">
-      </label>
-      <button class="btn btn-ghost btn-sm" onclick="exportAgingPiutangCSV()"><i class="ti ti-download" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> CSV</button>
-      <button class="btn btn-ghost btn-sm" onclick="cetakAgingPiutang()"><i class="ti ti-printer" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Cetak</button>
-    </div>
-    <div id="aging-piutang-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada data untuk ditampilkan.</div>
-  </div>
-</div>
-
-<!-- UMUR HUTANG (tabel: js/25-aging-ui.js jenis 'hutang'; data/ekspor: js/30-aging-hutang.js, task 4.7) -->
-<div class="page" id="page-umur-hutang">
-  <div class="section-header">
-    <div><div class="section-title"><i class="ti ti-clock" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Umur Hutang</div>
-    <div class="section-sub">Utang usaha belum lunas per supplier</div></div>
-  </div>
-  <div class="table-card" style="margin-bottom:16px;">
-    <div class="aging-toolbar">
-      <label class="aging-acuan-wrap">Per
-        <input type="date" id="aging-hutang-acuan" onchange="renderAgingHutang()" aria-label="Per tanggal">
-      </label>
-      <button class="btn btn-ghost btn-sm" onclick="exportAgingHutangCSV()"><i class="ti ti-download" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> CSV</button>
-      <button class="btn btn-ghost btn-sm" onclick="cetakAgingHutang()"><i class="ti ti-printer" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Cetak</button>
-    </div>
-    <div id="aging-hutang-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada data untuk ditampilkan.</div>
-  </div>
-</div>
-
-<!-- KARTU PIUTANG (js/34-kartu-kontak.js, task 6.1) -->
-<div class="page" id="page-kartu-piutang">
-  <div class="section-header">
-    <div><div class="section-title"><i class="ti ti-file-invoice" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Kartu Piutang</div>
-    <div class="section-sub">Invoice, pembayaran, dan saldo berjalan per pelanggan</div></div>
-  </div>
-  <div class="table-card" style="margin-bottom:16px;">
-    <div class="aging-toolbar" style="flex-wrap:wrap;">
-      <label class="aging-acuan-wrap">Pelanggan
-        <select id="kartu-piutang-kontak" onchange="renderKartuPiutang()" aria-label="Pelanggan" style="flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;font-family:var(--sans);"></select>
-      </label>
-      <label class="aging-acuan-wrap">Dari
-        <input type="date" id="kartu-piutang-dari" onchange="renderKartuPiutang()" aria-label="Dari tanggal">
-      </label>
-      <label class="aging-acuan-wrap">Sampai
-        <input type="date" id="kartu-piutang-sampai" onchange="renderKartuPiutang()" aria-label="Sampai tanggal">
-      </label>
-    </div>
-    <div id="kartu-piutang-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada data untuk ditampilkan.</div>
-  </div>
-</div>
-
-<!-- KARTU HUTANG (js/34-kartu-kontak.js, task 6.2) -->
-<div class="page" id="page-kartu-hutang">
-  <div class="section-header">
-    <div><div class="section-title"><i class="ti ti-file-invoice" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Kartu Hutang</div>
-    <div class="section-sub">Tagihan, pembayaran, dan saldo berjalan per supplier</div></div>
-  </div>
-  <div class="table-card" style="margin-bottom:16px;">
-    <div class="aging-toolbar" style="flex-wrap:wrap;">
-      <label class="aging-acuan-wrap">Supplier
-        <select id="kartu-hutang-kontak" onchange="renderKartuHutang()" aria-label="Supplier" style="flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;font-family:var(--sans);"></select>
-      </label>
-      <label class="aging-acuan-wrap">Dari
-        <input type="date" id="kartu-hutang-dari" onchange="renderKartuHutang()" aria-label="Dari tanggal">
-      </label>
-      <label class="aging-acuan-wrap">Sampai
-        <input type="date" id="kartu-hutang-sampai" onchange="renderKartuHutang()" aria-label="Sampai tanggal">
-      </label>
-    </div>
-    <div id="kartu-hutang-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada data untuk ditampilkan.</div>
-  </div>
-</div>
-
-<!-- TAGIHAN PEMBELIAN / BILL (form: task 4.3; daftar + simpan: task 4.4) -->
-<div class="page" id="page-bill">
-  <div class="section-header">
-    <div><div class="section-title"><i class="ti ti-file-invoice" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Tagihan Pembelian</div>
-    <div class="section-sub">Tagihan dari supplier yang belum dibayar · Utang usaha</div></div>
-  </div>
-  <div class="table-card" style="margin-bottom:16px;">
-    <div class="table-header">
-      <div class="table-title"><i class="ti ti-file-invoice ti-inline"></i> Daftar Tagihan Pembelian</div>
-      <button class="btn btn-primary" onclick="openModalBill()">+ Buat Tagihan</button>
-    </div>
-    <div id="bill-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada tagihan pembelian.</div>
-  </div>
-</div>
-
-<!-- PENAWARAN (form: task 7.1; simpan + daftar: task 7.2) -->
-<div class="page" id="page-penawaran">
-  <div class="section-header">
-    <div><div class="section-title"><i class="ti ti-file-text" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Penawaran</div>
-    <div class="section-sub">Penawaran harga ke pelanggan · Dasar pesanan penjualan</div></div>
-  </div>
-  <div class="table-card" style="margin-bottom:16px;">
-    <div class="table-header">
-      <div class="table-title"><i class="ti ti-file-text ti-inline"></i> Daftar Penawaran</div>
-      <button class="btn btn-primary" onclick="openModalPenawaran()">+ Buat Penawaran</button>
-    </div>
-    <div id="penawaran-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada penawaran.</div>
-  </div>
-</div>
-
-<!-- PESANAN PENJUALAN (task 7.3b; js/38-pesanan-jual-ui.js) -->
-<div class="page" id="page-pesanan-jual">
-  <div class="section-header">
-    <div><div class="section-title"><i class="ti ti-clipboard-list" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Pesanan Penjualan</div>
-    <div class="section-sub">Dibuat dari penawaran disetujui · Dasar faktur penjualan</div></div>
-  </div>
-  <div class="table-card" style="margin-bottom:16px;">
-    <div class="table-header">
-      <div class="table-title"><i class="ti ti-clipboard-list ti-inline"></i> Daftar Pesanan Penjualan</div>
-    </div>
-    <div id="pesanan-jual-body" style="padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;">Belum ada pesanan penjualan.</div>
-  </div>
-</div>
-
-<!-- INVOICE & PIUTANG -->
-<div class="page" id="page-invoice">
-  <div class="section-header">
-    <div><div class="section-title"><i class="ti ti-file-invoice" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Invoice &amp; Piutang</div>
-    <div class="section-sub">Buat invoice · Lacak pembayaran · Jurnal otomatis</div></div>
-    <button class="btn btn-primary" onclick="openModalInvoice()">+ Buat Invoice</button>
-  </div>
-  <div id="inv-belum-jurnal"></div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;" id="inv-kpi"></div>
-  <div class="table-card" style="margin-bottom:16px;">
-    <div class="table-header">
-      <div class="table-title"><i class="ti ti-clipboard-list ti-inline"></i> Daftar Invoice</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-ghost btn-sm" onclick="openModalAlokasiPembayaran()"><i class="ti ti-arrows-exchange"></i> Alokasi Pembayaran</button>
-        <select id="inv-filter-status" onchange="renderInvoiceList()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;font-family:var(--sans);">
-          <option value="all">Semua Status</option>
-          <option value="draft">Draft</option>
-          <option value="terkirim">Terkirim</option>
-          <option value="sebagian">Dibayar Sebagian</option>
-          <option value="lunas">Lunas</option>
-          <option value="jatuh-tempo">Jatuh Tempo</option>
-        </select>
-      </div>
-    </div>
-    <div class="table-scroll"><table id="inv-table">
-      <thead><tr><th>No Invoice</th><th>Pelanggan</th><th>Tanggal</th><th>Jatuh Tempo</th><th>Nominal</th><th>Sisa</th><th>Status</th><th>Aksi</th></tr></thead>
-      <tbody id="inv-tbody"></tbody>
-    </table></div>
-  </div>
-</div>
+<!-- UMUR PIUTANG/HUTANG, KARTU PIUTANG/HUTANG, BILL, PENAWARAN, PESANAN JUAL & INVOICE migrated to React components -->
 
 <!-- REKONSILIASI BANK -->
 <div class="page" id="page-rekonsiliasi">
   <div class="section-header">
     <div><div class="section-title"><i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Rekonsiliasi Bank</div>
-    <div class="section-sub">Cocokkan mutasi bank dengan jurnal · Upload CSV · Otomatis</div></div>
+    <div class="section-sub">Cocokkan mutasi bank dengan jurnal Â· Upload CSV Â· Otomatis</div></div>
   </div>
   <div style="grid-template-columns:1fr 1fr;" class="kalk-grid">
     <div class="table-card">
@@ -1183,7 +235,7 @@
 <div class="page" id="page-kurs">
   <div class="section-header">
     <div><div class="section-title"><i class="ti ti-currency-dollar" style="font-size:16px;vertical-align:-2px;margin-right:6px;"></i> Multi Mata Uang</div>
-    <div class="section-sub">Kurs otomatis · Konversi transaksi · History kurs</div></div>
+    <div class="section-sub">Kurs otomatis Â· Konversi transaksi Â· History kurs</div></div>
     <button class="btn btn-primary" onclick="refreshKursOtomatis()"><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Update Kurs</button>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;" id="kurs-cards"></div>
@@ -1199,28 +251,28 @@
           <div class="form-group">
             <label>Dari</label>
             <select id="kurs-dari" onchange="hitungKonversi()" style="width:100%">
-              <option value="IDR">IDR — Rupiah</option>
-              <option value="USD">USD — Dollar AS</option>
-              <option value="SGD">SGD — Dollar Singapura</option>
-              <option value="EUR">EUR — Euro</option>
-              <option value="MYR">MYR — Ringgit</option>
-              <option value="JPY">JPY — Yen</option>
+              <option value="IDR">IDR â€” Rupiah</option>
+              <option value="USD">USD â€” Dollar AS</option>
+              <option value="SGD">SGD â€” Dollar Singapura</option>
+              <option value="EUR">EUR â€” Euro</option>
+              <option value="MYR">MYR â€” Ringgit</option>
+              <option value="JPY">JPY â€” Yen</option>
             </select>
           </div>
           <div class="form-group">
             <label>Ke</label>
             <select id="kurs-ke" onchange="hitungKonversi()" style="width:100%">
-              <option value="USD">USD — Dollar AS</option>
-              <option value="IDR">IDR — Rupiah</option>
-              <option value="SGD">SGD — Dollar Singapura</option>
-              <option value="EUR">EUR — Euro</option>
-              <option value="MYR">MYR — Ringgit</option>
-              <option value="JPY">JPY — Yen</option>
+              <option value="USD">USD â€” Dollar AS</option>
+              <option value="IDR">IDR â€” Rupiah</option>
+              <option value="SGD">SGD â€” Dollar Singapura</option>
+              <option value="EUR">EUR â€” Euro</option>
+              <option value="MYR">MYR â€” Ringgit</option>
+              <option value="JPY">JPY â€” Yen</option>
             </select>
           </div>
         </div>
         <div id="kurs-hasil" style="background:var(--surface2);border-radius:12px;padding:20px;text-align:center;margin-top:12px;">
-          <div style="font-size:24px;font-weight:700;color:var(--accent);font-family:var(--mono);" id="kurs-hasil-angka">—</div>
+          <div style="font-size:24px;font-weight:700;color:var(--accent);font-family:var(--mono);" id="kurs-hasil-angka">â€”</div>
           <div style="font-size:12px;color:var(--muted);margin-top:4px;" id="kurs-hasil-detail">Masukkan nominal untuk konversi</div>
         </div>
       </div>
@@ -1244,7 +296,7 @@
 <div class="page" id="page-notifikasi">
   <div class="section-header">
     <div><div class="section-title"><i class="ti ti-bell" style="font-size:16px;vertical-align:-2px;margin-right:6px;"></i> Notifikasi &amp; Alert</div>
-    <div class="section-sub">Peringatan otomatis · Batas anggaran · Jatuh tempo · Arus kas</div></div>
+    <div class="section-sub">Peringatan otomatis Â· Batas anggaran Â· Jatuh tempo Â· Arus kas</div></div>
     <button class="btn btn-primary" onclick="openModalAlertBaru()">+ Tambah Alert</button>
   </div>
   <div id="notif-alert-list" style="margin-bottom:16px;"></div>
@@ -1264,7 +316,7 @@
 <div class="page" id="page-anggaran">
   <div class="section-header">
     <div><div class="section-title"><i class="ti ti-target" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Anggaran vs Aktual</div>
-    <div class="section-sub">Target per akun per bulan · Monitoring realisasi · Variance analysis</div></div>
+    <div class="section-sub">Target per akun per bulan Â· Monitoring realisasi Â· Variance analysis</div></div>
     <button class="btn btn-primary" onclick="openModalAnggaran()">+ Set Anggaran</button>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;" id="ang-kpi"></div>
@@ -1291,7 +343,7 @@
 <div class="page" id="page-pajak">
   <div class="section-header">
     <div><div class="section-title"><i class="ti ti-receipt-tax" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Pajak Otomatis</div>
-    <div class="section-sub">PPN 11%/12% · PPh 21 · PPh 23 · Laporan SPT</div></div>
+    <div class="section-sub">PPN 11%/12% Â· PPh 21 Â· PPh 23 Â· Laporan SPT</div></div>
     <button class="btn btn-primary" onclick="renderPajakOtomatis()"><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Hitung Ulang</button>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;" id="pajak-kpi"></div>
@@ -1343,7 +395,7 @@
         <select id="pajak-setor-bulan" onchange="renderRekapSiapSetor()" style="display:none;"></select>
         <button class="opt-picker-btn" type="button" id="pajak-setor-bulan-btn" onclick="openPajakBulanPicker()" style="min-width:160px;">
           <span class="opt-picker-label" id="pajak-setor-bulan-label">Pilih Periode...</span>
-          <span class="opt-picker-arrow">▾</span>
+          <span class="opt-picker-arrow">â–¾</span>
         </button>
         <button class="btn btn-ghost btn-sm" onclick="exportRekapPajakPDF()"><i class="ti ti-printer ti-btn"></i> Cetak PDF</button>
       </div>
@@ -1360,276 +412,7 @@
   </div>
 </div>
 
-<!-- TUTORIAL HUB PAGE -->
-<div class="page" id="page-tutorial">
-  <div class="section-header" style="margin-bottom:20px;">
-    <div>
-      <div class="section-title" style="display:flex;align-items:center;gap:10px;"><i class="ti ti-school" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Pusat Tutorial</div>
-      <div class="section-sub">Panduan lengkap semua fitur. Setiap tutorial bisa diselesaikan dalam 2–5 menit.</div>
-    </div>
-    <button class="btn btn-primary" onclick="startTutorialById('semua')"><i class="ti ti-player-play" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Jalankan Semua</button>
-  </div>
-
-  <!-- DASAR -->
-  <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;"><i class="ti ti-leaf" style="font-size:12px;vertical-align:-1px;margin-right:5px;"></i>Dasar — Mulai dari sini</div>
-  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
-    <div class="tut-card" onclick="startTutorialById('pengenalan')">
-      <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 00-2-2v0a2 2 0 00-2 2v0M14 10V4a2 2 0 00-2-2v0a2 2 0 00-2 2v2M10 10.5V6a2 2 0 00-2-2v0a2 2 0 00-2 2v8l3 3"/><path d="M18 11a2 2 0 114 0v3a8 8 0 01-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 012.83-2.82L7 15"/></svg></div><div class="tut-card-title">Pengenalan OAS</div>
-      <div class="tut-card-desc">Kenali tampilan, navigasi sidebar, topbar, dan cara berpindah antar menu. Cocok untuk pertama kali.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~2 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('konsep-akuntansi')">
-      <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v16l-5-2.5L5 20V4zm9 0h2a2 2 0 012 2v16l-4-2"/></svg></div><div class="tut-card-title">Konsep Dasar Akuntansi</div>
-      <div class="tut-card-desc">Debit, kredit, akun, jurnal — dijelaskan dengan bahasa sehari-hari tanpa rumus membingungkan.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('chart-of-accounts')">
-      <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 10h18M3 14h11M3 18h8"/><path d="M14 14l3 3 5-5"/></svg></div><div class="tut-card-title">Chart of Accounts</div>
-      <div class="tut-card-desc">Struktur daftar akun, cara tambah akun baru, dan tips pengelompokan yang benar.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~2 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('saldo-awal')">
-      <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg></div><div class="tut-card-title">Setup Saldo Awal</div>
-      <div class="tut-card-desc">Cara input saldo awal kas, aset, utang, dan modal saat pertama kali mulai menggunakan OAS.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-  </div>
-
-  <!-- TRANSAKSI -->
-  <div style="font-size:11px;font-weight:700;color:var(--accent2);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;"><i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Mencatat Transaksi</div>
-  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
-    <div class="tut-card" onclick="startTutorialById('catat-kas-masuk')">
-      <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></div><div class="tut-card-title">Mencatat Pemasukan Kas</div>
-      <div class="tut-card-desc">Cara mencatat uang masuk: dari modal, pembayaran pelanggan, penerimaan piutang, dll.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('catat-kas-keluar')">
-      <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="tut-card-title">Mencatat Pengeluaran Kas</div>
-      <div class="tut-card-desc">Cara mencatat bayar beban: listrik, gaji, sewa, pembelian perlengkapan, dan lainnya.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('catat-penjualan')">
-      <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V3l2 2 2-2 2 2 2-2 2 2 2-2v18l-2-2-2 2-2-2-2 2-2-2-2 2zm4-11h6m-6 4h6"/></svg></div><div class="tut-card-title">Mencatat Penjualan</div>
-      <div class="tut-card-desc">Penjualan tunai dan kredit (piutang). Input HPP agar laba kotor otomatis terhitung.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~4 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('catat-pembelian')">
-      <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg></div><div class="tut-card-title">Mencatat Pembelian</div>
-      <div class="tut-card-desc">Beli persediaan, aset, bahan — tunai maupun kredit. Akun yang tepat untuk setiap jenis.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('jurnal-manual')">
-      <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="tut-card-title">Jurnal Manual</div>
-      <div class="tut-card-desc">Input bebas baris debit/kredit dengan validasi balance otomatis. Untuk transaksi kompleks atau koreksi.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~4 menit</span></div>
-    </div>
-  </div>
-
-  <!-- LAPORAN -->
-  <div style="font-size:11px;font-weight:700;color:var(--accent3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;"><i class="ti ti-chart-bar ti-inline"></i> Membaca Laporan Keuangan</div>
-  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
-    <div class="tut-card" onclick="startTutorialById('jurnal-laporan')">
-      <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm8-2v18"/></svg></div><div class="tut-card-title">Jurnal & Buku Besar</div>
-      <div class="tut-card-desc">Cara memahami jurnal umum, kas, penjualan, dan buku besar per akun. Filter dan pencarian data.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('neraca-saldo')">
-      <div class="tut-card-icon"><i class="ti ti-scale ti-inline"></i></div><div class="tut-card-title">Neraca Saldo</div>
-      <div class="tut-card-desc">Apa itu neraca saldo, cara membacanya, dan apa artinya jika tidak balance.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~2 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('laba-rugi')">
-      <div class="tut-card-icon"><i class="ti ti-trending-up" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div><div class="tut-card-title">Laporan Laba Rugi</div>
-      <div class="tut-card-desc">Cara membaca laporan laba rugi — dari pendapatan, HPP, laba kotor, sampai laba bersih.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('neraca')">
-      <div class="tut-card-icon"><i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div><div class="tut-card-title">Neraca (Balance Sheet)</div>
-      <div class="tut-card-desc">Cara membaca neraca — aset, liabilitas, ekuitas. Kenapa harus balance dan apa artinya.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('export-laporan')">
-      <div class="tut-card-icon"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div><div class="tut-card-title">Export PDF, Excel & CSV</div>
-      <div class="tut-card-desc">Cara export semua laporan termasuk invoice, anggaran, pajak, dan analitik ke PDF, Excel, atau CSV.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-  </div>
-
-  <!-- FITUR BARU -->
-  <div style="font-size:11px;font-weight:700;color:#a78bfa;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;"><i class="ti ti-sparkles" style="font-size:12px;vertical-align:-1px;margin-right:5px;"></i>Fitur Baru</div>
-  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
-    <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-jurnal-berulang')">
-      <div class="tut-card-icon"><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div><div class="tut-card-title">Jurnal Berulang</div>
-      <div class="tut-card-desc">Otomasi transaksi rutin seperti gaji, sewa, cicilan. Set sekali, jalan otomatis sesuai jadwal.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-    <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-invoice')">
-      <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V3l2 2 2-2 2 2 2-2 2 2 2-2v18l-2-2-2 2-2-2-2 2-2-2-2 2zm4-11h6m-6 4h6"/></svg></div><div class="tut-card-title">Invoice & Piutang</div>
-      <div class="tut-card-desc">Buat invoice profesional, lacak status pembayaran, tandai lunas dan jurnal otomatis terbuat.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~4 menit</span></div>
-    </div>
-    <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-rekonsiliasi')">
-      <div class="tut-card-icon"><i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div><div class="tut-card-title">Rekonsiliasi Bank</div>
-      <div class="tut-card-desc">Upload CSV mutasi bank, cocokkan otomatis dengan jurnal, import transaksi yang belum tercatat.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~5 menit</span></div>
-    </div>
-    <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-kurs')">
-      <div class="tut-card-icon"><i class="ti ti-currency-exchange" style="font-size:26px;"></i></div><div class="tut-card-title">Multi Mata Uang & Kurs</div>
-      <div class="tut-card-desc">Kelola kurs USD, SGD, EUR, MYR, JPY. Konverter cepat dan update kurs otomatis.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-    <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-notifikasi')">
-      <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg></div><div class="tut-card-title">Notifikasi & Alert</div>
-      <div class="tut-card-desc">Set alert otomatis: arus kas negatif, invoice jatuh tempo, anggaran terlampaui, laba negatif.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-    <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-anggaran')">
-      <div class="tut-card-icon"><i class="ti ti-target" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div><div class="tut-card-title">Anggaran vs Aktual</div>
-      <div class="tut-card-desc">Set target anggaran per akun per bulan, monitor realisasi dengan progress bar dan variance analysis.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~4 menit</span></div>
-    </div>
-    <div class="tut-card" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);" onclick="startTutorialById('tut-pajak')">
-      <div class="tut-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V3l2 2 2-2 2 2 2-2 2 2 2-2v18l-2-2-2 2-2-2-2 2-2-2-2 2zm4-11h6m-6 4h6"/></svg></div><div class="tut-card-title">Pajak Otomatis</div>
-      <div class="tut-card-desc">Kalkulasi PPN 11%/12%, PPh 21 karyawan, PPh 23. Jurnal pajak otomatis dan ringkasan SPT tahunan.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~5 menit</span></div>
-    </div>
-  </div>
-
-  <!-- ANALITIK -->
-  <div style="font-size:11px;font-weight:700;color:var(--accent3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;"><i class="ti ti-trending-up" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Analitik & Tren</div>
-  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
-    <div class="tut-card" onclick="startTutorialById('tut-analitik')">
-      <div class="tut-card-icon"><i class="ti ti-chart-bar ti-inline"></i></div><div class="tut-card-title">Analitik & Tren Bisnis</div>
-      <div class="tut-card-desc">Baca 10+ grafik analitik: pendapatan vs beban, tren laba, arus kas, waterfall, proyeksi, dan lainnya.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~4 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('tut-chart-hd')">
-      <div class="tut-card-icon"><i class="ti ti-search" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div><div class="tut-card-title">Chart HD & Zoom</div>
-      <div class="tut-card-desc">Klik chart mana saja untuk tampilan HD super besar. Scroll horizontal di mobile agar label tidak bertabrakan.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~1 menit</span></div>
-    </div>
-  </div>
-
-  <!-- KALKULATOR -->
-  <div style="font-size:11px;font-weight:700;color:var(--red);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="9" y2="9"/><line x1="15" y1="9" x2="15" y2="9"/><line x1="9" y1="15" x2="9" y2="15"/><line x1="15" y1="12" x2="15" y2="18"/><line x1="12" y1="9" x2="12" y2="9"/><line x1="9" y1="12" x2="9" y2="12"/><line x1="12" y1="12" x2="12" y2="12"/></svg> Kalkulator Akuntansi</div>
-  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
-    <div class="tut-card" onclick="startTutorialById('kalk-penyusutan')">
-      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg></div><div class="tut-card-title">Kalkulator Penyusutan</div>
-      <div class="tut-card-desc">Hitung penyusutan aset tetap — garis lurus, saldo menurun, SYD, unit produksi. Tabel per tahun lengkap.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~4 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('kalk-persediaan')">
-      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div><div class="tut-card-title">Kalkulator Persediaan</div>
-      <div class="tut-card-desc">FIFO, LIFO, Weighted Average — cara input kartu stok dan baca hasil HPP serta nilai akhir persediaan.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~4 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('kalk-bep')">
-      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="tut-card-title">Kalkulator BEP & Margin</div>
-      <div class="tut-card-desc">Hitung titik impas bisnis — BEP unit, BEP rupiah, contribution margin, margin of safety.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('kalk-rasio')">
-      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div><div class="tut-card-title">Kalkulator Rasio Keuangan</div>
-      <div class="tut-card-desc">20+ rasio likuiditas, solvabilitas, profitabilitas, aktivitas, dan pasar. Otomatis dari data jurnal.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-hard">Lanjutan</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~5 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('kalk-bunga')">
-      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg></div><div class="tut-card-title">Kalkulator Bunga & Anuitas</div>
-      <div class="tut-card-desc">Hitung bunga tunggal, majemuk, PV/FV, cicilan kredit, dan tabel amortisasi pinjaman lengkap.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~4 menit</span></div>
-    </div>
-  </div>
-
-  <!-- AI -->
-  <div style="font-size:11px;font-weight:700;color:var(--accent2);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;"><i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> AI Assistant</div>
-  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
-    <div class="tut-card tut-card-ai" onclick="startTutorialById('ai-intro')">
-      <div class="tut-card-icon"><i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div><div class="tut-card-title">Mengenal Orias Assisten</div>
-      <div class="tut-card-desc">Cara terbaik menggunakan AI: catat transaksi pakai kalimat natural, minta kalkulasi, tanya cara pakai.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-    <div class="tut-card tut-card-ai" onclick="startTutorialById('ai-advanced')">
-      <div class="tut-card-icon"><i class="ti ti-sparkles" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div><div class="tut-card-title">AI untuk Analisis Keuangan</div>
-      <div class="tut-card-desc">Minta AI analisis laporan keuanganmu, identifikasi masalah cash flow, dan berikan rekomendasi bisnis.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-hard">Lanjutan</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-  </div>
-
-  <!-- TIPS & SHORTCUT -->
-  <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;padding-left:2px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg> Tips &amp; Shortcut</div>
-  <div class="tut-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:28px;">
-    <div class="tut-card" onclick="startTutorialById('tut-shortcut')">
-      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg></div><div class="tut-card-title">Keyboard Shortcut</div>
-      <div class="tut-card-desc">Ctrl+N tambah transaksi, Ctrl+S simpan, Ctrl+/ buka AI, dan shortcut lainnya untuk kerja lebih cepat.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~1 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('tut-mobile')">
-      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div><div class="tut-card-title">Penggunaan di Mobile</div>
-      <div class="tut-card-desc">Pull-to-refresh, bottom sheet picker, install sebagai PWA, dan tips navigasi di layar kecil.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-easy">Pemula</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~2 menit</span></div>
-    </div>
-    <div class="tut-card" onclick="startTutorialById('tut-backup')">
-      <div class="tut-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg></div><div class="tut-card-title">Backup &amp; Sinkronisasi</div>
-      <div class="tut-card-desc">Cara login Supabase untuk sinkron data antar perangkat, backup JSON, dan restore data.</div>
-      <div class="tut-card-meta"><span class="tut-badge tut-badge-medium">Menengah</span><span class="tut-dur"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> ~3 menit</span></div>
-    </div>
-  </div>
-</div>
-
-
-
-<!-- AUDIT TRAIL PAGE -->
-<!-- AUDIT TRAIL PAGE -->
-<div class="page" id="page-audit-trail" style="display:none;">
-  <div class="audit-trail-fixed-top">
-    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-    <button class="btn btn-ghost btn-sm" onclick="auditExportCSV()" style="gap:5px;"><i class="ti ti-download" style="font-size:12px;"></i> Export CSV</button>
-    <button class="btn btn-danger btn-sm" onclick="auditClearOld()" style="gap:5px;"><i class="ti ti-trash" style="font-size:12px;"></i> Bersihkan Log Lama</button>
-  </div>
-  <div id="audit-kpi" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;"></div>
-  <!-- Filter per bisnis — hidden, dirender dari JS (desktop & mobile sama) -->
-  <div id="audit-biz-bar" style="display:none;"></div>
-  <!-- Legend role — clickable filter badges -->
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
-    <span style="font-size:11px;color:var(--muted);">Label role:</span>
-    <button id="audit-role-owner"  onclick="auditToggleRoleFilter('owner')"  class="at-role-filter-badge" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(250,204,21,0.15);color:#facc15;border:1px solid rgba(250,204,21,0.3);display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s;" title="Klik untuk filter role Owner"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M2 20h20M5 20V10l7-6 7 6v10"/><path d="M9 20v-5h6v5"/></svg> Owner</button>
-    <button id="audit-role-admin"  onclick="auditToggleRoleFilter('admin')"  class="at-role-filter-badge" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(34,211,238,0.12);color:var(--accent2);border:1px solid rgba(34,211,238,0.25);display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s;" title="Klik untuk filter role Admin"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Admin</button>
-    <button id="audit-role-member" onclick="auditToggleRoleFilter('member')" class="at-role-filter-badge" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(148,163,184,0.12);color:#94a3b8;border:1px solid rgba(148,163,184,0.2);display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s;" title="Klik untuk filter role Member"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg> Member</button>
-    <button id="audit-role-guest"  onclick="auditToggleRoleFilter('guest')"  class="at-role-filter-badge" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(148,163,184,0.08);color:#64748b;border:1px solid rgba(148,163,184,0.15);display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s;" title="Klik untuk filter role Guest"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg> Guest</button>
-    <button id="audit-role-system" onclick="auditToggleRoleFilter('system')" class="at-role-filter-badge" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.25);display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s;" title="Klik untuk filter role Sistem"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Sistem</button>
-    <button id="audit-role-ai" onclick="auditToggleRoleFilter('ai')" class="at-role-filter-badge" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.3);display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s;" title="Klik untuk filter role AI"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4M8 16v.01M16 16v.01"/></svg> AI</button>
-  </div>
-  <!-- Filter bar — 3 opt-picker sejajar (desktop & mobile sama) -->
-  <div class="audit-filter-row">
-    <!-- Filter Bisnis — hidden sampai ada >1 bisnis -->
-    <button id="audit-biz-btn" class="opt-picker-btn audit-filter-pick" onclick="auditOpenBizPicker()" style="display:none;">
-      <span class="opt-picker-label" id="audit-biz-label">Semua Bisnis</span>
-      <span class="opt-picker-arrow">▾</span>
-    </button>
-    <!-- Filter Kategori -->
-    <button id="audit-kat-btn" class="opt-picker-btn audit-filter-pick" onclick="auditOpenKatPicker()">
-      <span class="opt-picker-label" id="audit-kat-label">Semua Kategori</span>
-      <span class="opt-picker-arrow">▾</span>
-    </button>
-    <!-- Filter Aktivitas -->
-    <button id="audit-akt-btn" class="opt-picker-btn audit-filter-pick" onclick="auditOpenAktPicker()">
-      <span class="opt-picker-label" id="audit-akt-label">Semua Aktivitas</span>
-      <span class="opt-picker-arrow">▾</span>
-    </button>
-  </div>
-  <!-- Search bar -->
-  <div style="margin-bottom:4px;">
-    <input type="text" id="audit-search" placeholder="Cari aktivitas, nama, referensi..." oninput="renderAuditTrail()"
-      style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;">
-  </div>
-  </div><!-- end .audit-trail-fixed-top -->
-  <div id="audit-scroll-area">
-  <div id="audit-trail-list"></div>
-  <div id="audit-load-more" style="text-align:center;padding:16px;display:none;">
-    <button class="btn btn-ghost btn-sm" onclick="auditLoadMore()">Muat lebih banyak</button>
-  </div>
-  </div><!-- end #audit-scroll-area -->
-</div>
+<!-- TUTORIAL & AUDIT TRAIL migrated to src/components/admin/ -->
 
 <!-- MODAL AKUN, SAMPAH COA & MODAL PRODUK migrated to React components -->
 
@@ -1642,7 +425,7 @@
     <div id="akun-picker-handle"></div>
     <div id="akun-picker-header">
       <h3><i class="ti ti-clipboard-list ti-inline"></i> Pilih Akun</h3>
-      <button id="akun-picker-close" onclick="closeAkunPicker()">✕</button>
+      <button id="akun-picker-close" onclick="closeAkunPicker()">âœ•</button>
     </div>
     <div id="akun-picker-search-wrap">
       <i class="ti ti-search" id="akun-picker-search-icon" style="font-size:15px;color:var(--muted);"></i>
@@ -1652,13 +435,13 @@
   </div>
 </div>
 
-<!-- KONTAK PICKER BOTTOM-SHEET — desain sama persis dengan akun picker -->
+<!-- KONTAK PICKER BOTTOM-SHEET â€” desain sama persis dengan akun picker -->
 <div id="kontak-picker-backdrop" onclick="if(event.target===this)closeKontakPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:6001;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px);">
   <div id="kontak-picker-sheet" style="background:var(--surface);width:100%;max-width:520px;border-radius:20px 20px 0 0;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,0.4);animation:slideUpSheet 0.25s cubic-bezier(0.34,1.2,0.64,1);">
     <div style="width:36px;height:4px;border-radius:2px;background:var(--border);margin:10px auto 0;flex-shrink:0;"></div>
     <div style="padding:10px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;gap:10px;">
       <h3 style="font-size:15px;font-weight:700;flex:1;"><i class="ti ti-users" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Pilih Kontak</h3>
-      <button onclick="closeKontakPicker()" style="background:var(--surface2);border:none;border-radius:50%;width:30px;height:30px;color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      <button onclick="closeKontakPicker()" style="background:var(--surface2);border:none;border-radius:50%;width:30px;height:30px;color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">âœ•</button>
     </div>
     <div style="padding:10px 14px 8px;flex-shrink:0;position:relative;">
       <i class="ti ti-search" style="position:absolute;left:26px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;color:var(--muted);"></i>
@@ -1678,7 +461,7 @@
 
 <!-- TUTORIAL OVERLAY -->
 <div id="tut-backdrop" style="display:none;position:fixed;inset:0;z-index:1100;pointer-events:none;">
-  <!-- Tooltip window — draggable & minimizable -->
+  <!-- Tooltip window â€” draggable & minimizable -->
   <div id="tut-tooltip" style="
     position:fixed;z-index:1110;width:320px;max-width:calc(100vw - 32px);
     background:var(--surface);border:2px solid var(--accent2);
@@ -1697,8 +480,8 @@
       <span id="tut-step-label" style="font-size:11px;font-weight:700;color:var(--accent2);letter-spacing:0.06em;text-transform:uppercase;flex:1;"></span>
       <span id="tut-counter" style="font-size:11px;color:var(--muted);font-family:var(--mono);"></span>
       <!-- Window controls -->
-      <button onclick="tutMinimize()" title="Kecilkan" style="background:rgba(245,158,11,0.2);border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:10px;color:var(--accent3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">−</button>
-      <button onclick="exitTutorial()" title="Tutup" style="background:rgba(248,113,113,0.2);border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:10px;color:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+      <button onclick="tutMinimize()" title="Kecilkan" style="background:rgba(245,158,11,0.2);border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:10px;color:var(--accent3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">âˆ’</button>
+      <button onclick="exitTutorial()" title="Tutup" style="background:rgba(248,113,113,0.2);border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:10px;color:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;">âœ•</button>
     </div>
 
     <!-- Progress bar -->
@@ -1713,12 +496,12 @@
       <div id="tut-body" style="font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:12px;max-height:200px;overflow-y:auto;"></div>
 
       <div id="tut-task-wrap" style="display:none;background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.25);border-radius:8px;padding:10px;margin-bottom:10px;">
-        <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">✋ Lakukan ini:</div>
+        <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">âœ‹ Lakukan ini:</div>
         <div id="tut-task" style="font-size:12.5px;color:var(--text);line-height:1.6;"></div>
       </div>
 
       <div id="tut-tip-wrap" style="display:none;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:6px;padding:8px;margin-bottom:10px;">
-        <div style="font-size:11.5px;color:var(--accent3);"><b>💡</b> <span id="tut-tip"></span></div>
+        <div style="font-size:11.5px;color:var(--accent3);"><b>ðŸ’¡</b> <span id="tut-tip"></span></div>
       </div>
 
       <div style="display:flex;gap:8px;align-items:center;">
@@ -1726,7 +509,7 @@
           background:var(--accent);color:#000;border:none;border-radius:7px;
           padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;
           font-family:var(--sans);flex:1;
-        ">Lanjut →</button>
+        ">Lanjut â†’</button>
         <button id="tut-btn-skip" onclick="tutSkipSection()" style="
           background:transparent;color:var(--muted);border:1px solid var(--border);
           border-radius:7px;padding:8px 12px;font-size:12px;cursor:pointer;font-family:var(--sans);
@@ -1745,7 +528,7 @@
     <span style="font-size:14px;"><i class="ti ti-school" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i></span>
     <span id="tut-mini-label" style="font-size:12px;font-weight:600;color:var(--accent2);">Tutorial</span>
     <span id="tut-mini-counter" style="font-size:11px;color:var(--muted);font-family:var(--mono);"></span>
-    <span style="font-size:11px;color:var(--muted);">↑ Buka</span>
+    <span style="font-size:11px;color:var(--muted);">â†‘ Buka</span>
   </div>
 
   <div id="tut-clickblock" style="position:fixed;z-index:1105;pointer-events:all;cursor:pointer;display:none;" onclick="tutHandleClick()"></div>
@@ -1754,7 +537,7 @@
 <!-- Tutorial complete modal -->
 <div id="tut-complete" style="display:none;position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this){this.style.display='none';}"  title="Klik area gelap untuk menutup">
   <div style="background:var(--surface);border:2px solid var(--accent);border-radius:20px;padding:32px;max-width:440px;width:100%;text-align:center;">
-    <div style="font-size:56px;margin-bottom:16px;">🎉</div>
+    <div style="font-size:56px;margin-bottom:16px;">ðŸŽ‰</div>
     <div style="font-size:22px;font-weight:800;color:var(--accent);margin-bottom:8px;">Tutorial Selesai!</div>
     <div style="font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.7;">
       Selamat! Kamu sudah menguasai semua fitur Bayu Harlan Priangga.<br>
@@ -1766,7 +549,7 @@
       <button onclick="document.getElementById('tut-complete').style.display='none';startTutorial()" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;cursor:pointer;font-family:var(--sans);">Ulangi Tutorial</button>
     </div>
     <div style="margin-top:16px;">
-      <button onclick="document.getElementById('tut-complete').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--sans);opacity:0.6;">✕ Tutup</button>
+      <button onclick="document.getElementById('tut-complete').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--sans);opacity:0.6;">âœ• Tutup</button>
     </div>
     <div style="margin-top:8px;font-size:11px;color:var(--muted);opacity:0.45;">Atau klik area gelap di luar popup untuk menutup</div>
   </div>
@@ -1777,7 +560,7 @@
   <div class="modal" style="max-width:400px;">
     <div class="modal-head">
       <div class="modal-title"><i class="ti ti-arrow-back-up" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Balik Jurnal</div>
-      <button class="modal-close" onclick="closeModal('modal-hapus-jurnal')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-hapus-jurnal')">âœ•</button>
     </div>
     <div class="modal-body">
       <div style="text-align:center;padding:8px 0 16px;">
@@ -1806,7 +589,7 @@
   <div class="modal" style="max-width:440px;">
     <div class="modal-head">
       <div class="modal-title"><i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Reset Data</div>
-      <button class="modal-close" onclick="closeModal('modal-reset-all')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-reset-all')">âœ•</button>
     </div>
     <div class="modal-body">
       <div style="text-align:center;padding:8px 0 16px;">
@@ -1853,7 +636,7 @@
   <div class="modal" style="max-width:520px;">
     <div class="modal-head">
       <div class="modal-title"><i class="ti ti-settings ti-inline"></i> Setting Saldo Awal</div>
-      <button class="modal-close" onclick="closeModal('modal-saldo-awal')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-saldo-awal')">âœ•</button>
     </div>
     <div class="modal-body">
       <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Pilih tanggal pembukaan:</div>
@@ -1883,190 +666,14 @@
   </div>
 </div>
 
-<!-- MODAL: EXPORT -->
-<div class="modal-backdrop" id="modal-export">
-  <div class="modal" style="max-width:560px;">
-    <div class="modal-head">
-      <div class="modal-title"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Export Laporan Keuangan</div>
-      <button class="modal-close" onclick="closeModal('modal-export')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.7;">
-        Export semua data keuangan. Setiap laporan & jurnal akan dipisah per sheet/halaman secara otomatis.
-      </div>
-
-      <!-- Format Selection -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
-        <div id="exp-opt-excel" class="exp-fmt-card exp-fmt-active" onclick="selectExportFmt('excel')">
-          <div style="font-size:28px;margin-bottom:6px;"><i class="ti ti-chart-bar ti-inline"></i></div>
-          <div style="font-weight:700;font-size:13px;">Excel</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:3px;">.xlsx dengan formula</div>
-        </div>
-        <div id="exp-opt-pdf" class="exp-fmt-card" onclick="selectExportFmt('pdf')">
-          <div style="font-size:28px;margin-bottom:6px;"><i class="ti ti-file-text" style="font-size:28px;"></i></div>
-          <div style="font-weight:700;font-size:13px;">PDF</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:3px;">Siap cetak/kirim</div>
-        </div>
-        <div id="exp-opt-csv" class="exp-fmt-card" onclick="selectExportFmt('csv')">
-          <div style="font-size:28px;margin-bottom:6px;"><i class="ti ti-clipboard-list ti-inline"></i></div>
-          <div style="font-weight:700;font-size:13px;">CSV</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:3px;">Untuk Google Sheets</div>
-        </div>
-      </div>
-
-      <!-- EXCEL TEMPLATE OPTIONS (hanya tampil kalau pilih Excel) -->
-      <div id="exp-excel-template-section" style="margin-bottom:16px;">
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">🗂️ Pilih Template Excel:</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div id="exp-tmpl-data" class="exp-fmt-card exp-fmt-active" onclick="selectExcelTemplate('data')" style="text-align:left;padding:14px;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-              <span style="font-size:20px;"><i class="ti ti-clipboard-list ti-inline"></i></span>
-              <span style="font-weight:700;font-size:13px;">Template Data</span>
-            </div>
-            <div style="font-size:11px;color:var(--muted);line-height:1.6;">Data transaksi lengkap + formula referensi. Cocok untuk arsip & analisis manual.</div>
-            <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">
-              <span style="background:rgba(74,222,128,0.12);color:var(--accent);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;">Data Bersih</span>
-              <span style="background:rgba(74,222,128,0.12);color:var(--accent);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;">Formula Ref</span>
-            </div>
-          </div>
-          <div id="exp-tmpl-formula" class="exp-fmt-card" onclick="selectExcelTemplate('formula')" style="text-align:left;padding:14px;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-              <span style="font-size:20px;"><i class="ti ti-settings ti-inline"></i></span>
-              <span style="font-weight:700;font-size:13px;">Template Hitung Otomatis</span>
-            </div>
-            <div style="font-size:11px;color:var(--muted);line-height:1.6;">Formula Excel aktif & terhubung antar sheet. Bisa diedit langsung, angka otomatis update.</div>
-            <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">
-              <span style="background:rgba(34,211,238,0.12);color:var(--accent2);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;">Live Formula</span>
-              <span style="background:rgba(34,211,238,0.12);color:var(--accent2);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;">Auto Hitung</span>
-              <span style="background:rgba(34,211,238,0.12);color:var(--accent2);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;">Per Kategori</span>
-            </div>
-          </div>
-        </div>
-        <div id="exp-tmpl-desc" style="margin-top:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:11.5px;color:var(--muted);line-height:1.7;">
-          💡 <b style="color:var(--text)">Template Data:</b> Export data mentah per sheet. Setiap sheet memiliki tabel terformat, total baris, dan sheet Referensi Formula sebagai panduan perhitungan manual.
-        </div>
-      </div>
-
-      <!-- PDF LOGO UPLOAD (hanya tampil kalau pilih PDF) -->
-      <div id="exp-pdf-logo-section" style="margin-bottom:16px;display:none;">
-        <!-- Template aktif badge -->
-        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px;gap:10px;">
-          <div>
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;">🎨 Template PDF Aktif</div>
-            <div id="exp-pdf-theme-badge" style="font-size:12px;"></div>
-          </div>
-          <div style="display:flex;gap:6px;flex-shrink:0;">
-            <button class="btn btn-ghost btn-sm" onclick="openPdfPreview()" style="font-size:11px;border-color:var(--accent2);color:var(--accent2);gap:4px;">
-              <i class="ti ti-palette" style="font-size:11px;"></i> Ubah
-            </button>
-            <button class="btn btn-ghost btn-sm" onclick="pvResetToDefault()" style="font-size:11px;gap:4px;" title="Reset ke default">
-              <i class="ti ti-refresh" style="font-size:11px;"></i> Reset
-            </button>
-          </div>
-        </div>
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">🖼️ Logo Perusahaan (opsional):</div>
-        <div style="display:flex;align-items:flex-start;gap:16px;">
-          <div id="exp-logo-preview-wrap" style="flex-shrink:0;">
-            <div id="exp-logo-preview-box" style="width:80px;height:80px;border:2px dashed var(--border);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:var(--surface2);transition:all 0.15s;position:relative;overflow:hidden;" onclick="document.getElementById('exp-logo-input').click()">
-              <img id="exp-logo-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;border-radius:8px;">
-              <div id="exp-logo-placeholder" style="text-align:center;">
-                <div style="display:flex;justify-content:center;color:var(--accent2);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-                <div style="font-size:9px;color:var(--muted);margin-top:3px;">Upload Logo</div>
-              </div>
-            </div>
-          </div>
-          <div style="flex:1;">
-            <input type="file" id="exp-logo-input" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp" style="display:none" onchange="handleLogoUpload(this)">
-            <button onclick="document.getElementById('exp-logo-input').click()" class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:8px;border-style:dashed;">
-              📁 Pilih File Logo (PNG/JPG/SVG)
-            </button>
-            <button id="exp-logo-remove-btn" onclick="removeLogo()" class="btn btn-danger btn-sm" style="width:100%;display:none;margin-bottom:8px;">
-              <i class="ti ti-trash ti-btn"></i> Hapus Logo
-            </button>
-            <div style="font-size:10.5px;color:var(--muted);line-height:1.6;">
-              Logo akan muncul di pojok kiri atas setiap halaman laporan PDF. Ukuran maks 2MB. Format: PNG, JPG, atau SVG.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sheet/Section selection -->
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Pilih yang ingin di-export:</div>
-
-      <div style="font-size:10px;color:var(--accent);font-weight:600;margin-bottom:8px;letter-spacing:0.05em;"><i class="ti ti-chart-bar ti-inline"></i> LAPORAN KEUANGAN STANDAR</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-        <label class="exp-check"><input type="checkbox" id="exp-jurnal-umum" checked> Jurnal Umum</label>
-        <label class="exp-check"><input type="checkbox" id="exp-jurnal-kas" checked> Jurnal Kas</label>
-        <label class="exp-check"><input type="checkbox" id="exp-jurnal-jual" checked> Jurnal Penjualan</label>
-        <label class="exp-check"><input type="checkbox" id="exp-jurnal-beli" checked> Jurnal Pembelian</label>
-        <label class="exp-check"><input type="checkbox" id="exp-buku-besar" checked> Buku Besar</label>
-        <label class="exp-check"><input type="checkbox" id="exp-neraca-saldo" checked> Neraca Saldo</label>
-        <label class="exp-check"><input type="checkbox" id="exp-laba-rugi" checked> Laporan Laba Rugi</label>
-        <label class="exp-check"><input type="checkbox" id="exp-neraca" checked> Neraca</label>
-        <label class="exp-check"><input type="checkbox" id="exp-coa" checked> Chart of Accounts</label>
-        <label class="exp-check"><input type="checkbox" id="exp-dashboard" checked> Ringkasan Dashboard</label>
-      </div>
-
-      <div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:8px;letter-spacing:0.05em;">✨ FITUR BARU</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-        <label class="exp-check"><input type="checkbox" id="exp-invoice" checked> Invoice & Piutang</label>
-        <label class="exp-check"><input type="checkbox" id="exp-jurnal-berulang" checked> Jurnal Berulang</label>
-        <label class="exp-check"><input type="checkbox" id="exp-anggaran" checked> Anggaran vs Aktual</label>
-        <label class="exp-check"><input type="checkbox" id="exp-pajak" checked> Laporan Pajak (PPN/PPh)</label>
-        <label class="exp-check"><input type="checkbox" id="exp-rekonsiliasi"> Rekonsiliasi Bank</label>
-        <label class="exp-check"><input type="checkbox" id="exp-kurs"> Kurs & Multi Mata Uang</label>
-      </div>
-
-      <div style="font-size:10px;color:var(--accent3);font-weight:600;margin-bottom:8px;letter-spacing:0.05em;"><i class="ti ti-trending-up" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> ANALITIK & TREN</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-        <label class="exp-check"><input type="checkbox" id="exp-analitik" checked> Grafik Analitik Bisnis</label>
-        <label class="exp-check"><input type="checkbox" id="exp-tren-laba"> Tren Laba Bersih</label>
-        <label class="exp-check"><input type="checkbox" id="exp-arus-kas"> Arus Kas per Bulan</label>
-        <label class="exp-check"><input type="checkbox" id="exp-proyeksi"> Proyeksi Keuangan</label>
-      </div>
-
-      <!-- Company info -->
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Info Laporan:</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Nama Perusahaan <span style="color:var(--accent);font-size:10px;">(judul besar di PDF)</span></label>
-          <input type="text" id="exp-nama-perusahaan" placeholder="PT Demo Indonesia">
-        </div>
-        <div class="form-group">
-          <label>Nama Proyek / Catatan <span style="color:var(--muted);font-size:10px;">(opsional)</span></label>
-          <input type="text" id="exp-proyek" placeholder="Laporan Keuangan Q1 2026">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Periode</label>
-          <input type="text" id="exp-periode" placeholder="Januari 2026">
-        </div>
-      </div>
-
-      <div id="exp-status" style="display:none;padding:10px;background:var(--surface2);border-radius:8px;font-size:12.5px;margin-top:4px;"></div>
-    </div>
-    <div class="modal-footer" style="flex-direction:column;gap:8px;">
-      <!-- Preview PDF button — selalu tampil, disable saat bukan PDF -->
-      <button class="btn btn-ghost" id="exp-preview-btn" onclick="openPdfPreview()" disabled
-        style="width:100%;border-color:rgba(34,211,238,0.25);color:rgba(34,211,238,0.35);gap:8px;justify-content:center;cursor:not-allowed;transition:all 0.2s;" id="exp-preview-row">
-        <i class="ti ti-eye" style="font-size:14px;"></i> Preview &amp; Edit Tampilan PDF
-      </button>
-      <!-- Batal + Export row -->
-      <div style="display:flex;gap:8px;width:100%;">
-        <button class="btn btn-ghost" onclick="closeModal('modal-export')" style="flex:1;justify-content:center;">Batal</button>
-        <button class="btn btn-primary" id="exp-btn" onclick="doExport()" style="flex:2;gap:6px;justify-content:center;"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:4px;"></i> Export Sekarang</button>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- MODAL: EXPORT migrated to src/components/export/ExportModal.tsx -->
 
 <!-- MODAL: KELOLA DATA -->
 <div class="modal-backdrop" id="modal-storage">
   <div class="modal" style="max-width:540px;">
     <div class="modal-head">
       <div class="modal-title"><i class="ti ti-folder-open" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Kelola Data Tersimpan</div>
-      <button class="modal-close" onclick="closeModal('modal-storage')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-storage')">âœ•</button>
     </div>
     <div class="modal-body" style="padding-bottom:8px;">
 
@@ -2078,7 +685,7 @@
         </div>
         <div style="display:flex;gap:8px;">
           <button onclick="manualSave()" class="btn btn-primary btn-sm"><i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Simpan Sekarang</button>
-          <button onclick="toggleAutoSave()" id="autosave-toggle-btn" class="btn btn-ghost btn-sm">⏱ Auto-save: ON</button>
+          <button onclick="toggleAutoSave()" id="autosave-toggle-btn" class="btn btn-ghost btn-sm">â± Auto-save: ON</button>
           <button onclick="closeModal('modal-storage');confirmResetAll()" id="storage-reset-btn" class="btn btn-danger btn-sm" title="Reset Data: pilih sendiri jenis data yang dihapus (tidak bisa dibatalkan)"><i class="ti ti-trash ti-btn"></i> Reset</button>
         </div>
       </div>
@@ -2107,7 +714,7 @@
 
       <!-- Info -->
       <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:10px 12px;font-size:11.5px;color:var(--muted);line-height:1.7;">
-        💡 <b style="color:var(--accent3)">Tips:</b> Data di slot tersimpan di browser ini. Untuk backup ke device lain atau sebagai keamanan, selalu <b>Download .oas</b> secara berkala. File .oas bisa di-upload kembali di browser manapun.
+        ðŸ’¡ <b style="color:var(--accent3)">Tips:</b> Data di slot tersimpan di browser ini. Untuk backup ke device lain atau sebagai keamanan, selalu <b>Download .oas</b> secara berkala. File .oas bisa di-upload kembali di browser manapun.
       </div>
     </div>
     <div class="modal-footer">
@@ -2158,7 +765,7 @@
   <div id="an-period-popup">
     <div class="an-period-popup-header">
       <span class="an-period-popup-title">Rentang Waktu Analitik</span>
-      <button class="an-period-popup-close" onclick="closeAnPeriodPopupDirect()">✕</button>
+      <button class="an-period-popup-close" onclick="closeAnPeriodPopupDirect()">âœ•</button>
     </div>
     <div class="an-period-popup-item" data-val="6" data-label="6 Bulan Terakhir" onclick="setAnPeriodPopup(this)">
       <div class="an-period-popup-icon" style="background:rgba(74,222,128,0.12);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l2.5 2.5"/></svg></div>
@@ -2207,20 +814,20 @@
             <i class="ti ti-book" style="font-size:14px;width:14px;height:14px;"></i>
           </button>
         </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Multi-provider — tempel API key apa pun, provider terdeteksi otomatis</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Multi-provider â€” tempel API key apa pun, provider terdeteksi otomatis</div>
         <div style="font-size:11px;color:var(--accent);margin-top:2px;" id="gemini-key-count">Belum ada key</div>
       </div>
-      <button class="modal-close" onclick="closeApiKeyModal()">✕</button>
+      <button class="modal-close" onclick="closeApiKeyModal()">âœ•</button>
     </div>
     <div class="modal-body">
       <div id="gemini-info-box" style="display:none;background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.2);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.7;color:var(--muted);">
-        <b style="color:var(--accent2)"><i class="ti ti-sparkles" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Panduan Setup — Pilih Provider</b><br>
+        <b style="color:var(--accent2)"><i class="ti ti-sparkles" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Panduan Setup â€” Pilih Provider</b><br>
         AI Orias mendukung banyak provider sekaligus. Tap salah satu modul di bawah untuk lihat langkah-langkah lengkap & link pembuatan API key-nya masing-masing.
         <div id="provider-guide-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;overflow:hidden;"></div>
       </div>
       <div id="gemini-keys-list" style="margin-bottom:10px;min-height:20px;"></div>
       <div style="display:flex;gap:8px;">
-        <input type="password" id="gemini-new-key" placeholder="Tempel API key — Gemini, Claude, GPT, Groq, dll"
+        <input type="password" id="gemini-new-key" placeholder="Tempel API key â€” Gemini, Claude, GPT, Groq, dll"
           style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;"
           oninput="updateDetectedProviderLabel()"
           onkeydown="if(event.key==='Enter')addAIKey()">
@@ -2230,7 +837,7 @@
       </div>
       <div id="ai-detected-provider" style="display:none;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:7px;"></div>
       <div style="margin-top:10px;font-size:11px;color:var(--muted);background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.15);border-radius:6px;padding:8px 10px;">
-        <i class="ti ti-lock" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Key hanya tersimpan di browser kamu — tidak dikirim ke server mana pun selain langsung ke provider AI resminya (Google, Anthropic, dll, sesuai key yang ditambahkan).
+        <i class="ti ti-lock" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Key hanya tersimpan di browser kamu â€” tidak dikirim ke server mana pun selain langsung ke provider AI resminya (Google, Anthropic, dll, sesuai key yang ditambahkan).
       </div>
       <div style="margin-top:8px;font-size:10.5px;color:var(--muted);opacity:0.75;">
         <i class="ti ti-info-circle" style="font-size:12px;width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i> Progress pemakaian di bawah adalah estimasi lokal (jumlah request per menit), bukan data kuota resmi dari provider.
@@ -2253,7 +860,7 @@
           <div style="font-size:11px;color:var(--muted);margin-top:1px;" id="pg-tagline"></div>
         </div>
       </div>
-      <button class="modal-close" onclick="closeModal('modal-provider-guide')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-provider-guide')">âœ•</button>
     </div>
     <div class="modal-body" id="pg-body" style="font-size:13px;line-height:1.7;color:var(--muted);"></div>
     <div class="modal-footer">
@@ -2270,11 +877,11 @@
   <div class="modal" style="max-width:520px;">
     <div class="modal-head">
       <div class="modal-title"><i class="ti ti-adjustments" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Jurnal Penyesuaian</div>
-      <button class="modal-close" onclick="closeModal('modal-penyesuaian')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-penyesuaian')">âœ•</button>
     </div>
     <div class="modal-body">
       <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6;">
-        Pilih jenis penyesuaian. Form Jurnal Manual akan otomatis terisi — tinggal isi nilainya dan simpan.
+        Pilih jenis penyesuaian. Form Jurnal Manual akan otomatis terisi â€” tinggal isi nilainya dan simpan.
       </div>
       <div style="grid-template-columns:1fr 1fr;" class="kalk-grid">
         <div class="tut-card" onclick="fillPenyesuaian('penyusutan')">
@@ -2330,13 +937,13 @@
   <div class="modal" style="max-width:500px;">
     <div class="modal-head">
       <div class="modal-title"><i class="ti ti-building ti-btn"></i> Profil Perusahaan</div>
-      <button class="modal-close" onclick="closeModal('modal-profil')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-profil')">âœ•</button>
     </div>
     <!-- VIEW MODE -->
     <div id="profil-view-mode" class="modal-body" style="display:none;">
       <!-- Logo / Foto -->
       <div style="text-align:center;padding:12px 0 16px;">
-        <div id="profil-view-logo" style="width:80px;height:80px;border-radius:16px;background:var(--surface2);border:2px solid var(--border);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:32px;">🏢</div>
+        <div id="profil-view-logo" style="width:80px;height:80px;border-radius:16px;background:var(--surface2);border:2px solid var(--border);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:32px;">ðŸ¢</div>
         <div id="profil-view-nama" style="font-size:18px;font-weight:700;color:var(--text);line-height:1.3;"></div>
         <div id="profil-view-jenis" style="font-size:12px;color:var(--muted);margin-top:3px;"></div>
       </div>
@@ -2368,7 +975,7 @@
       <!-- Upload Logo -->
       <div style="text-align:center;padding:4px 0 12px;">
         <div style="position:relative;display:inline-block;">
-          <div id="profil-edit-logo-preview" style="width:72px;height:72px;border-radius:14px;background:var(--surface2);border:2px dashed var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:28px;cursor:pointer;" onclick="document.getElementById('profil-logo-input').click()">🏢</div>
+          <div id="profil-edit-logo-preview" style="width:72px;height:72px;border-radius:14px;background:var(--surface2);border:2px dashed var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:28px;cursor:pointer;" onclick="document.getElementById('profil-logo-input').click()">ðŸ¢</div>
           <label for="profil-logo-input" style="position:absolute;bottom:-4px;right:-4px;width:24px;height:24px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg);">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0d0f14" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </label>
@@ -2411,7 +1018,7 @@
         <div class="form-group"><label>Mata Uang</label>
           <input type="hidden" id="prof-mata-uang" value="IDR">
           <button type="button" id="prof-mata-uang-btn" class="oas-picker-trigger" onclick="openMataUangPicker()">
-            <span id="prof-mata-uang-label"><i class="ti ti-currency" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> IDR — Rupiah</span>
+            <span id="prof-mata-uang-label"><i class="ti ti-currency" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> IDR â€” Rupiah</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
         </div>
@@ -2433,8 +1040,8 @@
   <div class="modal" style="max-width:520px;max-height:85vh;overflow-y:auto;">
     <div class="modal-head" style="background:linear-gradient(135deg,rgba(74,222,128,0.1),rgba(34,211,238,0.08));border-bottom:1px solid var(--border);">
       <div>
-        <div class="modal-title" style="font-size:18px;">→ Selamat Datang!</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Setup awal — hanya 1 menit</div>
+        <div class="modal-title" style="font-size:18px;">â†’ Selamat Datang!</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Setup awal â€” hanya 1 menit</div>
       </div>
     </div>
     <div class="modal-body">
@@ -2452,7 +1059,7 @@
         <div style="text-align:center;padding:8px 0 16px;">
           <div style="margin-bottom:12px;display:flex;justify-content:center;color:var(--accent2);"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V8l7-5 7 5v12"/><path d="M9 20v-5h6v5"/></svg></div>
           <div style="font-size:16px;font-weight:700;margin-bottom:6px;">Jenis bisnis kamu?</div>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Semua akun tetap tersedia — ini cuma buat kategori bisnismu</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Semua akun tetap tersedia â€” ini cuma buat kategori bisnismu</div>
         </div>
         <div style="grid-template-columns:1fr 1fr;" class="kalk-grid">
           <div class="ob-type-card ob-type-selected" data-val="umum" onclick="selectObType('umum',this)" style="background:var(--surface2);border:2px solid var(--accent);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
@@ -2496,8 +1103,8 @@
           <span style="width:8px;height:8px;border-radius:50%;background:var(--border);" id="ob-dot-3"></span>
         </div>
         <div style="display:flex;gap:8px;">
-          <button id="ob-back-btn" onclick="obBack()" class="btn btn-ghost" style="display:none">← Kembali</button>
-          <button id="ob-next-btn" onclick="obNext()" class="btn btn-primary">Lanjut →</button>
+          <button id="ob-back-btn" onclick="obBack()" class="btn btn-ghost" style="display:none">â† Kembali</button>
+          <button id="ob-next-btn" onclick="obNext()" class="btn btn-primary">Lanjut â†’</button>
         </div>
       </div>
     </div>
@@ -2511,7 +1118,7 @@
       <i class="ti ti-search" style="font-size:18px;margin-right:8px;color:var(--muted);"></i>
       <input id="global-search-input" placeholder="Cari jurnal, akun, menu, kalkulator..." 
         oninput="doGlobalSearch(this.value)" onkeydown="handleSearchKey(event)" autocomplete="off">
-      <button onclick="closeGlobalSearch()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px 8px;">✕</button>
+      <button onclick="closeGlobalSearch()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px 8px;">âœ•</button>
     </div>
     <div id="global-search-results" style="max-height:400px;overflow-y:auto;padding:8px 0;">
       <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px;">
@@ -2519,7 +1126,7 @@
       </div>
     </div>
     <div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;gap:12px;font-size:11px;color:var(--muted);">
-      <span><kbd class="kbd">↑↓</kbd> navigasi</span>
+      <span><kbd class="kbd">â†‘â†“</kbd> navigasi</span>
       <span><kbd class="kbd">Enter</kbd> pilih</span>
       <kbd class="kbd">Esc</kbd> tutup</span>
     </div>
@@ -2605,7 +1212,7 @@
         <div id="auth-msg" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:13px;text-align:center;"></div>
       </div>
 
-      <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:20px;opacity:0.7;">Data tersimpan aman di cloud · Multi-perangkat</p>
+      <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:20px;opacity:0.7;">Data tersimpan aman di cloud Â· Multi-perangkat</p>
     </div>
   </div>
 </div>
@@ -2691,7 +1298,7 @@
     </div>
     <div class="cp-action-btns">
       <button class="cp-action-btn open-btn" onclick="cpActionOpen()">
-        <div class="cp-action-btn-icon">🚀</div>
+        <div class="cp-action-btn-icon">ðŸš€</div>
         <div>
           <div>Buka Bisnis Ini</div>
           <div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:2px;">Masuk ke dashboard bisnis</div>
@@ -2783,7 +1390,7 @@
         transition:all 0.15s;
       " onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
-        ✕ Batal
+        âœ• Batal
       </button>
       <button id="confirm-ok-btn" style="
         flex:2;padding:11px;border-radius:10px;
@@ -2793,7 +1400,7 @@
         transition:all 0.15s;
       " onmouseover="this.style.opacity='0.9'"
          onmouseout="this.style.opacity='1'">
-        ✓ Ya, Simpan Sekarang
+        âœ“ Ya, Simpan Sekarang
       </button>
     </div>
   </div>
@@ -2806,7 +1413,7 @@
   <div class="modal" style="max-width:480px;">
     <div class="modal-head">
       <div class="modal-title" id="attach-modal-title"> Lampiran Jurnal</div>
-      <button class="modal-close" onclick="closeModal('modal-attach')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-attach')">âœ•</button>
     </div>
     <div class="modal-body">
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;padding:8px 12px;background:var(--surface2);border-radius:6px;" id="attach-jurnal-ket"></div>
@@ -2820,7 +1427,7 @@
         ondragleave="this.style.borderColor='var(--border)'">
         <div style="font-size:28px;margin-bottom:8px;"></div>
         <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">Tambah Lampiran</div>
-        <div style="font-size:11px;color:var(--muted);">Foto nota, invoice, kuitansi, PDF • Max 5MB</div>
+        <div style="font-size:11px;color:var(--muted);">Foto nota, invoice, kuitansi, PDF â€¢ Max 5MB</div>
         <input type="file" id="attach-file-input" accept="image/*,.pdf" style="display:none" onchange="handleAttachFile(this)">
       </div>
     </div>
@@ -2844,7 +1451,7 @@
     <div id="opt-picker-handle"></div>
     <div id="opt-picker-header">
       <span id="opt-picker-title">Pilih Opsi</span>
-      <button id="opt-picker-close" onclick="closeOptPicker()">✕</button>
+      <button id="opt-picker-close" onclick="closeOptPicker()">âœ•</button>
     </div>
     <div id="opt-picker-list"></div>
   </div>
@@ -2856,7 +1463,7 @@
 
 
 
-<!-- HALAMAN SETTINGS — Akun + Transaksi, gaya drill-down list (satu file: js/17-settings.js) -->
+<!-- HALAMAN SETTINGS â€” Akun + Transaksi, gaya drill-down list (satu file: js/17-settings.js) -->
 <div class="page" id="page-settings">
   <div class="section-header" style="margin-bottom:12px;">
     <div style="display:flex;align-items:center;gap:10px;">
@@ -2870,7 +1477,7 @@
 
   <div style="max-width:520px;margin:0 auto;">
 
-    <!-- ═══ LEVEL 0: ROOT ═══ -->
+    <!-- â•â•â• LEVEL 0: ROOT â•â•â• -->
     <div class="settings-view active" id="settings-view-root">
       <div class="settings-list">
         <div class="settings-list-item" onclick="settingsNavigate('akun')">
@@ -2886,17 +1493,17 @@
       </div>
     </div>
 
-    <!-- ═══ LEVEL 1: AKUN ═══ -->
+    <!-- â•â•â• LEVEL 1: AKUN â•â•â• -->
     <div class="settings-view" id="settings-view-akun">
       <!-- Baris foto profil -->
       <div id="accs-user-header" style="text-align:center;margin-bottom:20px;">
         <div style="position:relative;display:inline-block;">
           <div class="accs-avatar-ring" id="accs-avatar">?</div>
-          <div class="accs-avatar-badge" style="position:absolute;bottom:4px;right:4px;width:18px;height:18px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:9px;z-index:3;">✓</div>
+          <div class="accs-avatar-badge" style="position:absolute;bottom:4px;right:4px;width:18px;height:18px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:9px;z-index:3;">âœ“</div>
           <label for="accs-photo-input" title="Ganti foto profil"
             style="position:absolute;bottom:0px;left:-2px;width:26px;height:26px;border-radius:50%;
             background:var(--accent2);cursor:pointer;display:flex;align-items:center;justify-content:center;
-            font-size:12px;border:2px solid var(--bg);z-index:10;box-shadow:0 2px 6px rgba(0,0,0,0.3);">📷</label>
+            font-size:12px;border:2px solid var(--bg);z-index:10;box-shadow:0 2px 6px rgba(0,0,0,0.3);">ðŸ“·</label>
           <input type="file" id="accs-photo-input" accept="image/*" style="display:none"
             onchange="handleProfilePhotoUpload(this)">
         </div>
@@ -2906,18 +1513,18 @@
       <div class="settings-list">
         <div class="settings-list-item" onclick="settingsNavigate('akun-nama')">
           <div class="sli-body"><div class="sli-label">Nama</div></div>
-          <span class="sli-value" id="settings-nama-preview">—</span>
+          <span class="sli-value" id="settings-nama-preview">â€”</span>
           <span class="sli-chevron"><i class="ti ti-chevron-right"></i></span>
         </div>
         <div class="settings-list-item" onclick="settingsNavigate('akun-info')">
           <div class="sli-body"><div class="sli-label">Informasi Akun</div></div>
-          <span class="sli-value" id="settings-akuninfo-preview">—</span>
+          <span class="sli-value" id="settings-akuninfo-preview">â€”</span>
           <span class="sli-chevron"><i class="ti ti-chevron-right"></i></span>
         </div>
       </div>
     </div>
 
-    <!-- ═══ LEVEL 2: AKUN > NAMA ═══ -->
+    <!-- â•â•â• LEVEL 2: AKUN > NAMA â•â•â• -->
     <div class="settings-view" id="settings-view-akun-nama">
       <div class="accs-field">
         <label>NAMA TAMPILAN</label>
@@ -2933,9 +1540,9 @@
       <div id="accs-msg-profile" class="accs-msg"></div>
     </div>
 
-    <!-- ═══ LEVEL 2: AKUN > INFORMASI AKUN (kelola autentikasi) ═══ -->
+    <!-- â•â•â• LEVEL 2: AKUN > INFORMASI AKUN (kelola autentikasi) â•â•â• -->
     <div class="settings-view" id="settings-view-akun-info">
-      <div class="accs-email-label" id="accs-email-label" style="margin-bottom:2px;">—</div>
+      <div class="accs-email-label" id="accs-email-label" style="margin-bottom:2px;">â€”</div>
       <div class="accs-uid-label" id="accs-uid-label" style="margin-bottom:16px;"></div>
 
       <div class="settings-section-label">Metode Login</div>
@@ -2944,7 +1551,7 @@
       </div>
       <div id="accs-msg-providers" class="accs-msg"></div>
 
-      <!-- Password saat ini (tersensor, bisa disalin) — hanya tampil kalau email+password aktif -->
+      <!-- Password saat ini (tersensor, bisa disalin) â€” hanya tampil kalau email+password aktif -->
       <div id="accs-current-pw-section" style="display:none;">
         <div class="settings-section-label">Password Saat Ini</div>
         <div id="accs-current-pw-known" style="display:none;">
@@ -2978,7 +1585,7 @@
       </div>
     </div>
 
-    <!-- ═══ LEVEL 1: TRANSAKSI ═══ -->
+    <!-- â•â•â• LEVEL 1: TRANSAKSI â•â•â• -->
     <div class="settings-view" id="settings-view-transaksi">
       <div class="settings-list">
         <div class="settings-list-item" onclick="settingsNavigate('transaksi-jual')">
@@ -2999,16 +1606,16 @@
       </div>
     </div>
 
-    <!-- ═══ LEVEL 2: TRANSAKSI > PENJUALAN ═══ -->
+    <!-- â•â•â• LEVEL 2: TRANSAKSI > PENJUALAN â•â•â• -->
     <div class="settings-view" id="settings-view-transaksi-jual">
       <div class="accs-info-box">
-        Atur akun mana yang dipakai untuk tiap jenis penjualan. Defaultnya mengikuti akun bawaan (kode di bawah kode default) —
+        Atur akun mana yang dipakai untuk tiap jenis penjualan. Defaultnya mengikuti akun bawaan (kode di bawah kode default) â€”
         ubah kalau kamu mau pakai akun lain, misalnya karena akun bawaannya sudah dihapus dari COA.
       </div>
       <div id="settings-jual-list"></div>
     </div>
 
-    <!-- ═══ LEVEL 2: TRANSAKSI > PEMBELIAN ═══ -->
+    <!-- â•â•â• LEVEL 2: TRANSAKSI > PEMBELIAN â•â•â• -->
     <div class="settings-view" id="settings-view-transaksi-beli">
       <div class="accs-info-box">
         Atur akun mana yang dipakai untuk tiap jenis pembelian.
@@ -3029,7 +1636,7 @@
   <div class="modal" style="max-width:420px;">
     <div class="modal-head">
       <div class="modal-title"><i class="ti ti-lock ti-inline"></i> <span id="accs-pw-modal-title">Tambahkan Password</span></div>
-      <button class="modal-close" onclick="closeModal('modal-ubah-password')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-ubah-password')">âœ•</button>
     </div>
     <div class="modal-body">
       <div class="accs-field" id="accs-field-pw-old">

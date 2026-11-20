@@ -6,9 +6,6 @@ import LoadingOverlay from "./LoadingOverlay";
 
 const EXTERNAL_SCRIPTS = [
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
-  "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js",
 ];
 
 const OAS_ENGINE_SCRIPTS = [
@@ -17,12 +14,6 @@ const OAS_ENGINE_SCRIPTS = [
   "/js/02-utils.js",
   "/js/03-widgets.js",
   "/js/04-navigasi-tema.js",
-  "/js/06-transaksi.js",
-  "/js/07-jurnal-laporan.js",
-  "/js/08-kartu-stock.js",
-  "/js/11-kontak-invoice.js",
-  "/js/13-analitik-dashboard.js",
-  "/js/14-export.js",
   "/js/15-storage.js",
   "/js/16-auth-company.js",
   "/js/17-profil-perusahaan.js",
@@ -31,23 +22,6 @@ const OAS_ENGINE_SCRIPTS = [
   "/js/20-ai-chat.js",
   "/js/21-settings.js",
   "/js/22-cloud-records.js",
-  "/js/23-penomoran.js",
-  "/js/24-aging.js",
-  "/js/25-aging-ui.js",
-  "/js/26-daftar-bisnis.js",
-  "/js/27-oauth-url.js",
-  "/js/28-bill.js",
-  "/js/29-bill-ui.js",
-  "/js/30-aging-hutang.js",
-  "/js/31-pembayaran.js",
-  "/js/32-pembayaran-ui.js",
-  "/js/33-urut-jurnal.js",
-  "/js/34-kartu-kontak.js",
-  "/js/35-dok.js",
-  "/js/36-penawaran-ui.js",
-  "/js/37-pesanan-jual.js",
-  "/js/38-pesanan-jual-ui.js",
-  "/js/39-pesanan-invoice.js",
   "/js/99-init.js",
 ];
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import {
   BarChart3,
@@ -10,6 +10,7 @@ import {
   Settings,
   X,
 } from "lucide-react";
+import KartuStockPanel from "@/components/persediaan/KartuStockPanel";
 import { hitungPersediaanPure } from "@/lib/kalkulator";
 import { callOasGlobal } from "@/lib/legacy-actions";
 import { setOasWindowFn } from "@/lib/legacy-store";
@@ -74,169 +75,7 @@ function createInitialRows(nextId: () => number): InvInputRow[] {
   ];
 }
 
-// Memoized slot for legacy 08-kartu-stock.js imperative DOM rendering (migrated in Domain 3)
-const LegacyKartuStockSlot = memo(function LegacyKartuStockSlot() {
-  return (
-    <>
-      <div
-        className="table-card"
-        id="catatan-persediaan-wrap"
-        style={{ marginTop: 0 }}
-        suppressHydrationWarning
-      >
-        <div className="table-header" style={{ flexWrap: "wrap", gap: "10px" }}>
-          <div
-            className="table-title"
-            style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-          >
-            <ClipboardList size={16} strokeWidth={2} /> Catatan Persediaan /
-            Kartu Stock
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <button
-              className="opt-picker-btn"
-              type="button"
-              id="ks-metode-picker-btn"
-              onClick={() => callOasGlobal("openKsMetodePicker")}
-              style={{
-                minWidth: "180px",
-                maxWidth: "220px",
-                padding: "7px 12px",
-              }}
-            >
-              <span className="opt-picker-label" id="ks-metode-picker-label">
-                FIFO (First In First Out)
-              </span>
-              <span className="opt-picker-arrow">▾</span>
-            </button>
-            <input type="hidden" id="ks-metode-current" defaultValue="fifo" />
-          </div>
-        </div>
-        <div id="catatan-persediaan-content" style={{ padding: "12px 16px" }}>
-          <div id="ks-selector-wrap" />
-          <div
-            id="ks-active-tab-label"
-            style={{
-              fontSize: "12px",
-              color: "var(--accent)",
-              marginBottom: "8px",
-              fontWeight: 600,
-            }}
-          >
-            Metode: FIFO
-          </div>
-          <div className="ks-table-wrap" id="ks-table-scroll-wrap">
-            <table id="ks-table">
-              <thead>
-                <tr>
-                  <th style={{ minWidth: "72px" }}>Tgl</th>
-                  <th style={{ minWidth: "90px" }}>Ket</th>
-                  <th
-                    colSpan={3}
-                    style={{
-                      textAlign: "center",
-                      borderLeft: "1px solid var(--border)",
-                    }}
-                  >
-                    MASUK
-                  </th>
-                  <th
-                    colSpan={3}
-                    style={{
-                      textAlign: "center",
-                      borderLeft: "1px solid var(--border)",
-                    }}
-                  >
-                    KELUAR
-                  </th>
-                  <th
-                    colSpan={3}
-                    style={{
-                      textAlign: "center",
-                      borderLeft: "1px solid var(--border)",
-                    }}
-                  >
-                    SALDO
-                  </th>
-                  <th style={{ minWidth: "40px" }}>AK</th>
-                </tr>
-                <tr>
-                  <th />
-                  <th />
-                  <th
-                    style={{
-                      borderLeft: "1px solid var(--border)",
-                      minWidth: "50px",
-                    }}
-                  >
-                    Qty
-                  </th>
-                  <th style={{ minWidth: "90px" }}>Hrg Beli</th>
-                  <th style={{ minWidth: "100px" }}>Jumlah</th>
-                  <th
-                    style={{
-                      borderLeft: "1px solid var(--border)",
-                      minWidth: "50px",
-                    }}
-                  >
-                    Qty
-                  </th>
-                  <th style={{ minWidth: "90px" }}>HPP/Unit</th>
-                  <th style={{ minWidth: "100px" }}>Jumlah</th>
-                  <th
-                    style={{
-                      borderLeft: "1px solid var(--border)",
-                      minWidth: "50px",
-                    }}
-                  >
-                    Qty
-                  </th>
-                  <th style={{ minWidth: "90px" }}>Hrg</th>
-                  <th style={{ minWidth: "100px" }}>Jumlah</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody id="ks-table-body">
-                <tr>
-                  <td colSpan={12}>Belum ada catatan.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div
-            id="ks-stock-summary"
-            style={{ marginTop: "12px", display: "none" }}
-          >
-            <div
-              style={{ gridTemplateColumns: "1fr 1fr 1fr" }}
-              className="kalk-grid"
-            >
-              <div className="stat-card green">
-                <div className="stat-label">Saldo Qty</div>
-                <div className="stat-value" id="ks-saldo-qty">
-                  0
-                </div>
-              </div>
-              <div className="stat-card blue">
-                <div className="stat-label">Nilai Persediaan</div>
-                <div className="stat-value" id="ks-saldo-nilai">
-                  Rp 0
-                </div>
-              </div>
-              <div className="stat-card yellow">
-                <div className="stat-label">Total HPP Tercatat</div>
-                <div className="stat-value" id="ks-total-hpp">
-                  Rp 0
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div id="ks-extra-cards-container" suppressHydrationWarning />
-    </>
-  );
-});
+// Kartu Stock migrated to src/components/persediaan/KartuStockPanel.tsx
 
 function renderKartuRows(kartu: PersediaanKartuRow[], metode: PersediaanMetode) {
   const isLayered = metode === "fifo" || metode === "lifo";
@@ -912,7 +751,7 @@ export default function KalkPersediaanPage() {
         </motion.div>
       ) : null}
 
-      <LegacyKartuStockSlot />
+      <KartuStockPanel />
     </div>
   );
 }

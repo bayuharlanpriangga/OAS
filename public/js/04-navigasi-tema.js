@@ -179,18 +179,7 @@ function handleAddBtn() {
   showPage('transaksi');
 }
 
-// TABS
-function switchTab(group, tab) {
-  document.querySelectorAll('.trx-tab').forEach(t => t.style.display='none');
-  document.getElementById(`${group}-${tab}`).style.display='block';
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  event.target.classList.add('active');
-  if(tab==='umum') initManualLines();
-  if(tab==='penjualan') initJualAkunPendapatan();
-  if(tab==='simpel') {
-    // tanggal tidak auto-fill — user wajib pilih sendiri
-  }
-}
+// TABS (switchTab migrated to src/components/transaksi/TransaksiPage.tsx)
 
 // AKUN DROPDOWN
 function populateAkunSelect(selId, filter=null) {
@@ -449,43 +438,7 @@ function toggleTemplatePenyesuaian() { deteksiPenyesuaianOtomatis(); }
 function fillPenyesuaianInline() { deteksiPenyesuaianOtomatis(); }
 function openModalPenyesuaian() { deteksiPenyesuaianOtomatis(); }
 
-// ══════════════════════════════════════════════════════════════
-// LAPORAN ARUS KAS (PSAK 2 — Metode Tidak Langsung)
-// ══════════════════════════════════════════════════════════════
-function renderArusKas() {
-  const periodVal=document.getElementById('arus-kas-period')?.value||'all';
-  const saldoMap=getFilteredSaldo(periodVal, { tanpaPenutup: true });
-  const el=document.getElementById('arus-kas-content'); if(!el)return;
-  const profil=JSON.parse(localStorage.getItem('oas_profil')||localStorage.getItem('oas_profil_v1')||'{}');
-  const namaPerusahaan=profil.nama||'Perusahaan';
-  const getSaldo=(kode)=>{const a=akuns.find(x=>x.kode===kode);if(!a)return 0;const s=saldoMap[kode]||{debit:0,kredit:0};return a.normal==='D'?s.debit-s.kredit:s.kredit-s.debit;};
-  const sumK=(...kodes)=>kodes.reduce((acc,k)=>acc+getSaldo(k),0);
-  const _pl=a=>plNatural(a,saldoMap[a.kode]);
-  const labaBersih=akuns.filter(a=>a.tipe==='Pendapatan').reduce((acc,a)=>acc+_pl(a),0)-akuns.filter(a=>['HPP','Beban'].includes(a.tipe)).reduce((acc,a)=>acc+_pl(a),0);
-  const penyusutan=akuns.filter(a=>a.tipe==='Aset'&&a.kat==='Kontra'&&a.nama.toLowerCase().includes('penyusutan')).reduce((acc,a)=>{const s=saldoMap[a.kode]||{debit:0,kredit:0};return acc+(s.kredit-s.debit);},0);
-  const deltaPiutang=-(akuns.filter(a=>a.kode.startsWith('12')).reduce((acc,a)=>acc+getSaldo(a.kode),0));
-  const deltaPersediaan=-(akuns.filter(a=>a.kode.startsWith('13')).reduce((acc,a)=>acc+getSaldo(a.kode),0));
-  const deltaUtangUsaha=getSaldo('2101');
-  const deltaAkrual=sumK('2201','2301','2302','2303','2304','2501','2502');
-  const asetLain=-(akuns.filter(a=>a.kode.startsWith('14')||a.kode.startsWith('15')||a.kode.startsWith('16')).reduce((acc,a)=>acc+getSaldo(a.kode),0));
-  const totalOperasi=labaBersih+penyusutan+deltaPiutang+deltaPersediaan+deltaUtangUsaha+deltaAkrual+asetLain;
-  const beliAset=-(akuns.filter(a=>a.tipe==='Aset'&&a.kat==='Tetap'&&!a.nama.toLowerCase().includes('penyusutan')).reduce((acc,a)=>acc+getSaldo(a.kode),0));
-  const setorModal=getSaldo('3101'); const prive=-(getSaldo('3102'));
-  const utangLP=akuns.filter(a=>a.tipe==='Liabilitas'&&a.kat==='Jk Panjang').reduce((acc,a)=>acc+getSaldo(a.kode),0);
-  const totalPendanaan=setorModal+prive+utangLP;
-  const kasAkhir=sumK('1101','1102','1103','1104');
-  const kenaikan=totalOperasi+beliAset+totalPendanaan;
-  const rpFn=v=>{const f='Rp '+Math.abs(Math.round(v)).toLocaleString('id-ID');return v<0?`<span style="color:var(--red);">(${f})</span>`:`<span>${f}</span>`;};
-  const rpP=v=>{const f='Rp '+Math.abs(Math.round(v)).toLocaleString('id-ID');return v<0?`(${f})`:f;};
-  const sec=(icon,title,rows,total)=>`<div class="table-card" style="margin-bottom:16px;"><div class="table-header"><div class="table-title"><i class="ti ti-${icon} ti-btn"></i> ${title}</div></div><table><tbody>${rows.filter(([,v])=>v!==0).map(([l,v])=>`<tr><td style="padding-left:28px;color:var(--muted);font-size:13px;">${l}</td><td style="text-align:right;font-family:var(--mono);font-size:13px;">${rpFn(v)}</td></tr>`).join('')}</tbody><tfoot><tr class="total-row"><td>Total ${title}</td><td style="text-align:right;font-family:var(--mono);color:${total>=0?'var(--accent)':'var(--red)'};">${rpP(total)}</td></tr></tfoot></table></div>`;
-  const sel=document.getElementById('arus-kas-period');
-  const lbl=sel?sel.options[sel.selectedIndex].text:'Semua Periode';
-  el.innerHTML=`${sec('settings','Aktivitas Operasi',[['Laba Bersih Periode',labaBersih],['Penyusutan & Amortisasi',penyusutan],['Perubahan Piutang Usaha',deltaPiutang],['Perubahan Persediaan',deltaPersediaan],['Perubahan Utang Usaha',deltaUtangUsaha],['Perubahan Kewajiban Akrual & Pajak',deltaAkrual],['Perubahan Aset Lancar Lainnya',asetLain]],totalOperasi)}
-    ${sec('building-factory','Aktivitas Investasi',[['Pembelian Aset Tetap',beliAset]],beliAset)}
-    ${sec('cash','Aktivitas Pendanaan',[['Setoran Modal Pemilik',setorModal],['Pengambilan Prive',prive],['Perubahan Utang Bank Jangka Panjang',utangLP]],totalPendanaan)}
-    <div class="table-card"><table><tbody><tr><td style="color:var(--muted);font-size:13px;padding-left:16px;">Kenaikan (Penurunan) Kas Bersih</td><td style="text-align:right;font-family:var(--mono);font-size:13px;">${rpFn(kenaikan)}</td></tr><tr class="total-row"><td>Saldo Kas & Setara Kas Akhir Periode</td><td style="text-align:right;font-family:var(--mono);color:${kasAkhir>=0?'var(--accent)':'var(--red)'};">${rpP(kasAkhir)}</td></tr></tbody></table></div>
-    <div style="margin-top:12px;padding:10px 14px;background:var(--surface2);border-radius:10px;font-size:11px;color:var(--muted);line-height:1.7;"><b>Catatan:</b> Laporan metode tidak langsung sesuai PSAK 2. Pastikan saldo awal semua akun sudah diisi.</div>`;
-}
+// LAPORAN ARUS KAS migrated to src/components/laporan/LaporanPages.tsx
 
 function runSequential(ids, idx) {
   if(idx >= ids.length) { showTutComplete(); return; }

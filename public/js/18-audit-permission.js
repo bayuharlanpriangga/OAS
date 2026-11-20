@@ -1,3 +1,230 @@
+﻿// Relocated Audit constants & hooks from retired 14-export.js (Domain 4A)
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// AUDIT TRAIL SYSTEM â€” dengan label role multi-user
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+const AUDIT_KEY     = 'oas_audit_trail';
+const AUDIT_MAX     = 2000;
+const AUDIT_PAGE_SZ = 40;
+let   _auditPage       = 0;
+let   _auditFilter     = 'all';
+let   _auditRoleFilter = null; // null = semua role, string = filter spesifik role
+let   _auditBizFilter  = null; // null = semua bisnis, string = companyId spesifik
+
+const AUDIT_COLORS = {
+  create:'#4ade80', delete:'#f87171', edit:'#fbbf24',
+  auto:'#22d3ee',   login:'#a78bfa',  export:'#fb923c',
+  reset:'#ef4444',  info:'#94a3b8',
+};
+
+const AUDIT_ROLE_BADGE = {
+  owner:  { label:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d=\"M2 20h20M5 20V10l7-6 7 6v10\"/><path d=\"M9 20v-5h6v5\"/></svg> Owner',  style:'background:rgba(250,204,21,0.15);color:#facc15;border:1px solid rgba(250,204,21,0.3);display:inline-flex;align-items:center;gap:4px;' },
+  admin:  { label:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d=\"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\"/></svg> Admin',  style:'background:rgba(34,211,238,0.12);color:var(--accent2);border:1px solid rgba(34,211,238,0.25);display:inline-flex;align-items:center;gap:4px;' },
+  member: { label:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 20c0-4 3.6-7 8-7s8 3 8 7\"/></svg> Member', style:'background:rgba(148,163,184,0.12);color:#94a3b8;border:1px solid rgba(148,163,184,0.2);display:inline-flex;align-items:center;gap:4px;' },
+  guest:  { label:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 9.9-1\"/></svg> Guest',  style:'background:rgba(148,163,184,0.08);color:#64748b;border:1px solid rgba(148,163,184,0.15);display:inline-flex;align-items:center;gap:4px;' },
+  system: { label:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"/></svg> Sistem', style:'background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.25);display:inline-flex;align-items:center;gap:4px;' },
+  ai:     { label:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><rect x=\"3\" y=\"11\" width=\"18\" height=\"10\" rx=\"2\"/><circle cx=\"12\" cy=\"5\" r=\"2\"/><path d=\"M12 7v4M8 16v.01M16 16v.01\"/></svg> AI', style:'background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.3);display:inline-flex;align-items:center;gap:4px;' },
+};
+
+// â”€â”€ Determine current actor role â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function _getActorRole() {
+  // Guest / local mode
+  if (typeof isGuestMode !== 'undefined' && isGuestMode) return 'guest';
+  if (typeof currentUser === 'undefined' || !currentUser)  return 'guest';
+  // Owner: company creator
+  if (typeof currentCompany !== 'undefined' && currentCompany) {
+    if (currentCompany.user_id === currentUser.id) return 'owner';
+    // Peran anggota di bisnis ini
+    if (typeof _currentMemberRole !== 'undefined' && _currentMemberRole === 'admin') return 'admin';
+    if (typeof _currentMemberRole !== 'undefined' && _currentMemberRole === 'member') return 'member';
+    if (typeof _currentMemberRole !== 'undefined' && _currentMemberRole === 'owner') return 'owner';
+    // Fallback saat berada di bisnis orang lain: default ke member (bukan owner/admin)
+    return 'member';
+  }
+  // Fallback: user sudah login tapi company belum dipilih/terisi (masih loading)
+  if (currentUser?.id) return 'owner';
+  return 'guest';
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// AUDIT HOOKS
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+// 1. Delete jurnal â€” patch confirm button after modal opens
+function _patchHapusJurnalBtn() {
+  const btn=document.getElementById('hapus-jurnal-confirm-btn');
+  if(!btn||btn._auditPatched)return;
+  btn._auditPatched=true;
+  const orig=btn.onclick;
+  btn.onclick=async function(){
+    const idx=parseInt(document.getElementById('hapus-jurnal-idx')?.value??-1);
+    const entry=idx>=0?jurnalEntries[idx]:null;
+    if(orig)await orig.call(this);
+    if(entry){
+      const total=(entry.lines||[]).reduce((s,l)=>s+(l.debit||0),0);
+      auditLog('delete','jurnal',
+        `Hapus jurnal ${entry.jenis||'Manual'}: ${entry.ket||entry.keterangan||'â€”'} â€” ${fmtRp(total)}`,
+        {ref:entry.no||entry.id});
+    }
+  };
+}
+
+// 2. Akun
+const _origSimpanAkun2=window.simpanAkun;
+window.simpanAkun=function(){
+  const kode=document.getElementById('akun-kode')?.value;
+  const nama=document.getElementById('akun-nama')?.value;
+  const tipe=document.getElementById('akun-tipe')?.value;
+  const editId=document.getElementById('akun-edit-id')?.value;
+  _origSimpanAkun2?.();
+  auditLog(editId?'edit':'create','akun',`${editId?'Edit':'Tambah'} akun: ${kode} â€” ${nama} (${tipe})`,{ref:kode});
+};
+const _origHapusAkun2=window.hapusAkun;
+window.hapusAkun=function(kode){
+  const akun=akuns.find(a=>a.kode===kode);
+  _origHapusAkun2?.(kode);
+  auditLog('delete','akun',`Hapus akun: ${kode} â€” ${akun?.nama||''}`,{ref:kode});
+};
+
+// 3. Aset Tetap
+const _origSimpanAsetTetap2=window.simpanAsetTetap;
+window.simpanAsetTetap=function(){
+  const nama=document.getElementById('at-nama')?.value;
+  const harga=document.getElementById('at-harga')?.value;
+  const editId=document.getElementById('at-edit-id')?.value;
+  _origSimpanAsetTetap2?.();
+  auditLog(editId?'edit':'create','aset',
+    `${editId?'Edit':'Tambah'} aset: ${nama} â€” ${fmtRp(parseFloat(harga)||0)}`,{ref:editId||nama});
+};
+const _origHapusAset2=window.hapusAset;
+window.hapusAset=function(id){
+  const aset=typeof asetTetapList!=='undefined'?asetTetapList.find(a=>a.id===id):null;
+  _origHapusAset2?.(id);
+  auditLog('delete','aset',`Hapus aset: ${aset?.nama||id}`,{ref:id});
+};
+const _origDisposalAset2=window.disposalAset;
+window.disposalAset=function(id){
+  const aset=typeof asetTetapList!=='undefined'?asetTetapList.find(a=>a.id===id):null;
+  _origDisposalAset2?.(id);
+  auditLog('edit','aset',`Disposal aset: ${aset?.nama||id}`,{ref:id});
+};
+
+// 4. Produk
+const _origSimpanProduk2=window.simpanProduk;
+window.simpanProduk=function(){
+  const ksId=document.getElementById('produk-edit-id')?.value;
+  const hj=document.getElementById('produk-harga-jual')?.value;
+  const ppn=document.getElementById('produk-ppn')?.value;
+  _origSimpanProduk2?.();
+  auditLog('edit','produk',
+    `Update produk: harga jual ${fmtRp(parseFloat(hj)||0)}${ppn?', PPN '+ppn+'%':''}`,{ref:ksId});
+};
+
+// 5. Kontak
+const _origSimpanKontak2=window.simpanKontak;
+window.simpanKontak=function(){
+  const nama=document.getElementById('kontak-nama')?.value;
+  const editId=document.getElementById('kontak-edit-id')?.value;
+  _origSimpanKontak2?.();
+  auditLog(editId?'edit':'create','kontak',`${editId?'Edit':'Tambah'} kontak: ${nama}`,{ref:editId||nama});
+};
+const _origHapusKontak2=window.hapusKontak;
+window.hapusKontak=function(id){
+  const k=typeof kontakList!=='undefined'?kontakList.find(c=>c.id===id):null;
+  _origHapusKontak2?.(id);
+  auditLog('delete','kontak',`Hapus kontak: ${k?.nama||id}`,{ref:id});
+};
+
+// 6. Invoice
+const _origSimpanInvoice2=window.simpanInvoice;
+window.simpanInvoice=function(){
+  const no=document.getElementById('inv-no')?.value;
+  _origSimpanInvoice2?.();
+  auditLog('create','invoice',`Buat invoice ${no||'baru'}`,{ref:no});
+};
+
+// 7. Export
+const _origDoExport2=window.doExport;
+window.doExport=function(){
+  const fmt=typeof exportFmt!=='undefined'?exportFmt:'â€”';
+  const nama=document.getElementById('exp-nama-perusahaan')?.value||'â€”';
+  _origDoExport2?.();
+  auditLog('export','system',`Export laporan ${fmt.toUpperCase()} â€” ${nama}`,{ref:fmt});
+};
+
+// 8. Reset
+const _origConfirmResetAll2=window.confirmResetAll;
+window.confirmResetAll=function(){
+  auditLog('reset','system','Membuka konfirmasi Reset Semua Data âš ï¸');
+  _origConfirmResetAll2?.();
+};
+
+// 9. Transaksi cepat penjualan & pembelian
+const _origSimpanPenjualan2=window.simpanPenjualan;
+window.simpanPenjualan=function(){
+  const inv=document.getElementById('jual-inv')?.value||'';
+  const jml=parseFloat(document.getElementById('jual-jumlah')?.value)||0;
+  _origSimpanPenjualan2?.();
+  auditLog('create','jurnal',`Penjualan${inv?' '+inv:''} â€” ${fmtRp(jml)}`,{ref:inv});
+};
+const _origSimpanPembelian2=window.simpanPembelian;
+window.simpanPembelian=function(){
+  const po=document.getElementById('beli-po')?.value||'';
+  const jml=parseFloat(document.getElementById('beli-jumlah')?.value)||0;
+  _origSimpanPembelian2?.();
+  auditLog('create','jurnal',`Pembelian${po?' '+po:''} â€” ${fmtRp(jml)}`,{ref:po});
+};
+
+// 10. Auto penyusutan
+const _origAtCheck2=window.atCheckAndRunAutoPenyusutan;
+window.atCheckAndRunAutoPenyusutan=function(force=false){
+  const before=jurnalEntries.length;
+  _origAtCheck2?.(force);
+  const after=jurnalEntries.length;
+  if(after>before){
+    const n=typeof asetTetapList!=='undefined'?asetTetapList.filter(a=>a.status==='aktif').length:0;
+    auditLog('auto','jurnal',`Penyusutan otomatis${force?' (manual)':''} â€” ${n} aset`,{ref:'AUTO-DEPRE',count:n});
+  }
+};
+
+// â”€â”€ showPage hook â€” init audit page + patch hapus btn â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const _origShowPageAudit=window.showPage;
+window.showPage=function(id){
+  _origShowPageAudit?.(id);
+  if(id==='audit-trail') setTimeout(()=>{initAuditPage();_patchHapusJurnalBtn();},80);
+  if(id==='jurnal-umum') setTimeout(_patchHapusJurnalBtn,200);
+};
+
+// â”€â”€ Log startup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+window.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(()=>auditLog('info','system','Aplikasi dibuka',{ref:'STARTUP'}),2000);
+});
+
+
+// Relocated from retired 11-kontak-invoice.js (Domain 3A)
+const MODULES_CRUD = {
+  dashboard:    { label: 'Dashboard',          icon: 'ti-layout-dashboard' },
+  transaksi:    { label: 'Input Transaksi',     icon: 'ti-credit-card' },
+  jurnal:       { label: 'Jurnal',              icon: 'ti-book' },
+  'laba-rugi':  { label: 'Laba Rugi',           icon: 'ti-trending-up' },
+  neraca:       { label: 'Neraca',              icon: 'ti-building-bank' },
+  'arus-kas':   { label: 'Arus Kas',            icon: 'ti-cash' },
+  akun:         { label: 'Chart of Accounts',   icon: 'ti-clipboard-list' },
+  kontak:       { label: 'Kontak',              icon: 'ti-users' },
+  invoice:      { label: 'Invoice & Piutang',   icon: 'ti-receipt' },
+  anggaran:     { label: 'Anggaran',            icon: 'ti-chart-bar' },
+  pajak:        { label: 'Pajak',               icon: 'ti-percent' },
+  rekonsiliasi: { label: 'Rekonsiliasi Bank',   icon: 'ti-refresh' },
+  analitik:     { label: 'Analitik & Tren',     icon: 'ti-chart-area' },
+  'ai-assistant':{ label: 'AI Assisten',        icon: 'ti-robot' },
+  export:       { label: 'Export Laporan',      icon: 'ti-upload' },
+};
+
+function makeDefaultPerms() {
+  const p = {};
+  Object.keys(MODULES_CRUD).forEach(mod => { p[mod] = { read: true }; });
+  return p;
+}
 
 function _getCurrentActorLabel() {
   if (typeof currentUser !== 'undefined' && currentUser?.email) {
@@ -9,12 +236,12 @@ function _getCurrentActorLabel() {
   return 'Pengguna';
 }
 
-// ── Core logger ───────────────────────────────────────────────────────────
+// â”€â”€ Core logger â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function auditLog(action, category, description, meta = {}) {
   try {
     const logs      = auditGetAll();
     // meta.aiActed: aksi ini dieksekusi otomatis oleh Orias AI (bukan diketik
-    // manual oleh pengguna) — dicatat dengan label role "AI" tersendiri supaya
+    // manual oleh pengguna) â€” dicatat dengan label role "AI" tersendiri supaya
     // bisa dibedakan dari aksi yang dilakukan langsung oleh Owner/Admin/Member.
     const isAI      = !!meta.aiActed;
     const who       = isAI ? 'Orias AI' : _getCurrentActorLabel();
@@ -39,8 +266,9 @@ function auditGetAll() {
   try { return JSON.parse(localStorage.getItem(AUDIT_KEY)||'[]'); } catch { return []; }
 }
 
-// ── Render ────────────────────────────────────────────────────────────────
+// â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderAuditTrail() {
+  if (typeof window.__oasReactAuditRefresh === 'function') { window.__oasReactAuditRefresh(); return; }
   const logs   = auditGetAll();
   const search = (document.getElementById('audit-search')?.value||'').toLowerCase();
   const filtered = logs.filter(e => {
@@ -79,7 +307,7 @@ function renderAuditTrail() {
     const rb      = AUDIT_ROLE_BADGE[e.role||'guest'] || AUDIT_ROLE_BADGE.guest;
     const diffHtml = e.meta?.diff ? _renderDiff(e.meta.diff) : '';
     const metaHtml = e.meta?.ref ? `<div class="at-trail-meta">${e.meta.ref}</div>` : '';
-    // Badge nama bisnis — tampilkan jika ada dan filter bukan per-bisnis tunggal
+    // Badge nama bisnis â€” tampilkan jika ada dan filter bukan per-bisnis tunggal
     const bizBadge = (e.companyName && _auditBizFilter === null)
       ? `<span style="font-size:10px;color:var(--muted);background:var(--surface2,rgba(255,255,255,0.06));border:0.5px solid var(--border);padding:1px 6px;border-radius:4px;flex-shrink:0;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${e.companyName}"><i class="ti ti-building" style="font-size:9px;vertical-align:-1px;margin-right:2px;"></i>${e.companyName}</span>`
       : '';
@@ -93,7 +321,7 @@ function renderAuditTrail() {
           <span class="at-trail-action ${e.action}">${_auditActionLabel(e.action)}</span>
           <span class="at-trail-role-badge" style="${rb.style};font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px;flex-shrink:0;">${rb.label}</span>
           ${bizBadge}
-          <span class="at-trail-who"><i class="ti ti-user" style="font-size:10px;vertical-align:-1px;margin-right:3px;"></i>${e.who||'—'}</span>
+          <span class="at-trail-who"><i class="ti ti-user" style="font-size:10px;vertical-align:-1px;margin-right:3px;"></i>${e.who||'â€”'}</span>
           <span class="at-trail-time">${timeStr}</span>
         </div>
         <div class="at-trail-desc">${e.description}</div>
@@ -105,10 +333,10 @@ function renderAuditTrail() {
   if (lm) lm.style.display = filtered.length > slice.length ? '' : 'none';
 }
 
-// Render bar filter per bisnis — auto-generate dari log yang ada
+// Render bar filter per bisnis â€” auto-generate dari log yang ada
 function _renderAuditBizBar(logs) {
   // Pill tab bisnis digantikan oleh tombol opt-picker audit-biz-btn
-  // Fungsi ini dikosongkan — logika show/hide ditangani oleh override di akhir file
+  // Fungsi ini dikosongkan â€” logika show/hide ditangani oleh override di akhir file
 }
 
 function auditSetBizFilter(companyId) {
@@ -165,12 +393,12 @@ function _renderDiff(diff) {
   if(!diff) return '';
   const rows = Object.entries(diff).map(([f,{old:o,new:n}])=>
     `<div><span style="color:var(--muted);min-width:80px;display:inline-block;">${f}:</span>`+
-    `<span class="at-trail-diff-old">${o??'—'}</span> → <span class="at-trail-diff-new">${n??'—'}</span></div>`
+    `<span class="at-trail-diff-old">${o??'â€”'}</span> â†’ <span class="at-trail-diff-new">${n??'â€”'}</span></div>`
   ).join('');
   return `<div class="at-trail-diff">${rows}</div>`;
 }
 
-// ── Role filter toggle (label role badges) ────────────────────────────────
+// â”€â”€ Role filter toggle (label role badges) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function auditToggleRoleFilter(role) {
   // Klik badge yang sama dua kali = reset ke semua
   if (_auditRoleFilter === role) {
@@ -199,7 +427,7 @@ function auditToggleRoleFilter(role) {
   renderAuditTrail();
 }
 
-// ── Filter & pagination ───────────────────────────────────────────────────
+// â”€â”€ Filter & pagination â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function auditSetFilter(f) {
   _auditFilter=f; _auditPage=0;
   document.querySelectorAll('.at-trail-filter-btn').forEach(b=>b.classList.remove('active'));
@@ -208,10 +436,10 @@ function auditSetFilter(f) {
 }
 function auditLoadMore() { _auditPage++; renderAuditTrail(); }
 
-// ── Export CSV ────────────────────────────────────────────────────────────
+// â”€â”€ Export CSV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function auditExportCSV() {
   if (typeof isAdmin === 'function' && !isAdmin()) {
-    showAlert('⛔ Akses ditolak: Audit Trail hanya dapat diekspor oleh Admin atau Pemilik bisnis.');
+    showAlert('â›” Akses ditolak: Audit Trail hanya dapat diekspor oleh Admin atau Pemilik bisnis.');
     return;
   }
   const logs=auditGetAll();
@@ -223,18 +451,18 @@ function auditExportCSV() {
     e.action,e.category,e.description,e.who||'',e.role||'',e.meta?.ref||''
   ].map(v=>`"${String(v).replace(/"/g,'""')}"`));
   const csv=[header,...rows].map(r=>r.join(',')).join('\n');
-  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  const blob=new Blob(['ï»¿'+csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url;a.download=`audit-trail-${new Date().toISOString().slice(0,10)}.csv`;
   a.click();URL.revokeObjectURL(url);
-  auditLog('export','system',`Export audit trail CSV — ${logs.length} entri`);
+  auditLog('export','system',`Export audit trail CSV â€” ${logs.length} entri`);
 }
 
-// ── Clear old >90 days ────────────────────────────────────────────────────
+// â”€â”€ Clear old >90 days â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function auditClearOld() {
   if (typeof isAdmin === 'function' && !isAdmin()) {
-    showAlert('⛔ Akses ditolak: Hanya Admin atau Pemilik bisnis yang dapat membersihkan log audit.');
+    showAlert('â›” Akses ditolak: Hanya Admin atau Pemilik bisnis yang dapat membersihkan log audit.');
     return;
   }
   const cutoff=new Date(Date.now()-90*24*3600*1000).toISOString();
@@ -247,8 +475,9 @@ function auditClearOld() {
   showAlert(`${removed} log lama dihapus.`);
 }
 
-// ── Init page ─────────────────────────────────────────────────────────────
+// â”€â”€ Init page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function initAuditPage() {
+  if (typeof window.__oasReactAuditRefresh === 'function') { window.__oasReactAuditRefresh(); return; }
   _auditPage=0;_auditFilter='all';_auditRoleFilter=null;_auditBizFilter=null;
   document.querySelectorAll('.at-trail-filter-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('audit-f-all')?.classList.add('active');
@@ -257,7 +486,7 @@ function initAuditPage() {
   renderAuditTrail();
 }
 
-// ── Login/logout helpers ──────────────────────────────────────────────────
+// â”€â”€ Login/logout helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function auditLogLogin(email) {
   // Tunggu hingga currentCompany terisi (maks 5 detik) agar role & companyId akurat
   const MAX_WAIT = 5000, INTERVAL = 200;
@@ -265,7 +494,7 @@ function auditLogLogin(email) {
   const tryLog = () => {
     const companyReady = typeof currentCompany !== 'undefined' && currentCompany?.id;
     if (companyReady || elapsed >= MAX_WAIT) {
-      auditLog('login','system',`Login: ${email} — sesi dimulai`,{ref:email});
+      auditLog('login','system',`Login: ${email} â€” sesi dimulai`,{ref:email});
     } else {
       elapsed += INTERVAL;
       setTimeout(tryLog, INTERVAL);
@@ -337,7 +566,7 @@ function guardHanyaBaca(aksi) {
   if (typeof hideOpSpinner === 'function') hideOpSpinner();
   if (Date.now() - _readOnlyNotifTs > 5000) {
     _readOnlyNotifTs = Date.now();
-    if (typeof showAlert === 'function') showAlert('🔒 Kamu Viewer di bisnis ini, jadi hanya bisa melihat data.' + (aksi ? ' ' + aksi + ' tidak disimpan.' : ''));
+    if (typeof showAlert === 'function') showAlert('ðŸ”’ Kamu Viewer di bisnis ini, jadi hanya bisa melihat data.' + (aksi ? ' ' + aksi + ' tidak disimpan.' : ''));
   }
   return true;
 }
@@ -361,7 +590,7 @@ function hasPerm(mod, act = 'read') {
 // kliknya ditolak oleh showPage()/openExportModal() dengan pesan akses ditolak.
 function _setPermLocked(el, locked) {
   el.classList.toggle('perm-locked', !!locked);
-  if (locked) { if (el.dataset.permTitle === undefined) el.dataset.permTitle = el.title || ''; el.title = 'Tidak ada izin akses — hubungi admin'; }
+  if (locked) { if (el.dataset.permTitle === undefined) el.dataset.permTitle = el.title || ''; el.title = 'Tidak ada izin akses â€” hubungi admin'; }
   else if (el.dataset.permTitle !== undefined) { el.title = el.dataset.permTitle; delete el.dataset.permTitle; }
 }
 
@@ -419,7 +648,7 @@ function enforcePermissions() {
   });
 }
 
-// ── Share Link / Join Code ──────────────────────────────────
+// â”€â”€ Share Link / Join Code â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 /** Ambil join code aktif untuk company saat ini; kalau tidak ada/kedaluwarsa, minta database membuatnya. */
 async function getOrCreateJoinCode() {
   if (!currentCompany || !_supa) return null;
@@ -439,7 +668,7 @@ async function showJoinCodeModal() {
   try {
     const code = await getOrCreateJoinCode();
     const joinLink = `${location.origin}${location.pathname}?join=${code}`;
-    document.getElementById('joincode-display').textContent = code || '—';
+    document.getElementById('joincode-display').textContent = code || 'â€”';
     document.getElementById('joincode-link').value = joinLink;
     if (btn) { btn.disabled = false; btn.textContent = 'Perbarui Kode'; }
     openModal('modal-joincode');
@@ -459,10 +688,10 @@ async function regenerateJoinCode() {
 
 function copyJoinLink() {
   const val = document.getElementById('joincode-link').value;
-  navigator.clipboard.writeText(val).then(() => showAlert('✓ Link berhasil disalin!')).catch(() => {
+  navigator.clipboard.writeText(val).then(() => showAlert('âœ“ Link berhasil disalin!')).catch(() => {
     document.getElementById('joincode-link').select();
     document.execCommand('copy');
-    showAlert('✓ Link disalin!');
+    showAlert('âœ“ Link disalin!');
   });
 }
 
@@ -479,7 +708,7 @@ async function checkJoinCodeInURL() {
   if (!currentUser) {
     // Simpan ke sessionStorage HANYA jika ada di URL dan user belum login
     sessionStorage.setItem('oas_pending_join', code);
-    showAlert('🔗 Link undangan terdeteksi!\n\nSilakan login terlebih dahulu untuk bergabung ke bisnis ini.');
+    showAlert('ðŸ”— Link undangan terdeteksi!\n\nSilakan login terlebih dahulu untuk bergabung ke bisnis ini.');
     setTimeout(() => showAuthModal?.(), 400);
     return;
   }
@@ -493,7 +722,7 @@ async function _processJoinCode(code) {
   sessionStorage.removeItem('oas_pending_join');
   try {
     // Server memeriksa kode dan kedaluwarsa; bisnis baru terlihat setelah gabung, jadi konfirmasi memakai kodenya.
-    if (!confirm(`✅ Bergabung ke bisnis dengan kode ${code}?\n\nKamu akan ditambahkan sebagai Viewer (hanya bisa melihat). Admin bisa mengubah peran dan izin aksesmu.`)) return;
+    if (!confirm(`âœ… Bergabung ke bisnis dengan kode ${code}?\n\nKamu akan ditambahkan sebagai Viewer (hanya bisa melihat). Admin bisa mengubah peran dan izin aksesmu.`)) return;
     const { data: res, error } = await _supa.rpc('gabung', { kode: code });
     if (error) throw new Error(error.message || 'Gagal bergabung');
     const ringkas = ringkasHasilGabung(res);
@@ -512,7 +741,7 @@ async function _processJoinCode(code) {
   }
 }
 
-// ── Modal User Management ─────────────────────────────────────
+// â”€â”€ Modal User Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openUserMgmtModal() {
   if (!isAdmin()) { showAlert('Hanya admin yang bisa mengelola tim.'); return; }
   renderUserMgmtList();
@@ -565,12 +794,12 @@ async function renderUserMgmtList() {
         </div>
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px;">
-            <span style="font-weight:600;font-size:14px;">${m.nama||'—'}</span>
+            <span style="font-weight:600;font-size:14px;">${m.nama||'â€”'}</span>
             ${roleBadge}
             ${isMe?'<span style="font-size:10px;color:var(--accent);background:rgba(74,222,128,0.1);padding:2px 6px;border-radius:4px;font-weight:600;">Saya</span>':''}
           </div>
-          <div style="font-size:11px;color:var(--muted);">${m.email||'—'}${m.nik?' · NIK: '+m.nik:''}${m.jabatan?' · '+m.jabatan:''}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;"><i class="ti ti-shield-check" style="font-size:11px;width:11px;height:11px;vertical-align:-1px;"></i> ${activeCount}/${modCount} modul · Status: <span style="color:${m.status==='active'?'var(--accent)':'var(--accent3)'}">${m.status==='active'?'Aktif':'Pending'}</span></div>
+          <div style="font-size:11px;color:var(--muted);">${m.email||'â€”'}${m.nik?' Â· NIK: '+m.nik:''}${m.jabatan?' Â· '+m.jabatan:''}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;"><i class="ti ti-shield-check" style="font-size:11px;width:11px;height:11px;vertical-align:-1px;"></i> ${activeCount}/${modCount} modul Â· Status: <span style="color:${m.status==='active'?'var(--accent)':'var(--accent3)'}">${m.status==='active'?'Aktif':'Pending'}</span></div>
         </div>
         ${!isMe ? `<div style="display:flex;gap:6px;flex-shrink:0;">
           <button class="btn btn-ghost btn-sm" onclick="openEditMember('${m.id}')"><i class="ti ti-pencil ti-btn"></i> Edit</button>
@@ -585,11 +814,11 @@ async function removeMember(memberId, nama) {
   if (!confirm(`Hapus anggota "${nama}" dari tim?`)) return;
   const { error } = await DB.table('org_members').delete().eq('id', memberId);
   if (error) { showAlert('Gagal hapus: ' + error.message); return; }
-  showAlert(`✓ "${nama}" dihapus dari tim.`);
+  showAlert(`âœ“ "${nama}" dihapus dari tim.`);
   renderUserMgmtList();
 }
 
-// ── Invite / Edit Member dengan CRUD Permissions ─────────────
+// â”€â”€ Invite / Edit Member dengan CRUD Permissions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function openInviteModal() {
   if (!isAdmin()) return;
@@ -637,7 +866,7 @@ async function kirimInvite() {
     });
     btn.disabled = false; btn.textContent = 'Simpan Anggota';
     if (error) { showAlert('Gagal: ' + error.message); return; }
-    showAlert(`✓ Anggota "${nama||email}" ditambahkan!\n\nMinta mereka buka link join code untuk bergabung.`);
+    showAlert(`âœ“ Anggota "${nama||email}" ditambahkan!\n\nMinta mereka buka link join code untuk bergabung.`);
     closeModal('modal-invite-user');
     renderUserMgmtList();
   } catch(e) { btn.disabled=false; btn.textContent='Simpan Anggota'; showAlert('Error: '+e.message); }
@@ -685,13 +914,13 @@ async function simpanEditMember() {
   const { error } = await DB.table('org_members').update({ nama, nik, jabatan, role, permissions: perms }).eq('id', _editMemberId);
   btn.disabled = false; btn.textContent = 'Simpan Perubahan';
   if (error) { showAlert('Gagal: ' + error.message); return; }
-  showAlert('✓ Data anggota berhasil diperbarui!');
+  showAlert('âœ“ Data anggota berhasil diperbarui!');
   closeModal('modal-edit-member');
   renderUserMgmtList();
   enforcePermissions();
 }
 
-// ── Permission Table (CRUD per Modul) ─────────────────────────
+// â”€â”€ Permission Table (CRUD per Modul) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** Render tabel izin Lihat per modul ke dalam container */
 function renderPermTable(containerId, perms) {
@@ -754,7 +983,7 @@ function readPermTableValues(containerId) {
   return perms;
 }
 
-// Hook afterLogin — jalankan join code check + load org members
+// Hook afterLogin â€” jalankan join code check + load org members
 // FIX: Tidak pakai setTimeout agar wrap terjadi SEBELUM auth event pertama
 (function _hookAfterLogin() {
   const _origAL = window.afterLogin;
@@ -796,14 +1025,14 @@ function readPermTableValues(containerId) {
   }
 })();
 
-// Cek join code di URL — HANYA jika ada ?join= parameter
+// Cek join code di URL â€” HANYA jika ada ?join= parameter
 if (new URLSearchParams(location.search).has('join')) {
   checkJoinCodeInURL();
 }
 
-// ══════════════════════════════════════════════════════════════
-// DETEKSI JURNAL PENYESUAIAN OTOMATIS — FIXED
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// DETEKSI JURNAL PENYESUAIAN OTOMATIS â€” FIXED
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 let _autoDetectResults = [];
 
 function openJoinWithCodeModal() {
@@ -849,13 +1078,13 @@ async function prosesJoinCode() {
     if (st) st.innerHTML = '<span style="color:var(--red);">Gagal: ' + e.message + '</span>';
   }
 }
-// ══════════════════════════════════════════════════════════
-// PRIORITAS 1 — MASTER PRODUK
-// ══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// PRIORITAS 1 â€” MASTER PRODUK
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-// ══════════════════════════════════════════════════════════
-// MASTER PRODUK — Deteksi otomatis dari Kartu Stock Persediaan
-// ══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// MASTER PRODUK â€” Deteksi otomatis dari Kartu Stock Persediaan
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 /**
  * Hitung saldo & layer HPP dari satu kartu stock berdasarkan metode aktif.
@@ -865,11 +1094,11 @@ function getKsSaldo(ks, _depth) {
   // Support dua format:
   // 1. Kategori: { data:{fifo,lifo,wa,mwa} }
   // 2. Card lama (legacy): { data:{fifo,lifo,wa,mwa} }
-  // 3. Card baru: { kategori:{} } → aggregate semua kategori
+  // 3. Card baru: { kategori:{} } â†’ aggregate semua kategori
   const _empty = { metode:'fifo', totalQty:0, totalNilai:0, hppRata:0, hppNext:0, layers:[], allMetodeWithSaldo:[] };
   if (!ks) return _empty;
   if (ks.kategori && !ks.data) {
-    // Card baru — aggregate semua kategori TANPA rekursi (inline loop)
+    // Card baru â€” aggregate semua kategori TANPA rekursi (inline loop)
     let tQty = 0, tNilai = 0;
     Object.values(ks.kategori).forEach(kat => {
       if (!kat || !kat.data || typeof kat.data !== 'object') return;
@@ -948,24 +1177,24 @@ function getKsSaldo(ks, _depth) {
   return { metode, totalQty, totalNilai, hppRata, hppNext, layers, allMetodeWithSaldo };
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// AUDIT FILTER — Kategori & Aktivitas pickers pakai openOptPicker()
-// ══════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// AUDIT FILTER â€” Kategori & Aktivitas pickers pakai openOptPicker()
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 // State filter kategori (halaman/fitur dari sidebar)
 let _auditCatFilter = '__all__'; // '__all__' = semua kategori
 
-// ── Definisi opsi kategori — mirror sidebar dengan icon Tabler ─────────────
+// â”€â”€ Definisi opsi kategori â€” mirror sidebar dengan icon Tabler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const _AUDIT_KAT_OPTS = [
   { value:'__all__',        label:'Semua Kategori',    sub:'Tampilkan semua halaman & fitur',       icon:'<i class="ti ti-layout-grid" style="font-size:16px;"></i>' },
   // Utama
   { value:'transaksi',      label:'Transaksi',         sub:'Input transaksi cepat',                 icon:'<i class="ti ti-circle-plus" style="font-size:16px;"></i>' },
-  // Jurnal — per jenis masing-masing
+  // Jurnal â€” per jenis masing-masing
   { value:'jurnal-umum',    label:'Jurnal Umum',       sub:'Entry manual & jurnal penyesuaian',     icon:'<i class="ti ti-book" style="font-size:16px;"></i>' },
   { value:'jurnal-kas',     label:'Jurnal Kas',        sub:'Transaksi kas masuk & keluar',          icon:'<i class="ti ti-cash" style="font-size:16px;"></i>' },
   { value:'jurnal-jual',    label:'Jurnal Penjualan',  sub:'Transaksi penjualan',                   icon:'<i class="ti ti-receipt" style="font-size:16px;"></i>' },
   { value:'jurnal-beli',    label:'Jurnal Pembelian',  sub:'Transaksi pembelian',                   icon:'<i class="ti ti-shopping-cart" style="font-size:16px;"></i>' },
-  // Laporan — masing-masing halaman laporan
+  // Laporan â€” masing-masing halaman laporan
   { value:'buku-besar',     label:'Buku Besar',        sub:'Filter akun & rekap saldo',             icon:'<i class="ti ti-books" style="font-size:16px;"></i>' },
   { value:'neraca-saldo',   label:'Neraca Saldo',      sub:'Filter periode trial balance',          icon:'<i class="ti ti-scale" style="font-size:16px;"></i>' },
   { value:'laba-rugi',      label:'Laba Rugi',         sub:'Filter periode income statement',       icon:'<i class="ti ti-trending-up" style="font-size:16px;"></i>' },
@@ -993,22 +1222,22 @@ const _AUDIT_KAT_OPTS = [
   { value:'system',         label:'Sistem',            sub:'Profil, kurs, backup, tema, reset',     icon:'<i class="ti ti-settings" style="font-size:16px;"></i>' },
 ];
 
-// Mapping: filter value → {category, jenisMatch?, refMatch?}
+// Mapping: filter value â†’ {category, jenisMatch?, refMatch?}
 // jenisMatch: filter berdasarkan meta.jenis (untuk jurnal per jenis)
 // refMatch: filter berdasarkan meta.ref atau description mengandung string
 // catMatch: filter berdasarkan e.category
-// ── Mapping kategori → fungsi filter entry ────────────────────────────────
-// Setiap kategori mendefinisikan fn(entry) → boolean
+// â”€â”€ Mapping kategori â†’ fungsi filter entry â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Setiap kategori mendefinisikan fn(entry) â†’ boolean
 // Sehingga setiap log (navigasi, jurnal, laporan, dll) yang relevan tetap muncul
 const _AUDIT_KAT_FN = {
   '__all__': null,
 
-  // Transaksi — semua jurnal dari input transaksi cepat (jenis apapun) + navigasi ke halaman transaksi
+  // Transaksi â€” semua jurnal dari input transaksi cepat (jenis apapun) + navigasi ke halaman transaksi
   'transaksi': e =>
     (e.category === 'jurnal') ||
     (e.category === 'navigasi' && e.meta?.ref === 'transaksi'),
 
-  // Jurnal per jenis — jurnal dengan jenis cocok + navigasi ke halaman jurnal tersebut
+  // Jurnal per jenis â€” jurnal dengan jenis cocok + navigasi ke halaman jurnal tersebut
   'jurnal-umum': e =>
     (e.category === 'jurnal' && ['manual','penyesuaian'].includes((e.meta?.jenis||'').toLowerCase())) ||
     (e.category === 'navigasi' && e.meta?.ref === 'jurnal-umum'),
@@ -1025,7 +1254,7 @@ const _AUDIT_KAT_FN = {
     (e.category === 'jurnal' && (e.meta?.jenis||'').toLowerCase() === 'pembelian') ||
     (e.category === 'navigasi' && e.meta?.ref === 'jurnal-pembelian'),
 
-  // Laporan — aktivitas filter/view di halaman laporan + navigasi ke halaman tersebut
+  // Laporan â€” aktivitas filter/view di halaman laporan + navigasi ke halaman tersebut
   'buku-besar': e =>
     (e.category === 'laporan' && (e.meta?.ref||'').toLowerCase().includes('buku-besar')) ||
     (e.category === 'navigasi' && e.meta?.ref === 'buku-besar'),
@@ -1054,7 +1283,7 @@ const _AUDIT_KAT_FN = {
     (e.category === 'laporan' && (e.meta?.ref||'').toLowerCase().includes('analitik')) ||
     (e.category === 'navigasi' && e.meta?.ref === 'analitik'),
 
-  // Master — aktivitas CRUD + navigasi ke halaman
+  // Master â€” aktivitas CRUD + navigasi ke halaman
   'akun': e =>
     e.category === 'akun' ||
     (e.category === 'navigasi' && e.meta?.ref === 'akun'),
@@ -1076,7 +1305,7 @@ const _AUDIT_KAT_FN = {
     e.category === 'persediaan' ||
     (e.category === 'navigasi' && e.meta?.ref === 'kalk-persediaan'),
 
-  // Kalkulator — semua kalkulator + navigasi ke kalkulator
+  // Kalkulator â€” semua kalkulator + navigasi ke kalkulator
   'kalkulator': e =>
     e.category === 'kalkulator' ||
     (e.category === 'navigasi' && (e.meta?.ref||'').startsWith('kalk-')),
@@ -1110,10 +1339,10 @@ const _AUDIT_KAT_FN = {
   'system': e =>
     e.category === 'system',
   // Jurnal Penutup & Rekonsiliasi Kas tidak punya filter kategori sendiri
-  // — hanya muncul saat filter '__all__' (semua kategori)
+  // â€” hanya muncul saat filter '__all__' (semua kategori)
 };
 
-// ── Filter kategori pada renderAuditTrail ─────────────────────────────────
+// â”€â”€ Filter kategori pada renderAuditTrail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const _origRenderAuditTrailBase = window.renderAuditTrail;
 window.renderAuditTrail = function() {
   if (_auditCatFilter === '__all__') {
@@ -1131,7 +1360,7 @@ window.renderAuditTrail = function() {
   window.auditGetAll = origGetAll;
 };
 
-// ── Opsi aktivitas dengan icon ─────────────────────────────────────────────
+// â”€â”€ Opsi aktivitas dengan icon â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const _AUDIT_AKT_OPTS = [
   { value:'all',    label:'Semua Aktivitas', sub:'Tampilkan semua jenis aksi',             icon:'<i class="ti ti-list" style="font-size:16px;"></i>' },
   { value:'create', label:'Buat',            sub:'Tambah jurnal, akun, produk, dll',       icon:'<i class="ti ti-circle-plus" style="font-size:16px;"></i>' },
@@ -1141,10 +1370,10 @@ const _AUDIT_AKT_OPTS = [
   { value:'export', label:'Export',          sub:'Export laporan & CSV',                  icon:'<i class="ti ti-upload" style="font-size:16px;"></i>' },
   { value:'login',  label:'Sesi',            sub:'Login & logout pengguna',               icon:'<i class="ti ti-lock" style="font-size:16px;"></i>' },
   { value:'info',   label:'Info & Filter',   sub:'Filter laporan, buka halaman, AI, dll', icon:'<i class="ti ti-info-circle" style="font-size:16px;"></i>' },
-  { value:'reset',  label:'Reset',           sub:'Reset data — berbahaya',                icon:'<i class="ti ti-alert-triangle" style="font-size:16px;color:var(--red);"></i>' },
+  { value:'reset',  label:'Reset',           sub:'Reset data â€” berbahaya',                icon:'<i class="ti ti-alert-triangle" style="font-size:16px;color:var(--red);"></i>' },
 ];
 
-// ── Picker: Filter Kategori ────────────────────────────────────────────────
+// â”€â”€ Picker: Filter Kategori â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function auditOpenKatPicker() {
   const btn = document.getElementById('audit-kat-btn');
   openOptPicker({
@@ -1165,7 +1394,7 @@ function auditOpenKatPicker() {
   });
 }
 
-// ── Picker: Filter Aktivitas ───────────────────────────────────────────────
+// â”€â”€ Picker: Filter Aktivitas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function auditOpenAktPicker() {
   const btn = document.getElementById('audit-akt-btn');
   openOptPicker({
@@ -1183,7 +1412,7 @@ function auditOpenAktPicker() {
   });
 }
 
-// ── Picker: Filter Bisnis (dari biz bar) ──────────────────────────────────
+// â”€â”€ Picker: Filter Bisnis (dari biz bar) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function auditOpenBizPicker() {
   // Selalu ambil dari log asli (bypass cat filter)
   const origGetAll = window.auditGetAll;
@@ -1220,7 +1449,7 @@ function auditOpenBizPicker() {
   });
 }
 
-// ── Reset semua filter saat initAuditPage ─────────────────────────────────
+// â”€â”€ Reset semua filter saat initAuditPage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const _origInitAuditPageKat = window.initAuditPage;
 window.initAuditPage = function() {
   _auditCatFilter = '__all__';
@@ -1242,10 +1471,10 @@ window.initAuditPage = function() {
   _origInitAuditPageKat?.apply(this, arguments);
 };
 
-// ── Show/hide tombol Filter Bisnis berdasarkan jumlah bisnis di log ────────
+// â”€â”€ Show/hide tombol Filter Bisnis berdasarkan jumlah bisnis di log â”€â”€â”€â”€â”€â”€â”€â”€
 const _origRenderBizBar2 = window._renderAuditBizBar;
 window._renderAuditBizBar = function(logs) {
-  // Panggil original (yang render pill tab desktop) — kini tidak perlu render apa-apa
+  // Panggil original (yang render pill tab desktop) â€” kini tidak perlu render apa-apa
   _origRenderBizBar2?.call(this, logs);
   // Hitung dari raw logs (bukan filtered)
   const rawLogs = JSON.parse(localStorage.getItem('oas_audit_trail') || '[]');
@@ -1253,5 +1482,735 @@ window._renderAuditBizBar = function(logs) {
   const bizBtn = document.getElementById('audit-biz-btn');
   if (bizBtn) bizBtn.style.display = bizIds.size > 1 ? '' : 'none';
 };
+
+
+
+// Relocated Audit Hooks from retired 08-kartu-stock.js (Domain 3B)
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// OAS AUDIT TRAIL â€” HOOKS MENYELURUH
+// Semua aktivitas penting di seluruh fitur dilog ke auditLog()
+// Di-inject setelah semua fungsi sudah terdefinisi
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+function _installAuditHooks() {
+  'use strict';
+
+  // Helper: wrap fungsi dengan audit, toleran terhadap fungsi yang belum ada
+  function _wrap(fnName, before, after) {
+    const orig = window[fnName];
+    window[fnName] = function() {
+      try { if (before) before.apply(this, arguments); } catch(e) {}
+      const ret = orig ? orig.apply(this, arguments) : undefined;
+      try { if (after) after.apply(this, arguments); } catch(e) {}
+      return ret;
+    };
+    // Preserve async nature
+    if (orig && orig.constructor && orig.constructor.name === 'AsyncFunction') {
+      window[fnName] = async function() {
+        try { if (before) before.apply(this, arguments); } catch(e) {}
+        const ret = orig ? await orig.apply(this, arguments) : undefined;
+        try { if (after) after.apply(this, arguments); } catch(e) {}
+        return ret;
+      };
+    }
+  }
+
+  function _al(action, cat, desc, ref, extraMeta) {
+    if (typeof auditLog === 'function') auditLog(action, cat, desc, { ref: ref || '', ...(extraMeta||{}) });
+  }
+  function _rp(n) { return typeof fmtRp === 'function' ? fmtRp(n) : 'Rp ' + (n||0).toLocaleString('id-ID'); }
+  function _v(id) { return document.getElementById(id)?.value || ''; }
+
+  // â”€â”€ JURNAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  // 1. HAPUS JURNAL â€” wrap konfirmasiHapusJurnal langsung (bukan button patch)
+  //    Masalah sebelumnya: onclick di-set ulang setiap buka modal, listener tidak jalan
+  _wrap('konfirmasiHapusJurnal', function(idx) {
+    // Simpan data entry SEBELUM modal terbuka (idx masih valid)
+    try {
+      const j = jurnalEntries[idx];
+      if (j) window._auditPendingHapusJurnal = { idx, no: j.no, ket: j.ket, jenis: j.jenis, total: (j.lines||[]).reduce((s,l)=>s+(l.debit||0),0) };
+    } catch(e) {}
+  }, null);
+
+  // Patch tombol konfirmasi SETELAH konfirmasiHapusJurnal dipanggil
+  const _origKonfirmasiHapusJurnal = window.konfirmasiHapusJurnal;
+  window.konfirmasiHapusJurnal = function(idx) {
+    _origKonfirmasiHapusJurnal?.apply(this, arguments);
+    // Setelah modal terbuka, patch onclick-nya
+    setTimeout(function() {
+      const btn = document.getElementById('hapus-jurnal-confirm-btn');
+      if (!btn) return;
+      const origOnclick = btn.onclick;
+      btn.onclick = async function() {
+        const pending = window._auditPendingHapusJurnal;
+        if (pending) {
+          _al('delete', 'jurnal',
+            `Hapus jurnal ${pending.jenis||'Manual'}: "${pending.ket||'â€”'}" â€” ${_rp(pending.total)}`,
+            pending.no || String(pending.idx),
+            {jenis: pending.jenis || 'Manual'});
+          window._auditPendingHapusJurnal = null;
+        }
+        if (origOnclick) return await origOnclick.call(this);
+      };
+    }, 30);
+  };
+
+  // 2. Simpan Manual â€” jenis: Manual
+  _wrap('simpanManual', null, function() {
+    try {
+      const ket = _v('manual-ket') || _v('jm-ket') || _v('ket-manual') || 'â€”';
+      _al('create', 'jurnal', `Simpan Jurnal Manual: "${ket}"`, ket, {jenis:'Manual'});
+    } catch(e) {}
+  });
+
+  // 3. Simpan Kas â€” jenis: Kas
+  _wrap('simpanKas', null, function() {
+    try {
+      const ket = _v('kas-ket') || _v('ket-kas') || 'â€”';
+      const jml = parseFloat(_v('kas-jumlah')) || 0;
+      const tipe = _v('kas-tipe') || 'â€”';
+      _al('create', 'jurnal', `Kas ${tipe}: "${ket}" â€” ${_rp(jml)}`, ket, {jenis:'Kas'});
+    } catch(e) {}
+  });
+
+  // 4. Simpan Penjualan â€” jenis: Penjualan
+  _wrap('simpanPenjualan', null, function() {
+    try {
+      const inv = _v('jual-inv') || 'â€”';
+      const jml = parseFloat(_v('jual-jumlah')) || 0;
+      _al('create', 'jurnal', `Penjualan${inv !== 'â€”' ? ' ' + inv : ''} â€” ${_rp(jml)}`, inv, {jenis:'Penjualan'});
+    } catch(e) {}
+  });
+
+  // 5. Simpan Pembelian â€” jenis: Pembelian
+  _wrap('simpanPembelian', null, function() {
+    try {
+      const po = _v('beli-po') || 'â€”';
+      const jml = parseFloat(_v('beli-jumlah')) || 0;
+      _al('create', 'jurnal', `Pembelian${po !== 'â€”' ? ' ' + po : ''} â€” ${_rp(jml)}`, po, {jenis:'Pembelian'});
+    } catch(e) {}
+  });
+
+  // 6. Simpan Akun (Chart of Accounts)
+  _wrap('simpanAkun', null, function() {
+    try {
+      const kode = _v('akun-kode');
+      const nama = _v('akun-nama');
+      const tipe = _v('akun-tipe');
+      const editId = _v('akun-edit-id');
+      _al(editId ? 'edit' : 'create', 'akun',
+        `${editId ? 'Edit' : 'Tambah'} akun: ${kode} â€” ${nama} (${tipe})`, kode);
+    } catch(e) {}
+  });
+
+  // 7. Hapus Akun
+  _wrap('hapusAkun', function(kode) {
+    try {
+      const a = (typeof akuns !== 'undefined') ? akuns.find(x => x.kode === kode) : null;
+      _al('delete', 'akun', `Hapus akun: ${kode} â€” ${a?.nama || ''}`, kode);
+    } catch(e) {}
+  }, null);
+
+  // 8. Simpan Aset Tetap
+  _wrap('simpanAsetTetap', null, function() {
+    try {
+      const nama = _v('at-nama');
+      const harga = parseFloat(_v('at-harga')) || 0;
+      const editId = _v('at-edit-id');
+      _al(editId ? 'edit' : 'create', 'aset',
+        `${editId ? 'Edit' : 'Tambah'} aset: ${nama} â€” ${_rp(harga)}`, editId || nama);
+    } catch(e) {}
+  });
+
+  // 9. Hapus Aset
+  _wrap('hapusAset', function(id) {
+    try {
+      const a = (typeof asetTetapList !== 'undefined') ? asetTetapList.find(x => x.id === id) : null;
+      _al('delete', 'aset', `Hapus aset: ${a?.nama || id}`, id);
+    } catch(e) {}
+  }, null);
+
+  // 10. Disposal Aset
+  _wrap('disposalAset', function(id) {
+    try {
+      const a = (typeof asetTetapList !== 'undefined') ? asetTetapList.find(x => x.id === id) : null;
+      _al('edit', 'aset', `Disposal aset: ${a?.nama || id}`, id);
+    } catch(e) {}
+  }, null);
+
+  // 11. Simpan Kontak
+  _wrap('simpanKontak', null, function() {
+    try {
+      const nama = _v('kontak-nama');
+      const editId = _v('kontak-edit-id');
+      _al(editId ? 'edit' : 'create', 'kontak',
+        `${editId ? 'Edit' : 'Tambah'} kontak: ${nama}`, editId || nama);
+    } catch(e) {}
+  });
+
+  // 12. Hapus Kontak
+  _wrap('hapusKontak', function(id) {
+    try {
+      const k = (typeof kontakList !== 'undefined') ? kontakList.find(x => x.id === id) : null;
+      _al('delete', 'kontak', `Hapus kontak: ${k?.nama || id}`, id);
+    } catch(e) {}
+  }, null);
+
+  // 13. Simpan Invoice
+  _wrap('simpanInvoice', null, function(status) {
+    try {
+      const no = _v('inv-no');
+      _al('create', 'invoice', `${status === 'lunas' ? 'Invoice Lunas' : 'Buat invoice'}: ${no || 'â€”'}`, no);
+    } catch(e) {}
+  });
+
+  // 14. (dihapus di task 5.3) Pelunasan invoice kini dicatat simpanPembayaranInvoice (32-pembayaran-ui.js) lewat auditLog sendiri.
+
+  // 15. Hapus Invoice
+  _wrap('hapusInvoice', function(id) {
+    try {
+      const inv = (typeof invoiceList !== 'undefined') ? invoiceList.find(x => x.id === id) : null;
+      _al('delete', 'invoice', `Hapus invoice ${inv?.no || id} â€” ${_rp(inv?.total || 0)}`, inv?.no || id);
+    } catch(e) {}
+  }, null);
+
+  // 16. Simpan Produk
+  _wrap('simpanProduk', null, function() {
+    try {
+      const ksId = _v('produk-edit-id');
+      const hj = parseFloat(_v('produk-harga-jual')) || 0;
+      const ppn = _v('produk-ppn');
+      _al('edit', 'produk', `Update produk: harga jual ${_rp(hj)}${ppn ? ', PPN ' + ppn + '%' : ''}`, ksId);
+    } catch(e) {}
+  });
+
+  // 17. Hapus Produk
+  _wrap('hapusProduk', function(id) {
+    try {
+      _al('delete', 'produk', `Hapus produk id: ${id}`, id);
+    } catch(e) {}
+  }, null);
+
+  // 18. Simpan Jurnal Berulang
+  _wrap('simpanJurnalBerulang', null, function() {
+    try {
+      const nama = _v('jb-nama');
+      const frq = _v('jb-frekuensi');
+      _al('create', 'jurnal', `Buat Jurnal Berulang: ${nama} (${frq})`, nama);
+    } catch(e) {}
+  });
+
+  // 19. Hapus Jurnal Berulang
+  _wrap('hapusJurnalBerulang', function(id) {
+    try {
+      const jb = (typeof jurnalBerulangList !== 'undefined') ? jurnalBerulangList?.find(j => j.id === id) : null;
+      _al('delete', 'jurnal', `Hapus Jurnal Berulang: ${jb?.nama || id}`, id);
+    } catch(e) {}
+  }, null);
+
+  // 20. Buat Jurnal Penutup â€” dari Dashboard aksi cepat, category 'system' agar hanya muncul di semua kategori
+  _wrap('buatJurnalPenutup', null, function() {
+    _al('auto', 'system', 'Buat Jurnal Penutup (Closing Entries)', 'JURNAL-PENUTUP');
+  });
+
+  // 20b. Cek Rekonsiliasi Kas â€” dari Dashboard aksi cepat, category 'system'
+  _wrap('cekRekonsiliasi', null, function() {
+    _al('info', 'system', 'Rekonsiliasi Kas â€” cek dari Dashboard', 'REKON-KAS');
+  });
+
+  // 21. Jurnal Penyesuaian
+  _wrap('openJurnalPenyesuaian', null, function() {
+    _al('info', 'jurnal', 'Buka modul Jurnal Penyesuaian', 'PENYESUAIAN', {jenis:'Penyesuaian'});
+  });
+  _wrap('deteksiPenyesuaianOtomatis', null, function() {
+    _al('auto', 'jurnal', 'Deteksi otomatis Jurnal Penyesuaian', 'AUTO-PENYESUAIAN', {jenis:'Penyesuaian'});
+  });
+
+  // 22. Buat Jurnal PPh 21 & PPh 23
+  _wrap('buatJurnalPPh21', null, function() {
+    _al('create', 'pajak', 'Buat Jurnal PPh 21', 'PPH21');
+  });
+  _wrap('buatJurnalPPh23', null, function() {
+    _al('create', 'pajak', 'Buat Jurnal PPh 23', 'PPH23');
+  });
+
+  // 23. Proses Rekonsiliasi
+  _wrap('prosesRekonsiliasi', null, function() {
+    _al('create', 'rekonsiliasi', 'Proses rekonsiliasi bank', 'REKON');
+  });
+  _wrap('importRekonSebagaiJurnal', null, function() {
+    _al('create', 'jurnal', 'Import rekonsiliasi sebagai jurnal', 'REKON-IMPORT');
+  });
+
+  // 24. Simpan Kurs Manual
+  _wrap('simpanKursManual', null, function() {
+    try {
+      const mata = _v('kurs-mata') || _v('kurs-uang') || 'â€”';
+      const rate = parseFloat(_v('kurs-rate') || _v('kurs-nilai') || '0') || 0;
+      _al('edit', 'system', `Update kurs ${mata}: ${rate.toLocaleString('id-ID')}`, mata);
+    } catch(e) {}
+  });
+
+  // 25. Simpan Profil Perusahaan
+  _wrap('saveProfil', null, function() {
+    try {
+      const nama = _v('profil-nama') || _v('profil-perusahaan') || 'â€”';
+      _al('edit', 'system', `Simpan profil perusahaan: ${nama}`, 'PROFIL');
+    } catch(e) {}
+  });
+
+  // 26. Simpan Saldo Awal
+  _wrap('simpanSaldoAwal', null, function() {
+    _al('edit', 'akun', 'Simpan / update Saldo Awal', 'SALDO-AWAL');
+  });
+
+  // 27. Simpan Alert/Notifikasi
+  _wrap('simpanAlertBaru', null, function() {
+    try {
+      const nama = _v('notif-nama') || _v('alert-nama') || 'â€”';
+      _al('create', 'system', `Tambah notifikasi/alert: ${nama}`, nama);
+    } catch(e) {}
+  });
+
+  // 28. Hapus Alert
+  _wrap('hapusAlert', function(id) {
+    _al('delete', 'system', `Hapus notifikasi id: ${id}`, id);
+  }, null);
+
+  // 29. Simpan Anggaran
+  _wrap('simpanAnggaran', null, function() {
+    try {
+      const period = _v('anggaran-period') || _v('ang-period') || 'â€”';
+      _al('edit', 'anggaran', `Simpan anggaran periode ${period}`, period);
+    } catch(e) {}
+  });
+
+  // 30. Hapus Anggaran
+  _wrap('hapusAnggaran', function(id) {
+    try {
+      const a = (typeof anggaranList !== 'undefined') ? anggaranList?.find(x => x.id === id) : null;
+      _al('delete', 'anggaran', `Hapus anggaran: ${a?.nama || a?.period || id}`, id);
+    } catch(e) {}
+  }, null);
+
+  // 31. Export Backup JSON
+  _wrap('exportBackupJSON', null, function() {
+    _al('export', 'system', 'Export backup data JSON', 'BACKUP-JSON');
+  });
+
+  // 32. Import Backup JSON
+  _wrap('importBackupJSON', null, function() {
+    _al('create', 'system', 'Import data dari backup JSON', 'IMPORT-JSON');
+  });
+
+  // 33. Manual Save
+  _wrap('manualSave', null, function() {
+    _al('edit', 'system', 'Simpan manual (manual save)', 'MANUAL-SAVE');
+  });
+
+  // 34. Simpan Jurnal dari AI â€” dicatat dengan label role "AI" karena aksi ini
+  //     dieksekusi otomatis oleh Orias AI, bukan diketik manual oleh pengguna.
+  _wrap('saveJurnalFromAI', null, function(parsed) {
+    try {
+      const lines = parsed?.lines || parsed?.entries || [];
+      const ket = parsed?.keterangan || parsed?.ket || parsed?.description || 'â€”';
+      const total = lines.reduce ? lines.reduce((s, l) => s + (l.debit || 0), 0) : 0;
+      _al('create', 'jurnal', `Simpan Jurnal dari AI: "${ket}" â€” ${_rp(total)}`, 'AI-JURNAL', {aiActed:true});
+    } catch(e) {}
+  });
+
+  // 35. AI Chat â€” sendAI (kirim pesan ke Orias AI)
+  _wrap('sendAI', function() {
+    try {
+      const msg = (document.getElementById('ai-input')?.value || '').trim().slice(0, 120);
+      if (msg) _al('info', 'ai', `Orias AI: "${msg}"`, 'AI-CHAT');
+    } catch(e) {}
+  }, null);
+
+  // 36. Clear AI Chat
+  _wrap('clearAIChat', null, function() {
+    _al('edit', 'ai', 'Reset riwayat chat Orias AI', 'AI-CLEAR');
+  });
+
+  // 36b. Tambah API Key AI â€” cek jumlah key sebelum & sesudah, karena addAIKey()
+  //      bisa gagal diam-diam (format invalid / key duplikat) tanpa exception.
+  _wrap('addAIKey', function() {
+    try {
+      window._auditAIKeyCountBefore = (typeof getAIKeys === 'function') ? getAIKeys().length : 0;
+    } catch(e) {}
+  }, function() {
+    try {
+      const keys = (typeof getAIKeys === 'function') ? getAIKeys() : [];
+      if (keys.length <= (window._auditAIKeyCountBefore||0)) return; // gagal ditambahkan
+      const rec = keys[keys.length - 1];
+      const providerName = (typeof AI_PROVIDERS !== 'undefined' && AI_PROVIDERS[rec.provider])
+        ? AI_PROVIDERS[rec.provider].name : (rec.provider || 'â€”');
+      const masked = rec.key && rec.key.length > 10 ? (rec.key.slice(0,6) + 'â€¢â€¢â€¢â€¢' + rec.key.slice(-4)) : 'â€¢â€¢â€¢â€¢';
+      _al('create', 'ai', `Tambah API key AI: ${providerName} (${masked})`, 'AI-KEY-ADD');
+    } catch(e) {}
+  });
+
+  // 36c. Hapus API Key AI â€” capture SEBELUM splice() menghapus datanya
+  _wrap('removeAIKey', function(idx) {
+    try {
+      const keys = (typeof getAIKeys === 'function') ? getAIKeys() : [];
+      const rec = keys[idx];
+      if (rec) {
+        const providerName = (typeof AI_PROVIDERS !== 'undefined' && AI_PROVIDERS[rec.provider])
+          ? AI_PROVIDERS[rec.provider].name : (rec.provider || 'â€”');
+        const masked = rec.key && rec.key.length > 10 ? (rec.key.slice(0,6) + 'â€¢â€¢â€¢â€¢' + rec.key.slice(-4)) : 'â€¢â€¢â€¢â€¢';
+        window._auditAIKeyRemoved = `${providerName} (${masked})`;
+      }
+    } catch(e) {}
+  }, function() {
+    try {
+      if (window._auditAIKeyRemoved) _al('delete', 'ai', `Hapus API key AI: ${window._auditAIKeyRemoved}`, 'AI-KEY-DEL');
+      window._auditAIKeyRemoved = null;
+    } catch(e) {}
+  });
+
+  // 36d. Ganti provider AI aktif
+  _wrap('setActiveProvider', null, function(providerId) {
+    try {
+      const providerName = (typeof AI_PROVIDERS !== 'undefined' && AI_PROVIDERS[providerId])
+        ? AI_PROVIDERS[providerId].name : (providerId || 'â€”');
+      _al('edit', 'ai', `Ganti provider AI aktif: ${providerName}`, 'AI-PROVIDER-SWITCH');
+    } catch(e) {}
+  });
+
+  // 37. Tutorial â€” mulai
+  _wrap('startTutorialById', function(id) {
+    try {
+      const label = id === 'semua' ? 'Semua Tutorial' : (id || 'Tutorial');
+      _al('info', 'tutorial', `Mulai tutorial: ${label}`, id);
+    } catch(e) {}
+  }, null);
+
+  // 38. Tutorial â€” selesai/keluar
+  _wrap('exitTutorial', null, function() {
+    _al('info', 'tutorial', 'Keluar dari tutorial', 'TUT-EXIT');
+  });
+
+  // 39. doExport (laporan PDF/Excel/CSV)
+  _wrap('doExport', null, function() {
+    try {
+      const fmt = (typeof exportFmt !== 'undefined' ? exportFmt : _v('exp-fmt') || 'â€”').toUpperCase();
+      const nama = _v('exp-nama-perusahaan') || 'â€”';
+      _al('export', 'system', `Export laporan ${fmt} â€” ${nama}`, fmt);
+    } catch(e) {}
+  });
+
+  // 40. Reset Semua Data
+  const _origDoResetAll = window.doResetAll;
+  window.doResetAll = async function() {
+    try {
+      const cn = (typeof currentCompany !== 'undefined' && currentCompany?.name) || 'â€”';
+      const dipilih = Array.from(document.querySelectorAll('#modal-reset-all input[data-reset]:checked')).map(c => c.getAttribute('data-label') || c.getAttribute('data-reset')).join(', ') || 'â€”';
+      _al('reset', 'system', `âš ï¸ RESET DATA bisnis "${cn}" dieksekusi: ${dipilih}`, 'RESET-ALL');
+    } catch(e) {}
+    return _origDoResetAll ? await _origDoResetAll.apply(this, arguments) : undefined;
+  };
+
+  // 41. Kartu Stock â€” hapus entri baris (delegated event di tbody)
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.ks-hapus-btn');
+    if (!btn) return;
+    try {
+      const idx = parseInt(btn.getAttribute('data-idx'));
+      if (isNaN(idx)) return;
+      const entry = (typeof kartuStockData !== 'undefined' && typeof kartuStockTab !== 'undefined')
+        ? kartuStockData?.[kartuStockTab]?.[idx] : null;
+      const card = (typeof multiKartuStock !== 'undefined' && typeof activeKartuStockId !== 'undefined')
+        ? multiKartuStock?.[activeKartuStockId] : null;
+      const kat = (card && typeof activeKategoriId !== 'undefined')
+        ? card?.kategori?.[activeKategoriId] : null;
+      if (entry) {
+        const tipe = entry.mQty > 0 ? 'masuk' : 'keluar';
+        const qty = entry.mQty > 0 ? entry.mQty : entry.kQty;
+        const jml = entry.mQty > 0 ? (entry.mQty * (entry.mHarga || 0)) : (entry.kJml || 0);
+        _al('delete', 'persediaan',
+          `Hapus entry stock ${tipe}: ${entry.tgl || 'â€”'} | Qty ${qty} | ${entry.ket || 'â€”'} | ${_rp(jml)}`,
+          `${kat?.nama || card?.nama || 'â€”'} (${(typeof kartuStockTab !== 'undefined' ? kartuStockTab : '').toUpperCase()})`);
+      }
+    } catch(ex) {}
+  }, true); // capture phase â€” jalan sebelum confirm dialog
+
+  // 42. Kartu Stock â€” hapus semua catatan
+  _wrap('clearKartuStock', function() {
+    try {
+      const card = (typeof multiKartuStock !== 'undefined' && typeof activeKartuStockId !== 'undefined')
+        ? multiKartuStock?.[activeKartuStockId] : null;
+      const kat = (card && typeof activeKategoriId !== 'undefined')
+        ? card?.kategori?.[activeKategoriId] : null;
+      const tab = typeof kartuStockTab !== 'undefined' ? kartuStockTab : 'â€”';
+      const count = (typeof kartuStockData !== 'undefined') ? (kartuStockData?.[tab] || []).length : 0;
+      window._auditKsTabBefore = { tab, count, cardName: kat?.nama || card?.nama || 'â€”' };
+    } catch(e) {}
+  }, function() {
+    try {
+      const b = window._auditKsTabBefore;
+      if (b && b.count > 0) _al('delete', 'persediaan',
+        `Hapus semua catatan ${b.tab.toUpperCase()}: ${b.count} baris di "${b.cardName}"`, 'CLEAR-KS');
+    } catch(e) {}
+  });
+
+  // 43. Kartu Stock â€” hapus seluruh kartu
+  _wrap('_doHapusCard', function(cardId) {
+    try {
+      const card = (typeof multiKartuStock !== 'undefined') ? multiKartuStock?.[cardId] : null;
+      const nKat = Object.keys(card?.kategori || {}).length;
+      window._auditKsCardToDelete = { nama: card?.nama || cardId, nKat };
+    } catch(e) {}
+  }, function(cardId) {
+    try {
+      const d = window._auditKsCardToDelete;
+      if (d) _al('delete', 'persediaan', `Hapus kartu stock "${d.nama}" (${d.nKat} kategori)`, cardId);
+    } catch(e) {}
+  });
+
+  // 44. Kartu Stock â€” tambah entry baru via saveMKS
+  let _ksCountMap = {};
+  const _origSaveMKS = window.saveMKS;
+  window.saveMKS = function(skipSync) {
+    if (!skipSync) {
+      try {
+        const tab = typeof kartuStockTab !== 'undefined' ? kartuStockTab : null;
+        const key = `${typeof activeKartuStockId !== 'undefined' ? activeKartuStockId : ''}__${typeof activeKategoriId !== 'undefined' ? activeKategoriId : ''}__${tab}`;
+        const curr = (typeof kartuStockData !== 'undefined' && tab) ? (kartuStockData?.[tab] || []).length : 0;
+        const prev = _ksCountMap[key] || 0;
+        if (curr > prev && tab) {
+          const entry = (kartuStockData?.[tab] || []).slice(-1)[0];
+          const card = (typeof multiKartuStock !== 'undefined' && typeof activeKartuStockId !== 'undefined')
+            ? multiKartuStock?.[activeKartuStockId] : null;
+          const kat = (card && typeof activeKategoriId !== 'undefined') ? card?.kategori?.[activeKategoriId] : null;
+          if (entry) {
+            const tipe = entry.mQty > 0 ? 'masuk' : 'keluar';
+            const qty = entry.mQty > 0 ? entry.mQty : entry.kQty;
+            const jml = entry.mQty > 0 ? (entry.mQty * (entry.mHarga || 0)) : (entry.kJml || 0);
+            _al('create', 'persediaan',
+              `Entry stock ${tipe}: ${entry.tgl || 'â€”'} | Qty ${qty} | ${entry.ket || 'â€”'} | ${_rp(jml)}`,
+              `${kat?.nama || card?.nama || 'â€”'} (${tab.toUpperCase()})`);
+          }
+        }
+        _ksCountMap[key] = curr;
+      } catch(e) {}
+    }
+    return _origSaveMKS ? _origSaveMKS.apply(this, arguments) : undefined;
+  };
+
+  // 45. Kalkulator Penyusutan
+  _wrap('hitungPenyusutan', null, function() {
+    try {
+      const nama = _v('dep-nama') || _v('at-kalk-nama') || 'â€”';
+      const harga = parseFloat(_v('dep-harga') || _v('at-kalk-harga') || '0') || 0;
+      const metode = _v('dep-metode') || _v('at-kalk-metode') || 'â€”';
+      _al('info', 'kalkulator', `Hitung Penyusutan: ${nama} | ${_rp(harga)} | ${metode}`, 'KALK-PENYUSUTAN');
+    } catch(e) {}
+  });
+
+  // 46. Kalkulator Persediaan
+  _wrap('hitungPersediaan', null, function() {
+    try {
+      const metode = _v('inv-metode') || 'â€”';
+      const lbl = { fifo: 'FIFO', lifo: 'LIFO', wa: 'Weighted Average', mwa: 'Moving WA' };
+      _al('info', 'kalkulator', `Hitung Persediaan ${lbl[metode] || metode}`, 'KALK-PERSEDIAAN');
+    } catch(e) {}
+  });
+
+  // 47. Kalkulator Bunga
+  _wrap('hitungBunga', null, function() {
+    try {
+      const pokok = parseFloat(_v('bunga-pokok')) || 0;
+      const rate = _v('bunga-rate') || '0';
+      const tipe = _v('bunga-tipe') || 'â€”';
+      _al('info', 'kalkulator', `Hitung Bunga ${tipe}: pokok ${_rp(pokok)}, rate ${rate}%`, 'KALK-BUNGA');
+    } catch(e) {}
+  });
+
+  // 48. Kalkulator Rasio
+  _wrap('hitungRasio', null, function() {
+    _al('info', 'kalkulator', 'Hitung Rasio Keuangan', 'KALK-RASIO');
+  });
+
+  // 49. Kalkulator BEP
+  _wrap('hitungBEP', null, function() {
+    try {
+      const fc = parseFloat(_v('bep-fc')) || 0;
+      _al('info', 'kalkulator', `Hitung BEP: FC ${_rp(fc)}`, 'KALK-BEP');
+    } catch(e) {}
+  });
+
+  // 51. showPage â€” log semua navigasi halaman
+  const _origShowPage = window.showPage;
+  window.showPage = function(id) {
+    const ret = _origShowPage ? _origShowPage.apply(this, arguments) : undefined;
+    try {
+      const PAGE_LABELS = {
+        'dashboard': null, // terlalu sering, skip
+        'transaksi': 'Buka halaman Transaksi',
+        'jurnal-umum': 'Buka Jurnal Umum',
+        'jurnal-kas': 'Buka Jurnal Kas',
+        'jurnal-penjualan': 'Buka Jurnal Penjualan',
+        'jurnal-pembelian': 'Buka Jurnal Pembelian',
+        'buku-besar': 'Buka Buku Besar',
+        'neraca-saldo': 'Buka Neraca Saldo',
+        'laba-rugi': 'Buka Laporan Laba Rugi',
+        'neraca': 'Buka Neraca',
+        'arus-kas': 'Buka Laporan Arus Kas',
+        'perubahan-ekuitas': 'Buka Laporan Perubahan Ekuitas',
+        'analitik': 'Buka Analitik',
+        'produk': 'Buka Master Produk',
+        'akun': 'Buka Chart of Accounts',
+        'aset-tetap': 'Buka Aset Tetap',
+        'kontak': 'Buka Kontak',
+        'kalk-penyusutan': 'Buka Kalkulator Penyusutan',
+        'kalk-persediaan': 'Buka Kalkulator Persediaan',
+        'kalk-bunga': 'Buka Kalkulator Bunga',
+        'kalk-rasio': 'Buka Kalkulator Rasio',
+        'kalk-bep': 'Buka Kalkulator BEP & Margin',
+        'jurnal-berulang': 'Buka Jurnal Berulang',
+        'invoice': 'Buka Invoice',
+        'rekonsiliasi': 'Buka Rekonsiliasi',
+        'kurs': 'Buka Kurs Mata Uang',
+        'notifikasi': 'Buka Notifikasi',
+        'anggaran': 'Buka Anggaran',
+        'pajak': 'Buka Pajak Auto',
+        'tutorial': 'Buka Tutorial',
+        'ai-assistant': 'Buka Orias AI Assistant',
+        'audit-trail': null, // jangan log buka audit trail sendiri
+      };
+      const label = PAGE_LABELS[id];
+      if (label) _al('info', 'navigasi', label, id);
+    } catch(e) {}
+    return ret;
+  };
+
+  // 52. Theme toggle
+  const _origToggleTheme = window.toggleTheme;
+  window.toggleTheme = function() {
+    const ret = _origToggleTheme ? _origToggleTheme.apply(this, arguments) : undefined;
+    try {
+      const theme = document.documentElement.classList.contains('light') ? 'light' : 'dark';
+      _al('edit', 'system', `Ganti tema: ${theme}`, 'TEMA');
+    } catch(e) {}
+    return ret;
+  };
+
+  // 53. Hapus Kategori KS
+  _wrap('hapusKategori', function(cardId, katId) {
+    try {
+      const card = (typeof multiKartuStock !== 'undefined') ? multiKartuStock?.[cardId] : null;
+      const kat = card?.kategori?.[katId];
+      window._auditKatToDelete = kat?.nama || katId;
+    } catch(e) {}
+  }, function(cardId, katId) {
+    try {
+      const nm = window._auditKatToDelete || katId;
+      _al('delete', 'persediaan', `Hapus kategori KS: "${nm}"`, katId);
+    } catch(e) {}
+  });
+
+  // 54. Hapus KS (ksId)
+  _wrap('hapusKS', function(ksId) {
+    try {
+      const card = (typeof multiKartuStock !== 'undefined') ? multiKartuStock?.[ksId] : null;
+      window._auditKsToDelete = card?.nama || ksId;
+    } catch(e) {}
+  }, function(ksId) {
+    try {
+      _al('delete', 'persediaan', `Hapus KS: "${window._auditKsToDelete || ksId}"`, ksId);
+    } catch(e) {}
+  });
+
+  // â”€â”€ HOOKS LAPORAN â€” category: 'laporan', ref: page id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  // Buku Besar â€” hook saat filter akun berubah
+  const _origRenderBB = window.renderBukuBesar;
+  window.renderBukuBesar = function() {
+    try {
+      const kode = document.getElementById('bb-akun-filter-val')?.value || '';
+      const nama = kode
+        ? (typeof akuns !== 'undefined' ? akuns.find(a => a.kode === kode)?.nama || kode : kode)
+        : 'Semua Akun';
+      _al('info', 'laporan', `Filter Buku Besar: ${nama}`, 'buku-besar');
+    } catch(e) {}
+    return _origRenderBB?.apply(this, arguments);
+  };
+
+  // Laporan dengan filter periode (Laba Rugi, Neraca Saldo, Neraca)
+  const _origRenderReportPeriod = window.renderReportWithPeriod;
+  window.renderReportWithPeriod = function(pageId, periodVal) {
+    try {
+      const periodLabel = {
+        'all':'Semua Periode','this-month':'Bulan Ini','last-month':'Bulan Lalu',
+        'this-quarter':'Kuartal Ini','this-year':'Tahun Ini'
+      }[periodVal] || periodVal;
+      const pageLabel = {
+        'laba-rugi':'Laba Rugi','neraca-saldo':'Neraca Saldo','neraca':'Neraca'
+      }[pageId] || pageId;
+      _al('info', 'laporan', `Filter ${pageLabel}: ${periodLabel}`, pageId);
+    } catch(e) {}
+    return _origRenderReportPeriod?.apply(this, arguments);
+  };
+
+  // Arus Kas
+  const _origRenderAK = window.renderArusKas;
+  window.renderArusKas = function() {
+    try {
+      const period = document.getElementById('ak-period')?.value
+        || document.getElementById('pe-period')?.value || 'all';
+      _al('info', 'laporan', `Lihat Arus Kas`, 'arus-kas');
+    } catch(e) {}
+    return _origRenderAK?.apply(this, arguments);
+  };
+
+  // Perubahan Ekuitas
+  const _origRenderPE = window.renderPerubahanEkuitas;
+  window.renderPerubahanEkuitas = function() {
+    try {
+      _al('info', 'laporan', 'Lihat Perubahan Ekuitas', 'perubahan-ekuitas');
+    } catch(e) {}
+    return _origRenderPE?.apply(this, arguments);
+  };
+
+  // Analitik
+  const _origRenderAnalitik = window.renderAnalitik;
+  window.renderAnalitik = function() {
+    try {
+      _al('info', 'laporan', 'Lihat Analitik', 'analitik');
+    } catch(e) {}
+    return _origRenderAnalitik?.apply(this, arguments);
+  };
+
+  // Neraca â€” hook renderNeraca
+  const _origRenderNeraca = window.renderNeraca;
+  window.renderNeraca = function() {
+    try {
+      _al('info', 'laporan', 'Lihat Neraca', 'neraca');
+    } catch(e) {}
+    return _origRenderNeraca?.apply(this, arguments);
+  };
+
+  console.log('[OAS Audit] Hooks installed â€” ' + new Date().toLocaleTimeString('id-ID'));
+}
+
+// PENTING: file ini (08) dimuat lebih awal dari banyak modul lain (09..20) yang
+// baru mendefinisikan fungsi-fungsi yang mau di-hook di atas (mis. doResetAll di
+// 15-storage.js, clearAIChat/sendAI/saveJurnalFromAI di 20-ai-chat.js). Kalau
+// _installAuditHooks() dipanggil langsung di sini (saat file ini dieksekusi),
+// window.doResetAll dkk masih undefined â€” hook terpasang ke slot kosong, lalu
+// begitu file modul tsb belakangan mendeklarasikan `function namaSama(){...}`,
+// deklarasi itu MENIMPA hook yang sudah dipasang (function declaration di scope
+// global selalu menulis ulang window.namaSama). Efeknya: reset data, hapus chat
+// AI, dsb tidak pernah tercatat di Audit Trail meski kodenya terlihat benar.
+// Fix: tunda pemasangan hook sampai semua script <script defer> selesai jalan
+// (DOMContentLoaded baru terpicu setelah itu), jadi semua fungsi target sudah
+// pasti terdefinisi final saat di-wrap.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _installAuditHooks);
+} else {
+  _installAuditHooks();
+}
 
 
