@@ -923,6 +923,7 @@ function upgradeAllPeriodPickers() {
 function upgradeFormPickers() {
   // Reset semua select yang belum jadi opt-picker (jika elemen baru muncul setelah re-render)
   document.querySelectorAll('select[id]').forEach(sel => {
+    if (sel.dataset.reactManaged === '1') return;
     // Jika select masih visible (tidak disembunyikan oleh upgradeSelectToOptPicker), reset flag
     if (sel.style.display !== 'none' && sel.dataset.upgraded) {
       delete sel.dataset.upgraded;
@@ -958,7 +959,7 @@ function upgradeFormPickers() {
 
   // Penyusutan metode
   const pyMetode = document.getElementById('py-metode');
-  if (pyMetode) upgradeSelectToOptPicker(pyMetode, {
+  if (pyMetode && pyMetode.dataset.reactManaged !== '1') upgradeSelectToOptPicker(pyMetode, {
     title: 'Metode Penyusutan',
     iconMap: { 'garis-lurus': '<i class="ti ti-trending-down" style="font-size:18px;"></i>', 'saldo-menurun': '<i class="ti ti-chart-bar ti-inline"></i>', 'satuan-produksi': '<i class="ti ti-settings ti-inline"></i>' }
   });

@@ -420,6 +420,10 @@ function addInputBtnToPersediaan() {
 
 // PENYUSUTAN
 function hitungPenyusutan() {
+  if (document.getElementById('page-kalk-penyusutan')?.dataset.reactManaged === '1') {
+    window.dispatchEvent(new CustomEvent('oas:kalk-sync', { detail: { kind: 'penyusutan' } }));
+    return;
+  }
   const cost = parseFloat(document.getElementById('py-cost').value)||0;
   const sisa = parseFloat(document.getElementById('py-sisa').value)||0;
   const umur = parseInt(document.getElementById('py-umur').value)||0;
@@ -775,6 +779,10 @@ function hitungPersediaan() {
 
 // BUNGA
 function switchBungaTab(id, el) {
+  if (document.getElementById('page-kalk-bunga')?.dataset.reactManaged === '1') {
+    window.dispatchEvent(new CustomEvent('oas:kalk-sync', { detail: { kind: 'bunga-tab', tab: id } }));
+    return;
+  }
   ['tunggal','anuitas','pv','diskonto'].forEach(x => document.getElementById('bunga-'+x).style.display='none');
   document.getElementById('bunga-'+id).style.display='block';
   document.querySelectorAll('#bunga-tabs .tab').forEach(t=>t.classList.remove('active'));
@@ -782,6 +790,10 @@ function switchBungaTab(id, el) {
 }
 
 function hitungBunga() {
+  if (document.getElementById('page-kalk-bunga')?.dataset.reactManaged === '1') {
+    window.dispatchEvent(new CustomEvent('oas:kalk-sync', { detail: { kind: 'bunga' } }));
+    return;
+  }
   const pokok = parseFloat(document.getElementById('bt-pokok').value)||0;
   const rateAnn = parseFloat(document.getElementById('bt-rate').value)||0;
   const n = parseFloat(document.getElementById('bt-n').value)||0;
@@ -853,6 +865,10 @@ function hitungBunga() {
 }
 
 function hitungAnuitas() {
+  if (document.getElementById('page-kalk-bunga')?.dataset.reactManaged === '1') {
+    window.dispatchEvent(new CustomEvent('oas:kalk-sync', { detail: { kind: 'anuitas' } }));
+    return;
+  }
   const pokok = parseFloat(document.getElementById('an-pokok').value)||0;
   const dp = parseFloat(document.getElementById('an-dp').value)||0;
   const rateAnn = parseFloat(document.getElementById('an-rate').value)||0;
@@ -933,6 +949,10 @@ function hitungAnuitas() {
 }
 
 function hitungPV() {
+  if (document.getElementById('page-kalk-bunga')?.dataset.reactManaged === '1') {
+    window.dispatchEvent(new CustomEvent('oas:kalk-sync', { detail: { kind: 'pv' } }));
+    return;
+  }
   const mode = document.getElementById('pv-mode').value;
   const PV = parseFloat(document.getElementById('pv-pv').value)||0;
   const FV = parseFloat(document.getElementById('pv-fv').value)||0;
@@ -981,6 +1001,10 @@ function hitungPV() {
 }
 
 function hitungDiskonto() {
+  if (document.getElementById('page-kalk-bunga')?.dataset.reactManaged === '1') {
+    window.dispatchEvent(new CustomEvent('oas:kalk-sync', { detail: { kind: 'diskonto' } }));
+    return;
+  }
   const nominal = parseFloat(document.getElementById('dk-nominal').value)||0;
   const ratePct = parseFloat(document.getElementById('dk-rate').value)||0;
   const rate = ratePct/100;
@@ -1015,6 +1039,10 @@ function hitungDiskonto() {
 
 // RASIO KEUANGAN
 function hitungRasio() {
+  if (document.getElementById('page-kalk-rasio')?.dataset.reactManaged === '1') {
+    window.dispatchEvent(new CustomEvent('oas:kalk-sync', { detail: { kind: 'rasio' } }));
+    return;
+  }
   // g(): baca .value, fallback ke 0
   const g = id => { const el = document.getElementById(id); return el ? (parseFloat(el.value)||0) : 0; };
   // Helper row untuk nilai format string Rp (bypass parseFloat di rasioRow)
@@ -1171,6 +1199,10 @@ function hitungRasio() {
 
 // BEP
 function hitungBEP() {
+  if (document.getElementById('page-kalk-bep')?.dataset.reactManaged === '1') {
+    window.dispatchEvent(new CustomEvent('oas:kalk-sync', { detail: { kind: 'bep' } }));
+    return;
+  }
   const harga = parseFloat(document.getElementById('bep-harga').value)||0;
   const bv = parseFloat(document.getElementById('bep-bv').value)||0;
   const bt = parseFloat(document.getElementById('bep-bt').value)||0;
