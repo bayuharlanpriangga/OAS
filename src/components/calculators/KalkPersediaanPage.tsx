@@ -12,14 +12,15 @@ import {
 } from "lucide-react";
 import KartuStockPanel from "@/components/persediaan/KartuStockPanel";
 import { hitungPersediaanPure } from "@/lib/kalkulator";
-import { callOasGlobal } from "@/lib/legacy-actions";
+import { callOasGlobal } from "@/lib/legacy-store";
 import { setOasWindowFn } from "@/lib/legacy-store";
 import type {
   PersediaanKartuRow,
   PersediaanMetode,
   PersediaanResult,
 } from "@/types";
-import { KalkActionBar, fmtRp } from "./CalcPrimitives";
+import { KalkActionBar } from "./KalkActionBar";
+import { fmtRp } from "./fmtRp";
 
 interface InvInputRow {
   id: number;

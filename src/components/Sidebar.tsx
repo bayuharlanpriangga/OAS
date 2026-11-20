@@ -48,7 +48,7 @@ import {
   Zap,
 } from "lucide-react";
 import { NAV_GROUPS } from "@/config/navigation";
-import { callOasGlobal } from "@/lib/legacy-actions";
+import { callOasGlobal } from "@/lib/legacy-store";
 import type { NavCardItem, NavIconKey } from "@/types";
 
 interface IconProps {

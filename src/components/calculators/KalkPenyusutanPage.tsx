@@ -4,15 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { BarChart3, ClipboardList, Settings } from "lucide-react";
 import { hitungPenyusutanPure } from "@/lib/kalkulator";
-import { callOasGlobal } from "@/lib/legacy-actions";
+import { callOasGlobal } from "@/lib/legacy-store";
 import type { PenyusutanMetode } from "@/types";
-import {
-  CalcNumberInput,
-  CalcResultRow,
-  KalkActionBar,
-  fmtPct,
-  fmtRp,
-} from "./CalcPrimitives";
+import { CalcNumberInput } from "./CalcNumberInput";
+import { CalcResultRow } from "./CalcResultRow";
+import { KalkActionBar } from "./KalkActionBar";
+import { fmtPct } from "./fmtPct";
+import { fmtRp } from "./fmtRp";
 
 export default function KalkPenyusutanPage() {
   const [nama, setNama] = useState("");

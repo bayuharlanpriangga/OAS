@@ -1840,14 +1840,24 @@ window.manualSave = async function() {
 
 // OVERRIDE saveProfil — juga save ke Supabase
 (function() {
-  var _origSaveProfil = saveProfil;
-  window.saveProfil = function() {
-    _origSaveProfil();
-    if (currentCompany) {
-      const p = JSON.parse(localStorage.getItem('oas_profil_v1') || '{}');
-      saveProfilToSupabase(p);
-    }
-  };
+  function _patchSaveProfil() {
+    if (typeof window.saveProfil !== 'function' || window.saveProfil.__supaPatched) return;
+    var _origSaveProfil = window.saveProfil;
+    var _wrapped = function() {
+      _origSaveProfil.apply(this, arguments);
+      if (currentCompany) {
+        const p = JSON.parse(localStorage.getItem('oas_profil_v1') || '{}');
+        saveProfilToSupabase(p);
+      }
+    };
+    _wrapped.__supaPatched = true;
+    window.saveProfil = _wrapped;
+  }
+  if (typeof window.saveProfil === 'function') {
+    _patchSaveProfil();
+  } else {
+    window.addEventListener('DOMContentLoaded', _patchSaveProfil);
+  }
 })();
 
 // OVERRIDE handleAttachFile — save attachment ke Supabase

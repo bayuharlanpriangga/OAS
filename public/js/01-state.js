@@ -271,6 +271,12 @@ window.__oasStore = {
   setDokList: (next) => { dokList = next; },
   getCounterList: () => (typeof counterList !== 'undefined' && Array.isArray(counterList) ? counterList : []),
   setCounterList: (next) => { if (typeof counterList !== 'undefined') counterList = next; },
+  getAnggaranList: () => (typeof anggaranList !== 'undefined' && Array.isArray(anggaranList) ? anggaranList : []),
+  setAnggaranList: (next) => { if (typeof anggaranList !== 'undefined') anggaranList = next; },
+  getNotifAlerts: () => (typeof notifAlerts !== 'undefined' && Array.isArray(notifAlerts) ? notifAlerts : []),
+  setNotifAlerts: (next) => { if (typeof notifAlerts !== 'undefined') notifAlerts = next; },
+  getJurnalSumberAktif: () => (typeof _jurnalSumberAktif !== 'undefined' ? _jurnalSumberAktif : ''),
+  setJurnalSumberAktif: (next) => { if (typeof _jurnalSumberAktif !== 'undefined') _jurnalSumberAktif = next; },
   getTransaksiAkunSettings: () => transaksiAkunSettings,
   getCurrentCompany: () => currentCompany,
 };

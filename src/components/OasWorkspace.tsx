@@ -19,7 +19,6 @@ const OAS_ENGINE_SCRIPTS = [
   "/js/17-profil-perusahaan.js",
   "/js/18-audit-permission.js",
   "/js/19-fitur-tambahan.js",
-  "/js/20-ai-chat.js",
   "/js/21-settings.js",
   "/js/22-cloud-records.js",
   "/js/99-init.js",

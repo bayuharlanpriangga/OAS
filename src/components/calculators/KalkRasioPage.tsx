@@ -10,12 +10,10 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { hitungRasioPure } from "@/lib/kalkulator";
-import {
-  CalcNumberInput,
-  RasioTableRow,
-  fmtPct,
-  fmtRp,
-} from "./CalcPrimitives";
+import { CalcNumberInput } from "./CalcNumberInput";
+import { RasioTableRow } from "./RasioTableRow";
+import { fmtPct } from "./fmtPct";
+import { fmtRp } from "./fmtRp";
 
 export default function KalkRasioPage() {
   const [kas, setKas] = useState("");

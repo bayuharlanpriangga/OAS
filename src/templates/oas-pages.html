@@ -1,4 +1,4 @@
-﻿<!-- DASHBOARD migrated to src/components/dashboard/DashboardPage.tsx -->
+<!-- DASHBOARD migrated to src/components/dashboard/DashboardPage.tsx -->
 
 <!-- TRANSAKSI & JURNAL UMUM migrated to React components -->
 
@@ -86,63 +86,7 @@
 
 <!-- KALKULATOR: PERSEDIAAN migrated to src/components/calculators/KalkPersediaanPage.tsx -->
 
-<!-- AI ASSISTANT -->
-<div class="page" id="page-ai-assistant">
-  <div style="display:flex;flex-direction:column;height:calc(100vh - 120px);gap:0;">
-
-    <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0;">
-      <div>
-        <div class="section-title" style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:22px;"><i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></span> Orias Assisten
-        </div>
-        <div class="section-sub" style="margin-top:4px;">Ceritakan transaksi atau pertanyaan akuntansi Anda â€” AI akan mengerjakan & membimbing Anda</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-        <button class="btn btn-ghost btn-sm" onclick="clearAIChat()" style="flex-shrink:0"><i class="ti ti-trash" style="font-size:13px;vertical-align:-2px;margin-right:3px;"></i> Clear</button>
-        <button class="btn btn-ghost btn-sm" onclick="openApiKeyModal()" id="ai-key-status-btn" style="flex-shrink:0;border-color:rgba(245,158,11,0.4);color:var(--accent3);"><i class="ti ti-key" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Setup AI</button>
-      </div>
-    </div>
-
-    <!-- Chat area -->
-    <div id="ai-chat" style="flex:1;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:12px 12px 0 0;padding:16px;display:flex;flex-direction:column;gap:16px;min-height:0;">
-      <div class="ai-msg ai-msg-bot">
-        <div class="ai-avatar"><i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div>
-        <div class="ai-bubble">
-          <div style="font-weight:600;color:var(--accent2);margin-bottom:6px;">Orias Assisten siap membantu!</div>
-          <div>Saya bisa membantu Anda:</div>
-          <ul style="margin:8px 0 0 16px;line-height:1.8;">
-            <li><i class="ti ti-book" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Catat transaksi</b> â€” cukup ceritakan, saya buatkan jurnal otomatis</li>
-            <li><i class="ti ti-calculator" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Hitung kalkulasi</b> â€” penyusutan, BEP, PPh, rasio, bunga</li>
-            <li><i class="ti ti-chart-bar ti-inline"></i> <b>Analisis laporan</b> â€” saya baca data keuangan Anda & berikan insight</li>
-            <li><i class="ti ti-info-circle" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Bimbingan penggunaan</b> â€” tanya cara pakai fitur apapun</li>
-            <li><i class="ti ti-school" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> <b>Edukasi akuntansi</b> â€” jelaskan konsep, standar PSAK, dll</li>
-          </ul>
-          <div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--muted);">
-            <i class="ti ti-bulb" style="font-size:12px;vertical-align:-1px;margin-right:4px;"></i>Contoh: <i>"Kemarin saya beli laptop Rp 15jt untuk kantor, bayar tunai. Tolong buatkan jurnalnya dan hitung penyusutannya 4 tahun metode garis lurus."</i>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Input area -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;padding:12px;flex-shrink:0;">
-      <div style="display:flex;gap:10px;align-items:flex-end;">
-        <textarea id="ai-input" placeholder="Ceritakan transaksi, tanya cara pakai, atau minta hitung sesuatu..." 
-          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--sans);font-size:13.5px;resize:none;outline:none;min-height:44px;max-height:120px;line-height:1.5;"
-          rows="1"
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI();}"
-          oninput="this.style.height='44px';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
-        <button onclick="sendAI()" id="ai-send-btn"
-          style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;font-size:14px;font-family:var(--sans);height:44px;white-space:nowrap;flex-shrink:0;">
-          Kirim â†‘
-        </button>
-      </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px;">Enter untuk kirim Â· Shift+Enter untuk baris baru Â· AI punya akses ke data jurnal Anda</div>
-    </div>
-
-  </div>
-</div>
+<!-- AI ASSISTANT migrated to src/components/ai/AiAssistantPage.tsx -->
 
 
 <!-- JURNAL BERULANG -->
@@ -803,74 +747,7 @@
   </div>
 </div>
 
-<!-- MODAL: GEMINI API KEY SETUP -->
-<div class="modal-backdrop" id="modal-apikey" style="z-index:2000;">
-  <div class="modal" style="max-width:500px;">
-    <div class="modal-head">
-      <div>
-        <div class="modal-title"><i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Setup Orias Assisten
-          <button onclick="toggleGeminiInfo()" id="gemini-info-toggle-btn" data-tooltip="Panduan setup"
-            style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 6px;cursor:pointer;color:var(--muted);vertical-align:-4px;margin-left:6px;display:inline-flex;align-items:center;">
-            <i class="ti ti-book" style="font-size:14px;width:14px;height:14px;"></i>
-          </button>
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Multi-provider â€” tempel API key apa pun, provider terdeteksi otomatis</div>
-        <div style="font-size:11px;color:var(--accent);margin-top:2px;" id="gemini-key-count">Belum ada key</div>
-      </div>
-      <button class="modal-close" onclick="closeApiKeyModal()">âœ•</button>
-    </div>
-    <div class="modal-body">
-      <div id="gemini-info-box" style="display:none;background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.2);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;line-height:1.7;color:var(--muted);">
-        <b style="color:var(--accent2)"><i class="ti ti-sparkles" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Panduan Setup â€” Pilih Provider</b><br>
-        AI Orias mendukung banyak provider sekaligus. Tap salah satu modul di bawah untuk lihat langkah-langkah lengkap & link pembuatan API key-nya masing-masing.
-        <div id="provider-guide-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;overflow:hidden;"></div>
-      </div>
-      <div id="gemini-keys-list" style="margin-bottom:10px;min-height:20px;"></div>
-      <div style="display:flex;gap:8px;">
-        <input type="password" id="gemini-new-key" placeholder="Tempel API key â€” Gemini, Claude, GPT, Groq, dll"
-          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;"
-          oninput="updateDetectedProviderLabel()"
-          onkeydown="if(event.key==='Enter')addAIKey()">
-        <button onclick="addAIKey()" class="btn btn-primary btn-sm">+ Tambah</button>
-        <button onclick="const i=document.getElementById('gemini-new-key');i.type=i.type==='password'?'text':'password'"
-          style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;cursor:pointer;color:var(--muted);font-size:14px;"><i class="ti ti-eye" style="font-size:15px;"></i></button>
-      </div>
-      <div id="ai-detected-provider" style="display:none;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:7px;"></div>
-      <div style="margin-top:10px;font-size:11px;color:var(--muted);background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.15);border-radius:6px;padding:8px 10px;">
-        <i class="ti ti-lock" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;margin-right:4px;"></i> Key hanya tersimpan di browser kamu â€” tidak dikirim ke server mana pun selain langsung ke provider AI resminya (Google, Anthropic, dll, sesuai key yang ditambahkan).
-      </div>
-      <div style="margin-top:8px;font-size:10.5px;color:var(--muted);opacity:0.75;">
-        <i class="ti ti-info-circle" style="font-size:12px;width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i> Progress pemakaian di bawah adalah estimasi lokal (jumlah request per menit), bukan data kuota resmi dari provider.
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeApiKeyModal()">Tutup</button>
-    </div>
-  </div>
-</div>
 
-<!-- MODAL: PANDUAN PROVIDER (detail per modul, dibuka dari grid di atas) -->
-<div class="modal-backdrop" id="modal-provider-guide" style="z-index:2100;" onclick="if(event.target===this)closeModal('modal-provider-guide')">
-  <div class="modal" style="max-width:460px;">
-    <div class="modal-head">
-      <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-        <span id="pg-badge" style="width:30px;height:30px;border-radius:8px;color:#fff;font-size:12px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"></span>
-        <div style="min-width:0;">
-          <div class="modal-title" id="pg-title" style="font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-          <div style="font-size:11px;color:var(--muted);margin-top:1px;" id="pg-tagline"></div>
-        </div>
-      </div>
-      <button class="modal-close" onclick="closeModal('modal-provider-guide')">âœ•</button>
-    </div>
-    <div class="modal-body" id="pg-body" style="font-size:13px;line-height:1.7;color:var(--muted);"></div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-provider-guide')">Tutup</button>
-      <a id="pg-open-link" href="#" target="_blank" rel="noopener" class="btn btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;">
-        <i class="ti ti-external-link" style="font-size:14px;"></i> Buka Halaman API Key
-      </a>
-    </div>
-  </div>
-</div>
 
 <!-- MODAL: JURNAL PENYESUAIAN -->
 <div class="modal-backdrop" id="modal-penyesuaian">
@@ -1342,69 +1219,7 @@
 </div>
 
 
-<!-- CUSTOM CONFIRM MODAL -->
-<div id="custom-confirm-backdrop" style="
-  display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,0.65);z-index:8000;
-  align-items:center;justify-content:center;padding:20px;
-">
-  <div id="custom-confirm-box" style="
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:18px;
-    width:100%;max-width:380px;
-    box-shadow:0 24px 64px rgba(0,0,0,0.5);
-    overflow:hidden;
-    animation:confirmPop 0.2s cubic-bezier(0.34,1.56,0.64,1);
-  ">
-    <!-- Header -->
-    <div style="
-      background:linear-gradient(135deg,rgba(34,211,238,0.12),rgba(74,222,128,0.08));
-      border-bottom:1px solid var(--border);
-      padding:16px 20px 14px;
-      display:flex;align-items:center;gap:12px;
-    ">
-      <div style="width:36px;height:36px;border-radius:50%;background:rgba(34,211,238,0.15);border:1px solid rgba(34,211,238,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;"><i class="ti ti-robot" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div>
-      <div>
-        <div style="font-size:14px;font-weight:700;color:var(--text);">Konfirmasi Aksi Orias</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:1px;">Orias akan mengeksekusi aksi berikut</div>
-      </div>
-    </div>
-
-    <!-- Body -->
-    <div style="padding:16px 20px;">
-      <div id="confirm-journal-list" style="margin-bottom:12px;"></div>
-      <div id="confirm-other-actions" style="display:none;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--accent3);margin-bottom:12px;"></div>
-      <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.18);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--muted);">
-        <i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Data yang sudah disimpan bisa dihapus via menu <b style="color:var(--text)">Jurnal Umum</b> jika ada kesalahan.
-      </div>
-    </div>
-
-    <!-- Footer -->
-    <div style="padding:0 20px 18px;display:flex;gap:10px;">
-      <button id="confirm-cancel-btn" style="
-        flex:1;padding:11px;border-radius:10px;
-        background:var(--surface2);border:1px solid var(--border);
-        color:var(--muted);font-size:14px;font-weight:600;
-        cursor:pointer;font-family:var(--sans);
-        transition:all 0.15s;
-      " onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
-         onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
-        âœ• Batal
-      </button>
-      <button id="confirm-ok-btn" style="
-        flex:2;padding:11px;border-radius:10px;
-        background:linear-gradient(135deg,#4ade80,#22d3ee);
-        border:none;color:#000;font-size:14px;font-weight:700;
-        cursor:pointer;font-family:var(--sans);
-        transition:all 0.15s;
-      " onmouseover="this.style.opacity='0.9'"
-         onmouseout="this.style.opacity='1'">
-        âœ“ Ya, Simpan Sekarang
-      </button>
-    </div>
-  </div>
-</div>
+<!-- CUSTOM CONFIRM MODAL migrated to AiAssistantPage.tsx OasModalDialog -->
 
 
 

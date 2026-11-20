@@ -61,17 +61,29 @@ export default function RootLayout({
     <html lang="id" suppressHydrationWarning>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" id="meta-theme-color" content="#0d0f14" />
-        <meta name="color-scheme" id="meta-color-scheme" content="dark" />
+        <meta
+          name="theme-color"
+          id="meta-theme-color"
+          content="#0d0f14"
+          suppressHydrationWarning
+        />
+        <meta
+          name="color-scheme"
+          id="meta-color-scheme"
+          content="dark"
+          suppressHydrationWarning
+        />
         <link
           href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
+      </head>
+      <body suppressHydrationWarning>
         <Script id="oas-anti-glitch" strategy="beforeInteractive">
           {ANTI_GLITCH_SCRIPT}
         </Script>
-      </head>
-      <body suppressHydrationWarning>{children}</body>
+        {children}
+      </body>
     </html>
   );
 }

@@ -1,4 +1,4 @@
-﻿// Relocated Audit constants & hooks from retired 14-export.js (Domain 4A)
+// Relocated Audit constants & hooks from retired 14-export.js (Domain 4A)
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // AUDIT TRAIL SYSTEM â€” dengan label role multi-user
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -572,6 +572,7 @@ function guardHanyaBaca(aksi) {
 }
 
 function hasPerm(mod, act = 'read') {
+  if (typeof currentCompany === 'undefined' || !currentCompany || typeof currentUser === 'undefined' || !currentUser) return true;
   if (isAdmin()) return true;
   if (isReadOnly() && act !== 'read') return false;
   if (act !== 'read') return true; // izin per modul hanya mengatur Lihat; hak ubah ikut peran
@@ -1833,53 +1834,7 @@ function _installAuditHooks() {
     _al('edit', 'ai', 'Reset riwayat chat Orias AI', 'AI-CLEAR');
   });
 
-  // 36b. Tambah API Key AI â€” cek jumlah key sebelum & sesudah, karena addAIKey()
-  //      bisa gagal diam-diam (format invalid / key duplikat) tanpa exception.
-  _wrap('addAIKey', function() {
-    try {
-      window._auditAIKeyCountBefore = (typeof getAIKeys === 'function') ? getAIKeys().length : 0;
-    } catch(e) {}
-  }, function() {
-    try {
-      const keys = (typeof getAIKeys === 'function') ? getAIKeys() : [];
-      if (keys.length <= (window._auditAIKeyCountBefore||0)) return; // gagal ditambahkan
-      const rec = keys[keys.length - 1];
-      const providerName = (typeof AI_PROVIDERS !== 'undefined' && AI_PROVIDERS[rec.provider])
-        ? AI_PROVIDERS[rec.provider].name : (rec.provider || 'â€”');
-      const masked = rec.key && rec.key.length > 10 ? (rec.key.slice(0,6) + 'â€¢â€¢â€¢â€¢' + rec.key.slice(-4)) : 'â€¢â€¢â€¢â€¢';
-      _al('create', 'ai', `Tambah API key AI: ${providerName} (${masked})`, 'AI-KEY-ADD');
-    } catch(e) {}
-  });
-
-  // 36c. Hapus API Key AI â€” capture SEBELUM splice() menghapus datanya
-  _wrap('removeAIKey', function(idx) {
-    try {
-      const keys = (typeof getAIKeys === 'function') ? getAIKeys() : [];
-      const rec = keys[idx];
-      if (rec) {
-        const providerName = (typeof AI_PROVIDERS !== 'undefined' && AI_PROVIDERS[rec.provider])
-          ? AI_PROVIDERS[rec.provider].name : (rec.provider || 'â€”');
-        const masked = rec.key && rec.key.length > 10 ? (rec.key.slice(0,6) + 'â€¢â€¢â€¢â€¢' + rec.key.slice(-4)) : 'â€¢â€¢â€¢â€¢';
-        window._auditAIKeyRemoved = `${providerName} (${masked})`;
-      }
-    } catch(e) {}
-  }, function() {
-    try {
-      if (window._auditAIKeyRemoved) _al('delete', 'ai', `Hapus API key AI: ${window._auditAIKeyRemoved}`, 'AI-KEY-DEL');
-      window._auditAIKeyRemoved = null;
-    } catch(e) {}
-  });
-
-  // 36d. Ganti provider AI aktif
-  _wrap('setActiveProvider', null, function(providerId) {
-    try {
-      const providerName = (typeof AI_PROVIDERS !== 'undefined' && AI_PROVIDERS[providerId])
-        ? AI_PROVIDERS[providerId].name : (providerId || 'â€”');
-      _al('edit', 'ai', `Ganti provider AI aktif: ${providerName}`, 'AI-PROVIDER-SWITCH');
-    } catch(e) {}
-  });
-
-  // 37. Tutorial â€” mulai
+  // 37. Tutorial — mulai
   _wrap('startTutorialById', function(id) {
     try {
       const label = id === 'semua' ? 'Semua Tutorial' : (id || 'Tutorial');

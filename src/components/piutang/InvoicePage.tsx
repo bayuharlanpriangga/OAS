@@ -91,14 +91,16 @@ export default function InvoicePage() {
   const [akuns, setAkuns] = useState<Akun[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [tick, setTick] = useState(0);
+  const [today, setToday] = useState("");
+  const [readOnly, setReadOnly] = useState(false);
 
   const [invModalOpen, setInvModalOpen] = useState(false);
   const [invForm, setInvForm] = useState({
     editId: "",
     noInvoice: "",
     pelanggan: "",
-    tanggal: agingHariIni(),
-    jatuhTempo: berlakuDefaultPenawaran(agingHariIni(), 30),
+    tanggal: "",
+    jatuhTempo: "",
     deskripsi: "",
     items: [{ nama: "", qty: 1, harga: 0 }],
     ppnAktif: false,
@@ -111,7 +113,7 @@ export default function InvoicePage() {
   const [bayarForm, setBayarForm] = useState({
     invId: "",
     mode: "bayar" as "bayar" | "riwayat",
-    tanggal: agingHariIni(),
+    tanggal: "",
     jumlah: "",
     akunKas: "1101",
     metode: "",
@@ -120,7 +122,7 @@ export default function InvoicePage() {
 
   const [alokasiModalOpen, setAlokasiModalOpen] = useState(false);
   const [alokasiForm, setAlokasiForm] = useState({
-    tanggal: agingHariIni(),
+    tanggal: "",
     jumlah: "",
     akunKas: "1101",
     metode: "",
@@ -134,6 +136,8 @@ export default function InvoicePage() {
     setInvoices(readInvoiceList().slice());
     setPembayarans(readPembayaranList().slice());
     setAkuns(readAkuns().slice());
+    setToday(agingHariIni());
+    setReadOnly(Boolean(getWin().isReadOnly?.()));
     setTick((t) => t + 1);
   }, []);
 
@@ -563,7 +567,6 @@ export default function InvoicePage() {
     setOasWindowFn("openModalAlokasiPembayaran", openModalAlokasi as (...args: never[]) => unknown);
   }, [handleHapusInvoice, handleKirimInvoice, openModalAlokasi, openModalBayar, openModalInvoice, syncAll]);
 
-  const today = agingHariIni();
   const belumJurnalList = useMemo(() => {
     void tick;
     return pembayaranInvoiceBelumJurnal(pembayarans, invoices, readJurnalEntries());
@@ -616,7 +619,6 @@ export default function InvoicePage() {
     const found = akuns.find((a) => a.kode === kode);
     return found ? `${found.kode} — ${found.nama}` : kode;
   };
-  const readOnly = typeof window !== "undefined" && Boolean(getWin().isReadOnly?.());
 
   return (
     <>

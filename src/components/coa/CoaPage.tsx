@@ -19,7 +19,7 @@ import {
   akunTrashSisaHari,
   tipeBadgeClass,
 } from "@/lib/default-akuns";
-import { callOasGlobal } from "@/lib/legacy-actions";
+import { callOasGlobal } from "@/lib/legacy-store";
 import {
   readAkuns,
   readAkunsTrash,

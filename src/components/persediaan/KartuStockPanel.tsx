@@ -38,7 +38,7 @@ import {
   KsKonversiModal,
   KsPilihModal,
   type KsEditModalState,
-} from "./KartuStockModals";
+} from "./index";
 
 interface KsWin {
   showAlert?: (msg: string) => void;
@@ -87,6 +87,7 @@ export default function KartuStockPanel() {
     Array<{ idx: number; entry: KsEntry }>
   >([]);
   const [jurnalSelected, setJurnalSelected] = useState<number[]>([]);
+  const [readOnly, setReadOnly] = useState(false);
 
   const syncFromStore = useCallback(() => {
     const initialized = initMultiKartuStockStore();
@@ -97,6 +98,7 @@ export default function KartuStockPanel() {
     setActiveCardId(ids.cardId);
     setActiveKatId(ids.katId);
     setMetode(tab);
+    setReadOnly(Boolean(getWin().isReadOnly?.()));
   }, []);
 
   const switchCard = useCallback(
@@ -466,8 +468,6 @@ export default function KartuStockPanel() {
     const unjournaledCount = storage.filter((e) => e.kQty > 0 && !e.jurnalDone).length;
     return { totalMasuk, totalKeluar, saldoQty, saldoNilai, unjournaledCount };
   }, [storage]);
-
-  const readOnly = typeof window !== "undefined" && Boolean(getWin().isReadOnly?.());
 
   return (
     <>

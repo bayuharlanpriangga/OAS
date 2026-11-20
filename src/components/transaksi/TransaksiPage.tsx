@@ -16,7 +16,7 @@ import AkunPickerModal from "@/components/ui/AkunPickerModal";
 import { resolveAkunSetting } from "@/lib/accounting";
 import { guessAkunPersediaanDefault } from "@/lib/default-akuns";
 import { fmtRp } from "@/lib/format";
-import { callOasGlobal } from "@/lib/legacy-actions";
+import { callOasGlobal } from "@/lib/legacy-store";
 import {
   readAkuns,
   readCurrentCompany,

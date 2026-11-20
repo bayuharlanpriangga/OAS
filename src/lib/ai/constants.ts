@@ -1,0 +1,50 @@
+export const DEFAULT_GEMINI_MODEL = "gemini-4-hydrogen";
+
+export const MAX_AI_MESSAGES = 30;
+export const MAX_MESSAGE_CHARS = 12_000;
+export const MAX_TOTAL_CHARS = 60_000;
+export const MAX_CONTEXT_CHARS = 25_000;
+
+export const AI_PAGE_NAMES: Record<string, string> = {
+  dashboard: "Dashboard",
+  transaksi: "Transaksi",
+  "jurnal-umum": "Jurnal Umum",
+  "jurnal-kas": "Jurnal Kas",
+  "jurnal-penjualan": "Jurnal Penjualan",
+  "jurnal-pembelian": "Jurnal Pembelian",
+  "jurnal-berulang": "Jurnal Berulang",
+  "buku-besar": "Buku Besar",
+  "neraca-saldo": "Neraca Saldo",
+  "laba-rugi": "Laba Rugi",
+  neraca: "Neraca",
+  "arus-kas": "Arus Kas",
+  "perubahan-ekuitas": "Perubahan Ekuitas",
+  analitik: "Analitik",
+  akun: "Chart of Accounts",
+  produk: "Master Produk",
+  "aset-tetap": "Aset Tetap",
+  kontak: "Kontak",
+  invoice: "Invoice",
+  bill: "Tagihan Pembelian",
+  "umur-piutang": "Umur Piutang",
+  "umur-hutang": "Umur Hutang",
+  "kartu-piutang": "Kartu Piutang",
+  "kartu-hutang": "Kartu Hutang",
+  penawaran: "Penawaran",
+  "pesanan-jual": "Pesanan Penjualan",
+  anggaran: "Anggaran",
+  notifikasi: "Notifikasi",
+  pajak: "Pajak Auto",
+  kurs: "Kurs",
+  rekonsiliasi: "Rekonsiliasi",
+  "rekonsiliasi-bank": "Rekonsiliasi Bank",
+  "audit-trail": "Audit Trail",
+  settings: "Settings",
+  tutorial: "Tutorial",
+  "ai-assistant": "Orias Assisten",
+  "kalk-penyusutan": "Kalkulator Penyusutan",
+  "kalk-persediaan": "Kalkulator Persediaan",
+  "kalk-bunga": "Kalkulator Bunga",
+  "kalk-rasio": "Kalkulator Rasio",
+  "kalk-bep": "Kalkulator BEP",
+};

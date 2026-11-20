@@ -57,6 +57,7 @@ interface DashWin {
 const getWin = () => window as unknown as DashWin;
 
 export default function DashboardPage() {
+  const [mounted, setMounted] = useState(false);
   const [period, setPeriod] = useState<DashPeriodKey>("this-month");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
@@ -139,6 +140,7 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    setMounted(true);
     refresh();
     setOasWindowFn("renderDashboard", refresh as (...args: never[]) => unknown);
     setOasWindowFn("renderDashPiutangUtang", refresh as (...args: never[]) => unknown);
@@ -149,6 +151,9 @@ export default function DashboardPage() {
 
   const data = useMemo(() => {
     void tick;
+    if (!mounted) {
+      return computeDashboardData([], [], [], [], [], "all", "", "");
+    }
     return computeDashboardData(
       readJurnalEntries(),
       readAkuns(),
@@ -159,7 +164,7 @@ export default function DashboardPage() {
       customFrom,
       customTo
     );
-  }, [customFrom, customTo, period, tick]);
+  }, [customFrom, customTo, mounted, period, tick]);
 
   return (
     <div className="page active" id="page-dashboard" data-react-managed="1">

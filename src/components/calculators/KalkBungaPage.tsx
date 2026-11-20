@@ -8,20 +8,18 @@ import {
   hitungDiskontoPure,
   hitungPvPure,
 } from "@/lib/kalkulator";
-import { callOasGlobal } from "@/lib/legacy-actions";
+import { callOasGlobal } from "@/lib/legacy-store";
 import type {
   AnuitasJenis,
   BungaJenis,
   BungaSatuan,
   PvMode,
 } from "@/types";
-import {
-  CalcNumberInput,
-  CalcResultRow,
-  KalkActionBar,
-  fmtPct,
-  fmtRp,
-} from "./CalcPrimitives";
+import { CalcNumberInput } from "./CalcNumberInput";
+import { CalcResultRow } from "./CalcResultRow";
+import { KalkActionBar } from "./KalkActionBar";
+import { fmtPct } from "./fmtPct";
+import { fmtRp } from "./fmtRp";
 
 type BungaTab = "tunggal" | "anuitas" | "pv" | "diskonto";
 

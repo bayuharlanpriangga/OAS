@@ -55,7 +55,7 @@ import {
   type AsetFotoItem,
 } from "@/lib/aset-tetap";
 import { fmtRp as rp } from "@/lib/format";
-import { callOasGlobal } from "@/lib/legacy-actions";
+import { callOasGlobal } from "@/lib/legacy-store";
 import {
   readAkuns,
   readAsetTetapList,
@@ -509,7 +509,7 @@ export default function AsetTetapPage() {
   }, [asetList, filterStatus, search]);
 
   const fotoMap = useMemo(() => {
-    void fotoRevision;
+    if (!fotoRevision) return {};
     return getAtFotoAll();
   }, [fotoRevision]);
 

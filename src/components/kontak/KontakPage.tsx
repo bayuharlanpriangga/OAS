@@ -66,9 +66,11 @@ export default function KontakPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [detailKontak, setDetailKontak] = useState<Kontak | null>(null);
+  const [readOnly, setReadOnly] = useState(false);
 
   const syncFromStore = useCallback(() => {
     setKontaks(readKontakList().slice());
+    setReadOnly(Boolean(getWin().isReadOnly?.()));
   }, []);
 
   const recalcTotalTrx = useCallback(() => {
@@ -334,8 +336,6 @@ export default function KontakPage() {
       .slice(-10)
       .reverse();
   }, [detailKontak]);
-
-  const readOnly = typeof window !== "undefined" && Boolean(getWin().isReadOnly?.());
 
   return (
     <>

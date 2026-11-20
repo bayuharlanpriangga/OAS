@@ -54,9 +54,17 @@ export default function ExportModal() {
   const [sections, setSections] = useState<ExportSections>(DEFAULT_EXPORT_SECTIONS);
   const [nama, setNama] = useState("");
   const [proyek, setProyek] = useState("");
-  const [periode, setPeriode] = useState(defaultPeriodeLabel);
+  const [periode, setPeriode] = useState("");
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
-  const [pdfTheme, setPdfTheme] = useState<PdfThemeConfig>(() => loadSavedPdfTheme());
+  const [pdfTheme, setPdfTheme] = useState<PdfThemeConfig>(() => ({
+    template: "A",
+    colors: {
+      A: { ...PDF_THEME_DEFAULTS.A.colors },
+      B: { ...PDF_THEME_DEFAULTS.B.colors },
+      C: { ...PDF_THEME_DEFAULTS.C.colors },
+      D: { ...PDF_THEME_DEFAULTS.D.colors },
+    },
+  }));
   const [showThemeEditor, setShowThemeEditor] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

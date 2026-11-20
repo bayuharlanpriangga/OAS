@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import OasModalDialog from "@/components/ui/OasModalDialog";
 import { fmtRp } from "@/lib/format";
-import { callOasGlobal } from "@/lib/legacy-actions";
+import { callOasGlobal } from "@/lib/legacy-store";
 import {
   readMultiKartuStock,
   readProdukList,

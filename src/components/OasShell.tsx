@@ -1,6 +1,7 @@
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import OasWorkspace from "./OasWorkspace";
+import AiAssistantPage from "./ai/AiAssistantPage";
 import DashboardPage from "./dashboard/DashboardPage";
 import AnalitikPage from "./analitik/AnalitikPage";
 import AuditTrailPage from "./admin/AuditTrailPage";
@@ -12,9 +13,9 @@ import ExportModal from "./export/ExportModal";
 import KontakPage from "./kontak/KontakPage";
 import InvoicePage from "./piutang/InvoicePage";
 import BillPage from "./hutang/BillPage";
-import { UmurHutangPage, UmurPiutangPage } from "./aging/AgingPages";
-import { KartuHutangPage, KartuPiutangPage } from "./kartu/KartuKontakPages";
-import { PenawaranPage, PesananJualPage } from "./penjualan/DokPenjualanPages";
+import { UmurHutangPage, UmurPiutangPage } from "./aging";
+import { KartuHutangPage, KartuPiutangPage } from "./kartu";
+import { PenawaranPage, PesananJualPage } from "./penjualan";
 import TransaksiPage from "./transaksi/TransaksiPage";
 import {
   BukuBesarPage,
@@ -22,14 +23,14 @@ import {
   JurnalPembelianPage,
   JurnalPenjualanPage,
   JurnalUmumPage,
-} from "./jurnal/JurnalPages";
+} from "./jurnal";
 import {
   ArusKasPage,
   LabaRugiPage,
   NeracaPage,
   NeracaSaldoPage,
   PerubahanEkuitasPage,
-} from "./laporan/LaporanPages";
+} from "./laporan";
 import {
   KalkBepPage,
   KalkBungaPage,
@@ -57,6 +58,7 @@ export default function OasShell({ pagesHtml, overlaysHtml }: OasShellProps) {
             dangerouslySetInnerHTML={{ __html: pagesHtml }}
           />
           <DashboardPage />
+          <AiAssistantPage />
           <AnalitikPage />
           <TransaksiPage />
           <JurnalUmumPage />

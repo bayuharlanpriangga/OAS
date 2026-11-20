@@ -41,7 +41,7 @@ import {
   BillFormModal,
   type BillBayarFormState,
   type BillFormState,
-} from "./BillModals";
+} from "./index";
 
 interface BillLegacyWin {
   showAlert?: (msg: string) => void;
@@ -75,6 +75,8 @@ export default function BillPage() {
   const [pembayarans, setPembayarans] = useState<Pembayaran[]>([]);
   const [akuns, setAkuns] = useState<Akun[]>([]);
   const [tick, setTick] = useState(0);
+  const [today, setToday] = useState("");
+  const [readOnly, setReadOnly] = useState(false);
 
   const [billModalOpen, setBillModalOpen] = useState(false);
   const [billForm, setBillForm] = useState<BillFormState>({
@@ -82,8 +84,8 @@ export default function BillPage() {
     createdAt: "",
     noBill: "",
     supplier: "",
-    tanggal: agingHariIni(),
-    jatuhTempo: berlakuDefaultPenawaran(agingHariIni(), 30),
+    tanggal: "",
+    jatuhTempo: "",
     deskripsi: "",
     items: [{ nama: "", qty: 1, harga: 0, akun: "1301" }],
     ppnAktif: false,
@@ -95,7 +97,7 @@ export default function BillPage() {
   const [bayarForm, setBayarForm] = useState<BillBayarFormState>({
     billId: "",
     mode: "bayar",
-    tanggal: agingHariIni(),
+    tanggal: "",
     jumlah: "",
     akunKas: "1101",
     metode: "",
@@ -108,6 +110,8 @@ export default function BillPage() {
     setBills(readBillList().slice());
     setPembayarans(readPembayaranList().slice());
     setAkuns(readAkuns().slice());
+    setToday(agingHariIni());
+    setReadOnly(Boolean(getWin().isReadOnly?.()));
     setTick((t) => t + 1);
   }, []);
 
@@ -440,8 +444,6 @@ export default function BillPage() {
     const found = akuns.find((a) => a.kode === kode);
     return found ? `${found.kode} — ${found.nama}` : kode;
   };
-  const readOnly = typeof window !== "undefined" && Boolean(getWin().isReadOnly?.());
-  const today = agingHariIni();
 
   return (
     <>

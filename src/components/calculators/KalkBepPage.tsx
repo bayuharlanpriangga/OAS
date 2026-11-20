@@ -4,13 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Package, Settings } from "lucide-react";
 import { hitungBepPure } from "@/lib/kalkulator";
-import { callOasGlobal } from "@/lib/legacy-actions";
-import {
-  CalcNumberInput,
-  KalkActionBar,
-  fmtPct,
-  fmtRp,
-} from "./CalcPrimitives";
+import { callOasGlobal } from "@/lib/legacy-store";
+import { CalcNumberInput } from "./CalcNumberInput";
+import { KalkActionBar } from "./KalkActionBar";
+import { fmtPct } from "./fmtPct";
+import { fmtRp } from "./fmtRp";
 
 export default function KalkBepPage() {
   const [harga, setHarga] = useState("");
