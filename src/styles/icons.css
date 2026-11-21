@@ -165,7 +165,7 @@
 .ti-inline { font-size: 13px; width: 13px; height: 13px; vertical-align: -2px; }
 .quick-action-btn .ti { font-size: 15px; width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px; }
 .table-title .ti { font-size: 15px; width: 15px; height: 15px; vertical-align: -2px; margin-right: 6px; }
-.oas-active-tab { background: var(--accent) !important; color: #000 !important; border-color: var(--accent) !important; }
+.oas-active-tab { background: var(--accent) !important; color: var(--accent-fg) !important; border-color: var(--accent) !important; }
 /* ─ extra icons used in merged file ─ */
 .ti-chart-pie { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z'/%3E%3C/svg%3E"); }
 .ti-trophy { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 21h8M12 17v4M5 3h14M6 3v7a6 6 0 0012 0V3M4 3H2v3a3 3 0 003 3h1M20 3h2v3a3 3 0 01-3 3h-1'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 21h8M12 17v4M5 3h14M6 3v7a6 6 0 0012 0V3M4 3H2v3a3 3 0 003 3h1M20 3h2v3a3 3 0 01-3 3h-1'/%3E%3C/svg%3E"); }
@@ -185,18 +185,32 @@
 .logo-close { display: none; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 0; }
 
 :root {
-  --bg: #0d0f14;
-  --surface: #141720;
-  --surface2: #1c2030;
-  --border: #252a3a;
-  --accent: #4ade80;
-  --accent2: #22d3ee;
-  --accent3: #f59e0b;
-  --red: #f87171;
-  --text: #e2e8f0;
-  --muted: #64748b;
+  --tinta: #0D0D0D;
+  --perak: #EEF1F4;
+  --es: #A9C6DC;
+  --emas: #D4A72C;
+  --bg: #0D0D0D;
+  --surface: #141619;
+  --surface2: #1C1F24;
+  --border: rgba(169, 198, 220, 0.20);
+  --border-strong: rgba(169, 198, 220, 0.34);
+  --accent: #D4A72C;
+  --accent-text: #D4A72C;
+  --accent-fg: #0D0D0D;
+  --accent-tint: rgba(212, 167, 44, 0.14);
+  --accent2: #A9C6DC;
+  --accent2-tint: rgba(169, 198, 220, 0.12);
+  --green: #4E9A6B;
+  --green-tint: rgba(78, 154, 107, 0.14);
+  --accent3: #D9772B;
+  --warn: #D9772B;
+  --red: #D4564A;
+  --danger: #D4564A;
+  --red-tint: rgba(212, 86, 74, 0.14);
+  --text: #EEF1F4;
+  --muted: rgba(238, 241, 244, 0.70);
   --mono: 'IBM Plex Mono', monospace;
-  --sans: 'DM Sans', sans-serif;
+  --sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* Missing icon definitions */

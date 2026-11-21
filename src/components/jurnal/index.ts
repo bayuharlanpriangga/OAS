@@ -1,5 +1,4 @@
-export { JurnalUmumPage } from "./JurnalUmumPage";
-export { JurnalKasPage } from "./JurnalKasPage";
-export { JurnalPenjualanPage } from "./JurnalPenjualanPage";
-export { JurnalPembelianPage } from "./JurnalPembelianPage";
-export { BukuBesarPage } from "./BukuBesarPage";
+export { JurnalUmumPage } from "./jurnal-umum/JurnalUmumPage";
+export { JurnalKasPage } from "./jurnal-kas/JurnalKasPage";
+export { JurnalPenjualanPage } from "./jurnal-jual/JurnalPenjualanPage";
+export { JurnalPembelianPage } from "./jurnal-beli/JurnalPembelianPage";

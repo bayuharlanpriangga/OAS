@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { Menu, Search } from "lucide-react";
-import { callOasGlobal } from "@/lib/legacy-store";
+import { callOasGlobal } from "@/lib/shared/legacy-store";
 
 export default function Topbar() {
   return (

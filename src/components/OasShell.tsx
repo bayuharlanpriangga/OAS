@@ -1,43 +1,51 @@
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import OasWorkspace from "./OasWorkspace";
-import AiAssistantPage from "./ai/AiAssistantPage";
-import DashboardPage from "./dashboard/DashboardPage";
-import AnalitikPage from "./analitik/AnalitikPage";
-import AuditTrailPage from "./admin/AuditTrailPage";
-import TutorialPage from "./admin/TutorialPage";
-import CoaPage from "./coa/CoaPage";
-import ProdukPage from "./produk/ProdukPage";
-import AsetTetapPage from "./aset/AsetTetapPage";
-import ExportModal from "./export/ExportModal";
-import KontakPage from "./kontak/KontakPage";
-import InvoicePage from "./piutang/InvoicePage";
-import BillPage from "./hutang/BillPage";
-import { UmurHutangPage, UmurPiutangPage } from "./aging";
-import { KartuHutangPage, KartuPiutangPage } from "./kartu";
-import { PenawaranPage, PesananJualPage } from "./penjualan";
-import TransaksiPage from "./transaksi/TransaksiPage";
+import { DashboardPage, TransaksiPage } from "./utama";
 import {
-  BukuBesarPage,
   JurnalKasPage,
   JurnalPembelianPage,
   JurnalPenjualanPage,
   JurnalUmumPage,
 } from "./jurnal";
 import {
+  AnalitikPage,
   ArusKasPage,
+  BukuBesarPage,
   LabaRugiPage,
   NeracaPage,
   NeracaSaldoPage,
   PerubahanEkuitasPage,
 } from "./laporan";
 import {
+  AsetTetapPage,
+  CoaPage,
+  KontakPage,
+  ProdukPage,
+} from "./master";
+import {
   KalkBepPage,
   KalkBungaPage,
   KalkPenyusutanPage,
   KalkPersediaanPage,
   KalkRasioPage,
-} from "./calculators";
+} from "./kalkulator";
+import {
+  BillPage,
+  InvoicePage,
+  KartuHutangPage,
+  KartuPiutangPage,
+  PenawaranPage,
+  PesananJualPage,
+  UmurHutangPage,
+  UmurPiutangPage,
+} from "./fitur-baru";
+import {
+  AiAssistantPage,
+  AuditTrailPage,
+  ExportModal,
+  TutorialPage,
+} from "./lainnya";
 
 interface OasShellProps {
   pagesHtml: string;

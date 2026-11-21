@@ -36,7 +36,7 @@ async function initSupabase() {
     console.warn('[Auth] Redirect login berisi error:', oauthUrl.error);
     history.replaceState(null, '', window.location.pathname + (window.location.hash.includes('error') ? '' : window.location.hash));
     setTimeout(() => {
-      if (typeof showAlert === 'function') showAlert('⚠️ Login Google kedaluwarsa atau gagal. Silakan login lagi dan selesaikan dalam satu browser/tab.');
+      if (typeof showAlert === 'function') showAlert('Login Google kedaluwarsa atau gagal. Silakan login lagi dan selesaikan dalam satu browser/tab.');
     }, 800);
   }
 
@@ -63,7 +63,7 @@ async function initSupabase() {
       window.__oauthRedirect = false;
       window.__initialOAuthRedirect = false;
       setTimeout(() => {
-        if (typeof showAlert === 'function') showAlert('⚠️ Login Google gagal diproses. Silakan login lagi.');
+        if (typeof showAlert === 'function') showAlert('Login Google gagal diproses. Silakan login lagi.');
       }, 800);
     }
     // Bersihkan ?code= dari URL tanpa reload
@@ -191,8 +191,9 @@ function updateGuestChip() {
     chip.title = 'Login untuk simpan data ke cloud';
   }
   if (chipAvatar) {
-    chipAvatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:white;display:block;"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
-    chipAvatar.style.background = 'linear-gradient(135deg,#64748b,#94a3b8)';
+    chipAvatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text);display:block;"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    chipAvatar.style.background = 'var(--surface2)';
+    chipAvatar.style.border = '1px solid var(--border-strong)';
     chipAvatar.style.display = 'flex';
     chipAvatar.style.alignItems = 'center';
     chipAvatar.style.justifyContent = 'center';
@@ -212,10 +213,10 @@ function showGuestBanner() {
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
       <span><b>Mode Tamu</b> — Data hanya tersimpan di browser ini. <b>Login</b> untuk simpan ke cloud & akses dari perangkat lain.</span>
-      <button onclick="showAuthModal()" style="background:var(--accent);border:none;border-radius:6px;padding:5px 14px;font-weight:700;cursor:pointer;color:#0d0f14;font-size:12px;white-space:nowrap;flex-shrink:0;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-1px;margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Login / Daftar</button>
+      <button onclick="showAuthModal()" style="background:var(--accent);border:none;border-radius:6px;padding:5px 14px;font-weight:700;cursor:pointer;color:var(--accent-fg);font-size:12px;white-space:nowrap;flex-shrink:0;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-1px;margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Login / Daftar</button>
       <button onclick="document.getElementById('guest-banner').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 4px;margin-left:auto;flex-shrink:0;">✕</button>
     </div>`;
-  banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:var(--surface2);border-top:2px solid rgba(245,158,11,0.4);padding:10px 16px;z-index:5000;font-size:13px;';
+  banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:var(--surface2);border-top:1px solid var(--border-strong);padding:10px 16px;z-index:5000;font-size:13px;';
   document.body.appendChild(banner);
 }
 
@@ -233,10 +234,6 @@ function showAuthModal() {
     modal.id = 'auth-modal-inline';
     modal.style.cssText = 'position:fixed;inset:0;z-index:99998;overflow:hidden;background:var(--bg);';
     modal.innerHTML = `
-      <div class="auth-orb auth-orb-1"></div>
-      <div class="auth-orb auth-orb-2"></div>
-      <div class="auth-orb auth-orb-3"></div>
-
       <div class="auth-page-split">
 
         <!-- INTRO: mobile = atas, desktop = kanan tengah -->
@@ -245,7 +242,7 @@ function showAuthModal() {
             <div id="auth-welcome-text" class="auth-intro-overlay" style="font-size:clamp(22px,4vw,32px);font-weight:800;font-family:var(--sans);color:var(--text);"></div>
 
             <div id="auth-brand-block" style="display:flex;flex-direction:column;align-items:center;">
-              <div id="auth-brand-logo" style="width:72px;height:72px;border-radius:20px;background:var(--surface);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 8px 32px rgba(74,222,128,0.15);opacity:0;transition:opacity 0.25s ease;">
+              <div id="auth-brand-logo" style="width:72px;height:72px;border-radius:10px;background:var(--surface);border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;margin-bottom:16px;opacity:0;transition:opacity 0.2s cubic-bezier(0.16,1,0.3,1);">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="44" height="44">
                   <rect class="logo-part" style="--part-delay:0ms;fill:var(--accent)" x="38.5" y="12" width="3" height="38" rx="1.5"/>
                   <rect class="logo-part" style="--part-delay:90ms;fill:var(--accent)" x="24" y="50" width="32" height="4" rx="2"/>
@@ -260,7 +257,7 @@ function showAuthModal() {
                   <text class="logo-part" style="--part-delay:530ms;fill:var(--bg)" x="60" y="35.5" text-anchor="middle" font-size="9" font-weight="bold" font-family="sans-serif">=</text>
                 </svg>
               </div>
-              <div id="auth-brand-title" style="font-size:24px;font-weight:800;font-family:var(--mono);letter-spacing:0.02em;color:var(--accent);text-shadow:0 0 20px rgba(74,222,128,0.35);min-height:1.2em;"></div>
+              <div id="auth-brand-title" style="font-size:24px;font-weight:800;font-family:var(--mono);letter-spacing:0.02em;color:var(--accent-text);min-height:1.2em;"></div>
               <div id="auth-brand-sub" style="font-size:12px;margin-top:6px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);min-height:1.2em;"></div>
             </div>
           </div>
@@ -564,7 +561,7 @@ async function doModalLogin() {
   setModalAuthLoading('btn-modal-login', true); clearModalAuthMsg();
   const { error } = await DB.auth.signInWithPassword({ email, password: pw });
   setModalAuthLoading('btn-modal-login', false);
-  if (error) showModalAuthMsg(error.message === 'Invalid login credentials' ? '❌ Email atau password salah' : '❌ ' + error.message);
+  if (error) showModalAuthMsg(error.message === 'Invalid login credentials' ? 'Email atau password salah' : error.message);
   // Jika sukses → onAuthStateChange akan trigger afterLogin()
 }
 
@@ -581,16 +578,16 @@ async function doModalRegister() {
     options: { data: { full_name: name } }
   });
   setModalAuthLoading('btn-modal-register', false);
-  if (error) { showModalAuthMsg('❌ ' + error.message); return; }
-  showModalAuthMsg('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Cek email kamu untuk verifikasi!', false);
+  if (error) { showModalAuthMsg(error.message); return; }
+  showModalAuthMsg('<i class="ti ti-circle-check" style="color:var(--green);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Cek email kamu untuk verifikasi!', false);
 }
 
 async function doModalForgotPassword() {
   const email = document.getElementById('modal-auth-email').value.trim();
   if (!email) { showModalAuthMsg('Masukkan email kamu dulu'); return; }
   const { error } = await DB.auth.resetPasswordForEmail(email);
-  if (error) showModalAuthMsg('❌ ' + error.message);
-  else showModalAuthMsg('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Link reset password sudah dikirim!', false);
+  if (error) showModalAuthMsg(error.message);
+  else showModalAuthMsg('<i class="ti ti-circle-check" style="color:var(--green);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Link reset password sudah dikirim!', false);
 }
 
 // MIGRASI DATA GUEST → SUPABASE (opsional saat pertama login)
@@ -602,13 +599,13 @@ async function offerGuestDataMigration() {
   if (!localEntries.length) return;
 
   const doMigrate = await showCustomConfirmGeneral({
-    icon: '☁️', iconColor: 'rgba(34,211,238,0.12)', iconBorder: 'rgba(34,211,238,0.3)',
+    icon: '<i class="ti ti-cloud-upload"></i>', iconColor: 'var(--accent-tint)', iconBorder: 'var(--border-strong)',
     title: 'Pindahkan Data Tamu?',
     subtitle: `Kamu punya ${localEntries.length} jurnal dari mode tamu.`,
     rows: [{ label: 'Tujuan', value: `Bisnis "${currentCompany.name}" di cloud` }],
     warning: null,
-    btnLabel: '☁️ Ya, Pindahkan',
-    btnGradient: 'linear-gradient(135deg,#22d3ee,#4ade80)'
+    btnLabel: 'Ya, Pindahkan',
+    btnGradient: 'var(--accent)'
   });
 
   if (doMigrate) {
@@ -644,9 +641,9 @@ function switchAuthTab(tab) {
 function showAuthMsg(msg, isError = true) {
   const el = document.getElementById('auth-msg');
   el.style.display = 'block';
-  el.style.background = isError ? 'rgba(248,113,113,0.1)' : 'rgba(74,222,128,0.1)';
-  el.style.border = isError ? '1px solid rgba(248,113,113,0.3)' : '1px solid rgba(74,222,128,0.3)';
-  el.style.color = isError ? 'var(--red)' : 'var(--accent)';
+  el.style.background = isError ? 'var(--red-tint)' : 'var(--green-tint)';
+  el.style.border = isError ? '1px solid rgba(212,86,74,0.32)' : '1px solid rgba(78,154,107,0.32)';
+  el.style.color = isError ? 'var(--red)' : 'var(--green)';
   el.textContent = msg;
 }
 
@@ -678,7 +675,7 @@ async function doLogin() {
   const { error } = await DB.auth.signInWithPassword({ email, password: pw });
   hideOpSpinner();
   setAuthLoading('btn-login', false);
-  if (error) showAuthMsg(error.message === 'Invalid login credentials' ? '❌ Email atau password salah' : '❌ ' + error.message);
+  if (error) showAuthMsg(error.message === 'Invalid login credentials' ? 'Email atau password salah' : error.message);
 }
 
 async function doRegister() {
@@ -694,8 +691,8 @@ async function doRegister() {
     options: { data: { full_name: name } }
   });
   setAuthLoading('btn-register', false);
-  if (error) { showAuthMsg('❌ ' + error.message); return; }
-  showAuthMsg('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Cek email kamu untuk verifikasi!', false);
+  if (error) { showAuthMsg(error.message); return; }
+  showAuthMsg('<i class="ti ti-circle-check" style="color:var(--green);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Cek email kamu untuk verifikasi!', false);
 }
 
 async function doGoogleLogin() {
@@ -722,15 +719,15 @@ async function doGoogleLogin() {
       btns.forEach(b => { b.disabled = false; b.innerHTML = '<img src="https://www.google.com/favicon.ico" width="16" height="16" style="vertical-align:middle;margin-right:8px;border-radius:2px"> Lanjutkan dengan Google'; });
       // Cek apakah error karena provider belum dikonfigurasi
       if (error.message && (error.message.includes('provider') || error.message.includes('not enabled') || error.message.includes('OAuth'))) {
-        showAuthMsg('❌ Google Login belum diaktifkan. Hubungi admin untuk setup Google OAuth di Supabase Dashboard → Authentication → Providers → Google.');
+        showAuthMsg('Google Login belum diaktifkan. Hubungi admin untuk setup Google OAuth di Supabase Dashboard → Authentication → Providers → Google.');
       } else {
-        showAuthMsg('❌ ' + error.message);
+        showAuthMsg(error.message);
       }
     }
     // Jika sukses, browser akan redirect ke Google — tidak perlu reset tombol
   } catch(e) {
     btns.forEach(b => { b.disabled = false; b.innerHTML = '<img src="https://www.google.com/favicon.ico" width="16" height="16" style="vertical-align:middle;margin-right:8px;border-radius:2px"> Lanjutkan dengan Google'; });
-    showAuthMsg('❌ Gagal menghubungi server. Pastikan koneksi internet aktif.');
+    showAuthMsg('Gagal menghubungi server. Pastikan koneksi internet aktif.');
     console.error('Google login error:', e);
   }
 }
@@ -740,19 +737,19 @@ function showGoogleSetupGuide() {
   const modal = document.createElement('div');
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
   modal.innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;max-width:520px;width:100%;padding:28px;font-family:var(--sans);">
+    <div style="background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;max-width:520px;width:100%;padding:28px;font-family:var(--sans);">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-        <span style="font-size:24px;">🔐</span>
+        <span style="width:36px;height:36px;border-radius:8px;background:var(--surface2);border:1px solid var(--border-strong);display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--accent-text);"><i class="ti ti-lock"></i></span>
         <div>
           <div style="font-size:16px;font-weight:700;">Setup Google Login</div>
           <div style="font-size:12px;color:var(--muted);">Ikuti langkah berikut di Supabase Dashboard</div>
         </div>
       </div>
       <ol style="font-size:13px;line-height:1.9;color:var(--text);padding-left:18px;">
-        <li>Buka <a href="https://supabase.com/dashboard" target="_blank" style="color:var(--accent2)">supabase.com/dashboard</a> → pilih project kamu</li>
+        <li>Buka <a href="https://supabase.com/dashboard" target="_blank" style="color:var(--accent-text)">supabase.com/dashboard</a> → pilih project kamu</li>
         <li>Pergi ke <b>Authentication → Providers → Google</b></li>
         <li>Toggle <b>Enable</b> → aktifkan</li>
-        <li>Buka <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent2)">Google Cloud Console</a> → buat project / pilih project</li>
+        <li>Buka <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent-text)">Google Cloud Console</a> → buat project / pilih project</li>
         <li>Pergi ke <b>APIs & Services → Credentials → Create OAuth Client ID</b></li>
         <li>Application type: <b>Web application</b></li>
         <li>Di bagian <b>Authorized redirect URIs</b>, tambahkan:<br>
@@ -761,10 +758,10 @@ function showGoogleSetupGuide() {
         <li>Copy <b>Client ID</b> dan <b>Client Secret</b> → paste di Supabase (Authentication → Providers → Google)</li>
         <li>Simpan di Supabase → selesai! Google Login siap digunakan.</li>
       </ol>
-      <div style="margin-top:16px;padding:12px;background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);border-radius:8px;font-size:12px;color:var(--accent2);">
-        💡 <b>Site URL di Supabase</b> (Authentication → URL Configuration) harus diisi dengan URL tempat file HTML ini diakses, misalnya <code>http://localhost</code> atau domain kamu.
+      <div style="margin-top:16px;padding:12px;background:var(--surface2);border:1px solid var(--border-strong);border-radius:8px;font-size:12px;color:var(--text);">
+        <b>Site URL di Supabase</b> (Authentication → URL Configuration) harus diisi dengan URL tempat aplikasi ini diakses, misalnya <code>http://localhost</code> atau domain kamu.
       </div>
-      <button onclick="this.closest('div[style]').remove()" style="margin-top:18px;width:100%;background:var(--accent);border:none;border-radius:8px;padding:11px;font-weight:700;cursor:pointer;color:#000;font-size:14px;">Mengerti, Tutup</button>
+      <button onclick="this.closest('div[style]').remove()" style="margin-top:18px;width:100%;background:var(--accent);border:none;border-radius:8px;padding:11px;font-weight:700;cursor:pointer;color:var(--accent-fg);font-size:14px;">Mengerti, Tutup</button>
     </div>
   `;
   document.body.appendChild(modal);
@@ -775,8 +772,8 @@ async function doForgotPassword() {
   const email = document.getElementById('auth-email').value.trim();
   if (!email) { showAuthMsg('Masukkan email kamu dulu'); return; }
   const { error } = await DB.auth.resetPasswordForEmail(email);
-  if (error) showAuthMsg('❌ ' + error.message);
-  else showAuthMsg('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Link reset password sudah dikirim ke email kamu!', false);
+  if (error) showAuthMsg(error.message);
+  else showAuthMsg('<i class="ti ti-circle-check" style="color:var(--green);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Link reset password sudah dikirim ke email kamu!', false);
 }
 
 async function doLogout() {
@@ -835,7 +832,8 @@ async function afterLogin() {
       chipAvatar.style.background = 'transparent';
     } else {
       chipAvatar.textContent = initial;
-      chipAvatar.style.background = 'linear-gradient(135deg,var(--accent2),var(--accent))';
+      chipAvatar.style.background = 'var(--accent)';
+      chipAvatar.style.color = 'var(--accent-fg)';
     }
   }
   const _displayName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email || '—';
@@ -920,7 +918,7 @@ async function afterLogin() {
     if (chip) chip.style.pointerEvents = '';
     if (chipName) chipName.innerHTML = '<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Gagal memuat';
     if (chipSub) chipSub.textContent = e.message || 'Cek console';
-    showAlert('❌ Gagal memuat data bisnis: ' + e.message);
+    showAlert('Gagal memuat data bisnis: ' + e.message);
     enterGuestMode();
   } finally {
     _afterLoginRunning = false;
@@ -944,7 +942,7 @@ async function showCompanyPicker() {
     showCompanyPickerScreen(companies);
   } catch(e) {
     console.error('showCompanyPicker error:', e);
-    showAlert('❌ Gagal memuat daftar bisnis. Coba lagi.');
+    showAlert('Gagal memuat daftar bisnis. Coba lagi.');
   } finally {
     _companyPickerLoading = false;
     if (chip) chip.style.opacity = '1';
@@ -957,7 +955,7 @@ function showCompanyPickerScreen(companies) {
   const picker = document.getElementById('company-picker');
   picker.style.display = 'block';
   const isLight = document.body.classList.contains('light-mode');
-  picker.style.background = isLight ? '#f8fafc' : '#0d0f14';
+  picker.style.background = isLight ? '#EEF1F4' : '#0D0D0D';
 
   // Email
   document.getElementById('cp-user-email').textContent = currentUser?.email || '';
@@ -973,7 +971,7 @@ function showCompanyPickerScreen(companies) {
     const chipAvatar = document.getElementById('chip-avatar');
     const chipName   = document.getElementById('chip-company-name');
     const chipSub    = document.getElementById('chip-sub');
-    if (chipAvatar) { chipAvatar.textContent = currentUser?.email?.charAt(0)?.toUpperCase() || '?'; chipAvatar.style.background = 'linear-gradient(135deg,var(--accent2),var(--accent))'; }
+    if (chipAvatar) { chipAvatar.textContent = currentUser?.email?.charAt(0)?.toUpperCase() || '?'; chipAvatar.style.background = 'var(--accent)'; chipAvatar.style.color = 'var(--accent-fg)'; }
     if (chipName)   chipName.textContent = 'Pilih Bisnis';
     if (chipSub)    chipSub.textContent  = currentUser?.email || '';
   }
@@ -1134,7 +1132,7 @@ function cpActionDelete() {
 let _cpDeleteTarget = null;
 
 function showDeleteCompanyConfirm(company) {
-  if (!adalahPemilikBisnis(company, currentUser?.id)) { showAlert('❌ Hanya pemilik yang bisa menghapus bisnis.'); return; }
+  if (!adalahPemilikBisnis(company, currentUser?.id)) { showAlert('Hanya pemilik yang bisa menghapus bisnis.'); return; }
   _cpDeleteTarget = company;
   document.getElementById('cp-del-biz-name').textContent = company.name;
   document.getElementById('cp-del-journal-warn').textContent =
@@ -1158,7 +1156,7 @@ async function confirmDeleteCompany() {
   if (!_cpDeleteTarget) return;
   const company = _cpDeleteTarget;
   // Guard kedua: jurnal dihapus lebih dulu di bawah, dan RLS mengizinkan admin menghapus jurnal.
-  if (!adalahPemilikBisnis(company, currentUser?.id)) { closeDeleteCompanyConfirm(); showAlert('❌ Hanya pemilik yang bisa menghapus bisnis.'); return; }
+  if (!adalahPemilikBisnis(company, currentUser?.id)) { closeDeleteCompanyConfirm(); showAlert('Hanya pemilik yang bisa menghapus bisnis.'); return; }
   const okBtn = document.getElementById('cp-del-btn-ok');
   okBtn.classList.add('loading');
   okBtn.disabled = true;
@@ -1180,7 +1178,7 @@ async function confirmDeleteCompany() {
     okBtn.classList.remove('loading');
     okBtn.disabled = false;
     okBtn.innerHTML = '<i class="ti ti-trash ti-btn"></i> Hapus Permanen';
-    showAlert('❌ Gagal menghapus bisnis: ' + (e.message || e));
+    showAlert('Gagal menghapus bisnis: ' + (e.message || e));
   }
 }
 
@@ -1272,7 +1270,7 @@ async function createCompany() {
     // Tidak perlu getSession() — token sudah valid saat user login
     if (!currentUser) {
       btn.disabled = false; btnText.textContent = 'Buat Bisnis';
-      showAlert('❌ Sesi login habis. Silakan login ulang.');
+      showAlert('Sesi login habis. Silakan login ulang.');
       return;
     }
 
@@ -1289,17 +1287,17 @@ async function createCompany() {
       let msg = error.message || JSON.stringify(error);
       // Tabel belum dibuat di Supabase
       if (msg.includes('relation') || msg.includes('does not exist') || msg.includes('42P01')) {
-        showAlert('❌ Tabel "companies" belum ada di Supabase.\n\nSilakan buka menu <i class="ti ti-settings ti-inline"></i> Setup Supabase dan jalankan SQL schema-nya dulu di Supabase Dashboard → SQL Editor.');
+        showAlert('Tabel "companies" belum ada di Supabase.\n\nSilakan buka menu Setup Supabase dan jalankan SQL schema-nya dulu di Supabase Dashboard → SQL Editor.');
         showSupabaseSetup();
         return;
       }
       // RLS policy block
       if (msg.includes('row-level') || msg.includes('policy') || msg.includes('42501') || msg.includes('permission')) {
-        showAlert('❌ Akses ditolak Supabase (RLS).\n\nPastikan policy "Users can manage own companies" sudah dibuat di SQL Editor Supabase.');
+        showAlert('Akses ditolak Supabase (RLS).\n\nPastikan policy "Users can manage own companies" sudah dibuat di SQL Editor Supabase.');
         showSupabaseSetup();
         return;
       }
-      showAlert('❌ Gagal membuat bisnis:\n' + msg);
+      showAlert('Gagal membuat bisnis:\n' + msg);
       return;
     }
 
@@ -1313,7 +1311,7 @@ async function createCompany() {
   } catch(e) {
     btn.disabled = false; btnText.textContent = 'Buat Bisnis';
     console.error('createCompany exception:', e);
-    showAlert('❌ Error tidak terduga: ' + (e.message || e));
+    showAlert('Error tidak terduga: ' + (e.message || e));
   }
 }
 
@@ -1387,7 +1385,8 @@ function updateUserChip() {
     } else {
       const initial = (currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email || '?').charAt(0).toUpperCase();
       chipAvatar.innerHTML = initial;
-      chipAvatar.style.background = 'linear-gradient(135deg,var(--accent),var(--accent2))';
+      chipAvatar.style.background = 'var(--accent)';
+      chipAvatar.style.color = 'var(--accent-fg)';
     }
   }
 
@@ -1414,7 +1413,7 @@ function _loadCloudGagal(err, companyId) {
   console.warn('[loadDataFromSupabase] gagal, data cloud tidak dimuat:', err);
   if (typeof _cloudLoadFromCache === 'function' && currentCompany && currentCompany.id === companyId) _cloudLoadFromCache(companyId);
   hideOpSpinner();
-  showAlert('⚠️ Gagal memuat data bisnis dari cloud (koneksi bermasalah). Muat ulang halaman saat koneksi sudah ada. Tidak ada data yang diubah.');
+  showAlert('Gagal memuat data bisnis dari cloud (koneksi bermasalah). Muat ulang halaman saat koneksi sudah ada. Tidak ada data yang diubah.');
 }
 
 async function loadDataFromSupabase() {
@@ -1746,15 +1745,15 @@ window.saveToStorage = async function(showToast = true) {
       if (!recOk) {
         if (!_spinnerAlreadyActive) hideOpSpinner();
         updateSaveIndicator('error');
-        showAutoSaveToast('⚠️ Invoice/kontak/aset/produk belum tersimpan ke cloud', false);
+        showAutoSaveToast('<i class="ti ti-alert-triangle" style="color:var(--accent3);margin-right:4px;"></i> Invoice/kontak/aset/produk belum tersimpan ke cloud', false);
         return false;
       }
     }
     hasUnsavedChanges = false;
     lastSaveTime = new Date();
     updateSaveIndicator('saved');
-    if (showToast) showAutoSaveToast('☁️ Tersimpan ke cloud!', false);
-    else showAutoSaveToast('☁️ Auto-saved', true);
+    if (showToast) showAutoSaveToast('<i class="ti ti-cloud-check" style="margin-right:4px;"></i> Tersimpan ke cloud!', false);
+    else showAutoSaveToast('<i class="ti ti-cloud-check" style="margin-right:4px;"></i> Auto-saved', true);
     if (!_spinnerAlreadyActive) hideOpSpinner();
     return true;
   } catch(e) {
@@ -1834,7 +1833,7 @@ window.manualSave = async function() {
   } catch(e) {
     hideOpSpinner();
     updateSaveIndicator('error');
-    showAlert('❌ Gagal menyimpan: ' + (e.message || e));
+    showAlert('Gagal menyimpan: ' + (e.message || e));
   }
 };
 
@@ -1868,7 +1867,7 @@ function handleAttachFile(input) {
   const j = jurnalEntries[idx];
   if (!j || !input.files.length) return;
   const file = input.files[0];
-  if (file.size > 5 * 1024 * 1024) { showAlert('❌ File terlalu besar (max 5MB)'); return; }
+  if (file.size > 5 * 1024 * 1024) { showAlert('File terlalu besar (max 5MB)'); return; }
   const reader = new FileReader();
   reader.onload = async (e) => {
     if (!j.attachments) j.attachments = [];
@@ -1897,32 +1896,32 @@ function handleAttachFile(input) {
 // SUPABASE SCHEMA HELPER — tampilkan SQL yang perlu dijalankan
 
 async function diagnosSupabase() {
-  let result = '🔍 Diagnosa Supabase:\n\n';
+  let result = '<b>Diagnosa Supabase:</b>\n\n';
   try {
     // 1. Cek session
     const { data: { session }, error: sessErr } = await DB.auth.getSession();
-    result += session ? `<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Session aktif (${escapeHtml(session.user?.email)})\n` : `❌ Tidak ada session\n`;
+    result += session ? `<i class="ti ti-circle-check" style="color:var(--green);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Session aktif (${escapeHtml(session.user?.email)})\n` : `Tidak ada session aktif\n`;
     if (sessErr) result += `<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Session error: ${sessErr.message}\n`;
 
     // 2. Cek tabel companies
     const { data, error } = await DB.table('companies').select('count').limit(1);
     if (error) {
       if (error.message.includes('relation') || error.message.includes('does not exist') || error.code === '42P01') {
-        result += `❌ Tabel "companies" BELUM DIBUAT\n   → Jalankan SQL schema di Supabase Dashboard\n`;
+        result += `Tabel "companies" BELUM DIBUAT\n   → Jalankan SQL schema di Supabase Dashboard\n`;
       } else if (error.code === '42501' || error.message.includes('permission') || error.message.includes('policy')) {
-        result += `❌ RLS Policy BELUM DIBUAT\n   → Tambahkan policy di Supabase Dashboard\n`;
+        result += `RLS Policy BELUM DIBUAT\n   → Tambahkan policy di Supabase Dashboard\n`;
       } else {
-        result += `❌ Error tabel: ${error.message} (code: ${error.code})\n`;
+        result += `Error tabel: ${error.message} (code: ${error.code})\n`;
       }
     } else {
-      result += `<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tabel "companies" ada dan bisa diakses\n`;
+      result += `<i class="ti ti-circle-check" style="color:var(--green);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tabel "companies" ada dan bisa diakses\n`;
     }
   } catch(e) {
-    result += `❌ Exception: ${e.message}\n`;
+    result += `Exception: ${e.message}\n`;
   }
 
   result += `\nURL: <span style="word-break:break-all;">${escapeHtml(SUPABASE_URL)}</span>\n`;
-  result += `\nJika ada ❌, buka <i class="ti ti-settings ti-inline"></i> Setup Supabase untuk panduan lengkap.`;
+  result += `\nJika ada kendala, buka Setup Supabase untuk panduan lengkap.`;
   showAlert(result.replace(/\n/g, '<br>')); // showAlert memakai innerHTML: \n biasa tidak jadi baris baru
 }
 
@@ -1986,21 +1985,35 @@ CREATE POLICY "Users can manage own profiles"
   ON company_profiles FOR ALL
   USING (company_id IN (SELECT id FROM companies WHERE user_id = auth.uid()));`;
 
-  const w = window.open('', '_blank');
-  w.document.write('<!DOCTYPE html><html><head><title>Supabase Setup SQL<\/title>'
-    + '<style>body{font-family:monospace;background:#0d0f14;color:#e2e8f0;padding:24px;margin:0;}'
-    + 'pre{background:#141720;border:1px solid #252a3a;border-radius:10px;padding:20px;white-space:pre-wrap;font-size:13px;line-height:1.6;}'
-    + 'h2{color:#4ade80;margin-bottom:16px;}'
-    + 'p{color:#64748b;margin-bottom:16px;font-family:sans-serif;font-size:14px;}'
-    + 'button{background:#4ade80;border:none;border-radius:8px;padding:10px 20px;font-weight:700;cursor:pointer;color:#0d0f14;}'
-    + '<\/style><\/head><body>'
-    + '<h2>⚙️ Setup Supabase untuk OAS<\/h2>'
-    + '<p>1. Buat project baru di <a href="https://supabase.com" style="color:#22d3ee">supabase.com<\/a><br>'
-    + '2. Pergi ke SQL Editor → New Query<br>'
-    + '3. Copy-paste SQL di bawah ini dan klik RUN<br>'
-    + '4. Copy URL &amp; Anon Key dari Settings → API → paste ke file HTML (cari SUPABASE_URL dan SUPABASE_ANON_KEY)<\/p>'
-    + '<button onclick="navigator.clipboard.writeText(document.querySelector(\'pre\').textContent)">Copy SQL<\/button>'
-    + '<pre>' + sql + '<\/pre>'
-    + '<\/body><\/html>');
-  w.document.close();
+  document.getElementById('supa-setup-sql-modal')?.remove();
+  const bd = document.createElement('div');
+  bd.id = 'supa-setup-sql-modal';
+  bd.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  bd.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;max-width:680px;width:100%;max-height:88dvh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2);">
+        <div style="font-size:15px;font-weight:700;color:var(--text);">Setup Supabase untuk OAS</div>
+        <button type="button" onclick="this.closest('#supa-setup-sql-modal').remove()" class="modal-close"><i class="ti ti-x"></i></button>
+      </div>
+      <div style="padding:18px 20px;overflow-y:auto;flex:1;">
+        <p style="color:var(--muted);margin:0 0 14px;font-size:13px;line-height:1.6;">
+          1. Buat project baru di <b>supabase.com</b><br>
+          2. Pergi ke <b>SQL Editor → New Query</b><br>
+          3. Salin dan jalankan SQL di bawah ini<br>
+          4. Konfigurasi <b>SUPABASE_URL</b> dan <b>SUPABASE_ANON_KEY</b> di environment aplikasi
+        </p>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+          <button type="button" id="supa-copy-sql-btn" class="btn btn-primary" style="font-size:12px;padding:8px 14px;">Salin SQL</button>
+        </div>
+        <pre style="background:var(--bg);border:1px solid var(--border-strong);border-radius:8px;padding:16px;white-space:pre-wrap;font-size:12px;line-height:1.6;font-family:var(--mono);color:var(--text);margin:0;"></pre>
+      </div>
+    </div>`;
+  bd.querySelector('pre').textContent = sql;
+  bd.querySelector('#supa-copy-sql-btn').onclick = function() {
+    navigator.clipboard?.writeText(sql);
+    this.textContent = 'Tersalin!';
+    setTimeout(() => { this.textContent = 'Salin SQL'; }, 1600);
+  };
+  bd.onclick = (e) => { if (e.target === bd) bd.remove(); };
+  document.body.appendChild(bd);
 }

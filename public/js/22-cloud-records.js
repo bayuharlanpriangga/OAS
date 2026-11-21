@@ -184,7 +184,7 @@ function _cloudAfterSync(ok) {
   if (_cloudSyncErr) {
     if (!_cloudFailNotified) {
       _cloudFailNotified = true;
-      if (typeof showAlert === 'function') showAlert('⚠️ Perubahan belum tersimpan ke cloud (koneksi bermasalah). Data aman di perangkat ini dan dikirim otomatis saat aplikasi dibuka lagi dengan koneksi, atau saat kamu menyimpan berikutnya.');
+      if (typeof showAlert === 'function') showAlert('Perubahan belum tersimpan ke cloud (koneksi bermasalah). Data aman di perangkat ini dan dikirim otomatis saat aplikasi dibuka lagi dengan koneksi, atau saat kamu menyimpan berikutnya.');
     }
   } else if (ok) _cloudFailNotified = false;
 }
@@ -273,7 +273,7 @@ async function cloudLoadRecords() {
     _cloudLoadFromCache(cid);
     if (!_cloudTableWarned) {
       _cloudTableWarned = true;
-      showAlert('⚠️ Data invoice/kontak/aset/produk/jurnal berulang/anggaran/alert/kurs/penomoran belum bisa dimuat dari cloud. Pastikan migrasi SQL <b>001_company_records</b> sudah dijalankan di Supabase. Sementara ini data dibaca dari cache perangkat.');
+      showAlert('Data invoice/kontak/aset/produk/jurnal berulang/anggaran/alert/kurs/penomoran belum bisa dimuat dari cloud. Pastikan migrasi SQL <b>001_company_records</b> sudah dijalankan di Supabase. Sementara ini data dibaca dari cache perangkat.');
     }
     return false;
   }
@@ -389,7 +389,7 @@ async function cloudOfferLocalMigration(cid) {
   if (typeof hideOpSpinner === 'function') hideOpSpinner(); // spinner jangan menutupi dialog
   const label = { invoice: 'Invoice', bill: 'Tagihan pembelian', pembayaran: 'Pembayaran', dok: 'Dokumen penjualan/pembelian', kontak: 'Kontak', aset_tetap: 'Aset tetap', produk: 'Produk', jurnal_berulang: 'Jurnal berulang', anggaran: 'Anggaran', alert: 'Alert notifikasi', kurs: 'Kurs', counter: 'Penomoran dokumen' };
   const ok = await showCustomConfirmGeneral({
-    icon: '☁️', iconColor: 'rgba(34,211,238,0.12)', iconBorder: 'rgba(34,211,238,0.3)',
+    icon: '<i class="ti ti-cloud-upload"></i>', iconColor: 'var(--accent-tint)', iconBorder: 'var(--border-strong)',
     title: 'Unggah Data Lokal ke Cloud?',
     subtitle: 'Ditemukan data di perangkat ini yang belum ada di cloud.',
     rows: [
@@ -397,8 +397,8 @@ async function cloudOfferLocalMigration(cid) {
       { label: 'Tujuan', value: 'Bisnis "' + currentCompany.name + '"' }
     ],
     warning: null,
-    btnLabel: '☁️ Ya, Unggah',
-    btnGradient: 'linear-gradient(135deg,#22d3ee,#4ade80)'
+    btnLabel: 'Ya, Unggah',
+    btnGradient: 'var(--accent)'
   });
   if (!ok || !currentCompany || currentCompany.id !== cid) {
     if (!ok) { try { localStorage.setItem(_kunciBatal, _sidik); } catch (e) {} } // batal: data lokal tidak disentuh, jangan tanya lagi untuk data yang sama
@@ -415,7 +415,7 @@ async function cloudOfferLocalMigration(cid) {
     localStorage.setItem('oas_rec_seen_' + cid, '1');
     showAlert('✓ Data lokal berhasil diunggah ke cloud.');
   } else {
-    showAlert('⚠️ Sebagian data belum terunggah ke cloud. Data tetap aman di perangkat; akan dicoba lagi saat menyimpan berikutnya.');
+    showAlert('Sebagian data belum terunggah ke cloud. Data tetap aman di perangkat; akan dicoba lagi saat menyimpan berikutnya.');
   }
 }
 

@@ -7,14 +7,14 @@
   <div class="section-header">
     <div>
       <div class="section-title"><i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Rekonsiliasi Bank</div>
-      <div class="section-sub">Upload mutasi rekening â†’ Orias otomatis cocokkan dengan jurnal</div>
+      <div class="section-sub">Upload mutasi rekening → Orias otomatis cocokkan dengan jurnal</div>
     </div>
     <button class="btn btn-primary btn-sm" onclick="document.getElementById('bank-file-input').click()"><i class="ti ti-folder-open" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Upload Mutasi</button>
     <input type="file" id="bank-file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="parseBankStatement(this)">
   </div>
 
   <!-- Upload area -->
-  <div id="bank-upload-area" style="border:2px dashed var(--border);border-radius:14px;padding:40px 20px;text-align:center;margin-bottom:20px;cursor:pointer;transition:all 0.2s;" 
+  <div id="bank-upload-area" style="border:2px dashed var(--border);border-radius:10px;padding:40px 20px;text-align:center;margin-bottom:20px;cursor:pointer;transition:all 0.2s;" 
     onclick="document.getElementById('bank-file-input').click()"
     ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
     ondragleave="this.style.borderColor='var(--border)'"
@@ -30,12 +30,12 @@
   </div>
 
   <!-- Bank format guide -->
-  <div id="bank-format-guide" style="background:rgba(34,211,238,0.05);border:1px solid rgba(34,211,238,0.15);border-radius:10px;padding:14px;margin-bottom:16px;font-size:12.5px;color:var(--muted);line-height:1.8;">
-    <b style="color:var(--accent2)"><i class="ti ti-clipboard-list ti-inline"></i> Cara export mutasi dari m-banking:</b><br>
-    â€¢ <b>BCA</b>: myBCA â†’ Rekening â†’ Mutasi â†’ Download CSV<br>
-    â€¢ <b>Mandiri</b>: Livin â†’ History â†’ Export Excel<br>
-    â€¢ <b>BNI</b>: BNI Mobile â†’ Mutasi Rekening â†’ Unduh<br>
-    â€¢ Atau buat file CSV manual dengan kolom: <code style="background:var(--bg);padding:1px 5px;border-radius:3px;">Tanggal, Keterangan, Debit, Kredit, Saldo</code>
+  <div id="bank-format-guide" style="background:var(--surface2);border:1px solid var(--border-strong);border-radius:10px;padding:14px;margin-bottom:16px;font-size:12.5px;color:var(--muted);line-height:1.8;">
+    <b style="color:var(--accent-text)"><i class="ti ti-clipboard-list ti-inline"></i> Cara export mutasi dari m-banking:</b><br>
+    • <b>BCA</b>: myBCA → Rekening → Mutasi → Download CSV<br>
+    • <b>Mandiri</b>: Livin → History → Export Excel<br>
+    • <b>BNI</b>: BNI Mobile → Mutasi Rekening → Unduh<br>
+    • Atau buat file CSV manual dengan kolom: <code style="background:var(--bg);padding:1px 5px;border-radius:3px;">Tanggal, Keterangan, Debit, Kredit, Saldo</code>
   </div>
 
   <!-- Results -->
@@ -93,7 +93,7 @@
 <div class="page" id="page-jurnal-berulang">
   <div class="section-header">
     <div><div class="section-title"><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Jurnal Berulang</div>
-    <div class="section-sub">Otomasi transaksi rutin Â· Gaji Â· Sewa Â· Cicilan Â· Langganan</div></div>
+    <div class="section-sub">Otomasi transaksi rutin · Gaji · Sewa · Cicilan · Langganan</div></div>
     <button class="btn btn-primary" onclick="openModalJurnalBerulang()">+ Tambah Berulang</button>
   </div>
   <div id="jb-list-container">
@@ -124,7 +124,7 @@
 <div class="page" id="page-rekonsiliasi">
   <div class="section-header">
     <div><div class="section-title"><i class="ti ti-building-bank" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Rekonsiliasi Bank</div>
-    <div class="section-sub">Cocokkan mutasi bank dengan jurnal Â· Upload CSV Â· Otomatis</div></div>
+    <div class="section-sub">Cocokkan mutasi bank dengan jurnal · Upload CSV · Otomatis</div></div>
   </div>
   <div style="grid-template-columns:1fr 1fr;" class="kalk-grid">
     <div class="table-card">
@@ -159,10 +159,10 @@
   </div>
   <div class="table-card" id="rekon-result-card" style="display:none;">
     <div class="table-header">
-      <div class="table-title"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Hasil Pencocokan</div>
+      <div class="table-title"><i class="ti ti-circle-check" style="color:var(--green);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Hasil Pencocokan</div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-ghost btn-sm" onclick="filterRekon('all')" id="rekon-btn-all">Semua</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterRekon('cocok')" id="rekon-btn-cocok"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Cocok</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterRekon('cocok')" id="rekon-btn-cocok"><i class="ti ti-circle-check" style="color:var(--green);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Cocok</button>
         <button class="btn btn-ghost btn-sm" onclick="filterRekon('belum')" id="rekon-btn-belum"><i class="ti ti-question-mark" style="color:var(--red);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Belum Cocok</button>
         <button class="btn btn-ghost btn-sm" onclick="filterRekon('beda')" id="rekon-btn-beda"><i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Beda Nominal</button>
         <button class="btn btn-primary btn-sm" onclick="importRekonSebagaiJurnal()"><i class="ti ti-download ti-inline"></i> Import Belum Cocok</button>
@@ -179,7 +179,7 @@
 <div class="page" id="page-kurs">
   <div class="section-header">
     <div><div class="section-title"><i class="ti ti-currency-dollar" style="font-size:16px;vertical-align:-2px;margin-right:6px;"></i> Multi Mata Uang</div>
-    <div class="section-sub">Kurs otomatis Â· Konversi transaksi Â· History kurs</div></div>
+    <div class="section-sub">Kurs otomatis · Konversi transaksi · History kurs</div></div>
     <button class="btn btn-primary" onclick="refreshKursOtomatis()"><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Update Kurs</button>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;" id="kurs-cards"></div>
@@ -195,28 +195,28 @@
           <div class="form-group">
             <label>Dari</label>
             <select id="kurs-dari" onchange="hitungKonversi()" style="width:100%">
-              <option value="IDR">IDR â€” Rupiah</option>
-              <option value="USD">USD â€” Dollar AS</option>
-              <option value="SGD">SGD â€” Dollar Singapura</option>
-              <option value="EUR">EUR â€” Euro</option>
-              <option value="MYR">MYR â€” Ringgit</option>
-              <option value="JPY">JPY â€” Yen</option>
+              <option value="IDR">IDR — Rupiah</option>
+              <option value="USD">USD — Dollar AS</option>
+              <option value="SGD">SGD — Dollar Singapura</option>
+              <option value="EUR">EUR — Euro</option>
+              <option value="MYR">MYR — Ringgit</option>
+              <option value="JPY">JPY — Yen</option>
             </select>
           </div>
           <div class="form-group">
             <label>Ke</label>
             <select id="kurs-ke" onchange="hitungKonversi()" style="width:100%">
-              <option value="USD">USD â€” Dollar AS</option>
-              <option value="IDR">IDR â€” Rupiah</option>
-              <option value="SGD">SGD â€” Dollar Singapura</option>
-              <option value="EUR">EUR â€” Euro</option>
-              <option value="MYR">MYR â€” Ringgit</option>
-              <option value="JPY">JPY â€” Yen</option>
+              <option value="USD">USD — Dollar AS</option>
+              <option value="IDR">IDR — Rupiah</option>
+              <option value="SGD">SGD — Dollar Singapura</option>
+              <option value="EUR">EUR — Euro</option>
+              <option value="MYR">MYR — Ringgit</option>
+              <option value="JPY">JPY — Yen</option>
             </select>
           </div>
         </div>
-        <div id="kurs-hasil" style="background:var(--surface2);border-radius:12px;padding:20px;text-align:center;margin-top:12px;">
-          <div style="font-size:24px;font-weight:700;color:var(--accent);font-family:var(--mono);" id="kurs-hasil-angka">â€”</div>
+        <div id="kurs-hasil" style="background:var(--surface2);border-radius:10px;padding:20px;text-align:center;margin-top:12px;">
+          <div style="font-size:24px;font-weight:700;color:var(--accent-text);font-family:var(--mono);font-variant-numeric:tabular-nums;" id="kurs-hasil-angka">—</div>
           <div style="font-size:12px;color:var(--muted);margin-top:4px;" id="kurs-hasil-detail">Masukkan nominal untuk konversi</div>
         </div>
       </div>
@@ -240,7 +240,7 @@
 <div class="page" id="page-notifikasi">
   <div class="section-header">
     <div><div class="section-title"><i class="ti ti-bell" style="font-size:16px;vertical-align:-2px;margin-right:6px;"></i> Notifikasi &amp; Alert</div>
-    <div class="section-sub">Peringatan otomatis Â· Batas anggaran Â· Jatuh tempo Â· Arus kas</div></div>
+    <div class="section-sub">Peringatan otomatis · Batas anggaran · Jatuh tempo · Arus kas</div></div>
     <button class="btn btn-primary" onclick="openModalAlertBaru()">+ Tambah Alert</button>
   </div>
   <div id="notif-alert-list" style="margin-bottom:16px;"></div>
@@ -260,7 +260,7 @@
 <div class="page" id="page-anggaran">
   <div class="section-header">
     <div><div class="section-title"><i class="ti ti-target" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Anggaran vs Aktual</div>
-    <div class="section-sub">Target per akun per bulan Â· Monitoring realisasi Â· Variance analysis</div></div>
+    <div class="section-sub">Target per akun per bulan · Monitoring realisasi · Variance analysis</div></div>
     <button class="btn btn-primary" onclick="openModalAnggaran()">+ Set Anggaran</button>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;" id="ang-kpi"></div>
@@ -287,7 +287,7 @@
 <div class="page" id="page-pajak">
   <div class="section-header">
     <div><div class="section-title"><i class="ti ti-receipt-tax" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Pajak Otomatis</div>
-    <div class="section-sub">PPN 11%/12% Â· PPh 21 Â· PPh 23 Â· Laporan SPT</div></div>
+    <div class="section-sub">PPN 11%/12% · PPh 21 · PPh 23 · Laporan SPT</div></div>
     <button class="btn btn-primary" onclick="renderPajakOtomatis()"><i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Hitung Ulang</button>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;" id="pajak-kpi"></div>
@@ -339,7 +339,7 @@
         <select id="pajak-setor-bulan" onchange="renderRekapSiapSetor()" style="display:none;"></select>
         <button class="opt-picker-btn" type="button" id="pajak-setor-bulan-btn" onclick="openPajakBulanPicker()" style="min-width:160px;">
           <span class="opt-picker-label" id="pajak-setor-bulan-label">Pilih Periode...</span>
-          <span class="opt-picker-arrow">â–¾</span>
+          <span class="opt-picker-arrow">▾</span>
         </button>
         <button class="btn btn-ghost btn-sm" onclick="exportRekapPajakPDF()"><i class="ti ti-printer ti-btn"></i> Cetak PDF</button>
       </div>
@@ -369,7 +369,7 @@
     <div id="akun-picker-handle"></div>
     <div id="akun-picker-header">
       <h3><i class="ti ti-clipboard-list ti-inline"></i> Pilih Akun</h3>
-      <button id="akun-picker-close" onclick="closeAkunPicker()">âœ•</button>
+      <button id="akun-picker-close" onclick="closeAkunPicker()">✕</button>
     </div>
     <div id="akun-picker-search-wrap">
       <i class="ti ti-search" id="akun-picker-search-icon" style="font-size:15px;color:var(--muted);"></i>
@@ -379,13 +379,13 @@
   </div>
 </div>
 
-<!-- KONTAK PICKER BOTTOM-SHEET â€” desain sama persis dengan akun picker -->
+<!-- KONTAK PICKER BOTTOM-SHEET -->
 <div id="kontak-picker-backdrop" onclick="if(event.target===this)closeKontakPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:6001;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px);">
-  <div id="kontak-picker-sheet" style="background:var(--surface);width:100%;max-width:520px;border-radius:20px 20px 0 0;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,0.4);animation:slideUpSheet 0.25s cubic-bezier(0.34,1.2,0.64,1);">
+  <div id="kontak-picker-sheet" style="background:var(--surface);width:100%;max-width:520px;border-radius:14px 14px 0 0;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,0.4);animation:slideUpSheet 0.25s cubic-bezier(0.16,1,0.3,1);">
     <div style="width:36px;height:4px;border-radius:2px;background:var(--border);margin:10px auto 0;flex-shrink:0;"></div>
     <div style="padding:10px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;gap:10px;">
       <h3 style="font-size:15px;font-weight:700;flex:1;"><i class="ti ti-users" style="font-size:15px;width:15px;height:15px;vertical-align:-2px;margin-right:6px;"></i> Pilih Kontak</h3>
-      <button onclick="closeKontakPicker()" style="background:var(--surface2);border:none;border-radius:50%;width:30px;height:30px;color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">âœ•</button>
+      <button onclick="closeKontakPicker()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;width:30px;height:30px;color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
     <div style="padding:10px 14px 8px;flex-shrink:0;position:relative;">
       <i class="ti ti-search" style="position:absolute;left:26px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;color:var(--muted);"></i>
@@ -405,32 +405,32 @@
 
 <!-- TUTORIAL OVERLAY -->
 <div id="tut-backdrop" style="display:none;position:fixed;inset:0;z-index:1100;pointer-events:none;">
-  <!-- Tooltip window â€” draggable & minimizable -->
+  <!-- Tooltip window — draggable & minimizable -->
   <div id="tut-tooltip" style="
     position:fixed;z-index:1110;width:320px;max-width:calc(100vw - 32px);
-    background:var(--surface);border:2px solid var(--accent2);
-    border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,0.7);
+    background:var(--surface);border:1px solid var(--border-strong);
+    border-radius:10px;box-shadow:0 16px 48px rgba(0,0,0,0.65);
     pointer-events:all;overflow:hidden;
     top:50%;left:50%;transform:translate(-50%,-50%);
   ">
     <!-- Title bar (drag handle) -->
     <div id="tut-titlebar" style="
-      background:linear-gradient(135deg,rgba(34,211,238,0.15),rgba(74,222,128,0.1));
+      background:var(--surface2);
       border-bottom:1px solid var(--border);
       padding:10px 14px;display:flex;align-items:center;gap:8px;
       cursor:grab;user-select:none;
     ">
       <span style="font-size:14px;"><i class="ti ti-school" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i></span>
-      <span id="tut-step-label" style="font-size:11px;font-weight:700;color:var(--accent2);letter-spacing:0.06em;text-transform:uppercase;flex:1;"></span>
+      <span id="tut-step-label" style="font-size:11px;font-weight:700;color:var(--accent-text);letter-spacing:0.06em;text-transform:uppercase;flex:1;"></span>
       <span id="tut-counter" style="font-size:11px;color:var(--muted);font-family:var(--mono);"></span>
       <!-- Window controls -->
-      <button onclick="tutMinimize()" title="Kecilkan" style="background:rgba(245,158,11,0.2);border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:10px;color:var(--accent3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">âˆ’</button>
-      <button onclick="exitTutorial()" title="Tutup" style="background:rgba(248,113,113,0.2);border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:10px;color:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;">âœ•</button>
+      <button onclick="tutMinimize()" title="Kecilkan" style="background:rgba(217,119,43,0.16);border:none;border-radius:5px;width:20px;height:20px;cursor:pointer;font-size:11px;color:var(--accent3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">−</button>
+      <button onclick="exitTutorial()" title="Tutup" style="background:var(--red-tint);border:none;border-radius:5px;width:20px;height:20px;cursor:pointer;font-size:11px;color:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
     </div>
 
     <!-- Progress bar -->
     <div style="height:3px;background:var(--border);">
-      <div id="tut-progress" style="height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width 0.4s ease;width:0%;"></div>
+      <div id="tut-progress" style="height:100%;background:var(--accent);transition:width 0.3s ease;width:0%;"></div>
     </div>
 
     <!-- Body (collapsible) -->
@@ -439,21 +439,21 @@
       <div id="tut-title" style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text);"></div>
       <div id="tut-body" style="font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:12px;max-height:200px;overflow-y:auto;"></div>
 
-      <div id="tut-task-wrap" style="display:none;background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.25);border-radius:8px;padding:10px;margin-bottom:10px;">
-        <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">âœ‹ Lakukan ini:</div>
+      <div id="tut-task-wrap" style="display:none;background:var(--accent-tint);border:1px solid var(--border-strong);border-radius:8px;padding:10px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent-text);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Lakukan ini:</div>
         <div id="tut-task" style="font-size:12.5px;color:var(--text);line-height:1.6;"></div>
       </div>
 
-      <div id="tut-tip-wrap" style="display:none;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:6px;padding:8px;margin-bottom:10px;">
-        <div style="font-size:11.5px;color:var(--accent3);"><b>ðŸ’¡</b> <span id="tut-tip"></span></div>
+      <div id="tut-tip-wrap" style="display:none;background:rgba(217,119,43,0.1);border:1px solid rgba(217,119,43,0.28);border-radius:6px;padding:8px;margin-bottom:10px;">
+        <div style="font-size:11.5px;color:var(--accent3);"><i class="ti ti-bulb ti-inline"></i> <span id="tut-tip"></span></div>
       </div>
 
       <div style="display:flex;gap:8px;align-items:center;">
         <button id="tut-btn-next" onclick="tutNext()" style="
-          background:var(--accent);color:#000;border:none;border-radius:7px;
+          background:var(--accent);color:var(--accent-fg);border:none;border-radius:7px;
           padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;
           font-family:var(--sans);flex:1;
-        ">Lanjut â†’</button>
+        ">Lanjut →</button>
         <button id="tut-btn-skip" onclick="tutSkipSection()" style="
           background:transparent;color:var(--muted);border:1px solid var(--border);
           border-radius:7px;padding:8px 12px;font-size:12px;cursor:pointer;font-family:var(--sans);
@@ -462,17 +462,17 @@
     </div>
   </div>
 
-  <!-- Minimized pill -->
+  <!-- Minimized bar -->
   <div id="tut-minimized" style="display:none;position:fixed;bottom:24px;right:20px;z-index:1110;
-    background:var(--surface);border:2px solid var(--accent2);border-radius:24px;
-    padding:8px 16px;pointer-events:all;cursor:pointer;
+    background:var(--surface);border:1px solid var(--border-strong);border-radius:8px;
+    padding:8px 14px;pointer-events:all;cursor:pointer;
     display:none;align-items:center;gap:8px;
-    box-shadow:0 4px 20px rgba(0,0,0,0.4);"
+    box-shadow:0 8px 24px rgba(0,0,0,0.4);"
     onclick="tutRestore()">
     <span style="font-size:14px;"><i class="ti ti-school" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i></span>
-    <span id="tut-mini-label" style="font-size:12px;font-weight:600;color:var(--accent2);">Tutorial</span>
+    <span id="tut-mini-label" style="font-size:12px;font-weight:600;color:var(--accent-text);">Tutorial</span>
     <span id="tut-mini-counter" style="font-size:11px;color:var(--muted);font-family:var(--mono);"></span>
-    <span style="font-size:11px;color:var(--muted);">â†‘ Buka</span>
+    <span style="font-size:11px;color:var(--muted);">↑ Buka</span>
   </div>
 
   <div id="tut-clickblock" style="position:fixed;z-index:1105;pointer-events:all;cursor:pointer;display:none;" onclick="tutHandleClick()"></div>
@@ -480,20 +480,20 @@
 
 <!-- Tutorial complete modal -->
 <div id="tut-complete" style="display:none;position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this){this.style.display='none';}"  title="Klik area gelap untuk menutup">
-  <div style="background:var(--surface);border:2px solid var(--accent);border-radius:20px;padding:32px;max-width:440px;width:100%;text-align:center;">
-    <div style="font-size:56px;margin-bottom:16px;">ðŸŽ‰</div>
-    <div style="font-size:22px;font-weight:800;color:var(--accent);margin-bottom:8px;">Tutorial Selesai!</div>
+  <div style="background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;padding:32px;max-width:440px;width:100%;text-align:center;">
+    <div style="width:52px;height:52px;margin:0 auto 16px;border-radius:8px;background:var(--accent-tint);border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;color:var(--accent-text);"><i class="ti ti-circle-check" style="font-size:28px;"></i></div>
+    <div style="font-size:22px;font-weight:800;color:var(--accent-text);margin-bottom:8px;">Tutorial Selesai!</div>
     <div style="font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.7;">
-      Selamat! Kamu sudah menguasai semua fitur Bayu Harlan Priangga.<br>
-      Sekarang coba gunakan sendiri, atau tanya <b style="color:var(--accent2)">Orias Assisten</b> jika ada yang bingung.
+      Selamat! Kamu sudah menguasai semua fitur OAS.<br>
+      Sekarang coba gunakan sendiri, atau tanya <b style="color:var(--accent-text)">Orias Assisten</b> jika ada yang bingung.
     </div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      <button onclick="document.getElementById('tut-complete').style.display='none';showPage('transaksi')" style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:10px 20px;font-weight:700;cursor:pointer;font-family:var(--sans);">Mulai Input Transaksi</button>
-      <button onclick="document.getElementById('tut-complete').style.display='none';showPage('ai-assistant')" style="background:rgba(34,211,238,0.15);color:var(--accent2);border:1px solid rgba(34,211,238,0.3);border-radius:8px;padding:10px 20px;font-weight:600;cursor:pointer;font-family:var(--sans);">Tanya Orias Assisten</button>
+      <button onclick="document.getElementById('tut-complete').style.display='none';showPage('transaksi')" style="background:var(--accent);color:var(--accent-fg);border:none;border-radius:8px;padding:10px 20px;font-weight:700;cursor:pointer;font-family:var(--sans);">Mulai Input Transaksi</button>
+      <button onclick="document.getElementById('tut-complete').style.display='none';showPage('ai-assistant')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border-strong);border-radius:8px;padding:10px 20px;font-weight:600;cursor:pointer;font-family:var(--sans);">Tanya Orias Assisten</button>
       <button onclick="document.getElementById('tut-complete').style.display='none';startTutorial()" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;cursor:pointer;font-family:var(--sans);">Ulangi Tutorial</button>
     </div>
     <div style="margin-top:16px;">
-      <button onclick="document.getElementById('tut-complete').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--sans);opacity:0.6;">âœ• Tutup</button>
+      <button onclick="document.getElementById('tut-complete').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--sans);opacity:0.7;">✕ Tutup</button>
     </div>
     <div style="margin-top:8px;font-size:11px;color:var(--muted);opacity:0.45;">Atau klik area gelap di luar popup untuk menutup</div>
   </div>
@@ -504,7 +504,7 @@
   <div class="modal" style="max-width:400px;">
     <div class="modal-head">
       <div class="modal-title"><i class="ti ti-arrow-back-up" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i> Balik Jurnal</div>
-      <button class="modal-close" onclick="closeModal('modal-hapus-jurnal')">âœ•</button>
+      <button class="modal-close" onclick="closeModal('modal-hapus-jurnal')">✕</button>
     </div>
     <div class="modal-body">
       <div style="text-align:center;padding:8px 0 16px;">
@@ -533,7 +533,7 @@
   <div class="modal" style="max-width:440px;">
     <div class="modal-head">
       <div class="modal-title"><i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Reset Data</div>
-      <button class="modal-close" onclick="closeModal('modal-reset-all')">âœ•</button>
+      <button class="modal-close" onclick="closeModal('modal-reset-all')">✕</button>
     </div>
     <div class="modal-body">
       <div style="text-align:center;padding:8px 0 16px;">
@@ -556,8 +556,8 @@
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" data-reset="kurs" data-label="Kurs" style="accent-color:var(--red);width:15px;height:15px;"> Kurs</label>
           </div>
           <div style="margin-top:10px;display:flex;gap:12px;font-size:11.5px;">
-            <a href="javascript:void(0)" onclick="resetPilihSemua(true)" style="color:var(--accent2);">Pilih semua</a>
-            <a href="javascript:void(0)" onclick="resetPilihSemua(false)" style="color:var(--accent2);">Kosongkan</a>
+            <a href="javascript:void(0)" onclick="resetPilihSemua(true)" style="color:var(--accent-text);">Pilih semua</a>
+            <a href="javascript:void(0)" onclick="resetPilihSemua(false)" style="color:var(--accent-text);">Kosongkan</a>
           </div>
           <div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.6;">Catatan: menghapus Invoice juga mengulang penomoran invoice dari 001. Menghapus Invoice atau Produk tidak membatalkan jurnal yang sudah tercatat. Kalau mau laporan kembali ke nol, centang Jurnal Umum juga.</div>
         </div>
@@ -580,10 +580,10 @@
   <div class="modal" style="max-width:520px;">
     <div class="modal-head">
       <div class="modal-title"><i class="ti ti-settings ti-inline"></i> Setting Saldo Awal</div>
-      <button class="modal-close" onclick="closeModal('modal-saldo-awal')">âœ•</button>
+      <button class="modal-close" onclick="closeModal('modal-saldo-awal')">✕</button>
     </div>
     <div class="modal-body">
-      <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Pilih tanggal pembukaan:</div>
+      <div style="font-size:12px;font-weight:700;color:var(--accent-text);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Pilih tanggal pembukaan:</div>
       <div class="form-row" style="margin-bottom:16px;">
         <div class="form-group">
           <label>Tanggal Saldo Awal</label>
@@ -594,7 +594,7 @@
           <input type="text" id="saldo-awal-ket" value="Saldo awal pembukaan">
         </div>
       </div>
-      <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Isi saldo awal per akun (kosongkan jika 0):</div>
+      <div style="font-size:12px;font-weight:700;color:var(--accent-text);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Isi saldo awal per akun (kosongkan jika 0):</div>
       <div class="table-scroll">
         <table>
           <thead><tr><th>Akun</th><th>Tipe</th><th style="text-align:right">Saldo Awal (Rp)</th></tr></thead>
@@ -605,7 +605,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-saldo-awal')">Batal</button>
-      <button class="btn btn-primary" onclick="simpanSaldoAwal()"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Simpan Saldo Awal</button>
+      <button class="btn btn-primary" onclick="simpanSaldoAwal()"><i class="ti ti-circle-check" style="color:var(--accent-fg);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Simpan Saldo Awal</button>
     </div>
   </div>
 </div>
@@ -617,7 +617,7 @@
   <div class="modal" style="max-width:540px;">
     <div class="modal-head">
       <div class="modal-title"><i class="ti ti-folder-open" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Kelola Data Tersimpan</div>
-      <button class="modal-close" onclick="closeModal('modal-storage')">âœ•</button>
+      <button class="modal-close" onclick="closeModal('modal-storage')">✕</button>
     </div>
     <div class="modal-body" style="padding-bottom:8px;">
 
@@ -629,7 +629,7 @@
         </div>
         <div style="display:flex;gap:8px;">
           <button onclick="manualSave()" class="btn btn-primary btn-sm"><i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Simpan Sekarang</button>
-          <button onclick="toggleAutoSave()" id="autosave-toggle-btn" class="btn btn-ghost btn-sm">â± Auto-save: ON</button>
+          <button onclick="toggleAutoSave()" id="autosave-toggle-btn" class="btn btn-ghost btn-sm"><i class="ti ti-clock ti-inline"></i> Auto-save: ON</button>
           <button onclick="closeModal('modal-storage');confirmResetAll()" id="storage-reset-btn" class="btn btn-danger btn-sm" title="Reset Data: pilih sendiri jenis data yang dihapus (tidak bisa dibatalkan)"><i class="ti ti-trash ti-btn"></i> Reset</button>
         </div>
       </div>
@@ -641,24 +641,24 @@
       <!-- Import/Export JSON -->
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;"><i class="ti ti-package" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Backup & Restore File</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-        <div style="background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:14px;text-align:center;">
+        <div style="background:var(--surface2);border:1px solid var(--border-strong);border-radius:10px;padding:14px;text-align:center;">
           <div style="font-size:24px;margin-bottom:6px;"><i class="ti ti-upload" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i></div>
           <div style="font-size:13px;font-weight:700;margin-bottom:4px;">Export Backup</div>
           <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Simpan semua data ke file .oas</div>
           <button onclick="exportBackupJSON()" class="btn btn-primary btn-sm" style="width:100%">Download .oas</button>
         </div>
-        <div style="background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.2);border-radius:10px;padding:14px;text-align:center;">
+        <div style="background:var(--surface2);border:1px solid var(--border-strong);border-radius:10px;padding:14px;text-align:center;">
           <div style="font-size:24px;margin-bottom:6px;"><i class="ti ti-download ti-inline"></i></div>
           <div style="font-size:13px;font-weight:700;margin-bottom:4px;">Import Backup</div>
           <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Muat data dari file .oas</div>
-          <button onclick="document.getElementById('import-file-input').click()" class="btn btn-ghost btn-sm" style="width:100%;border-color:rgba(34,211,238,0.3);color:var(--accent2);">Pilih File .oas</button>
+          <button onclick="document.getElementById('import-file-input').click()" class="btn btn-ghost btn-sm" style="width:100%;border-color:var(--border-strong);color:var(--text);">Pilih File .oas</button>
           <input type="file" id="import-file-input" accept=".oas,.json" style="display:none" onchange="importBackupJSON(this)">
         </div>
       </div>
 
       <!-- Info -->
-      <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:10px 12px;font-size:11.5px;color:var(--muted);line-height:1.7;">
-        ðŸ’¡ <b style="color:var(--accent3)">Tips:</b> Data di slot tersimpan di browser ini. Untuk backup ke device lain atau sebagai keamanan, selalu <b>Download .oas</b> secara berkala. File .oas bisa di-upload kembali di browser manapun.
+      <div style="background:rgba(217,119,43,0.1);border:1px solid rgba(217,119,43,0.28);border-radius:8px;padding:10px 12px;font-size:11.5px;color:var(--muted);line-height:1.7;">
+        <i class="ti ti-bulb ti-inline"></i> <b style="color:var(--accent3)">Tips:</b> Data di slot tersimpan di browser ini. Untuk backup ke device lain atau sebagai keamanan, selalu <b>Download .oas</b> secara berkala. File .oas bisa di-upload kembali di browser manapun.
       </div>
     </div>
     <div class="modal-footer">
@@ -670,8 +670,8 @@
 <!-- Autosave toast -->
 <div id="autosave-toast" style="
   position:fixed;bottom:80px;right:24px;
-  background:var(--surface);border:1px solid rgba(74,222,128,0.3);
-  border-radius:8px;padding:8px 14px;font-size:12px;color:var(--accent);
+  background:var(--surface);border:1px solid var(--border-strong);
+  border-radius:8px;padding:8px 14px;font-size:12px;color:var(--accent-text);
   z-index:998;transform:translateY(40px);opacity:0;transition:all 0.3s;
   display:flex;align-items:center;gap:8px;pointer-events:none;
 ">
@@ -686,8 +686,8 @@
       <svg class="op-spin-svg" viewBox="0 0 44 44">
         <defs>
           <linearGradient id="op-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color:#4ade80"/>
-            <stop offset="100%" style="stop-color:#22d3ee"/>
+            <stop offset="0%" style="stop-color:#D4A72C"/>
+            <stop offset="100%" style="stop-color:#A9C6DC"/>
           </linearGradient>
         </defs>
         <circle class="track" cx="22" cy="22" r="18"/>
@@ -709,10 +709,10 @@
   <div id="an-period-popup">
     <div class="an-period-popup-header">
       <span class="an-period-popup-title">Rentang Waktu Analitik</span>
-      <button class="an-period-popup-close" onclick="closeAnPeriodPopupDirect()">âœ•</button>
+      <button class="an-period-popup-close" onclick="closeAnPeriodPopupDirect()">✕</button>
     </div>
     <div class="an-period-popup-item" data-val="6" data-label="6 Bulan Terakhir" onclick="setAnPeriodPopup(this)">
-      <div class="an-period-popup-icon" style="background:rgba(74,222,128,0.12);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l2.5 2.5"/></svg></div>
+      <div class="an-period-popup-icon" style="background:var(--accent-tint);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent-text)"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l2.5 2.5"/></svg></div>
       <div class="an-period-popup-texts">
         <div class="an-period-popup-name">6 Bulan Terakhir</div>
         <div class="an-period-popup-desc">Tren 6 bulan ke belakang</div>
@@ -720,7 +720,7 @@
       <div class="an-period-popup-check"></div>
     </div>
     <div class="an-period-popup-item active" data-val="12" data-label="12 Bulan Terakhir" onclick="setAnPeriodPopup(this)">
-      <div class="an-period-popup-icon" style="background:rgba(34,211,238,0.12);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent2)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg></div>
+      <div class="an-period-popup-icon" style="background:var(--surface2);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent2)"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg></div>
       <div class="an-period-popup-texts">
         <div class="an-period-popup-name">12 Bulan Terakhir</div>
         <div class="an-period-popup-desc">Analisis setahun penuh</div>
@@ -728,7 +728,7 @@
       <div class="an-period-popup-check"></div>
     </div>
     <div class="an-period-popup-item" data-val="24" data-label="24 Bulan Terakhir" onclick="setAnPeriodPopup(this)">
-      <div class="an-period-popup-icon" style="background:rgba(245,158,11,0.12);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent3)"><path d="M3 17l4-4 4 4 4-4 6-6"/><path d="M17 7h4v4"/></svg></div>
+      <div class="an-period-popup-icon" style="background:rgba(217,119,43,0.12);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent3)"><path d="M3 17l4-4 4 4 4-4 6-6"/><path d="M17 7h4v4"/></svg></div>
       <div class="an-period-popup-texts">
         <div class="an-period-popup-name">24 Bulan Terakhir</div>
         <div class="an-period-popup-desc">Tren jangka panjang 2 tahun</div>
@@ -737,7 +737,7 @@
     </div>
     <div class="an-period-popup-divider"></div>
     <div class="an-period-popup-item" data-val="all" data-label="Semua Data" onclick="setAnPeriodPopup(this)">
-      <div class="an-period-popup-icon" style="background:rgba(167,139,250,0.12);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#a78bfa"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 7v4l3 3"/></svg></div>
+      <div class="an-period-popup-icon" style="background:var(--surface2);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 7v4l3 3"/></svg></div>
       <div class="an-period-popup-texts">
         <div class="an-period-popup-name">Semua Data</div>
         <div class="an-period-popup-desc">Sejak transaksi pertama</div>
@@ -754,11 +754,11 @@
   <div class="modal" style="max-width:520px;">
     <div class="modal-head">
       <div class="modal-title"><i class="ti ti-adjustments" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Jurnal Penyesuaian</div>
-      <button class="modal-close" onclick="closeModal('modal-penyesuaian')">âœ•</button>
+      <button class="modal-close" onclick="closeModal('modal-penyesuaian')">✕</button>
     </div>
     <div class="modal-body">
       <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6;">
-        Pilih jenis penyesuaian. Form Jurnal Manual akan otomatis terisi â€” tinggal isi nilainya dan simpan.
+        Pilih jenis penyesuaian. Form Jurnal Manual akan otomatis terisi — tinggal isi nilainya dan simpan.
       </div>
       <div style="grid-template-columns:1fr 1fr;" class="kalk-grid">
         <div class="tut-card" onclick="fillPenyesuaian('penyusutan')">
@@ -895,7 +895,7 @@
         <div class="form-group"><label>Mata Uang</label>
           <input type="hidden" id="prof-mata-uang" value="IDR">
           <button type="button" id="prof-mata-uang-btn" class="oas-picker-trigger" onclick="openMataUangPicker()">
-            <span id="prof-mata-uang-label"><i class="ti ti-currency" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> IDR â€” Rupiah</span>
+            <span id="prof-mata-uang-label"><i class="ti ti-currency" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i> IDR — Rupiah</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
         </div>
@@ -915,16 +915,16 @@
 <!-- MODAL: ONBOARDING WIZARD -->
 <div class="modal-backdrop" id="modal-onboarding" style="z-index:2100;align-items:flex-start;padding-top:40px;">
   <div class="modal" style="max-width:520px;max-height:85vh;overflow-y:auto;">
-    <div class="modal-head" style="background:linear-gradient(135deg,rgba(74,222,128,0.1),rgba(34,211,238,0.08));border-bottom:1px solid var(--border);">
+    <div class="modal-head" style="background:var(--surface2);border-bottom:1px solid var(--border);">
       <div>
-        <div class="modal-title" style="font-size:18px;">â†’ Selamat Datang!</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Setup awal â€” hanya 1 menit</div>
+        <div class="modal-title" style="font-size:18px;">Selamat Datang!</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Setup awal — hanya 1 menit</div>
       </div>
     </div>
     <div class="modal-body">
       <div id="onboard-step-1">
         <div style="text-align:center;padding:8px 0 20px;">
-          <div style="margin-bottom:12px;display:flex;justify-content:center;color:var(--accent2);"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+          <div style="margin-bottom:12px;display:flex;justify-content:center;color:var(--accent-text);"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
           <div style="font-size:16px;font-weight:700;margin-bottom:6px;">Nama bisnis kamu?</div>
           <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Akan muncul di semua laporan & export</div>
           <input type="text" id="ob-nama" placeholder="Contoh: Toko Maju Bersama" 
@@ -934,33 +934,33 @@
       </div>
       <div id="onboard-step-2" style="display:none;">
         <div style="text-align:center;padding:8px 0 16px;">
-          <div style="margin-bottom:12px;display:flex;justify-content:center;color:var(--accent2);"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V8l7-5 7 5v12"/><path d="M9 20v-5h6v5"/></svg></div>
+          <div style="margin-bottom:12px;display:flex;justify-content:center;color:var(--accent-text);"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V8l7-5 7 5v12"/><path d="M9 20v-5h6v5"/></svg></div>
           <div style="font-size:16px;font-weight:700;margin-bottom:6px;">Jenis bisnis kamu?</div>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Semua akun tetap tersedia â€” ini cuma buat kategori bisnismu</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Semua akun tetap tersedia — ini cuma buat kategori bisnismu</div>
         </div>
         <div style="grid-template-columns:1fr 1fr;" class="kalk-grid">
-          <div class="ob-type-card ob-type-selected" data-val="umum" onclick="selectObType('umum',this)" style="background:var(--surface2);border:2px solid var(--accent);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
-            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent2);"><i class="ti ti-building-skyscraper" style="font-size:28px;"></i></div>
+          <div class="ob-type-card ob-type-selected" data-val="umum" onclick="selectObType('umum',this)" style="background:var(--surface2);border:2px solid var(--accent);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
+            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent-text);"><i class="ti ti-building-skyscraper" style="font-size:28px;"></i></div>
             <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Umum</div>
             <div style="font-size:11px;color:var(--muted);">Belum tahu / lainnya</div>
           </div>
-          <div class="ob-type-card" data-val="dagang" onclick="selectObType('dagang',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
-            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent2);"><i class="ti ti-shopping-cart" style="font-size:28px;"></i></div>
+          <div class="ob-type-card" data-val="dagang" onclick="selectObType('dagang',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
+            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent-text);"><i class="ti ti-shopping-cart" style="font-size:28px;"></i></div>
             <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Dagang / Toko</div>
             <div style="font-size:11px;color:var(--muted);">Toko, reseller, distributor</div>
           </div>
-          <div class="ob-type-card" data-val="jasa" onclick="selectObType('jasa',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
-            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent2);"><i class="ti ti-briefcase" style="font-size:28px;"></i></div>
+          <div class="ob-type-card" data-val="jasa" onclick="selectObType('jasa',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
+            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent-text);"><i class="ti ti-briefcase" style="font-size:28px;"></i></div>
             <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Jasa</div>
             <div style="font-size:11px;color:var(--muted);">Konsultan, klinik, salon, agensi</div>
           </div>
-          <div class="ob-type-card" data-val="manufaktur" onclick="selectObType('manufaktur',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
-            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent2);"><i class="ti ti-industry" style="font-size:28px;"></i></div>
+          <div class="ob-type-card" data-val="manufaktur" onclick="selectObType('manufaktur',this)" style="background:var(--surface2);border:2px solid var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
+            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent-text);"><i class="ti ti-industry" style="font-size:28px;"></i></div>
             <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Manufaktur</div>
             <div style="font-size:11px;color:var(--muted);">Pabrik, produksi, UMKM</div>
           </div>
-          <div class="ob-type-card" data-val="properti" onclick="selectObType('properti',this)" style="grid-column:1 / -1;background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
-            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent2);"><i class="ti ti-home" style="font-size:28px;"></i></div>
+          <div class="ob-type-card" data-val="properti" onclick="selectObType('properti',this)" style="grid-column:1 / -1;background:var(--surface2);border:2px solid var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;">
+            <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--accent-text);"><i class="ti ti-home" style="font-size:28px;"></i></div>
             <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Properti</div>
             <div style="font-size:11px;color:var(--muted);">Kos, kontrakan, rental</div>
           </div>
@@ -968,20 +968,20 @@
       </div>
       <div id="onboard-step-3" style="display:none;">
         <div style="text-align:center;padding:8px 0 20px;">
-          <div style="font-size:48px;margin-bottom:12px;"><i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i></div>
-          <div style="font-size:18px;font-weight:800;color:var(--accent);margin-bottom:8px;" id="ob-ready-title">Siap!</div>
+          <div style="width:52px;height:52px;border-radius:8px;background:var(--green-tint);border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;"><i class="ti ti-circle-check" style="color:var(--green);font-size:26px;"></i></div>
+          <div style="font-size:18px;font-weight:800;color:var(--accent-text);margin-bottom:8px;" id="ob-ready-title">Siap!</div>
           <div style="font-size:13px;color:var(--muted);line-height:1.7;" id="ob-ready-desc">Software sudah dikonfigurasi untuk bisnis kamu.</div>
         </div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;">
         <div style="display:flex;gap:6px;" id="ob-dots">
-          <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);" id="ob-dot-1"></span>
-          <span style="width:8px;height:8px;border-radius:50%;background:var(--border);" id="ob-dot-2"></span>
-          <span style="width:8px;height:8px;border-radius:50%;background:var(--border);" id="ob-dot-3"></span>
+          <span style="width:8px;height:8px;border-radius:2px;background:var(--accent);" id="ob-dot-1"></span>
+          <span style="width:8px;height:8px;border-radius:2px;background:var(--border);" id="ob-dot-2"></span>
+          <span style="width:8px;height:8px;border-radius:2px;background:var(--border);" id="ob-dot-3"></span>
         </div>
         <div style="display:flex;gap:8px;">
-          <button id="ob-back-btn" onclick="obBack()" class="btn btn-ghost" style="display:none">â† Kembali</button>
-          <button id="ob-next-btn" onclick="obNext()" class="btn btn-primary">Lanjut â†’</button>
+          <button id="ob-back-btn" onclick="obBack()" class="btn btn-ghost" style="display:none">← Kembali</button>
+          <button id="ob-next-btn" onclick="obNext()" class="btn btn-primary">Lanjut →</button>
         </div>
       </div>
     </div>
@@ -995,7 +995,7 @@
       <i class="ti ti-search" style="font-size:18px;margin-right:8px;color:var(--muted);"></i>
       <input id="global-search-input" placeholder="Cari jurnal, akun, menu, kalkulator..." 
         oninput="doGlobalSearch(this.value)" onkeydown="handleSearchKey(event)" autocomplete="off">
-      <button onclick="closeGlobalSearch()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px 8px;">âœ•</button>
+      <button onclick="closeGlobalSearch()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px 8px;">✕</button>
     </div>
     <div id="global-search-results" style="max-height:400px;overflow-y:auto;padding:8px 0;">
       <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px;">
@@ -1003,26 +1003,21 @@
       </div>
     </div>
     <div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;gap:12px;font-size:11px;color:var(--muted);">
-      <span><kbd class="kbd">â†‘â†“</kbd> navigasi</span>
+      <span><kbd class="kbd">↑↓</kbd> navigasi</span>
       <span><kbd class="kbd">Enter</kbd> pilih</span>
-      <kbd class="kbd">Esc</kbd> tutup</span>
+      <span><kbd class="kbd">Esc</kbd> tutup</span>
     </div>
   </div>
 </div>
 
 <!-- AUTH SCREEN -->
 <div id="auth-screen" style="display:none;position:fixed;inset:0;z-index:99998;overflow-y:auto;">
-  <div id="auth-bg" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;">
-    <!-- Animated background shapes -->
-    <div class="auth-orb auth-orb-1"></div>
-    <div class="auth-orb auth-orb-2"></div>
-    <div class="auth-orb auth-orb-3"></div>
-
+  <div id="auth-bg" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;">
     <div id="auth-card" style="width:100%;max-width:420px;position:relative;z-index:2;">
       <!-- Logo -->
       <div style="text-align:center;margin-bottom:32px;">
-        <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,rgba(74,222,128,0.2),rgba(34,211,238,0.15));border:1px solid rgba(74,222,128,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;box-shadow:0 8px 32px rgba(74,222,128,0.15);"><i class="ti ti-scale ti-inline"></i></div>
-        <div style="font-size:22px;font-weight:800;font-family:var(--mono);letter-spacing:0.02em;color:#4ade80;text-shadow:0 0 20px rgba(74,222,128,0.4);">OAS</div>
+        <div style="width:60px;height:60px;border-radius:8px;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);background:var(--surface2);border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;color:var(--accent-text);"><i class="ti ti-scale ti-inline"></i></div>
+        <div style="font-size:22px;font-weight:800;font-family:var(--mono);letter-spacing:0.08em;color:var(--accent-text);">OAS</div>
         <div style="font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:0.08em;text-transform:uppercase;">Software Akuntansi Profesional</div>
       </div>
 
@@ -1089,16 +1084,14 @@
         <div id="auth-msg" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:13px;text-align:center;"></div>
       </div>
 
-      <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:20px;opacity:0.7;">Data tersimpan aman di cloud Â· Multi-perangkat</p>
+      <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:20px;opacity:0.7;">Data tersimpan aman di cloud · Multi-perangkat</p>
     </div>
   </div>
 </div>
 
 <!-- COMPANY PICKER -->
 <div id="company-picker" style="display:none;position:fixed;inset:0;z-index:99997;overflow-y:auto;">
-  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;">
-    <div class="auth-orb auth-orb-1"></div>
-    <div class="auth-orb auth-orb-2"></div>
+  <div style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;">
     <div style="width:100%;max-width:480px;position:relative;z-index:2;">
       <!-- Header -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
@@ -1175,7 +1168,7 @@
     </div>
     <div class="cp-action-btns">
       <button class="cp-action-btn open-btn" onclick="cpActionOpen()">
-        <div class="cp-action-btn-icon">ðŸš€</div>
+        <div class="cp-action-btn-icon"><i class="ti ti-arrow-right"></i></div>
         <div>
           <div>Buka Bisnis Ini</div>
           <div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:2px;">Masuk ke dashboard bisnis</div>
@@ -1228,7 +1221,7 @@
   <div class="modal" style="max-width:480px;">
     <div class="modal-head">
       <div class="modal-title" id="attach-modal-title"> Lampiran Jurnal</div>
-      <button class="modal-close" onclick="closeModal('modal-attach')">âœ•</button>
+      <button class="modal-close" onclick="closeModal('modal-attach')">✕</button>
     </div>
     <div class="modal-body">
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;padding:8px 12px;background:var(--surface2);border-radius:6px;" id="attach-jurnal-ket"></div>
@@ -1242,14 +1235,14 @@
         ondragleave="this.style.borderColor='var(--border)'">
         <div style="font-size:28px;margin-bottom:8px;"></div>
         <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">Tambah Lampiran</div>
-        <div style="font-size:11px;color:var(--muted);">Foto nota, invoice, kuitansi, PDF â€¢ Max 5MB</div>
+        <div style="font-size:11px;color:var(--muted);">Foto nota, invoice, kuitansi, PDF • Max 5MB</div>
         <input type="file" id="attach-file-input" accept="image/*,.pdf" style="display:none" onchange="handleAttachFile(this)">
       </div>
     </div>
     <div class="modal-footer" style="justify-content:space-between;align-items:center;flex-wrap:nowrap;gap:8px;">
       <div style="display:flex;gap:6px;flex-shrink:0;">
         <button class="btn btn-ghost" onclick="closeModal('modal-attach')" style="flex-shrink:0;">Tutup</button>
-        <button id="attach-dl-all-btn" class="btn btn-ghost" style="display:none;color:var(--accent2);border-color:rgba(34,211,238,0.3);flex-shrink:0;white-space:nowrap;padding:0 10px;" title="Unduh Semua" onclick="(()=>{const idx=parseInt(document.getElementById('attach-jurnal-idx').value);const j=jurnalEntries[idx];if(j)downloadAllAttachments(j.no);})()">
+        <button id="attach-dl-all-btn" class="btn btn-ghost" style="display:none;color:var(--text);border-color:var(--border-strong);flex-shrink:0;white-space:nowrap;padding:0 10px;" title="Unduh Semua" onclick="(()=>{const idx=parseInt(document.getElementById('attach-jurnal-idx').value);const j=jurnalEntries[idx];if(j)downloadAllAttachments(j.no);})()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <span style="margin-left:5px;">Unduh</span>
         </button>
@@ -1266,7 +1259,7 @@
     <div id="opt-picker-handle"></div>
     <div id="opt-picker-header">
       <span id="opt-picker-title">Pilih Opsi</span>
-      <button id="opt-picker-close" onclick="closeOptPicker()">âœ•</button>
+      <button id="opt-picker-close" onclick="closeOptPicker()">✕</button>
     </div>
     <div id="opt-picker-list"></div>
   </div>

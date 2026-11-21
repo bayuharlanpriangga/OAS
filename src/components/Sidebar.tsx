@@ -48,7 +48,7 @@ import {
   Zap,
 } from "lucide-react";
 import { NAV_GROUPS } from "@/config/navigation";
-import { callOasGlobal } from "@/lib/legacy-store";
+import { callOasGlobal } from "@/lib/shared/legacy-store";
 import type { NavCardItem, NavIconKey } from "@/types";
 
 interface IconProps {
@@ -126,7 +126,7 @@ export default function Sidebar() {
 
       <aside className="sidebar" id="sidebar">
         <div className="logo">
-          <span style={{ color: "var(--accent)", letterSpacing: "0.08em" }}>
+          <span style={{ color: "var(--accent-text)", letterSpacing: "0.08em" }}>
             OAS
           </span>
           <button
@@ -259,15 +259,11 @@ export default function Sidebar() {
                 —
               </div>
             </div>
-            <span
-              style={{
-                color: "var(--muted)",
-                fontSize: "10px",
-                flexShrink: 0,
-              }}
-            >
-              ▾
-            </span>
+            <ChevronDown
+              size={13}
+              strokeWidth={2}
+              style={{ color: "var(--accent2)", flexShrink: 0 }}
+            />
           </button>
         </div>
 
@@ -366,16 +362,17 @@ export default function Sidebar() {
                 alignItems: "center",
                 gap: "5px",
                 fontSize: "10px",
-                color: "var(--accent)",
+                color: "var(--green)",
               }}
             >
               <span
                 id="save-dot"
                 style={{
-                  width: "7px",
-                  height: "7px",
-                  borderRadius: "50%",
-                  background: "var(--accent)",
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "2px",
+                  transform: "rotate(45deg)",
+                  background: "var(--green)",
                   display: "inline-block",
                 }}
               />
@@ -392,16 +389,15 @@ export default function Sidebar() {
             onClick={() => callOasGlobal("handlePwaInstall")}
             style={{
               width: "100%",
-              background:
-                "linear-gradient(135deg,rgba(74,222,128,0.15),rgba(34,211,238,0.15))",
-              border: "1px solid rgba(74,222,128,0.35)",
+              background: "var(--surface2)",
+              border: "1px solid var(--border-strong)",
               borderRadius: "8px",
-              padding: "8px 4px",
+              padding: "8px 6px",
               fontSize: "12px",
-              color: "var(--accent)",
+              color: "var(--text)",
               cursor: "pointer",
               fontFamily: "var(--sans)",
-              fontWeight: 700,
+              fontWeight: 600,
               marginBottom: "6px",
               display: "flex",
               alignItems: "center",
@@ -410,7 +406,7 @@ export default function Sidebar() {
               transition: "all 0.2s",
             }}
           >
-            <Download size={14} strokeWidth={2.1} />
+            <Download size={14} strokeWidth={2} style={{ color: "var(--accent2)" }} />
             <span id="pwa-btn-text" suppressHydrationWarning>
               Install App
             </span>
@@ -429,12 +425,12 @@ export default function Sidebar() {
               onClick={() => callOasGlobal("manualSave")}
               data-tooltip="Ctrl+S"
               style={{
-                background: "rgba(74,222,128,0.1)",
-                border: "1px solid rgba(74,222,128,0.25)",
+                background: "var(--surface2)",
+                border: "1px solid var(--border)",
                 borderRadius: "6px",
                 padding: "6px 4px",
                 fontSize: "11px",
-                color: "var(--accent)",
+                color: "var(--text)",
                 cursor: "pointer",
                 fontFamily: "var(--sans)",
                 fontWeight: 600,
@@ -444,7 +440,7 @@ export default function Sidebar() {
                 gap: "4px",
               }}
             >
-              <Save size={13} strokeWidth={2} /> Simpan
+              <Save size={13} strokeWidth={2} style={{ color: "var(--accent2)" }} /> Simpan
             </motion.button>
             <motion.button
               type="button"
@@ -452,12 +448,12 @@ export default function Sidebar() {
               onClick={() => callOasGlobal("openStorageModal")}
               data-tooltip="Kelola Data"
               style={{
-                background: "rgba(34,211,238,0.1)",
-                border: "1px solid rgba(34,211,238,0.25)",
+                background: "var(--surface2)",
+                border: "1px solid var(--border)",
                 borderRadius: "6px",
                 padding: "6px 4px",
                 fontSize: "11px",
-                color: "var(--accent2)",
+                color: "var(--text)",
                 cursor: "pointer",
                 fontFamily: "var(--sans)",
                 fontWeight: 600,
@@ -467,7 +463,7 @@ export default function Sidebar() {
                 gap: "4px",
               }}
             >
-              <FolderOpen size={13} strokeWidth={2} /> Kelola
+              <FolderOpen size={13} strokeWidth={2} style={{ color: "var(--accent2)" }} /> Kelola
             </motion.button>
           </div>
         </div>

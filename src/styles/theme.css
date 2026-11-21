@@ -1,30 +1,37 @@
 
-/* LIGHT MODE */
+/* LIGHT MODE — Perak (#EEF1F4) + Es (#4F7A99) + Emas (#D4A72C / #7A5C00) */
 body.light-mode {
-  --bg: #f8fafc;
-  --surface: #ffffff;
-  --surface2: #f1f5f9;
-  --border: #e2e8f0;
-  --accent: #16a34a;
-  --accent2: #0891b2;
-  --accent3: #d97706;
-  --red: #dc2626;
-  --text: #0f172a;
-  --muted: #64748b;
+  --bg: #EEF1F4;
+  --surface: #FFFFFF;
+  --surface2: #E4E9EF;
+  --border: rgba(79, 122, 153, 0.28);
+  --border-strong: rgba(79, 122, 153, 0.45);
+  --accent: #D4A72C;
+  --accent-text: #7A5C00;
+  --accent-fg: #0D0D0D;
+  --accent-tint: rgba(212, 167, 44, 0.16);
+  --accent2: #4F7A99;
+  --accent2-tint: rgba(79, 122, 153, 0.12);
+  --green: #2F7048;
+  --green-tint: rgba(47, 112, 72, 0.12);
+  --accent3: #A8530E;
+  --warn: #A8530E;
+  --red: #A93226;
+  --danger: #A93226;
+  --red-tint: rgba(169, 50, 38, 0.12);
+  --text: #0D0D0D;
+  --muted: #4A5663;
 }
-body.light-mode .sidebar { box-shadow: 2px 0 12px rgba(0,0,0,0.08); }
-body.light-mode .topbar { box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
-body.light-mode .table-card { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-body.light-mode .stat-card { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-body.light-mode .modal { box-shadow: 0 24px 64px rgba(0,0,0,0.15); }
-body.light-mode input, body.light-mode select, body.light-mode textarea { color: var(--text) !important; }
-body.light-mode .debit { color: #16a34a; }
-body.light-mode .kredit { color: #dc2626; }
-body.light-mode code { background: #f1f5f9; color: #0891b2; }
+body.light-mode .sidebar { border-right-color: var(--border); }
+body.light-mode .topbar { border-bottom-color: var(--border); }
+body.light-mode .modal { box-shadow: 0 20px 48px rgba(13, 13, 13, 0.14); }
+body.light-mode input, body.light-mode select, body.light-mode textarea { color: var(--text); }
+body.light-mode .debit { color: var(--green); }
+body.light-mode .kredit { color: var(--red); }
+body.light-mode code { background: var(--surface2); color: var(--accent2); }
 body.light-mode #tut-tooltip { border-color: var(--accent2); }
-body.light-mode .tut-card { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
 body.light-mode .ai-bubble { border-color: var(--border); }
-body.light-mode .ai-msg-user .ai-bubble { background: rgba(22,163,74,0.08); }
+body.light-mode .ai-msg-user .ai-bubble { background: var(--accent2-tint); border-color: var(--border-strong); }
 
 /* Theme toggle switch */
 .theme-toggle {
@@ -32,19 +39,19 @@ body.light-mode .ai-msg-user .ai-bubble { background: rgba(22,163,74,0.08); }
   cursor: pointer; border: none; background: none; padding: 0;
 }
 .theme-toggle-track {
-  width: 44px; height: 24px; border-radius: 12px;
-  background: var(--border); transition: background 0.3s;
+  width: 44px; height: 24px; border-radius: 6px;
+  background: var(--surface2); transition: background 0.2s, border-color 0.2s;
   display: flex; align-items: center; padding: 0 3px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--border-strong);
 }
 .theme-toggle-thumb {
-  width: 18px; height: 18px; border-radius: 50%;
-  background: var(--muted); transition: all 0.3s;
+  width: 16px; height: 16px; border-radius: 3px;
+  background: var(--accent2); transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s;
   display: flex; align-items: center; justify-content: center;
-  color: white; flex-shrink: 0;
+  color: var(--tinta); flex-shrink: 0;
 }
-body.light-mode .theme-toggle-track { background: var(--accent2); }
-body.light-mode .theme-toggle-thumb { transform: translateX(20px); background: white; }
+body.light-mode .theme-toggle-track { background: var(--surface2); border-color: var(--border-strong); }
+body.light-mode .theme-toggle-thumb { transform: translateX(20px); background: var(--accent); color: var(--accent-fg); }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html {
   overflow: hidden;
@@ -57,10 +64,9 @@ html {
 body {
   background: var(--bg); color: var(--text); font-family: var(--sans); height: 100%; display: flex; overflow: hidden;
   overscroll-behavior: none;
-  /* App-like: tidak bisa diseleksi/disalin & tanpa menu callout, seperti aplikasi native */
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-user-select: none; -moz-user-select: none; user-select: none;
   -webkit-touch-callout: none;
-  /* Cat area aman (notch/status bar/gesture bar) dengan warna tema saat mode fullscreen/standalone */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -73,7 +79,7 @@ button, .btn, .nav-card, a, [onclick] {
   touch-action: manipulation;
 }
 button:focus-visible, .btn:focus-visible, a:focus-visible, [onclick]:focus-visible, .nav-card:focus-visible {
-  outline: 2px solid var(--accent); outline-offset: 1px;
+  outline: 2px solid var(--accent-text); outline-offset: 2px;
 }
 
 /* ═══ SCROLLBAR TEMA GLOBAL — fallback untuk semua area overflow-y/overflow-x

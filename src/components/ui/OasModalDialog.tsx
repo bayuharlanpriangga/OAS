@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
-import { callOasGlobal } from "@/lib/legacy-store";
+import { callOasGlobal } from "@/lib/shared/legacy-store";
 
 interface OasModalDialogProps {
   id?: string;

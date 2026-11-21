@@ -41,7 +41,7 @@ function renderProfilView() {
     if (logo) {
       logoEl.innerHTML = `<img src="${escapeHtml(logo)}" style="width:100%;height:100%;object-fit:cover;border-radius:14px;cursor:pointer;" onclick="openPhotoViewer(this.src,'rounded')" title="Lihat logo">`;
     } else {
-      logoEl.innerHTML = '🏢';
+      logoEl.innerHTML = '<i class="ti ti-building" style="font-size:28px;color:var(--muted);"></i>';
     }
   }
   const setV = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val || '—'; };
@@ -139,7 +139,7 @@ function saveProfil() {
   // Show spinner on button
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2.5px solid rgba(0,0,0,0.2);border-top-color:#000;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:6px;"></span>Menyimpan...';
+    btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent-fg);border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:6px;"></span>Menyimpan...';
   }
   setTimeout(function() {
     const p = {
@@ -177,13 +177,13 @@ function showSaveProfilSuccess() {
   overlay.id = 'profil-success-popup';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);animation:fadeInOverlay 0.2s ease both;';
   overlay.innerHTML = `
-    <div style="background:var(--surface);border:1.5px solid rgba(74,222,128,0.4);border-radius:20px;padding:32px 36px;text-align:center;width:min(320px,88vw);box-shadow:0 24px 60px rgba(0,0,0,0.5);animation:popupSlideIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;">
-      <div style="width:56px;height:56px;background:rgba(74,222,128,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;border:2px solid rgba(74,222,128,0.35);">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    <div style="background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;padding:28px 32px;text-align:center;width:min(320px,88vw);box-shadow:0 24px 60px rgba(0,0,0,0.5);animation:popupSlideIn 0.25s cubic-bezier(0.16,1,0.3,1) both;">
+      <div style="width:52px;height:52px;background:var(--green-tint);border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;border:1px solid rgba(78,154,107,0.35);">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">Profil Tersimpan!</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Data profil perusahaan berhasil disimpan.</div>
-      <button onclick="document.getElementById('profil-success-popup').remove()" style="background:var(--accent);color:#000;border:none;border-radius:10px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">OK</button>
+      <button onclick="document.getElementById('profil-success-popup').remove()" style="background:var(--accent);color:var(--accent-fg);border:none;border-radius:8px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">OK</button>
     </div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('click', function(e) { if(e.target===overlay) overlay.remove(); });
@@ -226,17 +226,17 @@ function obNext() {
     p.jenis = obType;
     localStorage.setItem(PROFIL_KEY, JSON.stringify(p));
     if (currentCompany) currentCompany.type = obType;
-    document.getElementById('ob-ready-title').textContent = `Siap, ${p.nama}! 🎉`;
+    document.getElementById('ob-ready-title').textContent = `Siap, ${p.nama}!`;
     document.getElementById('ob-ready-desc').textContent = `Semua akun sudah siap dipakai. Kamu bisa mulai input transaksi sekarang.`;
     document.getElementById('onboard-step-2').style.display = 'none';
     document.getElementById('onboard-step-3').style.display = 'block';
-    document.getElementById('ob-next-btn').textContent = '🚀 Mulai Sekarang!';
+    document.getElementById('ob-next-btn').textContent = 'Mulai Sekarang';
     document.getElementById('ob-dot-3').style.background = 'var(--accent)';
   } else if(obStep === 3) {
     localStorage.setItem('oas_onboarded', '1');
     document.getElementById('modal-onboarding').classList.remove('open');
     renderDashboard();
-    showAlert('🎉 Selamat datang! Software siap digunakan.');
+    showAlert('<i class="ti ti-circle-check" style="color:var(--green);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Selamat datang! Software siap digunakan.');
   }
 }
 function obBack() {
@@ -258,7 +258,7 @@ function selectObType(type, el) {
   obType = type;
   document.querySelectorAll('.ob-type-card').forEach(c => { c.style.border = '2px solid var(--border)'; c.style.background = 'var(--surface2)'; });
   el.style.border = '2px solid var(--accent)';
-  el.style.background = 'rgba(74,222,128,0.07)';
+  el.style.background = 'var(--accent-tint)';
 }
 
 function loadProfilToSidebar() {
@@ -271,8 +271,8 @@ function showDemoModeBanner() {
   banner.id = 'demo-banner';
   banner.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <span>☁️ <b>Mode Demo</b> — Data tersimpan di browser. Untuk cloud + multi-user:</span>
-      <button onclick="showSupabaseSetup()" style="background:var(--accent);border:none;border-radius:6px;padding:5px 12px;font-weight:700;cursor:pointer;color:#0d0f14;font-size:12px;white-space:nowrap;">Setup Supabase ›</button>
+      <span><b>Mode Demo</b> — Data tersimpan di browser. Untuk cloud &amp; multi-user:</span>
+      <button onclick="showSupabaseSetup()" style="background:var(--accent);border:none;border-radius:6px;padding:5px 12px;font-weight:700;cursor:pointer;color:var(--accent-fg);font-size:12px;white-space:nowrap;">Setup Supabase ›</button>
       <button onclick="document.getElementById('demo-banner').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 4px;margin-left:auto;">✕</button>
     </div>`;
   banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:var(--surface2);border-top:1px solid var(--border);padding:10px 16px;z-index:5000;font-size:13px;';

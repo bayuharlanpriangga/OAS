@@ -73,17 +73,17 @@ function showCustomConfirmGeneral({ icon, iconColor, iconBorder, title, subtitle
     `;
     modal.innerHTML = `
       <div style="
-        background:var(--surface);border:1px solid var(--border);border-radius:18px;
-        width:100%;max-width:400px;box-shadow:0 32px 80px rgba(0,0,0,0.6);
-        overflow:hidden;animation:confirmPop 0.22s cubic-bezier(0.34,1.56,0.64,1);
+        background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;
+        width:100%;max-width:400px;box-shadow:0 24px 64px rgba(0,0,0,0.55);
+        overflow:hidden;animation:confirmPop 0.2s cubic-bezier(0.16,1,0.3,1);
       ">
         <!-- Header -->
         <div style="
-          background:linear-gradient(135deg,${iconColor||'rgba(74,222,128,0.12)'},rgba(34,211,238,0.06));
+          background:var(--surface2);
           border-bottom:1px solid var(--border);padding:18px 20px 16px;
           display:flex;align-items:center;gap:13px;
         ">
-          <div style="width:40px;height:40px;border-radius:50%;background:${iconColor||'rgba(74,222,128,0.15)'};border:1px solid ${iconBorder||'rgba(74,222,128,0.3)'};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${icon||'<i class="ti ti-target" style="font-size:20px;"></i>'}</div>
+          <div style="width:40px;height:40px;border-radius:8px;background:${iconColor||'var(--surface)'};border:1px solid ${iconBorder||'var(--border-strong)'};color:var(--text);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${icon||'<i class="ti ti-target" style="font-size:20px;"></i>'}</div>
           <div>
             <div style="font-size:14px;font-weight:700;color:var(--text);">${escapeHtml(title)}</div>
             <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.5;">${escapeHtml(subtitle||'')}</div>
@@ -91,33 +91,33 @@ function showCustomConfirmGeneral({ icon, iconColor, iconBorder, title, subtitle
         </div>
         <!-- Body -->
         <div style="padding:16px 20px;">
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px;">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;">
             ${(rows||[]).map(r=>`
               <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);">
                 <span style="font-size:12.5px;color:var(--muted);">${r.label}</span>
                 <span style="font-size:13px;font-weight:700;color:${r.color||'var(--text)'};font-family:var(--mono);">${r.value}</span>
               </div>`).join('')}
           </div>
-          ${warning?`<div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--accent3);">${warning}</div>`:''}
+          ${warning?`<div style="background:rgba(217,119,43,0.08);border:1px solid rgba(217,119,43,0.28);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--accent3);">${warning}</div>`:''}
         </div>
         <!-- Footer -->
         <div style="padding:0 20px 20px;display:flex;gap:10px;">
           <button id="gcm-cancel" style="
-            flex:1;padding:12px;border-radius:10px;
-            background:var(--surface2);border:1px solid var(--border);
+            flex:1;padding:12px;border-radius:8px;
+            background:var(--surface2);border:1px solid var(--border-strong);
             color:var(--muted);font-size:13.5px;font-weight:600;
             cursor:pointer;font-family:var(--sans);transition:all 0.15s;
           " onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
-             onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
-            ✕ Batal
+             onmouseout="this.style.borderColor='var(--border-strong)';this.style.color='var(--muted)'">
+            Batal
           </button>
           <button id="gcm-ok" style="
-            flex:2;padding:12px;border-radius:10px;
-            background:${btnGradient||'linear-gradient(135deg,#4ade80,#22d3ee)'};
-            border:none;color:#000;font-size:13.5px;font-weight:700;
+            flex:2;padding:12px;border-radius:8px;
+            background:${(btnGradient && !btnGradient.includes('linear-gradient')) ? btnGradient : 'var(--accent)'};
+            border:none;color:${(btnGradient && btnGradient.includes('red')) ? '#fff' : 'var(--accent-fg)'};font-size:13.5px;font-weight:700;
             cursor:pointer;font-family:var(--sans);transition:opacity 0.15s;
           " onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
-            ${btnLabel||'✓ Ya, Lanjutkan'}
+            ${btnLabel||'Ya, Lanjutkan'}
           </button>
         </div>
       </div>
@@ -146,17 +146,17 @@ function showCustomInputModal({ icon, iconColor, iconBorder, title, subtitle, ro
     `;
     modal.innerHTML = `
       <div style="
-        background:var(--surface);border:1px solid var(--border);border-radius:18px;
-        width:100%;max-width:400px;box-shadow:0 32px 80px rgba(0,0,0,0.6);
-        overflow:hidden;animation:confirmPop 0.22s cubic-bezier(0.34,1.56,0.64,1);
+        background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;
+        width:100%;max-width:400px;box-shadow:0 24px 64px rgba(0,0,0,0.55);
+        overflow:hidden;animation:confirmPop 0.2s cubic-bezier(0.16,1,0.3,1);
       ">
         <!-- Header -->
         <div style="
-          background:linear-gradient(135deg,${iconColor||'rgba(34,211,238,0.12)'},rgba(74,222,128,0.06));
+          background:var(--surface2);
           border-bottom:1px solid var(--border);padding:18px 20px 16px;
           display:flex;align-items:center;gap:13px;
         ">
-          <div style="width:40px;height:40px;border-radius:50%;background:${iconColor||'rgba(34,211,238,0.15)'};border:1px solid ${iconBorder||'rgba(34,211,238,0.3)'};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${icon||'<i class="ti ti-book" style="font-size:20px;"></i>'}</div>
+          <div style="width:40px;height:40px;border-radius:8px;background:${iconColor||'var(--surface)'};border:1px solid ${iconBorder||'var(--border-strong)'};color:var(--text);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${icon||'<i class="ti ti-book" style="font-size:20px;"></i>'}</div>
           <div>
             <div style="font-size:14px;font-weight:700;color:var(--text);">${escapeHtml(title)}</div>
             <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">${escapeHtml(subtitle||'')}</div>
@@ -164,7 +164,7 @@ function showCustomInputModal({ icon, iconColor, iconBorder, title, subtitle, ro
         </div>
         <!-- Body -->
         <div style="padding:16px 20px;">
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;">
             ${(rows||[]).map(r=>`
               <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);">
                 <span style="font-size:12.5px;color:var(--muted);">${r.label}</span>
@@ -174,29 +174,29 @@ function showCustomInputModal({ icon, iconColor, iconBorder, title, subtitle, ro
           <div style="margin-bottom:4px;">
             <label style="font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:0.04em;text-transform:uppercase;display:block;margin-bottom:7px;">${inputLabel||'Masukkan nilai:'}</label>
             <input id="cim-input" type="number" value="${inputDefault||''}"
-              style="width:100%;background:var(--surface2);border:1px solid var(--accent2);border-radius:8px;padding:11px 14px;color:var(--text);font-size:15px;font-family:var(--mono);font-weight:600;outline:none;transition:border 0.15s;"
-              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--accent2)'"
+              style="width:100%;background:var(--surface2);border:1px solid var(--border-strong);border-radius:8px;padding:11px 14px;color:var(--text);font-size:15px;font-family:var(--mono);font-weight:600;outline:none;transition:border 0.15s;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border-strong)'"
             >
           </div>
         </div>
         <!-- Footer -->
         <div style="padding:0 20px 20px;display:flex;gap:10px;">
           <button id="cim-cancel" style="
-            flex:1;padding:12px;border-radius:10px;
-            background:var(--surface2);border:1px solid var(--border);
+            flex:1;padding:12px;border-radius:8px;
+            background:var(--surface2);border:1px solid var(--border-strong);
             color:var(--muted);font-size:13.5px;font-weight:600;
             cursor:pointer;font-family:var(--sans);transition:all 0.15s;
           " onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
-             onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
-            ✕ Batal
+             onmouseout="this.style.borderColor='var(--border-strong)';this.style.color='var(--muted)'">
+            Batal
           </button>
           <button id="cim-ok" style="
-            flex:2;padding:12px;border-radius:10px;
-            background:linear-gradient(135deg,#22d3ee,#4ade80);
-            border:none;color:#000;font-size:13.5px;font-weight:700;
+            flex:2;padding:12px;border-radius:8px;
+            background:var(--accent);
+            border:none;color:var(--accent-fg);font-size:13.5px;font-weight:700;
             cursor:pointer;font-family:var(--sans);transition:opacity 0.15s;
           " onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
-            ${btnLabel||'✓ Konfirmasi'}
+            ${btnLabel||'Konfirmasi'}
           </button>
         </div>
       </div>
@@ -235,12 +235,12 @@ function showCustomSelectModal({ icon, iconColor, iconBorder, title, subtitle, o
       <div class="csm-option ${opt.value===selected?'csm-selected':''}"
         data-val="${opt.value}"
         style="display:flex;align-items:center;gap:12px;padding:11px 14px;
-          border-radius:9px;border:1.5px solid ${opt.value===selected?'var(--accent)':'var(--border)'};
-          background:${opt.value===selected?'rgba(74,222,128,0.08)':'var(--surface2)'};
+          border-radius:8px;border:1.5px solid ${opt.value===selected?'var(--accent)':'var(--border)'};
+          background:${opt.value===selected?'var(--accent-tint)':'var(--surface2)'};
           cursor:pointer;margin-bottom:7px;transition:all 0.12s;">
-        <div style="width:18px;height:18px;border-radius:50%;border:2px solid ${opt.value===selected?'var(--accent)':'var(--border)'};
-          background:${opt.value===selected?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.12s;">
-          ${opt.value===selected?'<svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5l2 2 4-4" stroke="#000" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>':''}
+        <div style="width:18px;height:18px;border-radius:4px;border:2px solid ${opt.value===selected?'var(--accent)':'var(--border-strong)'};
+          background:${opt.value===selected?'var(--accent)':'transparent'};color:var(--accent-fg);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.12s;">
+          ${opt.value===selected?'<svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5l2 2 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>':''}
         </div>
         <div>
           <div style="font-size:13px;font-weight:600;color:var(--text);">${opt.label}</div>
@@ -250,18 +250,18 @@ function showCustomSelectModal({ icon, iconColor, iconBorder, title, subtitle, o
 
     modal.innerHTML = `
       <div style="
-        background:var(--surface);border:1px solid var(--border);border-radius:18px;
-        width:100%;max-width:420px;box-shadow:0 32px 80px rgba(0,0,0,0.6);
-        overflow:hidden;animation:confirmPop 0.22s cubic-bezier(0.34,1.56,0.64,1);
-        max-height:90vh;display:flex;flex-direction:column;
+        background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;
+        width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,0.55);
+        overflow:hidden;animation:confirmPop 0.2s cubic-bezier(0.16,1,0.3,1);
+        max-height:90dvh;display:flex;flex-direction:column;
       ">
         <!-- Header -->
         <div style="
-          background:linear-gradient(135deg,${iconColor||'rgba(34,211,238,0.12)'},rgba(74,222,128,0.06));
+          background:var(--surface2);
           border-bottom:1px solid var(--border);padding:18px 20px 16px;
           display:flex;align-items:center;gap:13px;flex-shrink:0;
         ">
-          <div style="width:40px;height:40px;border-radius:50%;background:${iconColor||'rgba(34,211,238,0.15)'};border:1px solid ${iconBorder||'rgba(34,211,238,0.3)'};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${icon||'🗂️'}</div>
+          <div style="width:40px;height:40px;border-radius:8px;background:${iconColor||'var(--surface)'};border:1px solid ${iconBorder||'var(--border-strong)'};color:var(--text);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">${icon||'<i class="ti ti-folders" style="font-size:18px;"></i>'}</div>
           <div>
             <div style="font-size:14px;font-weight:700;color:var(--text);">${escapeHtml(title)}</div>
             <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">${escapeHtml(subtitle||'')}</div>
@@ -274,21 +274,21 @@ function showCustomSelectModal({ icon, iconColor, iconBorder, title, subtitle, o
         <!-- Footer -->
         <div style="padding:0 20px 20px;display:flex;gap:10px;flex-shrink:0;border-top:1px solid var(--border);padding-top:14px;">
           <button id="csm-cancel" style="
-            flex:1;padding:12px;border-radius:10px;
-            background:var(--surface2);border:1px solid var(--border);
+            flex:1;padding:12px;border-radius:8px;
+            background:var(--surface2);border:1px solid var(--border-strong);
             color:var(--muted);font-size:13.5px;font-weight:600;
             cursor:pointer;font-family:var(--sans);transition:all 0.15s;
           " onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
-             onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
-            ✕ Batal
+             onmouseout="this.style.borderColor='var(--border-strong)';this.style.color='var(--muted)'">
+            Batal
           </button>
           <button id="csm-ok" style="
-            flex:2;padding:12px;border-radius:10px;
-            background:linear-gradient(135deg,#22d3ee,#4ade80);
-            border:none;color:#000;font-size:13.5px;font-weight:700;
+            flex:2;padding:12px;border-radius:8px;
+            background:var(--accent);
+            border:none;color:var(--accent-fg);font-size:13.5px;font-weight:700;
             cursor:pointer;font-family:var(--sans);transition:opacity 0.15s;
           " onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
-            ${btnLabel||'✓ Pilih'}
+            ${btnLabel||'Pilih'}
           </button>
         </div>
       </div>
@@ -335,7 +335,8 @@ function showAlert(msg){
 
 function _isSuccessMsg(msg){
   if (typeof msg !== 'string') return false;
-  if (/^\s*(❌|⛔)/.test(msg)) return false;
+  if (/^\s*(❌|⛔|⚠️)/.test(msg)) return false;
+  if (/\b(gagal|salah|ditolak|tidak bisa|tidak valid|penuh|kedaluwarsa|habis|terlalu besar|belum|kosong|minimal|tidak cocok|wajib|masukkan|tidak balance|tidak ditemukan|hanya pemilik|hanya admin|tidak ada lampiran|tidak ada baris|bukan format|error)\b/i.test(msg)) return false;
   return /(✓|✅|ti-circle-check)/i.test(msg) || /\bberhasil\b/i.test(msg);
 }
 
@@ -1128,7 +1129,7 @@ function openCropModal({ imgSrc, shape, outputSize, title, onConfirm }) {
     fittedW: 0, fittedH: 0, fittedOffsetX: 0, fittedOffsetY: 0
   };
 
-  document.getElementById('crop-modal-title').textContent = title || '✂️ Sesuaikan Foto';
+  document.getElementById('crop-modal-title').textContent = title || 'Sesuaikan Foto';
 
   const win = document.getElementById('crop-window');
   if (win) {
@@ -1891,10 +1892,9 @@ function _applyCompanyLogo(compressed) {
       await new Promise(r => setTimeout(r, 0));
       const alertBox = document.getElementById('alert-box');
       const isValidationAlert = alertBox && alertBox.classList.contains('show') &&
-        (alertBox.textContent.startsWith('❌') || alertBox.textContent.startsWith('Lengkapi') ||
+        (alertBox.textContent.startsWith('Lengkapi') ||
          alertBox.textContent.startsWith('Isi') || alertBox.textContent.startsWith('Pilih') ||
-         alertBox.textContent.includes('wajib') || alertBox.textContent.includes('tidak bisa') ||
-         alertBox.textContent.includes('balance') || alertBox.textContent.includes('sudah ada'));
+         /\b(wajib|tidak bisa|balance|sudah ada|gagal|salah|ditolak|minimal|tidak cocok|kosong|tidak valid)\b/i.test(alertBox.textContent));
       if (isValidationAlert) return result;
 
       // Show spinner
@@ -1932,20 +1932,15 @@ function _applyCompanyLogo(compressed) {
       setTimeout(function() {
         const alertBox = document.getElementById('alert-box');
         const isError = alertBox && alertBox.classList.contains('show') &&
-          (alertBox.textContent.startsWith('❌') ||
-           alertBox.textContent.startsWith('Lengkapi') ||
+          (alertBox.textContent.startsWith('Lengkapi') ||
            alertBox.textContent.startsWith('Isi ') ||
            alertBox.textContent.startsWith('Pilih') ||
-           alertBox.textContent.includes('wajib') ||
-           alertBox.textContent.includes('tidak bisa') ||
-           alertBox.textContent.includes('tidak balance') ||
-           alertBox.textContent.includes('sudah ada') ||
-           alertBox.textContent.includes('tidak balance'));
+           /\b(wajib|tidak bisa|tidak balance|sudah ada|gagal|salah|ditolak|minimal|tidak cocok|kosong|tidak valid)\b/i.test(alertBox.textContent));
 
-        // Jika sukses (ada pesan ✓ atau <i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>), spinner sudah ditangani oleh addJurnal
+        // Jika sukses, spinner sudah ditangani oleh addJurnal
         // untuk mode Supabase. Untuk local-only, tambahkan spinner singkat.
-        const isSuccess = alertBox && alertBox.classList.contains('show') &&
-          (alertBox.textContent.startsWith('✓') || alertBox.textContent.startsWith('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>'));
+        const isSuccess = alertBox && alertBox.classList.contains('show') && !isError &&
+          (alertBox.textContent.startsWith('✓') || /berhasil|tersimpan/i.test(alertBox.textContent) || alertBox.innerHTML.includes('ti-circle-check'));
 
         if (isSuccess && typeof window.currentCompany === 'undefined' || 
             isSuccess && !window.currentCompany) {
@@ -2326,12 +2321,13 @@ function updatePwaBtn() {
     btn.style.animation = '';
     txt.textContent = 'Sudah Terinstall ✓';
   } else if (_pwaPrompt) {
-    // SIAP install — highlight penuh
+    // SIAP install — flat Emas accent
     btn.style.opacity = '1';
     btn.style.cursor = 'pointer';
-    btn.style.background = 'linear-gradient(135deg,rgba(74,222,128,0.25),rgba(34,211,238,0.25))';
-    btn.style.borderColor = 'rgba(74,222,128,0.6)';
-    btn.style.animation = 'pulseGlow 2s ease-in-out infinite';
+    btn.style.background = 'var(--accent)';
+    btn.style.color = 'var(--accent-fg)';
+    btn.style.borderColor = 'var(--accent)';
+    btn.style.animation = '';
     txt.textContent = 'Install — Siap!';
   } else {
     btn.style.opacity = '0.8';

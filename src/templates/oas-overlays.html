@@ -1,12 +1,12 @@
 <!-- INV METODE SHEET -->
 <div id="inv-metode-sheet-backdrop" onclick="if(event.target===this)closeInvMetodeSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:99998;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);width:calc(100% - 40px);max-width:400px;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06);animation:oasPickerIn 0.22s cubic-bezier(0.34,1.3,0.64,1);overflow:hidden;">
+  <div style="background:var(--surface);width:calc(100% - 40px);max-width:400px;border-radius:10px;border:1px solid var(--border-strong);box-shadow:0 24px 60px rgba(0,0,0,0.45);animation:oasPickerIn 0.2s cubic-bezier(0.16,1,0.3,1);overflow:hidden;">
     <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
       <div>
         <div style="font-size:16px;font-weight:700;color:var(--text);"><i class="ti ti-settings ti-inline"></i> Pilih Metode Persediaan</div>
         <div style="font-size:12px;color:var(--muted);margin-top:2px;">Pilih metode valuasi yang sesuai</div>
       </div>
-      <button onclick="closeInvMetodeSheet()" style="background:var(--surface2);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);">✕</button>
+      <button onclick="closeInvMetodeSheet()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;width:32px;height:32px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);">✕</button>
     </div>
     <div style="padding:12px 16px 20px;display:flex;flex-direction:column;gap:8px;" id="inv-metode-options">
     </div>
@@ -18,13 +18,13 @@
 
 <!-- TAHUN BUKU PICKER MODAL -->
 <div id="oas-tahun-buku-backdrop" onclick="if(event.target===this)closeTahunBukuPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);width:calc(100% - 40px);max-width:360px;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06);animation:oasPickerIn 0.22s cubic-bezier(0.34,1.3,0.64,1);overflow:hidden;">
+  <div style="background:var(--surface);width:calc(100% - 40px);max-width:360px;border-radius:10px;border:1px solid var(--border-strong);box-shadow:0 24px 60px rgba(0,0,0,0.45);animation:oasPickerIn 0.2s cubic-bezier(0.16,1,0.3,1);overflow:hidden;">
     <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
       <div>
         <div style="font-size:16px;font-weight:700;color:var(--text);"><i class="ti ti-calendar" style="font-size:16px;vertical-align:-2px;margin-right:6px;"></i> Pilih Tahun Buku</div>
         <div style="font-size:12px;color:var(--muted);margin-top:2px;">Periode fiskal perusahaan Anda</div>
       </div>
-      <button onclick="closeTahunBukuPicker()" style="background:var(--surface2);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);">✕</button>
+      <button onclick="closeTahunBukuPicker()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;width:32px;height:32px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);">✕</button>
     </div>
     <div style="padding:12px 16px 20px;display:flex;flex-direction:column;gap:8px;" id="oas-tahun-buku-options"></div>
   </div>
@@ -32,13 +32,13 @@
 
 <!-- MATA UANG PICKER MODAL -->
 <div id="oas-mata-uang-backdrop" onclick="if(event.target===this)closeMataUangPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);width:calc(100% - 40px);max-width:360px;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06);animation:oasPickerIn 0.22s cubic-bezier(0.34,1.3,0.64,1);overflow:hidden;">
+  <div style="background:var(--surface);width:calc(100% - 40px);max-width:360px;border-radius:10px;border:1px solid var(--border-strong);box-shadow:0 24px 60px rgba(0,0,0,0.45);animation:oasPickerIn 0.2s cubic-bezier(0.16,1,0.3,1);overflow:hidden;">
     <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
       <div>
         <div style="font-size:16px;font-weight:700;color:var(--text);"><i class="ti ti-currency" style="font-size:16px;vertical-align:-2px;margin-right:6px;"></i> Pilih Mata Uang</div>
         <div style="font-size:12px;color:var(--muted);margin-top:2px;">Satuan moneter laporan keuangan</div>
       </div>
-      <button onclick="closeMataUangPicker()" style="background:var(--surface2);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);">✕</button>
+      <button onclick="closeMataUangPicker()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;width:32px;height:32px;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);">✕</button>
     </div>
     <div style="padding:12px 16px 20px;display:flex;flex-direction:column;gap:8px;" id="oas-mata-uang-options"></div>
   </div>
@@ -60,7 +60,7 @@
 <div class="modal-backdrop" id="modal-image-crop">
   <div class="modal" style="max-width:420px;">
     <div class="modal-head">
-      <div class="modal-title" id="crop-modal-title">✂️ Sesuaikan Foto</div>
+      <div class="modal-title" id="crop-modal-title"><i class="ti ti-crop ti-inline"></i> Sesuaikan Foto</div>
       <button class="modal-close" onclick="cancelCrop()">✕</button>
     </div>
     <div class="modal-body" style="padding:16px;">
@@ -229,7 +229,7 @@
     <div class="modal-footer" style="flex-shrink:0;">
       <button class="btn btn-ghost" onclick="closeModal('modal-auto-penyesuaian')">Tutup</button>
       <button class="btn btn-primary" id="auto-peny-input-all-btn" onclick="inputSemuaAutoDetect()" style="display:none;">
-        <i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Input Semua yang Dipilih
+        <i class="ti ti-circle-check" style="color:var(--accent-fg);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Input Semua yang Dipilih
       </button>
     </div>
   </div>
@@ -266,9 +266,9 @@
     </div>
     <div class="modal-body">
       <!-- Join Code Banner -->
-      <div style="background:linear-gradient(135deg,rgba(74,222,128,0.08),rgba(34,211,238,0.08));border:1px solid rgba(74,222,128,0.25);border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+      <div style="background:var(--surface2);border:1px solid var(--border-strong);border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
         <div>
-          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:3px;"><i class="ti ti-link" style="font-size:12px;width:12px;height:12px;vertical-align:-1px;margin-right:4px;"></i> Share Join Code</div>
+          <div style="font-size:12px;font-weight:700;color:var(--accent-text);margin-bottom:3px;"><i class="ti ti-link" style="font-size:12px;width:12px;height:12px;vertical-align:-1px;margin-right:4px;"></i> Share Join Code</div>
           <div style="font-size:11px;color:var(--muted);">Bagikan kode ini agar anggota bisa bergabung dari perangkat mereka sendiri</div>
         </div>
         <button id="btn-show-joincode" class="btn btn-primary btn-sm" onclick="showJoinCodeModal()"><i class="ti ti-qrcode" style="font-size:13px;width:13px;height:13px;vertical-align:-1px;margin-right:4px;"></i> Lihat Join Code</button>
@@ -280,9 +280,9 @@
       </div>
       <div id="user-mgmt-list" style="max-height:360px;overflow-y:auto;"></div>
       <!-- SQL note — disembunyikan otomatis jika tabel sudah ada -->
-      <div id="user-mgmt-sql-note" style="display:none;margin-top:14px;padding:10px 12px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.7;">
-        <b style="color:var(--accent3);">⚠ Setup diperlukan:</b> Jalankan SQL schema <code>org_members</code> + <code>company_join_codes</code> di Supabase agar fitur tim berfungsi.
-        <button onclick="showOrgMembersSQL()" style="margin-left:8px;background:var(--accent3);border:none;border-radius:5px;padding:3px 10px;font-size:10px;color:#000;font-weight:700;cursor:pointer;">Lihat SQL</button>
+      <div id="user-mgmt-sql-note" style="display:none;margin-top:14px;padding:10px 12px;background:rgba(217,119,43,0.1);border:1px solid rgba(217,119,43,0.28);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.7;">
+        <b style="color:var(--accent3);"><i class="ti ti-alert-triangle ti-inline"></i> Setup diperlukan:</b> Jalankan SQL schema <code>org_members</code> + <code>company_join_codes</code> di Supabase agar fitur tim berfungsi.
+        <button onclick="showOrgMembersSQL()" style="margin-left:8px;background:var(--surface);border:1px solid var(--border-strong);border-radius:5px;padding:3px 10px;font-size:10px;color:var(--text);font-weight:700;cursor:pointer;">Lihat SQL</button>
       </div>
     </div>
     <div class="modal-footer">
@@ -302,7 +302,7 @@
       <!-- Big code display -->
       <div style="text-align:center;padding:24px 0 20px;">
         <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.1em;">Kode Bergabung</div>
-        <div id="joincode-display" style="font-size:40px;font-weight:800;letter-spacing:.2em;color:var(--accent);font-family:var(--mono);background:var(--surface2);border:2px dashed var(--accent)44;border-radius:12px;padding:16px 24px;display:inline-block;margin-bottom:8px;">—</div>
+        <div id="joincode-display" style="font-size:40px;font-weight:800;letter-spacing:.2em;color:var(--accent-text);font-family:var(--mono);background:var(--surface2);border:2px dashed var(--border-strong);border-radius:10px;padding:16px 24px;display:inline-block;margin-bottom:8px;">—</div>
         <div style="font-size:11px;color:var(--muted);">Berlaku 7 hari · Admin bisa memperbarui kapan saja</div>
       </div>
       <!-- Link copy -->
@@ -339,7 +339,7 @@
       <button class="modal-close" onclick="closeModal('modal-invite-user')"><i class="ti ti-x"></i></button>
     </div>
     <div class="modal-body" style="max-height:72vh;overflow-y:auto;">
-      <div style="font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Data Anggota</div>
+      <div style="font-size:11px;font-weight:700;color:var(--accent-text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Data Anggota</div>
       <div class="form-row">
         <div class="form-group">
           <label>Nama Lengkap</label>
@@ -372,7 +372,7 @@
       </div>
       <!-- CRUD Permission Table -->
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
-        <div style="font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;"><i class="ti ti-shield-check" style="font-size:12px;width:12px;height:12px;vertical-align:-1px;margin-right:4px;"></i> Izin Akses per Modul</div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent-text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;"><i class="ti ti-shield-check" style="font-size:12px;width:12px;height:12px;vertical-align:-1px;margin-right:4px;"></i> Izin Akses per Modul</div>
         <div id="perm-table-invite" style="overflow-x:auto;border:1px solid var(--border);border-radius:8px;"></div>
       </div>
     </div><!-- end modal-body -->
@@ -391,7 +391,7 @@
       <button class="modal-close" onclick="closeModal('modal-edit-member')"><i class="ti ti-x"></i></button>
     </div>
     <div class="modal-body" style="max-height:72vh;overflow-y:auto;">
-      <div style="font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Data Anggota</div>
+      <div style="font-size:11px;font-weight:700;color:var(--accent-text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Data Anggota</div>
       <div class="form-row">
         <div class="form-group">
           <label>Nama Lengkap</label>
@@ -418,7 +418,7 @@
       </div>
       <!-- CRUD Permission Table -->
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
-        <div style="font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;"><i class="ti ti-shield-check" style="font-size:12px;width:12px;height:12px;vertical-align:-1px;margin-right:4px;"></i> Izin Akses per Modul</div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent-text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;"><i class="ti ti-shield-check" style="font-size:12px;width:12px;height:12px;vertical-align:-1px;margin-right:4px;"></i> Izin Akses per Modul</div>
         <div id="perm-table-edit" style="overflow-x:auto;border:1px solid var(--border);border-radius:8px;"></div>
       </div>
     </div>
@@ -442,8 +442,8 @@
     <div class="modal-body">
       <!-- Input kode -->
       <div style="text-align:center;padding:20px 0 16px;">
-        <div style="width:56px;height:56px;border-radius:50%;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
-          <i class="ti ti-login" style="font-size:24px;width:24px;height:24px;color:var(--accent);"></i>
+        <div style="width:52px;height:52px;border-radius:8px;background:var(--accent-tint);border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+          <i class="ti ti-login" style="font-size:24px;width:24px;height:24px;color:var(--accent-text);"></i>
         </div>
         <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Ketik atau paste kode 8 karakter yang diberikan admin</div>
         <input id="join-code-input" type="text" maxlength="8"

@@ -60,7 +60,7 @@ function saveToStorage(showToast = true) {
   } catch(e) {
     updateSaveIndicator('error');
     if(e.name === 'QuotaExceededError') {
-      showAlert('❌ Storage penuh! Hapus beberapa data atau export backup dulu.');
+      showAlert('Storage penuh! Hapus beberapa data atau export backup dulu.');
     }
     return false;
   }
@@ -170,7 +170,7 @@ function loadFromSlot(slotId) {
     closeModal('modal-storage');
     showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Data "${slot.name}" berhasil dimuat!`);
   } catch(e) {
-    showAlert('❌ Gagal memuat: ' + e.message);
+    showAlert('Gagal memuat: ' + e.message);
   }
 }
 
@@ -334,7 +334,7 @@ function importBackupJSON(input) {
     try {
       const data = JSON.parse(e.target.result);
       if(!data.jurnalEntries && !data.akuns) {
-        showAlert('❌ File tidak valid atau bukan format BHP backup.'); return;
+        showAlert('File tidak valid atau bukan format backup OAS.'); return;
       }
       const jCount = data.jurnalEntries?.length || 0;
       const aCount = data.akuns?.length || 0;
@@ -354,7 +354,7 @@ function importBackupJSON(input) {
       closeModal('modal-storage');
       showAlert(`<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Import berhasil! ${jCount} jurnal dan ${aCount} akun dimuat.`);
     } catch(err) {
-      showAlert('❌ Gagal membaca file: ' + err.message);
+      showAlert('Gagal membaca file: ' + err.message);
     }
     input.value = '';
   };
@@ -369,7 +369,7 @@ function resetPilihSemua(on) {
 
 async function doResetAll() {
   if (typeof isAdmin === 'function' && !isAdmin()) {
-    showAlert('❌ Hanya Admin atau Pemilik bisnis yang memiliki izin untuk mereset data.');
+    showAlert('Hanya Admin atau Pemilik bisnis yang memiliki izin untuk mereset data.');
     closeModal('modal-reset-all');
     return;
   }
@@ -434,7 +434,7 @@ async function doResetAll() {
   const berhasil = Object.keys(label).map(k => label[k]).filter(l => !gagal.includes(l));
   const ico = '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ';
   if (!gagal.length) showAlert(ico + 'Data berhasil direset: ' + berhasil.join(', ') + '.');
-  else showAlert('⚠️ Gagal menghapus dari cloud: <b>' + gagal.join(', ') + '</b>. Data itu masih ada; cek koneksi lalu coba lagi.' + (berhasil.length ? '<br>Berhasil direset: ' + berhasil.join(', ') + '.' : ''));
+  else showAlert('Gagal menghapus dari cloud: <b>' + gagal.join(', ') + '</b>. Data itu masih ada; cek koneksi lalu coba lagi.' + (berhasil.length ? '<br>Berhasil direset: ' + berhasil.join(', ') + '.' : ''));
 }
 
 // markDirty is called directly inside addJurnal()

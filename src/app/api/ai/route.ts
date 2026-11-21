@@ -1,10 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
-import { buildOriasSystemPrompt } from "@/lib/ai/buildOriasSystemPrompt";
-import { DEFAULT_GEMINI_MODEL } from "@/lib/ai/constants";
-import { extractSdkErrorStatus } from "@/lib/ai/extractSdkErrorStatus";
-import { generateWithTransientRetry } from "@/lib/ai/generateWithTransientRetry";
-import { validateAiChatRequest } from "@/lib/ai/validateAiChatRequest";
+import { buildOriasSystemPrompt } from "@/lib/lainnya/orias-ai/prompt-sistem";
+import { DEFAULT_GEMINI_MODEL } from "@/lib/lainnya/orias-ai/constants";
+import { extractSdkErrorStatus } from "@/lib/lainnya/orias-ai/status-error-sdk";
+import { generateWithTransientRetry } from "@/lib/lainnya/orias-ai/panggil-gemini";
+import { validateAiChatRequest } from "@/lib/lainnya/orias-ai/validasi-permintaan";
 
 export const runtime = "nodejs";
 

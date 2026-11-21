@@ -17,9 +17,9 @@ export const metadata: Metadata = {
     google: "oFjtSELQXopEuDKY5zHTOu-yiMuQ9SwTbWNWyRLYPE8",
   },
   icons: {
-    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><circle cx='40' cy='40' r='40' fill='%23ffffff'/><rect x='38.5' y='16' width='3' height='36' rx='1.5' fill='%234ade80'/><rect x='26' y='51' width='28' height='4' rx='2' fill='%234ade80'/><rect x='30' y='55' width='20' height='3' rx='1.5' fill='%234ade80' opacity='0.7'/><rect x='18' y='22' width='44' height='3' rx='1.5' fill='%2322d3ee'/><circle cx='40' cy='23.5' r='3' fill='%23f59e0b'/><line x1='22' y1='25' x2='22' y2='37' stroke='%2322d3ee' stroke-width='1.5' stroke-linecap='round'/><line x1='58' y1='25' x2='58' y2='37' stroke='%2322d3ee' stroke-width='1.5' stroke-linecap='round'/><ellipse cx='22' cy='38.5' rx='9' ry='3' fill='%234ade80' opacity='0.85'/><ellipse cx='58' cy='38.5' rx='9' ry='3' fill='%234ade80' opacity='0.85'/><text x='22' y='37.5' text-anchor='middle' fill='%230d0f14' font-size='7' font-weight='bold' font-family='sans-serif'>Rp</text><text x='58' y='37.5' text-anchor='middle' fill='%230d0f14' font-size='8' font-weight='bold' font-family='sans-serif'>=</text></svg>",
+    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><polygon points='40,4 72,22 72,58 40,76 8,58 8,22' fill='%230D0D0D' stroke='%23A9C6DC' stroke-width='2.5'/><rect x='38.5' y='18' width='3' height='34' fill='%23D4A72C'/><rect x='26' y='52' width='28' height='4' fill='%23EEF1F4'/><rect x='18' y='24' width='44' height='3' fill='%23A9C6DC'/><circle cx='40' cy='25.5' r='3.5' fill='%23D4A72C'/><line x1='22' y1='27' x2='22' y2='39' stroke='%23A9C6DC' stroke-width='1.5'/><line x1='58' y1='27' x2='58' y2='39' stroke='%23A9C6DC' stroke-width='1.5'/><polygon points='13,40 31,40 28,44 16,44' fill='%23D4A72C'/><polygon points='49,40 67,40 64,44 52,44' fill='%23EEF1F4'/></svg>",
     apple:
-      "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><circle cx='256' cy='256' r='256' fill='%230d0f14'/><rect x='246' y='100' width='20' height='230' rx='10' fill='%234ade80'/><rect x='166' y='326' width='180' height='26' rx='13' fill='%234ade80'/><rect x='116' y='140' width='280' height='20' rx='10' fill='%2322d3ee'/></svg>",
+      "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><polygon points='256,20 460,138 460,374 256,492 52,374 52,138' fill='%230D0D0D' stroke='%23A9C6DC' stroke-width='14'/><rect x='246' y='112' width='20' height='220' fill='%23D4A72C'/><rect x='166' y='332' width='180' height='24' fill='%23EEF1F4'/><rect x='116' y='152' width='280' height='20' fill='%23A9C6DC'/></svg>",
   },
 };
 
@@ -40,7 +40,7 @@ const ANTI_GLITCH_SCRIPT = `
     }
   } catch(e) { window.__initialTheme = 'dark'; }
   var isLight = window.__initialTheme === 'light';
-  var bg = isLight ? '#f8fafc' : '#0d0f14';
+  var bg = isLight ? '#EEF1F4' : '#0D0D0D';
   var agStyle = document.createElement('style');
   agStyle.id = 'anti-glitch-style';
   agStyle.textContent = 'html,body{background:' + bg + ' !important;overflow:hidden;}';
@@ -64,7 +64,7 @@ export default function RootLayout({
         <meta
           name="theme-color"
           id="meta-theme-color"
-          content="#0d0f14"
+          content="#0D0D0D"
           suppressHydrationWarning
         />
         <meta
@@ -74,7 +74,7 @@ export default function RootLayout({
           suppressHydrationWarning
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
       </head>

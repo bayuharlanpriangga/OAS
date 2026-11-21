@@ -1,15 +1,24 @@
 
 /* MOBILE RESPONSIVE — must be LAST to override */
 @media (max-width: 768px) {
-  body { display: block; }
-  .sidebar { transform: translateX(-100%); width: 270px; }
+  body { display: block; overflow-x: hidden; }
+  .sidebar { transform: translateX(-100%); width: 270px; height: 100dvh; }
   .sidebar.open { transform: translateX(0); }
-  .logo-close { display: block; }
-  .main { margin-left: 0 !important; }
-  .hamburger { display: block; }
-  .topbar { padding: 11px 12px; }
+  .logo-close { display: block; min-width: 44px; min-height: 44px; }
+  .main { margin-left: 0 !important; height: 100dvh; }
+  .hamburger { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+  .topbar { padding: 10px 12px; }
+  .topbar .btn, .topbar-search-btn { min-height: 44px; }
   .content { padding: 10px; overflow-x: clip; }
   #current-date { display: none; }
+
+  /* Anti-zoom 16px inputs & >=44px tap targets */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select, textarea, .form-picker-btn, .opt-picker-btn, .akun-trigger-btn {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  .btn, .quick-action-btn, .nav-card { min-height: 44px; }
 
   /* Stats: 2x2 grid */
   .stats-grid {

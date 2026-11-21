@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { registerOasCoreBridge } from "@/lib/bridge";
+import { registerOasCoreBridge } from "@/lib/shared/bridge";
 import LoadingOverlay from "./LoadingOverlay";
 
 const EXTERNAL_SCRIPTS = [

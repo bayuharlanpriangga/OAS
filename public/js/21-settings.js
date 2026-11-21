@@ -328,7 +328,7 @@ async function switchToAccount(uid) {
     location.reload();
   } catch (e) {
     if (typeof hideOpSpinner === 'function') hideOpSpinner();
-    showAlert('❌ Sesi akun ini sudah kedaluwarsa, silakan login ulang.\n' + (e?.message || ''));
+    showAlert('Sesi akun ini sudah kedaluwarsa, silakan login ulang.\n' + (e?.message || ''));
     _setSavedAccounts(list.filter(a => a.uid !== uid));
     renderAccountSwitcher();
   }
@@ -364,7 +364,7 @@ const SUPPORTED_PROVIDERS = [
 // Shortcut publik: buka Settings langsung ke halaman Akun (dipakai tombol
 // "Akun" di dashboard & menu "Pengaturan Akun" di account switcher).
 async function openAccountSettings() {
-  if (!currentUser) { typeof showAuthModal === 'function' ? showAuthModal() : alert('Login dulu.'); return; }
+  if (!currentUser) { typeof showAuthModal === 'function' ? showAuthModal() : showAlert('Silakan login terlebih dahulu.'); return; }
   if (typeof closeAccountSwitcher === 'function') closeAccountSwitcher();
   showPage('settings');
   settingsResetTo(['root', 'akun']);
@@ -403,7 +403,7 @@ function handleProfilePhotoUpload(input) {
   if (!file) return;
   if (file.size > 5 * 1024 * 1024) {
     const msg = document.getElementById('accs-photo-msg');
-    if (msg) { msg.textContent = '❌ Ukuran foto max 5MB'; msg.style.color = 'var(--red)'; }
+    if (msg) { msg.textContent = 'Ukuran foto max 5MB'; msg.style.color = 'var(--red)'; }
     input.value = ''; return;
   }
   const reader = new FileReader();
@@ -412,7 +412,7 @@ function handleProfilePhotoUpload(input) {
       imgSrc: e.target.result,
       shape: 'circle',
       outputSize: 300,
-      title: '✂️ Sesuaikan Foto Profil',
+      title: 'Sesuaikan Foto Profil',
       onConfirm: function(croppedDataURL) { _applyProfilePhoto(croppedDataURL); }
     });
   };
@@ -428,7 +428,7 @@ async function accsLoadProviders() {
   // yang tersedia (Email & Password, Google, dst) supaya user tahu apa yang
   // bisa dipakai, statusnya "Belum login", dan diklik langsung ke halaman login.
   if (!currentUser) {
-    const goLogin = "typeof showAuthModal === 'function' ? showAuthModal() : alert('Login dulu.')";
+    const goLogin = "typeof showAuthModal === 'function' ? showAuthModal() : showAlert('Silakan login terlebih dahulu.')";
     let html = `<div class="provider-card" onclick="${goLogin}" style="cursor:pointer;">
       <div class="provider-icon"><i class="ti ti-mail" style="font-size:20px;"></i></div>
       <div class="provider-info">
@@ -512,7 +512,7 @@ async function accsLoadProviders() {
           <div class="provider-status ${isLinked ? 'linked' : ''}">${isLinked ? (linkedEmail || 'Terhubung') : p.description}</div>
         </div>
         ${isLinked
-          ? `<button class="provider-action btn-unlink" onclick="accsUnlinkProvider('${p.id}')" ${!canUnlink ? 'disabled title="Tidak bisa unlink satu-satunya metode login"' : ''}>${!canUnlink ? '🔒 Terkunci' : 'Putuskan'}</button>`
+          ? `<button class="provider-action btn-unlink" onclick="accsUnlinkProvider('${p.id}')" ${!canUnlink ? 'disabled title="Tidak bisa unlink satu-satunya metode login"' : ''}>${!canUnlink ? 'Terkunci' : 'Putuskan'}</button>`
           : `<button class="provider-action btn-link" onclick="accsLinkProvider('${p.id}')">+ Hubungkan</button>`}
       </div>`;
     }
@@ -527,7 +527,7 @@ async function accsLoadProviders() {
       if (hasEmail) loadCachedPasswordDisplay(user.id);
     }
   } catch(e) {
-    container.innerHTML = `<div style="color:var(--red);font-size:13px;padding:12px;text-align:center;">❌ Gagal memuat: ${escapeHtml(e.message)}</div>`;
+    container.innerHTML = `<div style="color:var(--red);font-size:13px;padding:12px;text-align:center;">Gagal memuat: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -543,15 +543,15 @@ async function accsLinkProvider(providerId) {
       }
       throw error;
     }
-  } catch(e) { accsShowMsg('providers', '❌ ' + e.message, 'error'); }
+  } catch(e) { accsShowMsg('providers', e.message, 'error'); }
 }
 
 async function accsUnlinkProvider(providerId) {
   const { data: { user } } = await DB.auth.getUser();
   const identities = user?.identities || [];
-  if (identities.length <= 1) { accsShowMsg('providers', '❌ Tidak bisa menghapus satu-satunya metode login.', 'error'); return; }
+  if (identities.length <= 1) { accsShowMsg('providers', 'Tidak bisa menghapus satu-satunya metode login.', 'error'); return; }
   const identity = identities.find(i => i.provider === providerId);
-  if (!identity) { accsShowMsg('providers', '❌ Provider tidak ditemukan.', 'error'); return; }
+  if (!identity) { accsShowMsg('providers', 'Provider tidak ditemukan.', 'error'); return; }
   const pName = SUPPORTED_PROVIDERS.find(p => p.id === providerId)?.name || providerId;
   if (!confirm(`Putuskan koneksi ${pName}? Kamu masih bisa login dengan metode lain.`)) return;
   try {
@@ -559,19 +559,19 @@ async function accsUnlinkProvider(providerId) {
     if (error) throw error;
     accsShowMsg('providers', `<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> ${pName} berhasil diputuskan dari akun ini.`, 'success');
     setTimeout(accsLoadProviders, 1200);
-  } catch(e) { accsShowMsg('providers', '❌ ' + e.message, 'error'); }
+  } catch(e) { accsShowMsg('providers', e.message, 'error'); }
 }
 
 async function accsUpdateProfile() {
   const name = document.getElementById('accs-input-name').value.trim();
-  if (!name) { accsShowMsg('profile', '❌ Nama tidak boleh kosong.', 'error'); return; }
+  if (!name) { accsShowMsg('profile', 'Nama tidak boleh kosong.', 'error'); return; }
   const btn = document.getElementById('accs-btn-save-profile');
   btn.innerHTML = '<span class="accs-spinner"></span>Menyimpan...'; btn.disabled = true;
   try {
     // Pastikan session masih valid sebelum update
     const { data: { session }, error: sessErr } = await DB.auth.getSession();
     if (sessErr || !session) {
-      accsShowMsg('profile', '❌ Sesi login sudah habis. Silakan login ulang.', 'error');
+      accsShowMsg('profile', 'Sesi login sudah habis. Silakan login ulang.', 'error');
       btn.innerHTML = '<i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Simpan Perubahan'; btn.disabled = false;
       return;
     }
@@ -584,9 +584,9 @@ async function accsUpdateProfile() {
     console.error('accsUpdateProfile error:', e);
     const msg = e.message || 'Gagal menyimpan';
     if (msg.toLowerCase().includes('jwt') || msg.toLowerCase().includes('token') || msg.toLowerCase().includes('session')) {
-      accsShowMsg('profile', '❌ Sesi expired — coba refresh halaman lalu login ulang.', 'error');
+      accsShowMsg('profile', 'Sesi expired — coba refresh halaman lalu login ulang.', 'error');
     } else {
-      accsShowMsg('profile', '❌ ' + msg, 'error');
+      accsShowMsg('profile', msg, 'error');
     }
   }
   finally { btn.innerHTML = '<i class="ti ti-device-floppy" style="font-size:14px;width:14px;height:14px;vertical-align:-2px;"></i> Simpan Perubahan'; btn.disabled = false; }
@@ -618,7 +618,7 @@ function accsUpdatePasswordButtonLabel(hasEmailPw) {
 
 function openAccsPasswordModal() {
   // Mode Tamu (belum login) tidak punya akun/password sama sekali — jangan buka modal.
-  if (!currentUser) { showAlert('❌ Belum memiliki password.'); return; }
+  if (!currentUser) { showAlert('Belum memiliki password.'); return; }
 
   const pwOld = document.getElementById('accs-input-pw-old');
   const pw1   = document.getElementById('accs-input-pw1');
@@ -644,10 +644,10 @@ async function accsUpdatePassword() {
   const pwOld = document.getElementById('accs-input-pw-old').value;
   const pw1   = document.getElementById('accs-input-pw1').value;
   const pw2   = document.getElementById('accs-input-pw2').value;
-  if (hasEmailPw && !pwOld) { showAlert('❌ Masukkan password lama.'); return; }
-  if (!pw1) { showAlert('❌ Password tidak boleh kosong.'); return; }
-  if (pw1.length < 6) { showAlert('❌ Password minimal 6 karakter.'); return; }
-  if (pw1 !== pw2) { showAlert('❌ Konfirmasi password tidak cocok.'); return; }
+  if (hasEmailPw && !pwOld) { showAlert('Masukkan password lama.'); return; }
+  if (!pw1) { showAlert('Password tidak boleh kosong.'); return; }
+  if (pw1.length < 6) { showAlert('Password minimal 6 karakter.'); return; }
+  if (pw1 !== pw2) { showAlert('Konfirmasi password tidak cocok.'); return; }
   const btn = document.getElementById('accs-btn-save-pw');
   btn.innerHTML = '<span class="accs-spinner"></span>Menyimpan...'; btn.disabled = true;
   try {
@@ -656,7 +656,7 @@ async function accsUpdatePassword() {
     if (hasEmailPw && pwOld) {
       const { error: reauthErr } = await DB.auth.signInWithPassword({ email: currentUser.email, password: pwOld });
       if (reauthErr) {
-        showAlert('❌ Password lama salah.');
+        showAlert('Password lama salah.');
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Simpan Password'; btn.disabled = false;
         return;
       }
@@ -691,7 +691,7 @@ async function accsUpdatePassword() {
       accsLoadProviders();
       closeModal('modal-ubah-password');
     }, 1500);
-  } catch(e) { showAlert('❌ ' + e.message); }
+  } catch(e) { showAlert(e.message); }
   finally { btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Simpan Password'; btn.disabled = false; }
 }
 
@@ -705,7 +705,7 @@ async function accsForgotPassword() {
     if (error) throw error;
     showAlert('<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Link reset password sudah dikirim ke ' + currentUser.email);
   } catch(e) {
-    showAlert('❌ ' + e.message);
+    showAlert(e.message);
   }
 }
 

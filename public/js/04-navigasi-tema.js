@@ -451,16 +451,16 @@ const TUT_MODULES = {
       { icon:'<i class="ti ti-clipboard-list ti-inline"></i>', title:'Sidebar — Pusat Navigasi',
         body:'Lihat panel di sebelah kiri — itu namanya <b>Sidebar</b>. Semua menu ada di sana, dikelompokkan:\n\n• <b>Utama</b> — Dashboard & Transaksi\n• <b>Jurnal</b> — Catatan transaksi\n• <b>Laporan</b> — Laporan keuangan\n• <b>Kalkulator</b> — Alat hitung\n• <b>AI Assistant</b> — Asisten pintar\n• <b>Tutorial</b> — Kamu sedang di sini!',
         target: '#sidebar', highlight: true },
-      { icon:'📱', title:'Di HP? Gunakan Tombol <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="0" y1="1" x2="18" y2="1"/><line x1="0" y1="7" x2="18" y2="7"/><line x1="0" y1="13" x2="18" y2="13"/></svg>',
+      { icon:'<i class="ti ti-device-mobile ti-inline"></i>', title:'Di HP? Gunakan Tombol <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="0" y1="1" x2="18" y2="1"/><line x1="0" y1="7" x2="18" y2="7"/><line x1="0" y1="13" x2="18" y2="13"/></svg>',
         body:'Kalau kamu buka Bayu Harlan Priangga di handphone, sidebar tidak terlihat secara default.\n\nTap tombol <b><svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="0" y1="1" x2="18" y2="1"/><line x1="0" y1="7" x2="18" y2="7"/><line x1="0" y1="13" x2="18" y2="13"/></svg> (tiga garis)</b> di pojok kiri atas untuk membuka sidebar. Setelah pilih menu, sidebar otomatis menutup sendiri.',
         target: '.hamburger', highlight: true },
       { icon:'<i class="ti ti-chart-bar ti-inline"></i>', title:'Dashboard — Ringkasan Keuangan',
         body:'<b>Dashboard</b> adalah halaman utama yang langsung tampil saat buka Bayu Harlan Priangga.\n\nDi sini kamu bisa lihat:\n• Total Aset bisnis kamu\n• Total Pendapatan bulan ini\n• Total Beban bulan ini\n• Laba Bersih\n• Transaksi terbaru\n• Ringkasan saldo akun utama',
         target: '#page-dashboard', navTo: 'dashboard' },
       { icon:'<i class="ti ti-refresh" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i>', title:'Cara Berpindah Halaman',
-        body:'Cukup klik menu di sidebar — halaman langsung berganti tanpa refresh browser.\n\nMenu yang sedang aktif ditandai dengan warna hijau dan garis di sisi kiri.\n\nSemua data tersimpan sementara selama sesi browser kamu terbuka.',
+        body:'Cukup klik menu di sidebar — halaman langsung berganti tanpa refresh browser.\n\nMenu yang sedang aktif ditandai dengan aksen emas dan aksen tepi di sisi kiri.\n\nSemua data tersimpan sementara selama sesi browser kamu terbuka.',
         target: null },
-      { icon:'<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>', title:'Siap Menjelajah!',
+      { icon:'<i class="ti ti-circle-check" style="color:var(--green);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>', title:'Siap Menjelajah!',
         body:'Sekarang kamu sudah tahu cara navigasi Bayu Harlan Priangga.\n\n<b>Lanjutkan dengan tutorial:</b>\n• <i class="ti ti-credit-card" style="font-size:16px;width:16px;height:16px;vertical-align:-2px;margin-right:6px;"></i> Mencatat Pemasukan Kas\n• <i class="ti ti-file-invoice" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Mencatat Penjualan\n• <i class="ti ti-chart-bar ti-inline"></i> Membaca Laporan Keuangan\n\nAtau langsung eksplorasi sendiri — jika bingung, tanya <b>Orias Assisten</b>!',
         target: null }
     ]
@@ -472,7 +472,7 @@ const TUT_MODULES = {
       { icon:'<i class="ti ti-book" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>', title:'Apa itu Akuntansi?',
         body:'Akuntansi adalah cara <b>mencatat, mengelompokkan, dan meringkas</b> semua kejadian keuangan bisnis.\n\nBayangkan kamu punya buku catatan keuangan yang rapi — itulah akuntansi. Bedanya, Bayu Harlan Priangga melakukannya secara otomatis!',
         target: null },
-      { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v16l-5-2.5L5 20V4zm9 0h2a2 2 0 012 2v16l-4-2"/></svg>', title:'Akun — Tempat Menyimpan Catatan',
+      { icon:'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent-text)"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v16l-5-2.5L5 20V4zm9 0h2a2 2 0 012 2v16l-4-2"/></svg>', title:'Akun — Tempat Menyimpan Catatan',
         body:'<b>Akun</b> adalah "laci" untuk menyimpan catatan jenis transaksi tertentu.\n\nContoh akun:\n• <b>Kas</b> — catatan semua uang tunai masuk keluar\n• <b>Penjualan</b> — catatan semua pendapatan\n• <b>Beban Gaji</b> — catatan semua pengeluaran gaji\n• <b>Piutang</b> — catatan tagihan yang belum dibayar pelanggan\n\nLihat semua akun di menu <b>Chart of Accounts</b>.',
         target: '.nav-item[onclick*="akun"]', highlight: true },
       { icon:'<i class="ti ti-scale ti-inline"></i>', title:'Debit dan Kredit',
@@ -482,9 +482,9 @@ const TUT_MODULES = {
         body:'<b>Jurnal</b> adalah catatan resmi setiap transaksi keuangan.\n\nContoh: Kamu bayar listrik Rp 500.000 tunai\n\n<code>Dr. Beban Listrik   Rp 500.000\n  Kr. Kas             Rp 500.000</code>\n\nArtinya: beban listrik bertambah (Dr), kas berkurang (Kr).\n\nBayu Harlan Priangga membuat jurnal ini <b>otomatis</b> saat kamu input transaksi!',
         target: null },
       { icon:'<i class="ti ti-list" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i>', title:'5 Jenis Akun',
-        body:'Semua akun dikelompokkan jadi 5 tipe:\n\n🟢 <b>Aset</b> — apa yang dimiliki bisnis (kas, mesin, gedung)\n🔴 <b>Liabilitas</b> — hutang bisnis (utang bank, utang usaha)\n🔵 <b>Ekuitas</b> — modal pemilik\n🟡 <b>Pendapatan</b> — uang masuk dari penjualan/jasa\n🟠 <b>Beban</b> — pengeluaran operasional\n\nRumus dasar: <b>Aset = Liabilitas + Ekuitas</b>',
+        body:'Semua akun dikelompokkan jadi 5 tipe:\n\n• <b>Aset</b> — apa yang dimiliki bisnis (kas, mesin, gedung)\n• <b>Liabilitas</b> — hutang bisnis (utang bank, utang usaha)\n• <b>Ekuitas</b> — modal pemilik\n• <b>Pendapatan</b> — uang masuk dari penjualan/jasa\n• <b>Beban</b> — pengeluaran operasional\n\nRumus dasar: <b>Aset = Liabilitas + Ekuitas</b>',
         target: null },
-      { icon:'<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>', title:'Konsep Sudah Paham!',
+      { icon:'<i class="ti ti-circle-check" style="color:var(--green);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i>', title:'Konsep Sudah Paham!',
         body:'Kamu sudah mengerti konsep dasar akuntansi.\n\nIngat intinya:\n• Setiap transaksi = Debit + Kredit\n• Total Debit = Total Kredit (selalu!)\n• Bayu Harlan Priangga otomatis buatkan jurnal yang benar\n\nLanjut ke tutorial <b>Mencatat Pemasukan Kas</b> untuk praktek langsung!',
         target: null }
     ]
@@ -1124,7 +1124,7 @@ function renderTutStep() {
   // Content
   document.getElementById('tut-icon').innerHTML = step.icon;
   document.getElementById('tut-title').textContent = step.title;
-  document.getElementById('tut-body').innerHTML = step.body.replace(/\n/g, '<br>').replace(/`([^`]+)`/g, '<code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;color:var(--accent);display:inline-block;margin:2px 0;">$1</code>').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/<b>/g,'<b style="color:var(--text)">');
+  document.getElementById('tut-body').innerHTML = step.body.replace(/\n/g, '<br>').replace(/`([^`]+)`/g, '<code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;color:var(--accent-text);display:inline-block;margin:2px 0;">$1</code>').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/<b>/g,'<b style="color:var(--text)">');
 
   // No task box in new system — just explanation
   document.getElementById('tut-task-wrap').style.display = 'none';
@@ -1133,7 +1133,7 @@ function renderTutStep() {
   // Next button
   const nextBtn = document.getElementById('tut-btn-next');
   if(tutStep === total - 1) {
-    nextBtn.innerHTML = window._tutSeqIds ? 'Bagian Berikutnya →' : '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Selesai';
+    nextBtn.innerHTML = window._tutSeqIds ? 'Bagian Berikutnya →' : '<i class="ti ti-circle-check" style="font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Selesai';
   } else {
     nextBtn.innerHTML = 'Lanjut →';
   }

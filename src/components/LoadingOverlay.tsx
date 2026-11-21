@@ -72,14 +72,16 @@ export default function LoadingOverlay({ scriptsReady }: LoadingOverlayProps) {
 
   if (removed) return null;
 
-  const bg = isLight ? "#f8fafc" : "#0d0f14";
-  const surface = isLight ? "#ffffff" : "#1c2030";
-  const accent = isLight ? "#16a34a" : "#4ade80";
-  const accent2 = isLight ? "#0891b2" : "#22d3ee";
-  const textColor = isLight ? "#0f172a" : "#e2e8f0";
-  const mutedColor = "#64748b";
-  const trackBg = isLight ? "#e2e8f0" : "#252a3a";
-  const plateTextColor = isLight ? "#ffffff" : "#0d0f14";
+  const bg = isLight ? "#EEF1F4" : "#0D0D0D";
+  const surface = isLight ? "#FFFFFF" : "#141619";
+  const accentText = isLight ? "#7A5C00" : "#D4A72C";
+  const accentFill = "#D4A72C";
+  const es = isLight ? "#4F7A99" : "#A9C6DC";
+  const textColor = isLight ? "#0D0D0D" : "#EEF1F4";
+  const mutedColor = isLight ? "#4A5663" : "rgba(238,241,244,0.70)";
+  const trackBg = isLight ? "rgba(79,122,153,0.22)" : "rgba(169,198,220,0.20)";
+  const plateTextColor = "#0D0D0D";
+  const versionColor = isLight ? "#4A5663" : "rgba(238,241,244,0.55)";
 
   let statusMsg = STATUS_BREAKPOINTS[0][1];
   for (let i = 0; i < STATUS_BREAKPOINTS.length; i++) {
@@ -115,66 +117,66 @@ export default function LoadingOverlay({ scriptsReady }: LoadingOverlayProps) {
             xmlns="http://www.w3.org/2000/svg"
             id="loading-logo-svg"
           >
-            <circle
+            {/* Crystal facet octagonal chamfered frame */}
+            <polygon
               className="logo-part"
               style={{ ["--part-delay" as string]: "0ms" }}
-              cx="40"
-              cy="40"
-              r="38"
+              points="16,4 64,4 76,16 76,64 64,76 16,76 4,64 4,16"
               id="logo-bg-circle"
               fill={surface}
-              stroke={accent}
+              stroke={es}
               strokeWidth="1.5"
             />
+            <polygon
+              className="logo-part"
+              style={{ ["--part-delay" as string]: "60ms" }}
+              points="58,4 76,22 76,16 64,4"
+              fill={accentFill}
+            />
+            {/* Pillar & base */}
             <rect
               className="logo-part"
               style={{ ["--part-delay" as string]: "110ms" }}
               x="38.5"
-              y="16"
+              y="17"
               width="3"
               height="36"
-              rx="1.5"
-              fill="#4ade80"
+              fill={es}
             />
-            <rect
+            <polygon
               className="logo-part"
               style={{ ["--part-delay" as string]: "190ms" }}
-              x="26"
-              y="51"
-              width="28"
-              height="4"
-              rx="2"
-              fill="#4ade80"
+              points="28,53 52,53 56,57 24,57"
+              fill={es}
             />
             <rect
               className="logo-part"
               style={{ ["--part-delay" as string]: "260ms" }}
               x="30"
-              y="55"
+              y="59"
               width="20"
-              height="3"
-              rx="1.5"
-              fill="#4ade80"
-              opacity="0.7"
+              height="2.5"
+              fill={es}
+              opacity="0.65"
             />
+            {/* Balance beam */}
             <rect
               className="logo-part"
               style={{ ["--part-delay" as string]: "340ms" }}
-              x="18"
-              y="22"
-              width="44"
-              height="3"
-              rx="1.5"
-              fill="#22d3ee"
+              x="17"
+              y="22.5"
+              width="46"
+              height="2.5"
+              fill={textColor}
             />
-            <circle
+            {/* Center Emas facet fulcrum diamond */}
+            <polygon
               className="logo-part"
               style={{ ["--part-delay" as string]: "420ms" }}
-              cx="40"
-              cy="23.5"
-              r="3"
-              fill="#f59e0b"
+              points="40,19 44.5,23.5 40,28 35.5,23.5"
+              fill={accentFill}
             />
+            {/* Suspension lines */}
             <line
               className="logo-part"
               style={{ ["--part-delay" as string]: "500ms" }}
@@ -182,9 +184,8 @@ export default function LoadingOverlay({ scriptsReady }: LoadingOverlayProps) {
               y1="25"
               x2="22"
               y2="37"
-              stroke="#22d3ee"
+              stroke={es}
               strokeWidth="1.5"
-              strokeLinecap="round"
             />
             <line
               className="logo-part"
@@ -193,41 +194,33 @@ export default function LoadingOverlay({ scriptsReady }: LoadingOverlayProps) {
               y1="25"
               x2="58"
               y2="37"
-              stroke="#22d3ee"
+              stroke={es}
               strokeWidth="1.5"
-              strokeLinecap="round"
             />
-            <ellipse
+            {/* Flat Emas balance plates with Tinta text (8.7:1 contrast) */}
+            <polygon
               className="logo-part"
               style={{ ["--part-delay" as string]: "590ms" }}
-              cx="22"
-              cy="38.5"
-              rx="9"
-              ry="3"
-              fill="#4ade80"
-              opacity="0.85"
+              points="13,36 31,36 28,45 16,45"
+              fill={accentFill}
             />
-            <ellipse
+            <polygon
               className="logo-part"
               style={{ ["--part-delay" as string]: "590ms" }}
-              cx="58"
-              cy="38.5"
-              rx="9"
-              ry="3"
-              fill="#4ade80"
-              opacity="0.85"
+              points="49,36 67,36 64,45 52,45"
+              fill={accentFill}
             />
             <text
               className="logo-part"
               style={{ ["--part-delay" as string]: "680ms" }}
               x="22"
-              y="37.5"
+              y="42.5"
               textAnchor="middle"
               fill={plateTextColor}
               id="logo-rp-text"
               fontSize="7"
-              fontWeight="bold"
-              fontFamily="sans-serif"
+              fontWeight="700"
+              fontFamily="'IBM Plex Mono', monospace"
             >
               Rp
             </text>
@@ -235,13 +228,13 @@ export default function LoadingOverlay({ scriptsReady }: LoadingOverlayProps) {
               className="logo-part"
               style={{ ["--part-delay" as string]: "680ms" }}
               x="58"
-              y="37.5"
+              y="42.5"
               textAnchor="middle"
               fill={plateTextColor}
               id="logo-eq-text"
               fontSize="8"
-              fontWeight="bold"
-              fontFamily="sans-serif"
+              fontWeight="700"
+              fontFamily="'IBM Plex Mono', monospace"
             >
               =
             </text>
@@ -298,7 +291,8 @@ export default function LoadingOverlay({ scriptsReady }: LoadingOverlayProps) {
               fontSize: "12px",
               fontFamily: "'IBM Plex Mono', monospace",
               fontWeight: 700,
-              color: accent,
+              fontVariantNumeric: "tabular-nums",
+              color: accentText,
             }}
           >
             {pct}%
@@ -318,9 +312,9 @@ export default function LoadingOverlay({ scriptsReady }: LoadingOverlayProps) {
             style={{
               height: "100%",
               width: `${pct}%`,
-              background: `linear-gradient(90deg,${accent},${accent2})`,
+              background: accentFill,
               borderRadius: "2px",
-              transition: "width 0.25s ease",
+              transition: "width 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           />
         </div>
@@ -332,13 +326,13 @@ export default function LoadingOverlay({ scriptsReady }: LoadingOverlayProps) {
           position: "absolute",
           bottom: "32px",
           fontSize: "11px",
-          color: isLight ? "#94a3b8" : "#334155",
+          color: versionColor,
         }}
       >
         Powered by{" "}
         <span
           id="loading-orias-accent"
-          style={{ color: accent, fontWeight: 700 }}
+          style={{ color: accentText, fontWeight: 700 }}
         >
           Orias
         </span>
