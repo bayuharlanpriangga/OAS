@@ -73,15 +73,15 @@ export default function LoadingOverlay({ scriptsReady }: LoadingOverlayProps) {
   if (removed) return null;
 
   const bg = isLight ? "#EEF1F4" : "#0D0D0D";
-  const surface = isLight ? "#FFFFFF" : "#141619";
-  const accentText = isLight ? "#7A5C00" : "#D4A72C";
-  const accentFill = "#D4A72C";
+  const surface = isLight ? "#F7F9FB" : "#131518";
+  const accentText = isLight ? "#7D5B00" : "#FFD026";
+  const accentFill = "#FFD026";
   const es = isLight ? "#4F7A99" : "#A9C6DC";
   const textColor = isLight ? "#0D0D0D" : "#EEF1F4";
-  const mutedColor = isLight ? "#4A5663" : "rgba(238,241,244,0.70)";
+  const mutedColor = isLight ? "#4A5663" : "rgba(238,241,244,0.72)";
   const trackBg = isLight ? "rgba(79,122,153,0.22)" : "rgba(169,198,220,0.20)";
   const plateTextColor = "#0D0D0D";
-  const versionColor = isLight ? "#4A5663" : "rgba(238,241,244,0.55)";
+  const versionColor = isLight ? "#4A5663" : "rgba(238,241,244,0.65)";
 
   let statusMsg = STATUS_BREAKPOINTS[0][1];
   for (let i = 0; i < STATUS_BREAKPOINTS.length; i++) {
@@ -255,10 +255,8 @@ export default function LoadingOverlay({ scriptsReady }: LoadingOverlayProps) {
         <div
           id="loading-subtitle"
           style={{
-            fontSize: "12px",
+            fontSize: "13px",
             marginTop: "6px",
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
             color: mutedColor,
           }}
         >
@@ -325,11 +323,11 @@ export default function LoadingOverlay({ scriptsReady }: LoadingOverlayProps) {
         style={{
           position: "absolute",
           bottom: "32px",
-          fontSize: "11px",
+          fontSize: "12px",
           color: versionColor,
         }}
       >
-        Powered by{" "}
+        Ekosistem{" "}
         <span
           id="loading-orias-accent"
           style={{ color: accentText, fontWeight: 700 }}

@@ -106,7 +106,7 @@ export default function CoaPage() {
         iconColor: "rgba(248,113,113,0.15)",
         iconBorder: "rgba(248,113,113,0.3)",
         title: "Hapus Akun?",
-        subtitle: `Akun <b>${target.kode} — ${target.nama}</b> akan dipindah ke Sampah COA`,
+        subtitle: `Akun <b>${target.kode} · ${target.nama}</b> akan dipindah ke Sampah COA`,
         rows: [
           { label: "Kode", value: target.kode, color: "var(--muted)" },
           { label: "Nama", value: target.nama, color: "var(--text)" },
@@ -124,7 +124,7 @@ export default function CoaPage() {
         warning:
           usedIn > 0
             ? `<i class="ti ti-alert-triangle" style="color:var(--accent3);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Akun ini dipakai di ${usedIn} jurnal. Jurnal lama tetap utuh (nominal tidak hilang) tapi akan tampil "akun tidak ditemukan" sampai akun ini di-restore dari Sampah COA. Tersimpan 30 hari sebelum terhapus permanen.`
-            : '<i class="ti ti-info-circle" style="color:var(--muted);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tersimpan di Sampah COA selama 30 hari — bisa di-restore kapan saja sebelum itu.',
+            : '<i class="ti ti-info-circle" style="color:var(--muted);font-size:13px;width:13px;height:13px;vertical-align:-2px;"></i> Tersimpan di Sampah COA selama 30 hari · bisa di-restore kapan saja sebelum itu.',
         btnLabel:
           '<i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;margin-right:4px;"></i> Ya, Hapus Akun',
         btnGradient: "var(--danger)",
@@ -151,7 +151,7 @@ export default function CoaPage() {
           if (ok) doDelete();
         });
       } else if (
-        window.confirm(`Pindahkan akun ${target.kode} — ${target.nama} ke Sampah COA?`)
+        window.confirm(`Pindahkan akun ${target.kode} · ${target.nama} ke Sampah COA?`)
       ) {
         doDelete();
       }
@@ -292,7 +292,7 @@ export default function CoaPage() {
     const s = saldoMap[a.kode] || { debit: 0, kredit: 0 };
     const saldo = a.normal === "D" ? s.debit - s.kredit : s.kredit - s.debit;
     const saldoColor =
-      saldo > 0 ? "var(--accent)" : saldo < 0 ? "var(--red)" : "var(--muted)";
+      saldo > 0 ? "var(--text)" : saldo < 0 ? "var(--red)" : "var(--muted)";
     const isContra = a.kat === "Kontra" || a.kat === "Kontra HPP";
 
     return (
@@ -334,7 +334,7 @@ export default function CoaPage() {
           </span>
         </td>
         <td style={{ color: "var(--muted)", fontSize: "11.5px" }}>
-          {a.kat || "—"}
+          {a.kat || "-"}
         </td>
         <td>
           <span
@@ -352,7 +352,7 @@ export default function CoaPage() {
             color: saldoColor,
           }}
         >
-          {saldo ? `Rp ${Math.abs(saldo).toLocaleString("id-ID")}` : "—"}
+          {saldo ? `Rp ${Math.abs(saldo).toLocaleString("id-ID")}` : "-"}
         </td>
         <td style={{ textAlign: "center" }}>
           <button
@@ -382,11 +382,8 @@ export default function CoaPage() {
   return (
     <div className="page" id="page-akun" data-react-managed="1">
       <div className="section-header" style={{ marginBottom: "12px" }}>
-        <div>
-          <div className="section-title">Chart of Accounts</div>
-          <div className="section-sub" id="coa-count-sub">
-            {filtered.length} dari {akuns.length} akun ditampilkan
-          </div>
+        <div className="section-sub" id="coa-count-sub" style={{ marginTop: 0 }}>
+          {filtered.length} dari {akuns.length} akun ditampilkan
         </div>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           <motion.button
@@ -394,7 +391,7 @@ export default function CoaPage() {
             whileTap={{ scale: 0.96 }}
             className="btn btn-ghost btn-sm"
             onClick={openTrashModal}
-            title="Sampah COA — akun terhapus tersimpan 30 hari"
+            title="Sampah COA · akun terhapus tersimpan 30 hari"
             id="coa-trash-btn"
             style={{ position: "relative" }}
           >
@@ -737,7 +734,7 @@ export default function CoaPage() {
         >
           Akun yang dihapus disimpan di sini selama <b>30 hari</b> sebelum
           terhapus permanen otomatis. Jurnal lama yang memakai akun ini tetap
-          utuh — restore akun untuk menyambungkannya kembali.
+          utuh · restore akun untuk menyambungkannya kembali.
         </div>
         <div id="akun-trash-body">
           {sortedTrash.length === 0 ? (
@@ -775,7 +772,7 @@ export default function CoaPage() {
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: "13px" }}>
-                      {item.kode} — {item.nama}
+                      {item.kode} · {item.nama}
                     </div>
                     <div
                       style={{

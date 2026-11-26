@@ -42,7 +42,7 @@ export function RasioTableRow({
   }
   const formatted =
     Number.isNaN(parsed) || !Number.isFinite(parsed)
-      ? "—"
+      ? "-"
       : `${nilai} ${satuan}`.trimEnd();
 
   return (

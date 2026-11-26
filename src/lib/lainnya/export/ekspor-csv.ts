@@ -1,7 +1,7 @@
-import { readAkuns } from "../../shared/legacy-store/baca-akun";
-import { readJurnalEntries } from "../../shared/legacy-store/baca-jurnal";
-import { safeFileSlug } from "./slug-berkas";
-import type { ExportOptions } from "./types";
+import { readAkuns, readJurnalEntries } from "../../shared/legacy-store";
+import { safeFileSlug, type ExportOptions } from "./tema-helper";
+import { jsPDF } from "jspdf";
+import * as XLSX from "xlsx";
 
 export function exportCsvReport(opts: ExportOptions): string {
   const akuns = readAkuns();
@@ -46,4 +46,11 @@ export function exportCsvReport(opts: ExportOptions): string {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   return fileName;
+}
+
+export function registerNpmExportGlobals(): void {
+  if (typeof window === "undefined") return;
+  const win = window as unknown as Record<string, unknown>;
+  win.XLSX = XLSX;
+  win.jspdf = { jsPDF };
 }

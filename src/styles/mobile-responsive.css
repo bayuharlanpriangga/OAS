@@ -1,18 +1,29 @@
-
-/* MOBILE RESPONSIVE — must be LAST to override */
+/* MOBILE RESPONSIVE — aturan ketat bagian 5 (HP <= 768px & <= 480px) */
 @media (max-width: 768px) {
   body { display: block; overflow-x: hidden; }
-  .sidebar { transform: translateX(-100%); width: 270px; height: 100dvh; }
+  .sidebar { transform: translateX(-100%); width: min(280px, 84vw); height: 100dvh; }
   .sidebar.open { transform: translateX(0); }
-  .logo-close { display: block; min-width: 44px; min-height: 44px; }
+  .logo-close { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
   .main { margin-left: 0 !important; height: 100dvh; }
-  .hamburger { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
-  .topbar { padding: 10px 12px; }
+  .hamburger { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+
+  .topbar {
+    padding: 8px 12px;
+    min-height: 52px;
+    gap: 8px;
+  }
+  .topbar-titles h1 { font-size: 16px; }
+  .topbar-titles p { display: none; }
   .topbar .btn, .topbar-search-btn { min-height: 44px; }
-  .content { padding: 10px; overflow-x: clip; }
+  .topbar .btn-primary { padding: 8px 12px; font-size: 13px; }
   #current-date { display: none; }
 
-  /* Anti-zoom 16px inputs & >=44px tap targets */
+  .content {
+    padding: 12px 14px 28px;
+    overflow-x: clip;
+  }
+
+  /* Anti-zoom iOS 16px input & minimal target sentuh 44px dengan jarak >= 8px */
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
   select, textarea, .form-picker-btn, .opt-picker-btn, .akun-trigger-btn {
     font-size: 16px;
@@ -20,86 +31,174 @@
   }
   .btn, .quick-action-btn, .nav-card { min-height: 44px; }
 
-  /* Stats: 2x2 grid */
+  /* Dashboard mobile — langsung tampilkan Laba Bersih & ringkasan di layar pertama */
+  .dash-toolbar { gap: 8px; margin-bottom: 10px; }
+  .dash-toolbar-group:first-child { width: 100%; justify-content: space-between; }
+  .dash-ledger-hero {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 14px 14px;
+    margin-bottom: 12px;
+  }
+  .dash-kpi-secondary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+  .dash-kpi-sec-item {
+    border-left: none;
+    padding-left: 0;
+  }
+  .dash-kpi-sec-val { font-size: 14px; }
+  .dash-workspace-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .dash-col-main,
+  .dash-col-ref { gap: 14px; }
+  .dash-subsplit {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .dash-section { padding: 14px; }
+  .table-header { padding: 12px 14px; }
+  .table-card > .modal-body { padding: 14px; }
+  .table-card > .modal-footer { padding: 12px 14px; }
+
+  /* Pita KPI Facet Orias mobile — item pertama utama di atas, sisanya baris ringkas */
+  .oas-kpi-strip {
+    grid-template-columns: 1fr;
+  }
+  .oas-kpi-cell {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding: 10px 14px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .oas-kpi-cell:first-child {
+    border-top: none;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px;
+    gap: 4px;
+  }
+  .oas-kpi-cell:not(:first-child) .oas-kpi-val {
+    font-size: 14px;
+    text-align: right;
+  }
+  .dash-action-strip {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    gap: 8px;
+    margin-bottom: 18px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .dash-action-strip::-webkit-scrollbar { display: none; }
+  .dash-action-strip .quick-action-btn { flex-shrink: 0; }
+
+  /* Legacy stats-grid di halaman lain (Invoice, Bill, Aset, dll.) */
   .stats-grid {
     grid-template-columns: 1fr 1fr !important;
-    gap: 10px !important;
+    gap: 8px !important;
     margin-bottom: 14px;
   }
-  .stat-card { padding: 14px 12px; }
-  .stat-value { font-size: 18px !important; word-break: break-all; }
-  .stat-label { font-size: 10px !important; }
-  .stat-sub { font-size: 11px; }
+  .stat-card { padding: 12px; }
+  .stat-value { font-size: clamp(15px, 4.2vw, 18px) !important; word-break: normal; overflow-wrap: anywhere; }
+  .stat-label { font-size: 12px !important; }
+  .stat-sub { font-size: 12px; }
 
-  /* Stack dashboard 2-col */
-  .grid-2 { grid-template-columns: 1fr !important; gap: 10px; }
+  .grid-2 { grid-template-columns: 1fr !important; gap: 16px; }
 
-  /* Tables — no min-width, use responsive columns instead */
+  /* Tables — scroll horizontal bersih dalam kontainer, tanpa pecah 320px */
   .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .table-card table { font-size: 12px; width: 100%; }
-  th, td { padding: 7px 8px; }
+  .table-card table { font-size: 13px; width: 100%; }
+  th, td { padding: 8px 8px; }
 
-  /* Dash quick tables (no min-width needed) */
-  #dash-recent table, #dash-saldo table { min-width: unset; font-size: 12px; }
+  #dash-recent table, #dash-saldo table { min-width: unset; font-size: 13px; }
 
   /* Form */
   .form-row { grid-template-columns: 1fr !important; gap: 10px; }
-  .jurnal-lines-head, .jurnal-line-row { grid-template-columns: 1.8fr 1.2fr 1fr 1fr 24px; font-size: 11px; }
+  .jurnal-lines-head, .jurnal-line-row { grid-template-columns: 1.6fr 1.1fr 1fr 1fr 28px; font-size: 12px; gap: 6px; }
 
   /* Filter */
-  .filter-bar { flex-wrap: wrap; }
+  .filter-bar { flex-wrap: wrap; gap: 8px; }
   .filter-bar input, .filter-bar select { width: 100%; min-width: unset; }
 
   /* Modal tetap di tengah di mobile — hanya akun-picker yang bottom sheet */
-  .modal-backdrop { align-items: center; padding: 16px; }
-  .modal { max-width: 100%; border-radius: 16px; }
+  .modal-backdrop { align-items: center; padding: 12px; }
+  .modal, dialog.oas-dialog { max-width: 100%; border-radius: var(--r-panel); }
 
   /* Section */
-  .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .section-header { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .section-header.page-actions-only { justify-content: flex-end; }
+  .section-title { font-size: 20px; }
+  .section-sub { font-size: 13px; }
 
-  /* Topbar title size */
-  .topbar-titles h1 { font-size: 15px; }
-  .topbar-titles p { font-size: 11px; }
-
-  /* COA table mobile — no min-width, hide extra cols */
+  /* COA table mobile */
   #coa-table { width: 100%; }
-  #coa-table td:nth-child(1), #coa-table th:nth-child(1) { font-size: 10px; padding: 6px 6px; }
-  #coa-table td:nth-child(2) { font-size: 12px; word-break: break-word; white-space: normal; }
+  #coa-table td:nth-child(1), #coa-table th:nth-child(1) { font-size: 12px; padding: 7px 6px; }
+  #coa-table td:nth-child(2) { font-size: 13px; word-break: break-word; white-space: normal; }
   #coa-table td:nth-child(4), #coa-table th:nth-child(4) { display: none; }
   #coa-table td:nth-child(5), #coa-table th:nth-child(5) { display: none; }
   #coa-table td:nth-child(6), #coa-table th:nth-child(6) { display: none; }
-  #coa-table td:nth-child(7), #coa-table th:nth-child(7) { width: 32px; }
+  #coa-table td:nth-child(7), #coa-table th:nth-child(7) { width: 44px; }
   .storage-slot { flex-wrap: wrap; }
   .storage-slot .slot-actions { width: 100%; justify-content: flex-end; }
 
   /* Neraca Saldo mobile — horizontal scroll */
-  #page-neraca-saldo .table-card table { min-width: 360px; width: max-content; font-size: 12px; }
+  #page-neraca-saldo .table-card table { min-width: 360px; width: max-content; font-size: 12.5px; }
   #page-neraca-saldo .table-card table th:nth-child(4),
-  #page-neraca-saldo .table-card table td:nth-child(4) { font-size: 11px; white-space: nowrap; }
+  #page-neraca-saldo .table-card table td:nth-child(4),
   #page-neraca-saldo .table-card table th:nth-child(5),
-  #page-neraca-saldo .table-card table td:nth-child(5) { font-size: 11px; white-space: nowrap; }
+  #page-neraca-saldo .table-card table td:nth-child(5) { font-size: 12px; white-space: nowrap; }
 
-  /* Buku Besar mobile — no min-width, hide No.Jurnal col */
-  #buku-besar-content table { width: 100%; font-size: 12px; }
-  #buku-besar-content th, #buku-besar-content td { padding: 6px 7px; }
-  #buku-besar-content td:nth-child(2) { display: none; }
+  /* Buku Besar mobile */
+  #buku-besar-content table { width: 100%; font-size: 12.5px; }
+  #buku-besar-content th, #buku-besar-content td { padding: 7px 6px; }
+  #buku-besar-content td:nth-child(2),
   #buku-besar-content th:nth-child(2) { display: none; }
   #buku-besar-content td:nth-child(3) { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #buku-besar-content td:nth-child(4), #buku-besar-content th:nth-child(4),
   #buku-besar-content td:nth-child(5), #buku-besar-content th:nth-child(5),
-  #buku-besar-content td:nth-child(6), #buku-besar-content th:nth-child(6) { font-size: 11px; white-space: nowrap; }
+  #buku-besar-content td:nth-child(6), #buku-besar-content th:nth-child(6) { font-size: 12px; white-space: nowrap; }
 
-  /* Neraca mobile — single column, no overflow */
+  /* Neraca mobile */
   #neraca-content .grid-2 { grid-template-columns: 1fr !important; }
-  #neraca-content table { width: 100%; font-size: 12px; }
-  #neraca-content td { padding: 6px 8px; white-space: nowrap; }
-  
-  /* Jurnal Umum mobile — horizontal scroll within table-scroll wrapper */
+  #neraca-content table { width: 100%; font-size: 13px; }
+  #neraca-content td { padding: 7px 8px; }
+
+  /* Jurnal Umum mobile */
   #page-jurnal-umum .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  #page-jurnal-umum table { min-width: 480px; width: max-content; }
+  #page-jurnal-umum table { min-width: 520px; width: max-content; }
 
   /* Tutorial window mobile */
-  /* Tutorial tooltip floating window */
-  #tut-body-wrap { max-height: 55vh; overflow-y: auto; }
+  #tut-body-wrap { max-height: 55dvh; overflow-y: auto; }
   #tut-minimized { bottom: 16px !important; right: 16px !important; }
+}
+
+@media (max-width: 480px) {
+  .dash-kpi-secondary {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .dash-kpi-sec-item {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .dash-kpi-sec-item:last-child { border-bottom: none; }
+  .filter-bar .opt-picker-btn { width: 100%; }
+  .stats-grid { grid-template-columns: 1fr !important; }
 }

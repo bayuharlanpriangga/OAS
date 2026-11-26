@@ -36,7 +36,8 @@ export type NavIconKey =
   | "upload"
   | "moon"
   | "log-in"
-  | "settings";
+  | "settings"
+  | "truck";
 
 export type NavCardAction =
   | { type: "page"; pageId: string }

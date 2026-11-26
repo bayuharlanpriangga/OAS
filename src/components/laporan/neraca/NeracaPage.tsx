@@ -69,7 +69,10 @@ export function NeracaPage() {
               <td style={{ paddingLeft: "24px" }}>Laba Periode Berjalan</td>
               <td
                 className="num"
-                style={{ textAlign: "right", color: "var(--accent)" }}
+                style={{
+                  textAlign: "right",
+                  color: report.labaBersih >= 0 ? "var(--green)" : "var(--red)",
+                }}
               >
                 {fmtRp(report.labaBersih)}
               </td>
@@ -90,17 +93,11 @@ export function NeracaPage() {
 
   return (
     <div className="page" id="page-neraca" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Neraca (Balance Sheet)</div>
-          <div className="section-sub">Posisi keuangan perusahaan</div>
-        </div>
-      </div>
 
       <div id="neraca-content">
         <div className="grid-2" style={{ alignItems: "start" }}>
           <div>
-            {renderSection("Aset", report.asetRows, report.aset, "var(--accent)")}
+            {renderSection("Aset", report.asetRows, report.aset, "var(--text)")}
           </div>
           <div>
             {renderSection(
@@ -113,14 +110,14 @@ export function NeracaPage() {
               "Ekuitas",
               report.ekRows,
               report.totalEkuitas,
-              "var(--accent2)",
+              "var(--text)",
               true
             )}
             <div className="table-card">
               <table>
                 <tbody>
                   <tr className="total-row">
-                    <td>TOTAL LIAB + EKUITAS</td>
+                    <td>Total liabilitas dan ekuitas</td>
                     <td className="num" style={{ textAlign: "right" }}>
                       {fmtRp(report.liab + report.totalEkuitas)}
                     </td>
@@ -133,14 +130,15 @@ export function NeracaPage() {
         <div
           style={{
             fontSize: "12px",
-            color: report.balanced ? "var(--accent)" : "var(--red)",
+            color: report.balanced ? "var(--green)" : "var(--red)",
             marginTop: "8px",
             fontFamily: "var(--mono)",
+            fontWeight: 600,
           }}
         >
           {report.balanced
-            ? "✓ Neraca Balance"
-            : `✗ Neraca Tidak Balance — selisih: ${fmtRp(report.selisih)}`}
+            ? "✓ Neraca seimbang"
+            : `✗ Neraca belum seimbang · selisih: ${fmtRp(report.selisih)}`}
         </div>
       </div>
     </div>

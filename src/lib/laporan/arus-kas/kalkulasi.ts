@@ -1,6 +1,6 @@
 import type { Akun, SaldoMap } from "@/types";
-import { plNatural } from "../../shared/accounting/saldo-alami";
-import type { ArusKasReport } from "../shared/types";
+import { plNatural } from "../../shared/accounting";
+import type { ArusKasReport } from "../shared";
 
 export function computeArusKas(
   akuns: readonly Akun[],

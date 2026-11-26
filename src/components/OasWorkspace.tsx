@@ -1,27 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  SUPABASE_URL,
+  checkJoinCodeInURL,
+  initDbAdapter,
+  initLocalStorageFull,
+  initMobileKeyboardScrollFix,
+  initStorageLight,
+  initSupabase,
+  loadProfilToSidebar,
+  logStartupAudit,
+  showDemoModeBanner,
+} from "@/lib/cloud";
+import {
+  initCurrentDateLabel,
+  initGlobalShortcuts,
+  initInfoPopoverHover,
+  initNavigationLifecycle,
+  initPullToRefresh,
+  setupNumberInputs,
+} from "@/lib/core";
 import { registerOasCoreBridge } from "@/lib/shared/bridge";
+import { callOasGlobal } from "@/lib/shared/legacy-store";
 import LoadingOverlay from "./LoadingOverlay";
 
 const EXTERNAL_SCRIPTS = [
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
-];
-
-const OAS_ENGINE_SCRIPTS = [
-  "/js/00-db-adapter.js",
-  "/js/01-state.js",
-  "/js/02-utils.js",
-  "/js/03-widgets.js",
-  "/js/04-navigasi-tema.js",
-  "/js/15-storage.js",
-  "/js/16-auth-company.js",
-  "/js/17-profil-perusahaan.js",
-  "/js/18-audit-permission.js",
-  "/js/19-fitur-tambahan.js",
-  "/js/21-settings.js",
-  "/js/22-cloud-records.js",
-  "/js/99-init.js",
 ];
 
 function loadScriptSequential(src: string, timeoutMs = 8000): Promise<void> {
@@ -71,6 +76,14 @@ export default function OasWorkspace() {
 
     async function bootOasRuntime() {
       registerOasCoreBridge();
+      initNavigationLifecycle();
+      initInfoPopoverHover();
+      initCurrentDateLabel();
+      initGlobalShortcuts();
+      initPullToRefresh();
+      initMobileKeyboardScrollFix();
+      setTimeout(setupNumberInputs, 400);
+
       const host = window.location.hostname;
       const isDevPreview =
         host.startsWith("ais-dev-") ||
@@ -85,155 +98,94 @@ export default function OasWorkspace() {
         } catch {}
       }
 
-      const domReadyQueue: Array<() => void> = [];
-      const loadQueue: Array<() => void> = [];
-
-      const origDocAdd = document.addEventListener.bind(document);
-      const origWinAdd = window.addEventListener.bind(window);
-
-      const needDomShim = document.readyState !== "loading";
-      const needLoadShim = document.readyState === "complete";
-
-      if (needDomShim) {
-        document.addEventListener = function (
-          type: string,
-          listener: EventListenerOrEventListenerObject,
-          options?: boolean | AddEventListenerOptions
-        ) {
-          if (type === "DOMContentLoaded" && typeof listener === "function") {
-            domReadyQueue.push(() =>
-              listener.call(document, new Event("DOMContentLoaded"))
-            );
-            return;
-          }
-          return origDocAdd(type, listener, options);
-        } as typeof document.addEventListener;
-
-        window.addEventListener = function (
-          type: string,
-          listener: EventListenerOrEventListenerObject,
-          options?: boolean | AddEventListenerOptions
-        ) {
-          if (type === "DOMContentLoaded" && typeof listener === "function") {
-            domReadyQueue.push(() =>
-              listener.call(window, new Event("DOMContentLoaded"))
-            );
-            return;
-          }
-          if (
-            needLoadShim &&
-            type === "load" &&
-            typeof listener === "function"
-          ) {
-            loadQueue.push(() => listener.call(window, new Event("load")));
-            return;
-          }
-          return origWinAdd(type, listener, options);
-        } as typeof window.addEventListener;
+      for (const src of EXTERNAL_SCRIPTS) {
+        try {
+          await loadScriptSequential(src, 4000);
+        } catch (err) {
+          console.warn("[OAS Next] CDN script warning:", src, err);
+        }
       }
 
-      try {
-        for (const src of EXTERNAL_SCRIPTS) {
-          try {
-            await loadScriptSequential(src, 4000);
-          } catch (err) {
-            console.warn("[OAS Next] CDN script warning:", src, err);
-          }
-        }
-
-        if (!win.supabase) {
-          win.supabase = {
-            createClient: () => ({
-              auth: {
-                signInWithPassword: async () => ({
-                  data: null,
-                  error: { message: "Offline" },
-                }),
-                signUp: async () => ({
-                  data: null,
-                  error: { message: "Offline" },
-                }),
-                signOut: async () => ({ error: null }),
-                signInWithOAuth: async () => ({
-                  data: null,
-                  error: { message: "Offline" },
-                }),
-                getSession: async () => ({
-                  data: { session: null },
-                  error: null,
-                }),
-                getUser: async () => ({ data: { user: null }, error: null }),
-                onAuthStateChange: () => ({
-                  data: { subscription: { unsubscribe: () => {} } },
-                }),
-                resetPasswordForEmail: async () => ({
-                  data: null,
-                  error: { message: "Offline" },
-                }),
-                updateUser: async () => ({
-                  data: null,
-                  error: { message: "Offline" },
-                }),
-                refreshSession: async () => ({
-                  data: null,
-                  error: { message: "Offline" },
-                }),
-                setSession: async () => ({
-                  data: null,
-                  error: { message: "Offline" },
-                }),
-                exchangeCodeForSession: async () => ({
-                  data: null,
-                  error: { message: "Offline" },
-                }),
-                linkIdentity: async () => ({
-                  data: null,
-                  error: { message: "Offline" },
-                }),
-                unlinkIdentity: async () => ({
-                  data: null,
-                  error: { message: "Offline" },
-                }),
-              },
-              from: () => ({
-                select: () => ({
-                  eq: () => ({
-                    single: async () => ({ data: null, error: null }),
-                  }),
+      if (!win.supabase) {
+        win.supabase = {
+          createClient: () => ({
+            auth: {
+              signInWithPassword: async () => ({
+                data: null,
+                error: { message: "Offline" },
+              }),
+              signUp: async () => ({
+                data: null,
+                error: { message: "Offline" },
+              }),
+              signOut: async () => ({ error: null }),
+              signInWithOAuth: async () => ({
+                data: null,
+                error: { message: "Offline" },
+              }),
+              getSession: async () => ({
+                data: { session: null },
+                error: null,
+              }),
+              getUser: async () => ({ data: { user: null }, error: null }),
+              onAuthStateChange: () => ({
+                data: { subscription: { unsubscribe: () => {} } },
+              }),
+              resetPasswordForEmail: async () => ({
+                data: null,
+                error: { message: "Offline" },
+              }),
+              updateUser: async () => ({
+                data: null,
+                error: { message: "Offline" },
+              }),
+              refreshSession: async () => ({
+                data: null,
+                error: { message: "Offline" },
+              }),
+              setSession: async () => ({
+                data: null,
+                error: { message: "Offline" },
+              }),
+              exchangeCodeForSession: async () => ({
+                data: null,
+                error: { message: "Offline" },
+              }),
+              linkIdentity: async () => ({
+                data: null,
+                error: { message: "Offline" },
+              }),
+              unlinkIdentity: async () => ({
+                data: null,
+                error: { message: "Offline" },
+              }),
+            },
+            from: () => ({
+              select: () => ({
+                eq: () => ({
+                  single: async () => ({ data: null, error: null }),
                 }),
               }),
             }),
-          };
-        }
-
-        for (const src of OAS_ENGINE_SCRIPTS) {
-          try {
-            await loadScriptSequential(src, 10000);
-          } catch (err) {
-            console.error("[OAS Next] Engine script error:", src, err);
-          }
-        }
-      } finally {
-        if (needDomShim) {
-          document.addEventListener = origDocAdd;
-          window.addEventListener = origWinAdd;
-        }
+          }),
+        };
       }
 
-      for (const cb of domReadyQueue) {
-        try {
-          cb();
-        } catch (err) {
-          console.error("[OAS Next] DOMContentLoaded hook error:", err);
-        }
+      initDbAdapter();
+      logStartupAudit();
+
+      if (SUPABASE_URL.includes("YOUR_PROJECT")) {
+        initLocalStorageFull();
+        loadProfilToSidebar();
+        callOasGlobal("checkShowOnboarding");
+        showDemoModeBanner();
+      } else {
+        initStorageLight();
+        void initSupabase();
       }
 
-      for (const cb of loadQueue) {
-        try {
-          cb();
-        } catch (err) {
-          console.error("[OAS Next] load hook error:", err);
-        }
+      if (new URLSearchParams(window.location.search).has("join")) {
+        void checkJoinCodeInURL();
       }
 
       if (!isDevPreview && "serviceWorker" in navigator) {

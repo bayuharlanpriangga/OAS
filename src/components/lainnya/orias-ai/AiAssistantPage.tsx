@@ -463,7 +463,7 @@ export default function AiAssistantPage() {
           "auditLog",
           "create",
           "jurnal",
-          `Simpan Jurnal dari AI: "${parsed.ket}" — ${fmtRp(total)}`,
+          `Simpan Jurnal dari AI: "${parsed.ket}" · ${fmtRp(total)}`,
           { ref: "AI-JURNAL", aiActed: true }
         );
       } catch {}
@@ -507,63 +507,32 @@ export default function AiAssistantPage() {
           gap: 0,
         }}
       >
-        {/* Header */}
+        {/* Actions bar */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
-            gap: "12px",
-            marginBottom: "14px",
+            justifyContent: "flex-end",
+            gap: "8px",
+            marginBottom: "10px",
             flexShrink: 0,
-            flexWrap: "wrap",
           }}
         >
-          <div style={{ minWidth: 0 }}>
-            <div
-              className="section-title"
-              style={{ display: "flex", alignItems: "center", gap: "10px" }}
-            >
-              <span
-                style={{
-                  width: "32px",
-                  height: "32px",
-                  borderRadius: "6px",
-                  background: "var(--accent2-tint)",
-                  border: "1px solid var(--border-strong)",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "var(--accent2)",
-                  flexShrink: 0,
-                }}
-              >
-                <Bot size={18} strokeWidth={2} />
-              </span>
-              <span>Orias Assisten</span>
-            </div>
-            <div className="section-sub" style={{ marginTop: "4px" }}>
-              Ceritakan transaksi atau pertanyaan akuntansi Anda — Orias akan mencatat &amp; membimbing Anda
-            </div>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={clearChat}
-              disabled={!hasConversation && !inputVal.trim()}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                flexShrink: 0,
-              }}
-            >
-              <Trash2 size={14} strokeWidth={2} />
-              <span>Hapus Chat</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={clearChat}
+            disabled={!hasConversation && !inputVal.trim()}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              flexShrink: 0,
+            }}
+          >
+            <Trash2 size={14} strokeWidth={2} />
+            <span>Hapus Chat</span>
+          </button>
         </div>
 
         {/* Chat scroll area */}
@@ -630,31 +599,31 @@ export default function AiAssistantPage() {
                 <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
                   <BookOpen size={15} style={{ marginTop: "3px", flexShrink: 0, color: "var(--accent-text)" }} />
                   <span>
-                    <b>Catat transaksi</b> — cukup ceritakan, jurnal dibuat otomatis
+                    <b>Catat transaksi</b> · cukup ceritakan, jurnal dibuat otomatis
                   </span>
                 </li>
                 <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
                   <Calculator size={15} style={{ marginTop: "3px", flexShrink: 0, color: "var(--accent2)" }} />
                   <span>
-                    <b>Hitung kalkulasi</b> — penyusutan, BEP, PPh, rasio, bunga &amp; anuitas
+                    <b>Hitung kalkulasi</b> · penyusutan, BEP, PPh, rasio, bunga &amp; anuitas
                   </span>
                 </li>
                 <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
                   <BarChart3 size={15} style={{ marginTop: "3px", flexShrink: 0, color: "var(--accent3)" }} />
                   <span>
-                    <b>Analisis laporan</b> — membaca data keuangan Anda &amp; memberi insight
+                    <b>Analisis laporan</b> · membaca data keuangan Anda &amp; memberi insight
                   </span>
                 </li>
                 <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
                   <Info size={15} style={{ marginTop: "3px", flexShrink: 0, color: "var(--accent2)" }} />
                   <span>
-                    <b>Bimbingan penggunaan</b> — tanya cara pakai fitur OAS apa pun
+                    <b>Bimbingan penggunaan</b> · tanya cara pakai fitur OAS apa pun
                   </span>
                 </li>
                 <li style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
                   <GraduationCap size={15} style={{ marginTop: "3px", flexShrink: 0, color: "var(--green)" }} />
                   <span>
-                    <b>Edukasi akuntansi</b> — jelaskan konsep, standar PSAK &amp; pajak
+                    <b>Edukasi akuntansi</b> · jelaskan konsep, standar PSAK &amp; pajak
                   </span>
                 </li>
               </ul>

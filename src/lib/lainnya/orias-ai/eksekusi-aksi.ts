@@ -1,41 +1,143 @@
-import type {
-  AkunTipe,
-  AsetTetap,
-  AsetTetapMetode,
-  Invoice,
-  JurnalLine,
-  Kontak,
-  KontakTipe,
-} from "@/types";
-import { akunPpnKeluaranKode } from "../../shared/accounting/kode-ppn-keluaran";
-import { JENIS_JURNAL, PPN_TARIF_STANDAR, SUMBER_JURNAL } from "../../shared/accounting/constants";
-import { hitungPpn } from "../../shared/accounting/hitung-ppn";
-import { fmtDate } from "../../shared/format/tanggal";
-import { fmtRp } from "../../shared/format/rupiah";
-import { addKartuStockOnBuyStore } from "../../kalkulator/persediaan/kartu-stock/masuk-beli";
-import { deductKartuStockOnSaleStore } from "../../kalkulator/persediaan/kartu-stock/keluar-jual";
-import { readMksMap } from "../../kalkulator/persediaan/kartu-stock/baca-peta";
-import { callOasGlobal } from "../../shared/legacy-store/panggil-global";
-import { getJurnalSumberAktif } from "../../shared/legacy-store/baca-sumber-jurnal";
-import { readAkuns } from "../../shared/legacy-store/baca-akun";
-import { readAnggaranList } from "../../shared/legacy-store/baca-anggaran";
-import { readAsetTetapList } from "../../shared/legacy-store/baca-aset-tetap";
-import { readInvoiceList } from "../../shared/legacy-store/baca-invoice";
-import { readKontakList } from "../../shared/legacy-store/baca-kontak";
-import { readNotifAlerts } from "../../shared/legacy-store/baca-notifikasi";
-import { readProdukList } from "../../shared/legacy-store/baca-produk";
-import { setJurnalSumberAktif } from "../../shared/legacy-store/atur-sumber-jurnal";
-import { writeAkuns } from "../../shared/legacy-store/tulis-akun";
-import { writeAnggaranList } from "../../shared/legacy-store/tulis-anggaran";
-import { writeAsetTetapList } from "../../shared/legacy-store/tulis-aset-tetap";
-import { writeInvoiceList } from "../../shared/legacy-store/tulis-invoice";
-import { writeKontakList } from "../../shared/legacy-store/tulis-kontak";
-import { writeNotifAlerts } from "../../shared/legacy-store/tulis-notifikasi";
-import { writeProdukList } from "../../shared/legacy-store/tulis-produk";
-import { AI_PAGE_NAMES } from "./constants";
-import { findKatByNamaPure } from "./cari-kategori-stok";
-import { normalizeAiJurnalEntry } from "./normalisasi-jurnal";
-import type { AiAction } from "./types";
+import { type KsKategori, addKartuStockOnBuyStore, deductKartuStockOnSaleStore, readMksMap } from "../../kalkulator/persediaan/kartu-stock";
+import type { FoundKartuKategori, AiAction, ExtractedAiActions } from "./types";
+import { isPlainObject, AI_PAGE_NAMES } from "./konteks-prompt";
+import type { JurnalLine, ParsedAIJurnal, AkunTipe, AsetTetap, AsetTetapMetode, Invoice, Kontak, KontakTipe } from "@/types";
+import { JENIS_JURNAL, SUMBER_JURNAL, akunPpnKeluaranKode, PPN_TARIF_STANDAR, hitungPpn } from "../../shared/accounting";
+import { callOasGlobal, getJurnalSumberAktif, setJurnalSumberAktif, readAkuns, readAnggaranList, readAsetTetapList, readInvoiceList, readKontakList, readNotifAlerts, readProdukList, writeAkuns, writeAnggaranList, writeAsetTetapList, writeInvoiceList, writeKontakList, writeNotifAlerts, writeProdukList } from "../../shared/legacy-store";
+import { fmtDate, fmtRp } from "../../shared/format";
+
+export function findKatByNamaPure(
+  mks: Record<string, { id?: string; nama?: string; kategori?: Record<string, KsKategori> }>,
+  query: unknown
+): FoundKartuKategori | null {
+  const q = typeof query === "string" ? query.trim().toLowerCase() : "";
+  if (!q) return null;
+
+  let partial: FoundKartuKategori | null = null;
+  for (const [cardId, card] of Object.entries(mks || {})) {
+    const kats = card?.kategori || {};
+    for (const [katId, kat] of Object.entries(kats)) {
+      const nama = (kat?.nama || "").trim().toLowerCase();
+      if (!nama) continue;
+      if (nama === q) {
+        return { cardId, katId, kat };
+      }
+      if (!partial && (nama.includes(q) || q.includes(nama))) {
+        partial = { cardId, katId, kat };
+      }
+    }
+  }
+  return partial;
+}
+
+export function extractAiActions(rawText: string): ExtractedAiActions {
+  const source = typeof rawText === "string" ? rawText : "";
+  const match = source.match(/<ACTIONS>\s*([\s\S]*?)\s*<\/ACTIONS>/i);
+  const displayText = source.replace(/<ACTIONS>[\s\S]*?<\/ACTIONS>/gi, "").trim();
+
+  if (!match) {
+    return { displayText, actions: [], hadActionBlock: false };
+  }
+
+  let jsonPayload = match[1].trim();
+  const fenceMatch = jsonPayload.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  if (fenceMatch) {
+    jsonPayload = fenceMatch[1].trim();
+  }
+
+  try {
+    const parsed = JSON.parse(jsonPayload);
+    if (!Array.isArray(parsed)) {
+      return {
+        displayText,
+        actions: [],
+        hadActionBlock: true,
+        parseError: "Blok ACTIONS harus berupa array JSON.",
+      };
+    }
+    const actions = parsed.filter(
+      (item): item is AiAction =>
+        isPlainObject(item) && typeof item.type === "string" && item.type.trim().length > 0
+    );
+    return { displayText, actions, hadActionBlock: true };
+  } catch (err) {
+    return {
+      displayText,
+      actions: [],
+      hadActionBlock: true,
+      parseError: err instanceof Error ? err.message : "Format JSON ACTIONS tidak valid.",
+    };
+  }
+}
+
+export function normalizeAiJurnalEntry(
+  action: AiAction,
+  today: string = new Date().toISOString().split("T")[0]
+): {
+  tanggal: string;
+  ket: string;
+  jenis: string;
+  sumber: string;
+  lines: JurnalLine[];
+  totalDebit: number;
+  totalKredit: number;
+} {
+  const rawLines = Array.isArray(action.lines) ? action.lines : [];
+  const lines: JurnalLine[] = rawLines
+    .filter((l): l is Record<string, unknown> => typeof l === "object" && l !== null)
+    .map((l) => ({
+      akun: typeof l.akun === "string" ? l.akun.trim() : String(l.akun ?? ""),
+      ket: typeof l.ket === "string" ? l.ket : "",
+      debit: Number(l.debit) || 0,
+      kredit: Number(l.kredit) || 0,
+    }));
+
+  const totalDebit = lines.reduce((s, l) => s + l.debit, 0);
+  const totalKredit = lines.reduce((s, l) => s + l.kredit, 0);
+
+  return {
+    tanggal:
+      typeof action.tanggal === "string" && /^\d{4}-\d{2}-\d{2}$/.test(action.tanggal.trim())
+        ? action.tanggal.trim()
+        : today,
+    ket:
+      typeof action.ket === "string" && action.ket.trim()
+        ? action.ket.trim()
+        : "Dari AI",
+    jenis:
+      typeof action.jenis === "string" && action.jenis.trim()
+        ? action.jenis.trim()
+        : JENIS_JURNAL.MANUAL,
+    sumber: SUMBER_JURNAL.ORIAS_AI,
+    lines,
+    totalDebit,
+    totalKredit,
+  };
+}
+
+export async function saveParsedJurnalFromAi(parsed: ParsedAIJurnal): Promise<boolean> {
+  if (!parsed || !Array.isArray(parsed.lines) || parsed.lines.length < 2) {
+    callOasGlobal("showAlert", "Format jurnal dari AI tidak lengkap.");
+    return false;
+  }
+  const allowed = callOasGlobal("guardPeriode", parsed.tanggal, "diposting");
+  if (allowed === false) return false;
+
+  const prev = getJurnalSumberAktif();
+  setJurnalSumberAktif(SUMBER_JURNAL.ORIAS_AI);
+  try {
+    callOasGlobal("addJurnal", {
+      ...parsed,
+      jenis: parsed.jenis || JENIS_JURNAL.MANUAL,
+      sumber: SUMBER_JURNAL.ORIAS_AI,
+    });
+    callOasGlobal("renderDashboard");
+    callOasGlobal("showAlert", `✓ Jurnal "${parsed.ket}" disimpan ke sistem!`);
+    return true;
+  } finally {
+    setJurnalSumberAktif(prev);
+  }
+}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -56,12 +158,12 @@ async function executeInner(actions: AiAction[]): Promise<string[]> {
         case "addJurnal": {
           const entry = normalizeAiJurnalEntry(action, today);
           if (entry.lines.length < 2) {
-            results.push(`Jurnal "${entry.ket}" tidak memiliki minimal 2 baris — dilewati`);
+            results.push(`Jurnal "${entry.ket}" tidak memiliki minimal 2 baris · dilewati`);
             break;
           }
           if (Math.abs(entry.totalDebit - entry.totalKredit) > 1) {
             results.push(
-              `Jurnal "${entry.ket}" tidak balance (Dr:${fmtRp(entry.totalDebit)} ≠ Kr:${fmtRp(entry.totalKredit)}) — dilewati`
+              `Jurnal "${entry.ket}" tidak balance (Dr:${fmtRp(entry.totalDebit)} ≠ Kr:${fmtRp(entry.totalKredit)}) · dilewati`
             );
             break;
           }
@@ -79,7 +181,7 @@ async function executeInner(actions: AiAction[]): Promise<string[]> {
           });
           callOasGlobal("renderDashboard");
           results.push(
-            `✓ Jurnal disimpan: ${entry.ket} — ${entry.lines.length} baris (${fmtRp(entry.totalDebit)})`
+            `✓ Jurnal disimpan: ${entry.ket} · ${entry.lines.length} baris (${fmtRp(entry.totalDebit)})`
           );
           break;
         }
@@ -193,7 +295,7 @@ async function executeInner(actions: AiAction[]): Promise<string[]> {
           const found = findKatByNamaPure(readMksMap(), action.produk);
           if (!found) {
             results.push(
-              `⚠ Produk "${String(action.produk || "")}" tidak ditemukan di Kartu Stock — dilewati`
+              `⚠ Produk "${String(action.produk || "")}" tidak ditemukan di Kartu Stock · dilewati`
             );
             break;
           }
@@ -232,7 +334,7 @@ async function executeInner(actions: AiAction[]): Promise<string[]> {
         case "addKontak": {
           const nama = typeof action.nama === "string" ? action.nama.trim() : "";
           if (!nama) {
-            results.push("Nama kontak wajib diisi — dilewati");
+            results.push("Nama kontak wajib diisi · dilewati");
             break;
           }
           const list = readKontakList().slice();
@@ -279,7 +381,7 @@ async function executeInner(actions: AiAction[]): Promise<string[]> {
           const nama = typeof action.nama === "string" ? action.nama.trim() : "";
           const harga = Number(action.harga) || 0;
           if (!nama || !harga) {
-            results.push("Nama aset dan harga perolehan wajib diisi — dilewati");
+            results.push("Nama aset dan harga perolehan wajib diisi · dilewati");
             break;
           }
           const metodeRaw = typeof action.metode === "string" ? action.metode : "garis-lurus";
@@ -316,7 +418,7 @@ async function executeInner(actions: AiAction[]): Promise<string[]> {
           }
           callOasGlobal("renderDashboard");
           results.push(
-            `✓ Aset tetap ditambahkan: ${aset.nama} — ${fmtRp(aset.hargaPerolehan)}, ${aset.umurEkonomis} tahun (${aset.metode})`
+            `✓ Aset tetap ditambahkan: ${aset.nama} · ${fmtRp(aset.hargaPerolehan)}, ${aset.umurEkonomis} tahun (${aset.metode})`
           );
           break;
         }
@@ -328,7 +430,7 @@ async function executeInner(actions: AiAction[]): Promise<string[]> {
             typeof action.periode === "string" ? action.periode.trim() : "";
           const nominal = Number(action.nominal) || 0;
           if (!akunKode || !periode || !nominal) {
-            results.push("Akun, periode, dan nominal anggaran wajib diisi — dilewati");
+            results.push("Akun, periode, dan nominal anggaran wajib diisi · dilewati");
             break;
           }
           const akuns = readAkuns();
@@ -350,7 +452,7 @@ async function executeInner(actions: AiAction[]): Promise<string[]> {
           callOasGlobal("saveFiturBaru");
           if (isPageActive("anggaran")) callOasGlobal("renderAnggaranPage");
           results.push(
-            `✓ Anggaran diset: ${akunNm} periode ${item.periode} — ${fmtRp(item.nominal)}`
+            `✓ Anggaran diset: ${akunNm} periode ${item.periode} · ${fmtRp(item.nominal)}`
           );
           break;
         }
@@ -359,7 +461,7 @@ async function executeInner(actions: AiAction[]): Promise<string[]> {
           const found = findKatByNamaPure(readMksMap(), action.produk);
           if (!found) {
             results.push(
-              `⚠ Produk "${String(action.produk || "")}" tidak ditemukan di Kartu Stock — dilewati`
+              `⚠ Produk "${String(action.produk || "")}" tidak ditemukan di Kartu Stock · dilewati`
             );
             break;
           }
@@ -390,7 +492,7 @@ async function executeInner(actions: AiAction[]): Promise<string[]> {
             typeof action.pelanggan === "string" ? action.pelanggan.trim() : "";
           const rawItems = Array.isArray(action.items) ? action.items : [];
           if (!pelanggan || rawItems.length === 0) {
-            results.push("Pelanggan dan minimal 1 item invoice wajib diisi — dilewati");
+            results.push("Pelanggan dan minimal 1 item invoice wajib diisi · dilewati");
             break;
           }
           const items = rawItems.map((it) => {
@@ -471,7 +573,7 @@ async function executeInner(actions: AiAction[]): Promise<string[]> {
               id: `JRN_INV_${Date.now()}`,
               tanggal: inv.tanggal,
               jenis: JENIS_JURNAL.INVOICE,
-              keterangan: `Invoice ${inv.noInvoice} — ${inv.pelanggan}`,
+              keterangan: `Invoice ${inv.noInvoice} · ${inv.pelanggan}`,
               sumber: SUMBER_JURNAL.ORIAS_AI,
               _ppnTarif: ppnNom > 0 ? tarifInput : undefined,
               lines: lines.filter((l) => l.akun),
@@ -492,7 +594,7 @@ async function executeInner(actions: AiAction[]): Promise<string[]> {
           }
           callOasGlobal("cekNotifikasi");
           results.push(
-            `✓ Invoice ${inv.noInvoice} (${status}) untuk ${inv.pelanggan} — ${fmtRp(total)}`
+            `✓ Invoice ${inv.noInvoice} (${status}) untuk ${inv.pelanggan} · ${fmtRp(total)}`
           );
           break;
         }
@@ -500,7 +602,7 @@ async function executeInner(actions: AiAction[]): Promise<string[]> {
         case "addAlertNotifikasi": {
           const nama = typeof action.nama === "string" ? action.nama.trim() : "";
           if (!nama) {
-            results.push("Nama alert wajib diisi — dilewati");
+            results.push("Nama alert wajib diisi · dilewati");
             break;
           }
           const list = readNotifAlerts().slice();

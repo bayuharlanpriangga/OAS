@@ -75,15 +75,6 @@ export default function KalkBepPage() {
 
   return (
     <div className="page" id="page-kalk-bep" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Kalkulator BEP &amp; Margin</div>
-          <div className="section-sub">
-            Break Even Point · Contribution Margin · Margin of Safety · Leverage
-            Operasi
-          </div>
-        </div>
-      </div>
 
       <div style={{ gridTemplateColumns: "1fr 1fr" }} className="kalk-grid">
         <div className="table-card">

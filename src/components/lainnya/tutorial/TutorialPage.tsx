@@ -72,22 +72,15 @@ export default function TutorialPage() {
 
   return (
     <div className="page" id="page-tutorial" data-react-managed="1">
-      <div className="section-header" style={{ flexWrap: "wrap", gap: "10px" }}>
-        <div>
-          <div className="section-title">
-            <BookOpen size={15} style={{ verticalAlign: "-2px", marginRight: "6px" }} />
-            Panduan Penggunaan OAS
-          </div>
-          <div className="section-sub">Langkah cepat pembukuan dari setup awal hingga laporan keuangan</div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px", padding: "0 10px" }}>
+      <div className="section-header page-actions-only" style={{ flexWrap: "wrap", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "var(--surface)", border: "1px solid var(--border-strong)", borderRadius: "var(--r-control)", padding: "0 10px" }}>
           <Search size={14} style={{ color: "var(--muted)" }} />
           <input
             type="text"
             placeholder="Cari topik panduan..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            style={{ background: "transparent", border: "none", padding: "7px 4px", color: "var(--text)", fontSize: "12.5px", outline: "none" }}
+            style={{ background: "transparent", border: "none", padding: "7px 4px", color: "var(--text)", fontSize: "13px", outline: "none" }}
           />
         </div>
       </div>

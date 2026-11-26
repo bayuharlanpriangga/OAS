@@ -1,4 +1,4 @@
-export type { DashPeriodKey, DateRangeResult } from "./dashboard/types";
-export { getDashPeriodRange } from "./dashboard/rentang-periode";
-export { filterJurnalRange } from "./dashboard/filter-jurnal";
-export { computeDashboardData } from "./dashboard/ringkasan";
+export type { DashPeriodKey, DateRangeResult } from "./dashboard";
+export { getDashPeriodRange } from "./dashboard";
+export { filterJurnalRange } from "./dashboard";
+export { computeDashboardData } from "./dashboard";

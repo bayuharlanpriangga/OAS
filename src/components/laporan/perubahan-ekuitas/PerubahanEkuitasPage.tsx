@@ -68,21 +68,15 @@ export function PerubahanEkuitasPage() {
 
   return (
     <div className="page" id="page-perubahan-ekuitas" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Laporan Perubahan Ekuitas</div>
-          <div className="section-sub">Mutasi modal pemilik · PSAK 1</div>
-        </div>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={handlePrint}
-            style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
-          >
-            <Printer size={14} /> Cetak PDF
-          </button>
-        </div>
+      <div className="section-header page-actions-only">
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm"
+          onClick={handlePrint}
+          style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
+        >
+          <Printer size={14} /> Cetak PDF
+        </button>
       </div>
 
       <PeriodSelect id="pe-period" value={period} onChange={setPeriod} />
@@ -166,7 +160,7 @@ export function PerubahanEkuitasPage() {
                       fontSize: "13px",
                     }}
                   >
-                    —
+                    -
                   </td>
                   <td
                     style={{
@@ -196,7 +190,7 @@ export function PerubahanEkuitasPage() {
                     fontSize: "13px",
                   }}
                 >
-                  —
+                  -
                 </td>
                 <td
                   style={{
@@ -235,7 +229,7 @@ export function PerubahanEkuitasPage() {
                       fontSize: "13px",
                     }}
                   >
-                    —
+                    -
                   </td>
                   <td
                     style={{
@@ -264,10 +258,10 @@ export function PerubahanEkuitasPage() {
               <tr className="total-row">
                 <td>TOTAL EKUITAS AKHIR PERIODE</td>
                 <td style={{ textAlign: "right", fontFamily: "var(--mono)" }}>
-                  —
+                  -
                 </td>
                 <td style={{ textAlign: "right", fontFamily: "var(--mono)" }}>
-                  —
+                  -
                 </td>
                 <td
                   style={{

@@ -1,5 +1,5 @@
 import type { Akun, SaldoMap } from "@/types";
-import type { NeracaSaldoReport, NeracaSaldoRow } from "../shared/types";
+import type { NeracaSaldoReport, NeracaSaldoRow } from "../shared";
 
 export function computeNeracaSaldo(
   akuns: readonly Akun[],

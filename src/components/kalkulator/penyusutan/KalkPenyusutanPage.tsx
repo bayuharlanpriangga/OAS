@@ -81,14 +81,6 @@ export default function KalkPenyusutanPage() {
 
   return (
     <div className="page" id="page-kalk-penyusutan" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Kalkulator Penyusutan Aset</div>
-          <div className="section-sub">
-            Garis Lurus · Saldo Menurun · Sum of Years · Unit Produksi
-          </div>
-        </div>
-      </div>
 
       <div style={{ gridTemplateColumns: "1fr 1fr" }} className="kalk-grid">
         <div className="table-card">

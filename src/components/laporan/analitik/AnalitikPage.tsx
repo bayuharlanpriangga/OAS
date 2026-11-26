@@ -153,45 +153,34 @@ export default function AnalitikPage() {
 
   return (
     <div className="page" id="page-analitik" data-react-managed="1">
-      <div className="section-header" style={{ flexWrap: "wrap", gap: "12px" }}>
-        <div>
-          <div className="section-title">
-            <BarChart3 size={15} style={{ verticalAlign: "-2px", marginRight: "6px" }} />
-            Analitik &amp; Tren Bisnis
-          </div>
-          <div className="section-sub">
-            Pendapatan · Laba · Arus Kas · Rasio · Proyeksi · Perbandingan Periode
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-            style={{ background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: "10px", padding: "7px 12px", color: "var(--text)", fontSize: "13px", fontWeight: 600 }}
-          >
-            <option value="3">3 Bulan Terakhir</option>
-            <option value="6">6 Bulan Terakhir</option>
-            <option value="12">12 Bulan Terakhir</option>
-            <option value="all">Semua Waktu</option>
-          </select>
-          <button className="btn btn-ghost btn-sm" type="button" onClick={refresh} title="Refresh">
-            <RefreshCw size={14} />
-          </button>
-        </div>
+      <div className="section-header page-actions-only" style={{ flexWrap: "wrap", gap: "8px" }}>
+        <select
+          value={period}
+          onChange={(e) => setPeriod(e.target.value)}
+          className="dash-period-select"
+        >
+          <option value="3">3 Bulan Terakhir</option>
+          <option value="6">6 Bulan Terakhir</option>
+          <option value="12">12 Bulan Terakhir</option>
+          <option value="all">Semua Waktu</option>
+        </select>
+        <button className="btn btn-ghost btn-sm" type="button" onClick={refresh} title="Refresh">
+          <RefreshCw size={14} />
+        </button>
       </div>
 
-      {/* KPI Summary */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: "10px", marginBottom: "16px" }}>
+      {/* KPI Summary — Pita Facet Orias */}
+      <div className="oas-kpi-strip" aria-label="Ringkasan analitik bisnis">
         {[
-          { label: "Total Pendapatan", val: fmtRp(data.totalPendapatan), color: "var(--accent2)" },
-          { label: "Total Beban & HPP", val: fmtRp(data.totalBeban), color: "var(--accent3)" },
-          { label: "Total Laba Bersih", val: fmtRp(data.totalLaba), color: data.totalLaba >= 0 ? "var(--green)" : "var(--danger)" },
-          { label: "Arus Kas Bersih", val: fmtRp(data.totalArusKas), color: data.totalArusKas >= 0 ? "var(--green)" : "var(--danger)" },
-          { label: "Margin Bersih Rata-rata", val: `${data.avgMargin.toFixed(1)}%`, color: "var(--text)" },
+          { label: "Total laba bersih", val: fmtRp(data.totalLaba), color: data.totalLaba > 0 ? "var(--green)" : data.totalLaba < 0 ? "var(--danger)" : "var(--text)" },
+          { label: "Total pendapatan", val: fmtRp(data.totalPendapatan), color: "var(--text)" },
+          { label: "Total beban & HPP", val: fmtRp(data.totalBeban), color: "var(--warn)" },
+          { label: "Arus kas bersih", val: fmtRp(data.totalArusKas), color: data.totalArusKas > 0 ? "var(--green)" : data.totalArusKas < 0 ? "var(--danger)" : "var(--text)" },
+          { label: "Margin bersih rata-rata", val: `${data.avgMargin.toFixed(1)}%`, color: "var(--text)" },
         ].map((k) => (
-          <div key={k.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "12px 14px" }}>
-            <div style={{ fontSize: "11px", color: "var(--muted)", fontWeight: 600 }}>{k.label}</div>
-            <div style={{ fontSize: "15.5px", fontWeight: 700, fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums", color: k.color, marginTop: "4px" }}>{k.val}</div>
+          <div key={k.label} className="oas-kpi-cell">
+            <span className="oas-kpi-label">{k.label}</span>
+            <span className="oas-kpi-val" style={{ color: k.color }}>{k.val}</span>
           </div>
         ))}
       </div>
@@ -272,7 +261,7 @@ export default function AnalitikPage() {
               <div className="table-header">
                 <div className="table-title"><Scale size={14} style={{ verticalAlign: "-2px", marginRight: "5px" }} /> Rasio Keuangan Otomatis</div>
               </div>
-              <div style={{ padding: "14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              <div className="dash-list" style={{ padding: "6px 18px 12px" }}>
                 {[
                   { label: "Current Ratio", val: `${data.rasio.currentRatio.toFixed(2)}x` },
                   { label: "Debt to Equity", val: `${data.rasio.debtToEquity.toFixed(2)}x` },
@@ -280,9 +269,9 @@ export default function AnalitikPage() {
                   { label: "Net Margin", val: `${data.rasio.netMargin.toFixed(1)}%` },
                   { label: "Return on Assets (ROA)", val: `${data.rasio.roa.toFixed(1)}%` },
                 ].map((r) => (
-                  <div key={r.label} style={{ background: "var(--surface2)", borderRadius: "8px", padding: "10px 12px" }}>
-                    <div style={{ fontSize: "11px", color: "var(--muted)" }}>{r.label}</div>
-                    <div style={{ fontFamily: "var(--mono)", fontWeight: 700, fontSize: "15px", marginTop: "3px" }}>{r.val}</div>
+                  <div key={r.label} className="dash-row">
+                    <span style={{ color: "var(--muted)" }}>{r.label}</span>
+                    <span className="dash-row-num">{r.val}</span>
                   </div>
                 ))}
               </div>
@@ -292,13 +281,13 @@ export default function AnalitikPage() {
               <div className="table-header">
                 <div className="table-title"><TrendingUp size={14} style={{ verticalAlign: "-2px", marginRight: "5px" }} /> Proyeksi 3 Bulan ke Depan</div>
               </div>
-              <div style={{ padding: "14px", display: "grid", gap: "8px" }}>
+              <div className="dash-list" style={{ padding: "6px 18px 12px" }}>
                 {data.proyeksi.map((p) => (
-                  <div key={p.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 12px", background: "var(--surface2)", borderRadius: "8px", fontSize: "12.5px" }}>
+                  <div key={p.label} className="dash-row">
                     <b>{p.label}</b>
-                    <div style={{ textAlign: "right", fontFamily: "var(--mono)" }}>
-                      <div style={{ color: "var(--accent2)" }}>Pend: {fmtRp(p.pendapatan)}</div>
-                      <div style={{ fontSize: "11.5px", color: p.laba >= 0 ? "var(--green)" : "var(--danger)" }}>Est. Laba: {fmtRp(p.laba)}</div>
+                    <div style={{ textAlign: "right", fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums" }}>
+                      <div>Pend: {fmtRp(p.pendapatan)}</div>
+                      <div style={{ fontSize: "12px", color: p.laba >= 0 ? "var(--green)" : "var(--danger)" }}>Est. Laba: {fmtRp(p.laba)}</div>
                     </div>
                   </div>
                 ))}

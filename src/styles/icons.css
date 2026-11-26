@@ -184,34 +184,7 @@
 .ti-calendar-stats { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 5h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1zm-1 5h18M8 3v4m8-4v4m-5 7v2m4-5v5M9 13v.01'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 5h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1zm-1 5h18M8 3v4m8-4v4m-5 7v2m4-5v5M9 13v.01'/%3E%3C/svg%3E"); }
 .logo-close { display: none; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 0; }
 
-:root {
-  --tinta: #0D0D0D;
-  --perak: #EEF1F4;
-  --es: #A9C6DC;
-  --emas: #D4A72C;
-  --bg: #0D0D0D;
-  --surface: #141619;
-  --surface2: #1C1F24;
-  --border: rgba(169, 198, 220, 0.20);
-  --border-strong: rgba(169, 198, 220, 0.34);
-  --accent: #D4A72C;
-  --accent-text: #D4A72C;
-  --accent-fg: #0D0D0D;
-  --accent-tint: rgba(212, 167, 44, 0.14);
-  --accent2: #A9C6DC;
-  --accent2-tint: rgba(169, 198, 220, 0.12);
-  --green: #4E9A6B;
-  --green-tint: rgba(78, 154, 107, 0.14);
-  --accent3: #D9772B;
-  --warn: #D9772B;
-  --red: #D4564A;
-  --danger: #D4564A;
-  --red-tint: rgba(212, 86, 74, 0.14);
-  --text: #EEF1F4;
-  --muted: rgba(238, 241, 244, 0.70);
-  --mono: 'IBM Plex Mono', monospace;
-  --sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-}
+/* Design tokens dipusatkan di theme.css */
 
 /* Missing icon definitions */
 .ti-arrow-left { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 12H5M12 5l-7 7 7 7'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 12H5M12 5l-7 7 7 7'/%3E%3C/svg%3E"); }

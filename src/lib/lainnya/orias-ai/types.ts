@@ -1,4 +1,4 @@
-import type { KsKategori } from "../../kalkulator/persediaan/kartu-stock/types";
+import type { KsKategori } from "../../kalkulator/persediaan/kartu-stock";
 
 export type AiChatRole = "user" | "assistant";
 

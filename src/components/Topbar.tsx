@@ -1,63 +1,52 @@
 "use client";
 
-import { motion } from "motion/react";
-import { Menu, Search } from "lucide-react";
+import { Menu, Plus, Search } from "lucide-react";
 import { callOasGlobal } from "@/lib/shared/legacy-store";
 
 export default function Topbar() {
   return (
-    <div className="topbar">
+    <header className="topbar">
       <div className="topbar-left">
-        <motion.button
+        <button
           type="button"
           className="hamburger"
-          aria-label="Buka menu"
-          whileTap={{ scale: 0.92 }}
+          aria-label="Buka menu navigasi"
           onClick={() => callOasGlobal("toggleSidebar")}
         >
           <Menu size={20} strokeWidth={2} />
-        </motion.button>
-        <motion.div
-          className="topbar-titles"
-          initial={{ opacity: 0.92 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.18 }}
-        >
+        </button>
+        <div className="topbar-titles">
           <h1 id="page-title" suppressHydrationWarning>
             Dashboard
           </h1>
           <p id="page-sub" suppressHydrationWarning>
-            Ringkasan keuangan bisnis Anda
+            Ringkasan keuangan bisnis
           </p>
-        </motion.div>
+        </div>
       </div>
 
       <div className="topbar-right">
         <span id="current-date" suppressHydrationWarning />
-        <motion.button
+        <button
           type="button"
-          whileTap={{ scale: 0.96 }}
           onClick={() => callOasGlobal("openGlobalSearch")}
           className="topbar-search-btn"
           data-tooltip="Ctrl+K"
+          aria-label="Cari transaksi, akun, atau halaman"
         >
-          <Search
-            size={14}
-            strokeWidth={2}
-            style={{ flexShrink: 0, opacity: 0.7 }}
-          />
+          <Search size={15} strokeWidth={2} style={{ flexShrink: 0, color: "var(--accent2)" }} />
           <span className="topbar-search-label">Cari</span>
-        </motion.button>
-        <motion.button
+        </button>
+        <button
           type="button"
-          whileTap={{ scale: 0.96 }}
           className="btn btn-primary"
           onClick={() => callOasGlobal("handleAddBtn")}
           data-tooltip="Ctrl+N"
         >
-          + Tambah
-        </motion.button>
+          <Plus size={15} strokeWidth={2.5} aria-hidden="true" />
+          <span className="btn-label">Catat transaksi</span>
+        </button>
       </div>
-    </div>
+    </header>
   );
 }

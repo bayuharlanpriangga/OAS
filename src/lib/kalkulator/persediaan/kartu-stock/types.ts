@@ -26,10 +26,16 @@ export interface KsMetodeData {
   mwa: KsEntry[];
 }
 
+export interface GudangRak {
+  id: string;
+  nama: string;
+}
+
 export interface KsKategori {
   id: string;
   nama: string;
   satuan: string;
+  rakId?: string;
   deskripsi?: string;
   data: KsMetodeData;
 }
@@ -38,10 +44,27 @@ export interface KsCard {
   id: string;
   nama: string;
   satuan: string;
+  lokasi?: string;
+  rakList?: GudangRak[];
   createdAt?: string;
   lockedFromTrx?: boolean;
   kategori: Record<string, KsKategori>;
   data?: KsMetodeData;
+}
+
+export interface TransferGudangLog {
+  id: string;
+  tanggal: string;
+  fromGudangId: string;
+  fromGudangNama: string;
+  toGudangId: string;
+  toGudangNama: string;
+  toRakNama?: string;
+  barangNama: string;
+  satuan: string;
+  qty: number;
+  nilaiTotal: number;
+  catatan?: string;
 }
 
 export interface KsSaldoDetail {

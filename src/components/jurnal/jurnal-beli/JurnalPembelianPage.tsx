@@ -81,12 +81,6 @@ export function JurnalPembelianPage() {
 
   return (
     <div className="page" id="page-jurnal-pembelian" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Jurnal Pembelian</div>
-          <div className="section-sub">Semua transaksi pembelian</div>
-        </div>
-      </div>
 
       <div className="filter-bar">
         <input
@@ -159,7 +153,7 @@ export function JurnalPembelianPage() {
                             akuns={akuns}
                             akunsTrash={akunsTrash}
                           />{" "}
-                          — <span className="debit">{fmtRp(l.debit)}</span>
+ · <span className="debit">{fmtRp(l.debit)}</span>
                         </Fragment>
                       ))}
                     </td>

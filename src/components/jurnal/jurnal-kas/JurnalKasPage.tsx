@@ -88,12 +88,6 @@ export function JurnalKasPage() {
 
   return (
     <div className="page" id="page-jurnal-kas" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Jurnal Kas</div>
-          <div className="section-sub">Penerimaan dan pengeluaran kas</div>
-        </div>
-      </div>
 
       <div className="filter-bar">
         <input
@@ -176,7 +170,7 @@ export function JurnalKasPage() {
         >
           <span style={{ fontSize: "12.5px", color: "var(--muted)" }}>
             Total Penerimaan:{" "}
-            <b style={{ color: "var(--accent)", fontFamily: "var(--mono)" }}>
+            <b style={{ color: "var(--accent-text)", fontFamily: "var(--mono)" }}>
               {fmtRp(totalIn)}
             </b>{" "}
             &nbsp;|&nbsp; Total Pengeluaran:{" "}

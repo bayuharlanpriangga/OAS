@@ -151,35 +151,26 @@ export default function AuditTrailPage() {
 
   return (
     <div className="page" id="page-audit-trail" data-react-managed="1">
-      <div className="section-header" style={{ flexWrap: "wrap", gap: "10px" }}>
-        <div>
-          <div className="section-title">
-            <Shield size={15} style={{ verticalAlign: "-2px", marginRight: "6px" }} />
-            Audit Trail
-          </div>
-          <div className="section-sub">Rekam jejak seluruh aktivitas pengguna &amp; sistem</div>
-        </div>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <button className="btn btn-ghost btn-sm" type="button" onClick={handleExportCsv}>
-            <Download size={13} /> Export CSV
-          </button>
-          <button className="btn btn-danger btn-sm" type="button" onClick={handleClearOld}>
-            <Trash2 size={13} /> Bersihkan Log Lama
-          </button>
-        </div>
+      <div className="section-header page-actions-only" style={{ flexWrap: "wrap", gap: "8px" }}>
+        <button className="btn btn-ghost btn-sm" type="button" onClick={handleExportCsv}>
+          <Download size={13} /> Export CSV
+        </button>
+        <button className="btn btn-danger btn-sm" type="button" onClick={handleClearOld}>
+          <Trash2 size={13} /> Bersihkan Log Lama
+        </button>
       </div>
 
-      {/* KPI */}
-      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px" }}>
+      {/* KPI — Pita Facet Orias */}
+      <div className="oas-kpi-strip" aria-label="Ringkasan aktivitas audit">
         {[
-          { label: "Total Aktivitas", val: kpi.total, color: "var(--text)" },
-          { label: "Hari Ini", val: kpi.todayCount, color: "var(--accent2)" },
-          { label: "Buat / Ubah", val: kpi.writeCount, color: "var(--green)" },
-          { label: "Hapus / Reset", val: kpi.delCount, color: "var(--danger)" },
+          { label: "Total aktivitas", val: kpi.total, color: "var(--text)" },
+          { label: "Hari ini", val: kpi.todayCount, color: "var(--accent-text)" },
+          { label: "Buat / ubah", val: kpi.writeCount, color: "var(--green)" },
+          { label: "Hapus / reset", val: kpi.delCount, color: "var(--danger)" },
         ].map((c) => (
-          <div key={c.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "10px 14px", flex: 1, minWidth: "120px" }}>
-            <div style={{ fontSize: "11px", color: "var(--muted)", fontWeight: 600 }}>{c.label}</div>
-            <div style={{ fontSize: "17px", fontWeight: 700, fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums", color: c.color, marginTop: "2px" }}>{c.val}</div>
+          <div key={c.label} className="oas-kpi-cell">
+            <span className="oas-kpi-label">{c.label}</span>
+            <span className="oas-kpi-val" style={{ color: c.color }}>{c.val}</span>
           </div>
         ))}
       </div>
@@ -265,7 +256,7 @@ export default function AuditTrailPage() {
                     hour: "2-digit",
                     minute: "2-digit",
                   })
-                : "—";
+                : "-";
               return (
                 <div
                   key={l.id || idx}
@@ -294,7 +285,7 @@ export default function AuditTrailPage() {
                       </span>
                       <span style={{ fontSize: "11.5px", fontWeight: 600 }}>{l.who || "Pengguna"}</span>
                     </div>
-                    <div>{l.desc || l.description || "—"}</div>
+                    <div>{l.desc || l.description || "-"}</div>
                   </div>
                   <div style={{ fontSize: "11px", color: "var(--muted)", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}>
                     {timeStr}

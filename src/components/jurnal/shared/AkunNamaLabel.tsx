@@ -14,7 +14,7 @@ export function AkunNamaLabel({ kode, akuns, akunsTrash }: AkunNamaLabelProps) {
   if (found) return <>{found.nama}</>;
   const inTrash = akunsTrash.some((a) => a.kode === kode);
   const label = inTrash
-    ? `Akun tidak ditemukan (${kode} — di Sampah COA)`
+    ? `Akun tidak ditemukan (${kode} · di Sampah COA)`
     : `Akun tidak ditemukan (${kode})`;
   return (
     <span

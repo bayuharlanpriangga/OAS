@@ -184,15 +184,6 @@ export default function KalkBungaPage() {
 
   return (
     <div className="page" id="page-kalk-bunga" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Kalkulator Bunga &amp; Anuitas</div>
-          <div className="section-sub">
-            Bunga Tunggal · Majemuk · Anuitas · Cicilan Kredit · Present/Future
-            Value
-          </div>
-        </div>
-      </div>
 
       <div className="tabs" id="bunga-tabs">
         <div
@@ -889,7 +880,7 @@ export default function KalkBungaPage() {
                     label="Hasil Bersih Diterima"
                     value={
                       <span
-                        style={{ color: "var(--accent)", fontSize: "18px" }}
+                        style={{ color: "var(--accent-text)", fontSize: "18px" }}
                       >
                         {fmtRp(diskontoRes.data.hasilBersih)}
                       </span>

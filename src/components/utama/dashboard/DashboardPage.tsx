@@ -3,30 +3,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
-  ArrowDownLeft,
-  ArrowUpRight,
   BookOpen,
   Bot,
   Building2,
-  Clock,
-  CreditCard,
   Landmark,
-  Receipt,
   RefreshCw,
-  Scale,
   Settings,
   SlidersHorizontal,
-  TrendingDown,
   TrendingUp,
   Upload,
   User,
-  Zap,
 } from "lucide-react";
 import {
   agingHariIni,
   computeDashboardData,
   computeLabaRugi,
   computeSaldoAll,
+  fmtDate,
   fmtRp,
   getJurnalTanpaPenutup,
   JENIS_PENUTUP,
@@ -104,14 +97,14 @@ export default function DashboardPage() {
       const posted = w.addJurnal?.({
         tanggal: agingHariIni(),
         jenis: JENIS_PENUTUP,
-        ket: `Jurnal Penutup — Laba Bersih ${fmtRp(lr.labaBersih)}`,
+        ket: `Jurnal Penutup · Laba Bersih ${fmtRp(lr.labaBersih)}`,
         lines,
       });
       if (!posted) return;
       w.saveToStorage?.(false);
       refresh();
       w.renderJurnalUmum?.();
-      w.showAlert?.("Jurnal Penutup berhasil dibuat.");
+      w.showAlert?.("Jurnal penutup dibuat.");
     };
     if (w.showConfirm) {
       w.showConfirm(
@@ -169,48 +162,79 @@ export default function DashboardPage() {
 
   return (
     <div className="page active" id="page-dashboard" data-react-managed="1">
-      {/* Top controls */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px", marginBottom: "16px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+      {/* Kontrol periode & pengaturan cepat */}
+      <div className="dash-toolbar">
+        <div className="dash-toolbar-group">
           <select
             id="dash-filter-period"
+            aria-label="Pilih periode laporan"
+            className="dash-period-select"
             value={period}
             onChange={(e) => setPeriod(e.target.value as DashPeriodKey)}
-            style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px", padding: "7px 12px", color: "var(--text)", fontSize: "13px", fontFamily: "var(--sans)" }}
           >
-            <option value="all">Semua Periode</option>
-            <option value="this-month">Bulan Ini</option>
-            <option value="last-month">Bulan Lalu</option>
-            <option value="this-quarter">Kuartal Ini</option>
-            <option value="this-year">Tahun Ini</option>
-            <option value="custom">Rentang Kustom</option>
+            <option value="all">Semua periode</option>
+            <option value="this-month">Bulan ini</option>
+            <option value="last-month">Bulan lalu</option>
+            <option value="this-quarter">Kuartal ini</option>
+            <option value="this-year">Tahun ini</option>
+            <option value="custom">Rentang kustom</option>
           </select>
           {period === "custom" && (
-            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-              <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "6px", padding: "6px 10px", color: "var(--text)", fontSize: "12px" }} />
-              <span style={{ color: "var(--muted)", fontSize: "12px" }}>s/d</span>
-              <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "6px", padding: "6px 10px", color: "var(--text)", fontSize: "12px" }} />
+            <div className="dash-toolbar-group">
+              <input
+                type="date"
+                aria-label="Tanggal mulai"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="dash-period-select"
+              />
+              <span className="dash-period-label">s/d</span>
+              <input
+                type="date"
+                aria-label="Tanggal akhir"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="dash-period-select"
+              />
             </div>
           )}
-          <span style={{ fontSize: "12px", color: "var(--muted)", fontFamily: "var(--mono)" }}>{data.range.label}</span>
+          <span className="dash-period-label">{data.range.label}</span>
         </div>
 
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <button className="btn btn-ghost btn-sm" type="button" onClick={() => getWin().openModalSaldoAwal?.()}>
-            <Settings size={13} /> Saldo Awal
+        <div className="dash-toolbar-group">
+          <button
+            className="btn btn-ghost btn-sm"
+            type="button"
+            onClick={() => getWin().openModalSaldoAwal?.()}
+          >
+            <Settings size={14} aria-hidden="true" />
+            Saldo awal
           </button>
-          <button className="btn btn-ghost btn-sm" type="button" onClick={() => { getWin().openModal?.("modal-profil"); getWin().loadProfil?.(); }}>
-            <Building2 size={13} /> Profil
+          <button
+            className="btn btn-ghost btn-sm"
+            type="button"
+            onClick={() => {
+              getWin().openModal?.("modal-profil");
+              getWin().loadProfil?.();
+            }}
+          >
+            <Building2 size={14} aria-hidden="true" />
+            Profil
           </button>
-          <button className="btn btn-ghost btn-sm" type="button" onClick={() => getWin().openAccountSettings?.()}>
-            <User size={13} /> Akun
+          <button
+            className="btn btn-ghost btn-sm"
+            type="button"
+            onClick={() => getWin().openAccountSettings?.()}
+          >
+            <User size={14} aria-hidden="true" />
+            Akun
           </button>
         </div>
       </div>
 
-      {/* Reminders */}
+      {/* Peringatan jatuh tempo / saldo (hanya tampil jika ada) */}
       {data.reminders.length > 0 && (
-        <div style={{ display: "grid", gap: "6px", marginBottom: "14px" }}>
+        <div style={{ display: "grid", gap: "8px", marginBottom: "14px" }}>
           {data.reminders.map((r, i) => (
             <button
               key={i}
@@ -219,240 +243,446 @@ export default function DashboardPage() {
               style={{
                 cursor: "pointer",
                 padding: "9px 14px",
-                borderRadius: "8px",
-                fontSize: "12.5px",
+                borderRadius: "var(--r-control)",
+                fontSize: "13px",
                 textAlign: "left",
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
                 fontFamily: "var(--sans)",
-                background: r.tone === "danger" ? "var(--red-tint)" : "rgba(217,119,43,0.12)",
-                border: `1px solid ${r.tone === "danger" ? "var(--danger)" : "var(--accent3)"}`,
-                color: r.tone === "danger" ? "var(--danger)" : "var(--accent3)",
+                background: r.tone === "danger" ? "var(--red-tint)" : "var(--warn-tint)",
+                border: `1px solid ${r.tone === "danger" ? "var(--danger)" : "var(--warn)"}`,
+                color: r.tone === "danger" ? "var(--danger)" : "var(--warn)",
               }}
             >
-              <AlertTriangle size={14} strokeWidth={2} style={{ flexShrink: 0 }} />
+              <AlertTriangle size={15} strokeWidth={2} style={{ flexShrink: 0 }} aria-hidden="true" />
               <span>{r.text}</span>
             </button>
           ))}
         </div>
       )}
 
-      {/* KPI Cards */}
-      <div className="stats-grid" style={{ marginBottom: "16px" }}>
-        <div className="stat-card green">
-          <div className="stat-label">Total Aset</div>
-          <div className="stat-value" id="stat-aset">{fmtRp(data.totalAset)}</div>
-          <div className="stat-sub">Semua periode</div>
-        </div>
-        <div className="stat-card blue">
-          <div className="stat-label">Pendapatan</div>
-          <div className="stat-value" id="stat-pendapatan">{fmtRp(data.totalPendapatan)}</div>
-          <div className="stat-sub">{data.range.label}</div>
-        </div>
-        <div className="stat-card yellow">
-          <div className="stat-label">Total Beban &amp; HPP</div>
-          <div className="stat-value" id="stat-beban">{fmtRp(data.totalBeban)}</div>
-          <div className="stat-sub">{data.range.label}</div>
-        </div>
-        <div className="stat-card red">
-          <div className="stat-label">Laba Bersih</div>
-          <div className="stat-value" id="stat-laba" style={{ color: data.labaBersih >= 0 ? "var(--green)" : "var(--danger)" }}>
+      {/* Pita Posisi Keuangan — 1 titik masuk utama (Laba Bersih) + 3 angka pendukung */}
+      <section className="dash-ledger-hero" aria-label="Ringkasan posisi keuangan">
+        <div className="dash-kpi-primary">
+          <div className="dash-kpi-label">Laba bersih ({data.range.label})</div>
+          <div
+            className="dash-kpi-main-val"
+            id="stat-laba"
+            style={{
+              color:
+                data.labaBersih > 0
+                  ? "var(--green)"
+                  : data.labaBersih < 0
+                    ? "var(--danger)"
+                    : "var(--text)",
+            }}
+          >
             {fmtRp(data.labaBersih)}
           </div>
-          <div className="stat-sub">{data.range.label}</div>
+          <div className="dash-kpi-sub">
+            Pendapatan dikurangi HPP dan beban operasional
+          </div>
         </div>
+
+        <div className="dash-kpi-secondary">
+          <div className="dash-kpi-sec-item">
+            <span className="dash-kpi-label">Pendapatan</span>
+            <span className="dash-kpi-sec-val" id="stat-pendapatan">
+              {fmtRp(data.totalPendapatan)}
+            </span>
+          </div>
+          <div className="dash-kpi-sec-item">
+            <span className="dash-kpi-label">Beban &amp; HPP</span>
+            <span className="dash-kpi-sec-val" id="stat-beban">
+              {fmtRp(data.totalBeban)}
+            </span>
+          </div>
+          <div className="dash-kpi-sec-item">
+            <span className="dash-kpi-label">Total aset</span>
+            <span className="dash-kpi-sec-val" id="stat-aset">
+              {fmtRp(data.totalAset)}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Pita aksi kerja — datar dan ringkas, satu baris tanpa bingkai kartu */}
+      <div className="dash-action-strip" role="toolbar" aria-label="Aksi pembukuan cepat">
+        <button
+          type="button"
+          onClick={() => getWin().openJurnalPenyesuaian?.()}
+          className="quick-action-btn"
+        >
+          <SlidersHorizontal size={14} aria-hidden="true" />
+          Penyesuaian
+        </button>
+        <button
+          type="button"
+          onClick={() => getWin().showPage?.("laba-rugi")}
+          className="quick-action-btn"
+        >
+          <TrendingUp size={14} aria-hidden="true" />
+          Laba rugi
+        </button>
+        <button
+          type="button"
+          onClick={() => getWin().showPage?.("neraca")}
+          className="quick-action-btn"
+        >
+          <Landmark size={14} aria-hidden="true" />
+          Neraca
+        </button>
+        <button
+          type="button"
+          onClick={handleJurnalPenutup}
+          className="quick-action-btn"
+        >
+          <BookOpen size={14} aria-hidden="true" />
+          Tutup buku
+        </button>
+        <button
+          type="button"
+          onClick={handleCekRekonsiliasi}
+          className="quick-action-btn"
+        >
+          <RefreshCw size={14} aria-hidden="true" />
+          Cek saldo kas
+        </button>
+        <button
+          type="button"
+          onClick={() => getWin().openExportModal?.()}
+          className="quick-action-btn"
+        >
+          <Upload size={14} aria-hidden="true" />
+          Ekspor laporan
+        </button>
+        <button
+          type="button"
+          onClick={() => getWin().showPage?.("ai-assistant")}
+          className="quick-action-btn"
+        >
+          <Bot size={14} aria-hidden="true" />
+          Orias AI
+        </button>
       </div>
 
-      {/* Row 1: Piutang, Utang, Aksi Cepat, Penjualan */}
-      <div className="grid-2" style={{ marginBottom: "16px" }}>
-        <div className="table-card">
-          <div className="table-header">
-            <div>
-              <div className="table-title"><ArrowUpRight size={14} style={{ verticalAlign: "-2px", marginRight: "4px" }} /> Piutang Usaha</div>
-              <div className="table-subtitle">Total: {fmtRp(data.totalPiutangInv)} ({data.openInvoices.length} invoice)</div>
+      {/* Area kerja asimetris: Operasional (kiri ~62%) & Referensi (kanan ~38%) */}
+      <div className="dash-workspace-grid">
+        <div className="dash-col-main">
+          {/* Transaksi terbaru — tabel/daftar langsung di permukaan */}
+          <section className="dash-section" id="dash-recent">
+            <div className="dash-section-head">
+              <div>
+                <h2 className="dash-section-title">Transaksi terbaru</h2>
+                <div className="dash-section-meta">5 entri jurnal terakhir</div>
+              </div>
+              <button
+                className="dash-link-btn"
+                type="button"
+                onClick={() => getWin().showPage?.("jurnal-umum")}
+              >
+                Buka jurnal umum
+              </button>
             </div>
-            <button className="btn btn-ghost btn-sm" type="button" onClick={() => getWin().showPage?.("invoice")}>Lihat Semua</button>
-          </div>
-          <div className="dash-card-scroll" style={{ padding: "10px 14px" }}>
-            {!data.openInvoices.length ? (
-              <div style={{ fontSize: "12px", color: "var(--muted)", textAlign: "center", padding: "16px 0" }}>Tidak ada piutang berjalan.</div>
-            ) : (
-              data.openInvoices.slice(0, 6).map(({ inv, sisa }) => (
-                <div key={inv.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)", fontSize: "12.5px" }}>
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{inv.pelanggan}</div>
-                    <div style={{ fontSize: "11px", color: "var(--muted)", fontFamily: "var(--mono)" }}>{inv.noInvoice} · JT {inv.jatuhTempo || "—"}</div>
-                  </div>
-                  <div style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "var(--accent-text)" }}>{fmtRp(sisa)}</div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="table-card">
-          <div className="table-header">
-            <div>
-              <div className="table-title"><ArrowDownLeft size={14} style={{ verticalAlign: "-2px", marginRight: "4px" }} /> Utang Usaha</div>
-              <div className="table-subtitle">Total: {fmtRp(data.totalUtangBill)} ({data.openBills.length} tagihan)</div>
-            </div>
-            <button className="btn btn-ghost btn-sm" type="button" onClick={() => getWin().showPage?.("bill")}>Lihat Semua</button>
-          </div>
-          <div className="dash-card-scroll" style={{ padding: "10px 14px" }}>
-            {!data.openBills.length ? (
-              <div style={{ fontSize: "12px", color: "var(--muted)", textAlign: "center", padding: "16px 0" }}>Tidak ada tagihan utang belum lunas.</div>
-            ) : (
-              data.openBills.slice(0, 6).map(({ b, sisa }) => (
-                <div key={b.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)", fontSize: "12.5px" }}>
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{b.supplier}</div>
-                    <div style={{ fontSize: "11px", color: "var(--muted)", fontFamily: "var(--mono)" }}>{b.noBill} · JT {b.jatuhTempo || "—"}</div>
-                  </div>
-                  <div style={{ fontFamily: "var(--mono)", fontWeight: 700, color: "var(--accent3)" }}>{fmtRp(sisa)}</div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="table-card">
-          <div className="table-header">
-            <div className="table-title"><Zap size={14} style={{ verticalAlign: "-2px", marginRight: "4px" }} /> Aksi Cepat</div>
-          </div>
-          <div style={{ padding: "12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-            <button type="button" onClick={() => getWin().showPage?.("transaksi")} className="quick-action-btn"><CreditCard size={15} /> Input Transaksi</button>
-            <button type="button" onClick={() => getWin().openJurnalPenyesuaian?.()} className="quick-action-btn"><SlidersHorizontal size={15} /> Jurnal Penyesuaian</button>
-            <button type="button" onClick={() => getWin().showPage?.("laba-rugi")} className="quick-action-btn"><TrendingUp size={15} /> Laba Rugi</button>
-            <button type="button" onClick={() => getWin().showPage?.("neraca")} className="quick-action-btn"><Landmark size={15} /> Neraca</button>
-            <button type="button" onClick={handleJurnalPenutup} className="quick-action-btn"><BookOpen size={15} /> Jurnal Penutup</button>
-            <button type="button" onClick={handleCekRekonsiliasi} className="quick-action-btn"><RefreshCw size={15} /> Cek Saldo Kas</button>
-            <button type="button" onClick={() => getWin().showPage?.("ai-assistant")} className="quick-action-btn"><Bot size={15} /> Orias Assisten</button>
-            <button type="button" onClick={() => getWin().openExportModal?.()} className="quick-action-btn"><Upload size={15} /> Export Laporan</button>
-          </div>
-        </div>
-
-        <div className="table-card">
-          <div className="table-header">
-            <div>
-              <div className="table-title"><Receipt size={14} style={{ verticalAlign: "-2px", marginRight: "4px" }} /> Informasi Penjualan</div>
-              <div className="table-subtitle">{data.penjualanJurnals.length} transaksi pada {data.range.label}</div>
-            </div>
-            <button className="btn btn-ghost btn-sm" type="button" onClick={() => getWin().showPage?.("jurnal-penjualan")}>Detail</button>
-          </div>
-          <div className="dash-card-scroll" style={{ padding: "10px 14px" }}>
-            {!data.penjualanJurnals.length ? (
-              <div style={{ fontSize: "12px", color: "var(--muted)", textAlign: "center", padding: "16px 0" }}>Belum ada penjualan pada periode ini.</div>
-            ) : (
-              data.penjualanJurnals.slice(-5).reverse().map((j, idx) => {
-                const nom = (j.lines || []).reduce((s, l) => s + (l.debit || 0), 0);
-                return (
-                  <div key={j.no || idx} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)", fontSize: "12.5px" }}>
-                    <div>
-                      <div style={{ fontWeight: 600 }}>{j.ket}</div>
-                      <div style={{ fontSize: "11px", color: "var(--muted)", fontFamily: "var(--mono)" }}>{j.tanggal} · {j.no}</div>
-                    </div>
-                    <div style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "var(--green)" }}>{fmtRp(nom)}</div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Row 2: Beban Usaha + Rekap Pajak */}
-      <div className="grid-2" style={{ marginBottom: "16px" }}>
-        <div className="table-card">
-          <div className="table-header">
-            <div>
-              <div className="table-title"><TrendingDown size={14} style={{ verticalAlign: "-2px", marginRight: "4px" }} /> Beban Usaha</div>
-              <div className="table-subtitle">Pengeluaran operasional ({data.range.label})</div>
-            </div>
-            <button className="btn btn-ghost btn-sm" type="button" onClick={() => getWin().showPage?.("laba-rugi")}>Detail</button>
-          </div>
-          <div className="dash-card-scroll" style={{ padding: "10px 14px" }}>
-            {!data.bebanRows.length ? (
-              <div style={{ fontSize: "12px", color: "var(--muted)", textAlign: "center", padding: "16px 0" }}>Belum ada beban tercatat.</div>
-            ) : (
-              data.bebanRows.slice(0, 6).map((b) => (
-                <div key={b.kode} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)", fontSize: "12.5px" }}>
-                  <span><span style={{ fontFamily: "var(--mono)", color: "var(--muted)", marginRight: "6px" }}>{b.kode}</span>{b.nama}</span>
-                  <span style={{ fontFamily: "var(--mono)", fontWeight: 600, color: "var(--accent3)" }}>{fmtRp(b.nilai)}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="table-card">
-          <div className="table-header">
-            <div>
-              <div className="table-title"><Receipt size={14} style={{ verticalAlign: "-2px", marginRight: "4px" }} /> Rekap Pajak Periode</div>
-              <div className="table-subtitle">PPN Keluaran vs PPN Masukan</div>
-            </div>
-            <button className="btn btn-ghost btn-sm" type="button" onClick={() => getWin().showPage?.("pajak")}>Detail</button>
-          </div>
-          <div style={{ padding: "12px 14px", display: "grid", gap: "8px", fontSize: "13px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--muted)" }}>PPN Keluaran</span><span style={{ fontFamily: "var(--mono)", fontWeight: 600 }}>{fmtRp(data.ppn.keluaran)}</span></div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--muted)" }}>PPN Masukan</span><span style={{ fontFamily: "var(--mono)", fontWeight: 600 }}>{fmtRp(data.ppn.masukan)}</span></div>
-            <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--border)", paddingTop: "8px" }}>
-              <span style={{ fontWeight: 700 }}>{data.ppn.kurangBayar >= 0 ? "PPN Kurang Bayar" : "PPN Lebih Bayar"}</span>
-              <span style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums", fontWeight: 700, color: data.ppn.kurangBayar >= 0 ? "var(--accent3)" : "var(--green)" }}>
-                {fmtRp(Math.abs(data.ppn.kurangBayar))}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Row 3: Recent + Neraca Saldo */}
-      <div className="grid-2">
-        <div className="table-card">
-          <div className="table-header">
-            <div><div className="table-title"><Clock size={14} style={{ verticalAlign: "-2px", marginRight: "4px" }} /> Transaksi Terbaru</div><div className="table-subtitle">5 entri terakhir</div></div>
-            <button className="btn btn-ghost btn-sm" type="button" onClick={() => getWin().showPage?.("jurnal-umum")}>Lihat Semua</button>
-          </div>
-          <div className="dash-card-scroll" style={{ padding: "10px 14px" }}>
             {!data.recent.length ? (
-              <div style={{ fontSize: "12px", color: "var(--muted)", textAlign: "center", padding: "16px 0" }}>Belum ada jurnal tercatat.</div>
+              <div className="dash-empty">
+                <span>Belum ada entri jurnal pada pembukuan ini.</span>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => getWin().showPage?.("transaksi")}
+                >
+                  Catat transaksi pertama
+                </button>
+              </div>
             ) : (
-              data.recent.map((j, idx) => {
-                const nom = (j.lines || []).reduce((s, l) => s + (l.debit || 0), 0);
-                return (
-                  <div key={j.no || idx} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)", fontSize: "12.5px" }}>
-                    <div>
-                      <div style={{ fontWeight: 600 }}>{j.ket}</div>
-                      <div style={{ fontSize: "11px", color: "var(--muted)", fontFamily: "var(--mono)" }}>{j.tanggal} · {j.jenis}</div>
+              <div className="dash-list">
+                {data.recent.map((j, idx) => {
+                  const nom = (j.lines || []).reduce((s, l) => s + (l.debit || 0), 0);
+                  return (
+                    <div key={j.no || idx} className="dash-row">
+                      <div className="dash-row-main">
+                        <div className="dash-row-title">{j.ket}</div>
+                        <div className="dash-row-meta">
+                          <span>{fmtDate(j.tanggal)}</span>
+                          <span>{j.jenis}</span>
+                          {j.no ? <span style={{ fontFamily: "var(--mono)" }}>{j.no}</span> : null}
+                        </div>
+                      </div>
+                      <span className="dash-row-num">{fmtRp(nom)}</span>
                     </div>
-                    <span style={{ fontFamily: "var(--mono)", fontWeight: 600 }}>{fmtRp(nom)}</span>
-                  </div>
-                );
-              })
+                  );
+                })}
+              </div>
             )}
+          </section>
+
+          {/* Piutang & Utang berjalan — dua kolom sejajar di permukaan */}
+          <div className="dash-subsplit">
+            <section className="dash-section">
+              <div className="dash-section-head">
+                <div>
+                  <h2 className="dash-section-title">Piutang usaha</h2>
+                  <div className="dash-section-meta">
+                    {fmtRp(data.totalPiutangInv)} ({data.openInvoices.length} invoice)
+                  </div>
+                </div>
+                <button
+                  className="dash-link-btn"
+                  type="button"
+                  onClick={() => getWin().showPage?.("invoice")}
+                >
+                  Kelola
+                </button>
+              </div>
+              {!data.openInvoices.length ? (
+                <div className="dash-empty">
+                  <span>Tidak ada piutang berjalan.</span>
+                </div>
+              ) : (
+                <div className="dash-list">
+                  {data.openInvoices.slice(0, 6).map(({ inv, sisa }) => (
+                    <div key={inv.id} className="dash-row">
+                      <div className="dash-row-main">
+                        <div className="dash-row-title">{inv.pelanggan}</div>
+                        <div className="dash-row-meta">
+                          <span style={{ fontFamily: "var(--mono)" }}>{inv.noInvoice}</span>
+                          <span>JT {inv.jatuhTempo ? fmtDate(inv.jatuhTempo) : "-"}</span>
+                        </div>
+                      </div>
+                      <span className="dash-row-num" style={{ color: "var(--accent-text)" }}>
+                        {fmtRp(sisa)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="dash-section">
+              <div className="dash-section-head">
+                <div>
+                  <h2 className="dash-section-title">Utang usaha</h2>
+                  <div className="dash-section-meta">
+                    {fmtRp(data.totalUtangBill)} ({data.openBills.length} tagihan)
+                  </div>
+                </div>
+                <button
+                  className="dash-link-btn"
+                  type="button"
+                  onClick={() => getWin().showPage?.("pesanan-pembelian")}
+                >
+                  Kelola
+                </button>
+              </div>
+              {!data.openBills.length ? (
+                <div className="dash-empty">
+                  <span>Tidak ada tagihan belum lunas.</span>
+                </div>
+              ) : (
+                <div className="dash-list">
+                  {data.openBills.slice(0, 6).map(({ b, sisa }) => (
+                    <div key={b.id} className="dash-row">
+                      <div className="dash-row-main">
+                        <div className="dash-row-title">{b.supplier}</div>
+                        <div className="dash-row-meta">
+                          <span style={{ fontFamily: "var(--mono)" }}>{b.noBill}</span>
+                          <span>JT {b.jatuhTempo ? fmtDate(b.jatuhTempo) : "-"}</span>
+                        </div>
+                      </div>
+                      <span className="dash-row-num" style={{ color: "var(--warn)" }}>
+                        {fmtRp(sisa)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
+
+          {/* Penjualan periode ini */}
+          <section className="dash-section">
+            <div className="dash-section-head">
+              <div>
+                <h2 className="dash-section-title">Penjualan periode ini</h2>
+                <div className="dash-section-meta">
+                  {data.penjualanJurnals.length} transaksi pada {data.range.label}
+                </div>
+              </div>
+              <button
+                className="dash-link-btn"
+                type="button"
+                onClick={() => getWin().showPage?.("jurnal-penjualan")}
+              >
+                Jurnal penjualan
+              </button>
+            </div>
+            {!data.penjualanJurnals.length ? (
+              <div className="dash-empty">
+                <span>Belum ada penjualan pada {data.range.label}.</span>
+              </div>
+            ) : (
+              <div className="dash-list">
+                {data.penjualanJurnals.slice(-5).reverse().map((j, idx) => {
+                  const nom = (j.lines || []).reduce((s, l) => s + (l.debit || 0), 0);
+                  return (
+                    <div key={j.no || idx} className="dash-row">
+                      <div className="dash-row-main">
+                        <div className="dash-row-title">{j.ket}</div>
+                        <div className="dash-row-meta">
+                          <span>{fmtDate(j.tanggal)}</span>
+                          {j.no ? <span style={{ fontFamily: "var(--mono)" }}>{j.no}</span> : null}
+                        </div>
+                      </div>
+                      <span className="dash-row-num" style={{ color: "var(--green)" }}>
+                        {fmtRp(nom)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </div>
 
-        <div className="table-card">
-          <div className="table-header">
-            <div><div className="table-title"><Scale size={14} style={{ verticalAlign: "-2px", marginRight: "4px" }} /> Neraca Saldo Utama</div><div className="table-subtitle">Akun aktif dengan saldo</div></div>
-            <button className="btn btn-ghost btn-sm" type="button" onClick={() => getWin().showPage?.("neraca-saldo")}>Lengkap</button>
-          </div>
-          <div className="dash-card-scroll" style={{ padding: "10px 14px" }}>
+        {/* Kolom referensi (lebih rapat) */}
+        <aside className="dash-col-ref" aria-label="Ringkasan akun dan pajak">
+          {/* Neraca saldo utama */}
+          <section className="dash-section" id="dash-saldo">
+            <div className="dash-section-head">
+              <div>
+                <h2 className="dash-section-title">Neraca saldo utama</h2>
+                <div className="dash-section-meta">Akun aktif dengan saldo</div>
+              </div>
+              <button
+                className="dash-link-btn"
+                type="button"
+                onClick={() => getWin().showPage?.("neraca-saldo")}
+              >
+                Lengkap
+              </button>
+            </div>
             {!data.topSaldo.length ? (
-              <div style={{ fontSize: "12px", color: "var(--muted)", textAlign: "center", padding: "16px 0" }}>Belum ada saldo akun.</div>
+              <div className="dash-empty">
+                <span>Belum ada saldo akun tercatat.</span>
+              </div>
             ) : (
-              data.topSaldo.map((r) => (
-                <div key={r.kode} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)", fontSize: "12.5px" }}>
-                  <span><span style={{ fontFamily: "var(--mono)", color: "var(--muted)", marginRight: "6px" }}>{r.kode}</span>{r.nama}</span>
-                  <span style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums", fontWeight: 600, color: r.debit > 0 ? "var(--text)" : "var(--accent-text)" }}>
-                    {fmtRp(r.debit || r.kredit)} {r.debit > 0 ? "D" : "K"}
-                  </span>
-                </div>
-              ))
+              <div className="dash-list">
+                {data.topSaldo.map((r) => (
+                  <div key={r.kode} className="dash-row">
+                    <div className="dash-row-main">
+                      <div className="dash-row-title" style={{ fontWeight: 500 }}>
+                        <span
+                          style={{
+                            fontFamily: "var(--mono)",
+                            color: "var(--muted)",
+                            marginRight: "8px",
+                            fontSize: "12px",
+                          }}
+                        >
+                          {r.kode}
+                        </span>
+                        {r.nama}
+                      </div>
+                    </div>
+                    <span className="dash-row-num">
+                      {fmtRp(r.debit || r.kredit)}{" "}
+                      <span style={{ color: "var(--muted)", fontSize: "12px" }}>
+                        {r.debit > 0 ? "D" : "K"}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
             )}
-          </div>
-        </div>
+          </section>
+
+          {/* Rekap pajak PPN — format ledger dengan garis total ganda */}
+          <section className="dash-section">
+            <div className="dash-section-head">
+              <div>
+                <h2 className="dash-section-title">Rekap PPN</h2>
+                <div className="dash-section-meta">Keluaran dibanding masukan</div>
+              </div>
+              <button
+                className="dash-link-btn"
+                type="button"
+                onClick={() => getWin().showPage?.("pajak")}
+              >
+                Pajak
+              </button>
+            </div>
+            <div className="dash-list">
+              <div className="dash-row">
+                <span style={{ color: "var(--muted)" }}>PPN keluaran</span>
+                <span className="dash-row-num">{fmtRp(data.ppn.keluaran)}</span>
+              </div>
+              <div className="dash-row">
+                <span style={{ color: "var(--muted)" }}>PPN masukan</span>
+                <span className="dash-row-num">{fmtRp(data.ppn.masukan)}</span>
+              </div>
+              <div className="dash-total-double">
+                <span>{data.ppn.kurangBayar >= 0 ? "PPN kurang bayar" : "PPN lebih bayar"}</span>
+                <span
+                  className="dash-row-num"
+                  style={{
+                    color: data.ppn.kurangBayar >= 0 ? "var(--warn)" : "var(--green)",
+                  }}
+                >
+                  {fmtRp(Math.abs(data.ppn.kurangBayar))}
+                </span>
+              </div>
+            </div>
+          </section>
+
+          {/* Beban operasional */}
+          <section className="dash-section">
+            <div className="dash-section-head">
+              <div>
+                <h2 className="dash-section-title">Beban operasional</h2>
+                <div className="dash-section-meta">{data.range.label}</div>
+              </div>
+              <button
+                className="dash-link-btn"
+                type="button"
+                onClick={() => getWin().showPage?.("laba-rugi")}
+              >
+                Laba rugi
+              </button>
+            </div>
+            {!data.bebanRows.length ? (
+              <div className="dash-empty">
+                <span>Belum ada beban tercatat.</span>
+              </div>
+            ) : (
+              <div className="dash-list">
+                {data.bebanRows.slice(0, 6).map((b) => (
+                  <div key={b.kode} className="dash-row">
+                    <div className="dash-row-main">
+                      <div className="dash-row-title" style={{ fontWeight: 500 }}>
+                        <span
+                          style={{
+                            fontFamily: "var(--mono)",
+                            color: "var(--muted)",
+                            marginRight: "8px",
+                            fontSize: "12px",
+                          }}
+                        >
+                          {b.kode}
+                        </span>
+                        {b.nama}
+                      </div>
+                    </div>
+                    <span className="dash-row-num" style={{ color: "var(--warn)" }}>
+                      {fmtRp(b.nilai)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </aside>
       </div>
     </div>
   );

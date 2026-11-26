@@ -1,19 +1,14 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { computeSaldoAll } from "../../shared/accounting/saldo-semua";
-import { rekapPpnJurnal } from "../../shared/accounting/rekap-ppn";
-import { fmtRp } from "../../shared/format/rupiah";
+import { computeSaldoAll, rekapPpnJurnal } from "../../shared/accounting";
+import { fmtRp } from "../../shared/format";
 import { computeArusKas } from "../../laporan/arus-kas/kalkulasi";
 import { computeLabaRugi } from "../../laporan/laba-rugi/kalkulasi";
 import { computeNeraca } from "../../laporan/neraca/kalkulasi";
 import { computeNeracaSaldo } from "../../laporan/neraca-saldo/kalkulasi";
-import { getFilteredSaldoPure } from "../../laporan/shared/saldo-filter";
-import { readAkuns } from "../../shared/legacy-store/baca-akun";
-import { readInvoiceList } from "../../shared/legacy-store/baca-invoice";
-import { readJurnalEntries } from "../../shared/legacy-store/baca-jurnal";
-import { loadSavedPdfTheme } from "./muat-tema-pdf";
-import { safeFileSlug } from "./slug-berkas";
-import type { ExportOptions } from "./types";
+import { getFilteredSaldoPure } from "../../laporan/shared";
+import { readAkuns, readInvoiceList, readJurnalEntries } from "../../shared/legacy-store";
+import { loadSavedPdfTheme, safeFileSlug, type ExportOptions } from "./tema-helper";
 
 function hexToRgbTuple(hex: string): [number, number, number] {
   const clean = (hex || "#1e3a8a").replace("#", "");
@@ -162,8 +157,8 @@ export function exportPdfReport(opts: ExportOptions): string {
         ...ns.rows.map((r) => [
           r.kode,
           r.nama,
-          r.debit ? fmtRp(r.debit) : "—",
-          r.kredit ? fmtRp(r.kredit) : "—",
+          r.debit ? fmtRp(r.debit) : "-",
+          r.kredit ? fmtRp(r.kredit) : "-",
         ]),
         ["", "TOTAL", fmtRp(ns.totalDebit), fmtRp(ns.totalKredit)],
       ],
@@ -183,15 +178,15 @@ export function exportPdfReport(opts: ExportOptions): string {
           j.no || "",
           l.akun,
           (l.ket || j.ket || "").slice(0, 48),
-          l.debit ? fmtRp(l.debit) : "—",
-          l.kredit ? fmtRp(l.kredit) : "—",
+          l.debit ? fmtRp(l.debit) : "-",
+          l.kredit ? fmtRp(l.kredit) : "-",
         ]);
       });
     });
     autoTable(doc, {
       startY: y,
       head: [["Tanggal", "No", "Akun", "Keterangan", "Debit", "Kredit"]],
-      body: body.length ? body : [["—", "—", "—", "Belum ada jurnal", "—", "—"]],
+      body: body.length ? body : [["-", "-", "-", "Belum ada jurnal", "-", "-"]],
       headStyles: { fillColor: primaryRgb, textColor: 255 },
       columnStyles: { 4: { halign: "right" }, 5: { halign: "right" } },
       styles: { fontSize: 8 },

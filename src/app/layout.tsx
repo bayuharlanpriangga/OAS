@@ -3,7 +3,7 @@ import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OAS — Software Akuntansi",
+  title: "OAS | Software Akuntansi",
   description:
     "Software akuntansi lengkap: jurnal, laporan keuangan, invoice, pajak otomatis, analitik bisnis.",
   applicationName: "OAS Akuntansi",
@@ -17,9 +17,9 @@ export const metadata: Metadata = {
     google: "oFjtSELQXopEuDKY5zHTOu-yiMuQ9SwTbWNWyRLYPE8",
   },
   icons: {
-    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><polygon points='40,4 72,22 72,58 40,76 8,58 8,22' fill='%230D0D0D' stroke='%23A9C6DC' stroke-width='2.5'/><rect x='38.5' y='18' width='3' height='34' fill='%23D4A72C'/><rect x='26' y='52' width='28' height='4' fill='%23EEF1F4'/><rect x='18' y='24' width='44' height='3' fill='%23A9C6DC'/><circle cx='40' cy='25.5' r='3.5' fill='%23D4A72C'/><line x1='22' y1='27' x2='22' y2='39' stroke='%23A9C6DC' stroke-width='1.5'/><line x1='58' y1='27' x2='58' y2='39' stroke='%23A9C6DC' stroke-width='1.5'/><polygon points='13,40 31,40 28,44 16,44' fill='%23D4A72C'/><polygon points='49,40 67,40 64,44 52,44' fill='%23EEF1F4'/></svg>",
+    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><polygon points='40,4 72,22 72,58 40,76 8,58 8,22' fill='%230D0D0D' stroke='%23A9C6DC' stroke-width='2.5'/><rect x='38.5' y='18' width='3' height='34' fill='%23FFD026'/><rect x='26' y='52' width='28' height='4' fill='%23EEF1F4'/><rect x='18' y='24' width='44' height='3' fill='%23A9C6DC'/><circle cx='40' cy='25.5' r='3.5' fill='%23FFD026'/><line x1='22' y1='27' x2='22' y2='39' stroke='%23A9C6DC' stroke-width='1.5'/><line x1='58' y1='27' x2='58' y2='39' stroke='%23A9C6DC' stroke-width='1.5'/><polygon points='13,40 31,40 28,44 16,44' fill='%23FFD026'/><polygon points='49,40 67,40 64,44 52,44' fill='%23EEF1F4'/></svg>",
     apple:
-      "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><polygon points='256,20 460,138 460,374 256,492 52,374 52,138' fill='%230D0D0D' stroke='%23A9C6DC' stroke-width='14'/><rect x='246' y='112' width='20' height='220' fill='%23D4A72C'/><rect x='166' y='332' width='180' height='24' fill='%23EEF1F4'/><rect x='116' y='152' width='280' height='20' fill='%23A9C6DC'/></svg>",
+      "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><polygon points='256,20 460,138 460,374 256,492 52,374 52,138' fill='%230D0D0D' stroke='%23A9C6DC' stroke-width='14'/><rect x='246' y='112' width='20' height='220' fill='%23FFD026'/><rect x='166' y='332' width='180' height='24' fill='%23EEF1F4'/><rect x='116' y='152' width='280' height='20' fill='%23A9C6DC'/></svg>",
   },
 };
 
@@ -41,6 +41,8 @@ const ANTI_GLITCH_SCRIPT = `
   } catch(e) { window.__initialTheme = 'dark'; }
   var isLight = window.__initialTheme === 'light';
   var bg = isLight ? '#EEF1F4' : '#0D0D0D';
+  if (isLight) document.documentElement.classList.add('light-mode');
+  else document.documentElement.classList.remove('light-mode');
   var agStyle = document.createElement('style');
   agStyle.id = 'anti-glitch-style';
   agStyle.textContent = 'html,body{background:' + bg + ' !important;overflow:hidden;}';
@@ -70,7 +72,7 @@ export default function RootLayout({
         <meta
           name="color-scheme"
           id="meta-color-scheme"
-          content="dark"
+          content="dark light"
           suppressHydrationWarning
         />
         <link

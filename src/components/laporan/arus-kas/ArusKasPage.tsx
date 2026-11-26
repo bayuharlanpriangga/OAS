@@ -108,7 +108,8 @@ export function ArusKasPage() {
                 style={{
                   textAlign: "right",
                   fontFamily: "var(--mono)",
-                  color: total >= 0 ? "var(--accent)" : "var(--red)",
+                  fontVariantNumeric: "tabular-nums",
+                  color: total >= 0 ? "var(--green)" : "var(--red)",
                 }}
               >
                 {totalFmt.text}
@@ -125,21 +126,15 @@ export function ArusKasPage() {
 
   return (
     <div className="page" id="page-arus-kas" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Laporan Arus Kas</div>
-          <div className="section-sub">Metode Tidak Langsung · PSAK 2</div>
-        </div>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={handlePrint}
-            style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
-          >
-            <Printer size={14} /> Cetak PDF
-          </button>
-        </div>
+      <div className="section-header page-actions-only">
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm"
+          onClick={handlePrint}
+          style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
+        >
+          <Printer size={14} /> Cetak PDF
+        </button>
       </div>
 
       <PeriodSelect id="arus-kas-period" value={period} onChange={setPeriod} />
@@ -194,7 +189,8 @@ export function ArusKasPage() {
                   style={{
                     textAlign: "right",
                     fontFamily: "var(--mono)",
-                    color: report.kasAkhir >= 0 ? "var(--accent)" : "var(--red)",
+                    fontVariantNumeric: "tabular-nums",
+                    color: report.kasAkhir >= 0 ? "var(--green)" : "var(--red)",
                   }}
                 >
                   {kasAkhirFmt.text}

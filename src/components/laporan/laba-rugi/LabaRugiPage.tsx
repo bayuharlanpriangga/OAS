@@ -88,19 +88,11 @@ export function LabaRugiPage() {
 
   return (
     <div className="page" id="page-laba-rugi" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Laporan Laba Rugi</div>
-          <div className="section-sub">
-            Pendapatan dan beban periode berjalan
-          </div>
-        </div>
-      </div>
 
       <PeriodSelect value={period} onChange={setPeriod} />
 
       <div id="laba-rugi-content">
-        {renderSection("Pendapatan", report.pRows, report.totalPendapatan, "var(--accent)")}
+        {renderSection("Pendapatan", report.pRows, report.totalPendapatan, "var(--text)")}
         {renderSection("HPP", report.hRows, report.totalHpp, "var(--red)")}
         <div className="table-card" style={{ marginBottom: "16px" }}>
           <table>
@@ -109,7 +101,7 @@ export function LabaRugiPage() {
                 <td>Laba Kotor</td>
                 <td
                   className="num"
-                  style={{ textAlign: "right", color: "var(--accent2)" }}
+                  style={{ textAlign: "right", color: "var(--text)" }}
                 >
                   {fmtRp(report.labaKotor)}
                 </td>
@@ -127,13 +119,17 @@ export function LabaRugiPage() {
           <table>
             <tbody>
               <tr className="total-row">
-                <td>LABA BERSIH</td>
+                <td>Laba bersih</td>
                 <td
                   className="num"
                   style={{
                     textAlign: "right",
                     color:
-                      report.labaBersih >= 0 ? "var(--accent)" : "var(--red)",
+                      report.labaBersih > 0
+                        ? "var(--green)"
+                        : report.labaBersih < 0
+                          ? "var(--red)"
+                          : "var(--text)",
                   }}
                 >
                   {fmtRp(report.labaBersih)}

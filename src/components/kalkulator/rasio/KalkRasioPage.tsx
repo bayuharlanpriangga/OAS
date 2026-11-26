@@ -135,14 +135,6 @@ export default function KalkRasioPage() {
 
   return (
     <div className="page" id="page-kalk-rasio" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Kalkulator Rasio Keuangan</div>
-          <div className="section-sub">
-            Likuiditas · Solvabilitas · Profitabilitas · Aktivitas · Pasar
-          </div>
-        </div>
-      </div>
 
       <div style={{ gridTemplateColumns: "1fr 1fr" }} className="kalk-grid">
         <div>
@@ -165,7 +157,7 @@ export default function KalkRasioPage() {
                 style={{
                   fontSize: "11px",
                   fontWeight: 700,
-                  color: "var(--accent)",
+                  color: "var(--accent-text)",
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
                   marginBottom: "10px",
@@ -315,7 +307,7 @@ export default function KalkRasioPage() {
                 style={{
                   fontSize: "11px",
                   fontWeight: 700,
-                  color: "var(--accent)",
+                  color: "var(--accent-text)",
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
                   margin: "14px 0 10px",
@@ -684,19 +676,19 @@ export default function KalkRasioPage() {
                     <RasioTableRow
                       nama="EPS (Earning per Share)"
                       nilai=""
-                      rawText={res.eps !== null ? fmtRp(res.eps) : "—"}
+                      rawText={res.eps !== null ? fmtRp(res.eps) : "-"}
                       keterangan="Laba per lembar saham"
                     />
                     <RasioTableRow
                       nama="Price to Earning (PER)"
-                      nilai={res.per !== null ? res.per.toFixed(2) : "—"}
+                      nilai={res.per !== null ? res.per.toFixed(2) : "-"}
                       satuan={res.per !== null ? "x" : ""}
                       benchmark={{ ok: 15, warn: 25 }}
                       keterangan="Valuasi saham"
                     />
                     <RasioTableRow
                       nama="Price to Book Value (PBV)"
-                      nilai={res.pbv !== null ? res.pbv.toFixed(2) : "—"}
+                      nilai={res.pbv !== null ? res.pbv.toFixed(2) : "-"}
                       satuan={res.pbv !== null ? "x" : ""}
                       benchmark={{ ok: 1, warn: 3 }}
                       keterangan="Nilai pasar vs buku"
@@ -704,21 +696,21 @@ export default function KalkRasioPage() {
                     <RasioTableRow
                       nama="Book Value per Share"
                       nilai=""
-                      rawText={res.bvps !== null ? fmtRp(res.bvps) : "—"}
+                      rawText={res.bvps !== null ? fmtRp(res.bvps) : "-"}
                       keterangan="Nilai buku per saham"
                     />
                     <RasioTableRow
                       nama="Market Cap"
                       nilai=""
                       rawText={
-                        res.marketCap !== null ? fmtRp(res.marketCap) : "—"
+                        res.marketCap !== null ? fmtRp(res.marketCap) : "-"
                       }
                       keterangan="Kapitalisasi pasar"
                     />
                     <RasioTableRow
                       nama="Dividend per Share"
                       nilai=""
-                      rawText="—"
+                      rawText="-"
                       keterangan="Isi manual jika ada"
                     />
                   </>

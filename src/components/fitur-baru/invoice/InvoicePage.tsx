@@ -207,8 +207,8 @@ export default function InvoicePage() {
     const w = getWin();
     if (!w.addJurnal) return false;
     const lines = [
-      { akun: inv.akunPiutang || "1201", ket: `Piutang — ${inv.pelanggan}`, debit: inv.total, kredit: 0 },
-      { akun: inv.akunPend || "4101", ket: `Pendapatan — ${inv.noInvoice}`, debit: 0, kredit: inv.subtotal },
+      { akun: inv.akunPiutang || "1201", ket: `Piutang · ${inv.pelanggan}`, debit: inv.total, kredit: 0 },
+      { akun: inv.akunPend || "4101", ket: `Pendapatan · ${inv.noInvoice}`, debit: 0, kredit: inv.subtotal },
     ];
     if ((inv.ppn || 0) > 0) {
       lines.push({
@@ -221,7 +221,7 @@ export default function InvoicePage() {
     const res = w.addJurnal({
       tanggal: inv.tanggal,
       jenis: JENIS_JURNAL.INVOICE,
-      ket: `Invoice ${inv.noInvoice} — ${inv.pelanggan}${inv.deskripsi ? " (" + inv.deskripsi + ")" : ""}`,
+      ket: `Invoice ${inv.noInvoice} · ${inv.pelanggan}${inv.deskripsi ? " (" + inv.deskripsi + ")" : ""}`,
       ref: inv.noInvoice,
       lines,
       ...(inv.ppn > 0 ? { _ppnTarif: inv.ppnTarif || PPN_TARIF_STANDAR } : {}),
@@ -617,26 +617,19 @@ export default function InvoicePage() {
   const labelAkun = (kode: string) => {
     if (!kode) return "Pilih Akun...";
     const found = akuns.find((a) => a.kode === kode);
-    return found ? `${found.kode} — ${found.nama}` : kode;
+    return found ? `${found.kode} · ${found.nama}` : kode;
   };
 
   return (
     <>
       <div className="page" id="page-invoice" data-react-managed="1">
-        <div className="section-header">
-          <div>
-            <div className="section-title">
-              <FileText size={15} style={{ verticalAlign: "-2px", marginRight: "6px" }} />
-              Invoice &amp; Piutang
-            </div>
-            <div className="section-sub">Buat invoice · Lacak pembayaran · Jurnal otomatis</div>
-          </div>
-          {!readOnly && (
+        {!readOnly && (
+          <div className="section-header page-actions-only">
             <button className="btn btn-primary" type="button" onClick={() => openModalInvoice()}>
               + Buat Invoice
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         <div id="inv-belum-jurnal">
           {belumJurnalList.length > 0 && !readOnly && (
@@ -647,16 +640,16 @@ export default function InvoicePage() {
           )}
         </div>
 
-        <div id="inv-kpi" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: "10px", marginBottom: "16px" }}>
+        <div id="inv-kpi" className="oas-kpi-strip" aria-label="Ringkasan invoice">
           {[
-            { label: "Total Invoice", val: String(kpi.jumlah), color: "var(--text)" },
-            { label: "Piutang Berjalan", val: fmtRp(kpi.totalPiutang), color: "var(--accent2)" },
-            { label: "Sudah Lunas", val: fmtRp(kpi.totalLunas), color: "var(--green)" },
-            { label: "Lewat Jatuh Tempo", val: fmtRp(kpi.totalJatuhTempo), color: kpi.totalJatuhTempo > 0 ? "var(--danger)" : "var(--muted)" },
+            { label: "Piutang berjalan", val: fmtRp(kpi.totalPiutang), color: "var(--text)" },
+            { label: "Total invoice", val: String(kpi.jumlah), color: "var(--text)" },
+            { label: "Sudah lunas", val: fmtRp(kpi.totalLunas), color: "var(--green)" },
+            { label: "Lewat jatuh tempo", val: fmtRp(kpi.totalJatuhTempo), color: kpi.totalJatuhTempo > 0 ? "var(--danger)" : "var(--muted)" },
           ].map((c) => (
-            <div key={c.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "12px 14px" }}>
-              <div style={{ fontSize: "11px", color: "var(--muted)", fontWeight: 600 }}>{c.label}</div>
-              <div style={{ fontSize: "16px", fontWeight: 700, fontFamily: "var(--mono)", color: c.color, marginTop: "4px" }}>{c.val}</div>
+            <div key={c.label} className="oas-kpi-cell">
+              <span className="oas-kpi-label">{c.label}</span>
+              <span className="oas-kpi-val" style={{ color: c.color }}>{c.val}</span>
             </div>
           ))}
         </div>
@@ -711,9 +704,9 @@ export default function InvoicePage() {
                           {inv.deskripsi && <div style={{ fontSize: "11px", color: "var(--muted)", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{inv.deskripsi}</div>}
                         </td>
                         <td style={{ fontFamily: "var(--mono)", fontSize: "12px", whiteSpace: "nowrap" }}>{inv.tanggal}</td>
-                        <td style={{ fontFamily: "var(--mono)", fontSize: "12px", whiteSpace: "nowrap", color: isOverdue ? "var(--danger)" : undefined }}>{inv.jatuhTempo || "—"}</td>
+                        <td style={{ fontFamily: "var(--mono)", fontSize: "12px", whiteSpace: "nowrap", color: isOverdue ? "var(--danger)" : undefined }}>{inv.jatuhTempo || "-"}</td>
                         <td style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums", fontWeight: 600, fontSize: "12px" }}>{fmtRp(inv.total)}</td>
-                        <td style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums", fontSize: "12px", color: sisa > 0 ? "var(--accent3)" : "var(--green)" }}>{inv.status === "draft" ? "—" : fmtRp(sisa)}</td>
+                        <td style={{ fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums", fontSize: "12px", color: sisa > 0 ? "var(--accent3)" : "var(--green)" }}>{inv.status === "draft" ? "-" : fmtRp(sisa)}</td>
                         <td><span style={{ background: badge.bg, color: badge.c, border: "1px solid var(--border)", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "6px", whiteSpace: "nowrap" }}>{badge.t}</span></td>
                         <td>
                           <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
@@ -805,7 +798,7 @@ export default function InvoicePage() {
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--border)", paddingTop: "8px" }}>
             <span style={{ fontWeight: 700 }}>Total</span>
-            <span style={{ fontFamily: "var(--mono)", fontWeight: 700, color: "var(--accent)", fontSize: "16px" }}>{fmtRp(invTotals.total)}</span>
+            <span style={{ fontFamily: "var(--mono)", fontWeight: 700, color: "var(--accent-text)", fontSize: "16px" }}>{fmtRp(invTotals.total)}</span>
           </div>
         </div>
         <div className="form-row" style={{ marginTop: "12px" }}>
@@ -819,7 +812,7 @@ export default function InvoicePage() {
         open={bayarModalOpen && Boolean(activeBayarInv)}
         onClose={() => setBayarModalOpen(false)}
         maxWidth="460px"
-        title={<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Banknote size={15} style={{ color: "var(--accent)" }} /> {bayarForm.mode === "riwayat" ? `Riwayat Pembayaran ${activeBayarInv?.noInvoice || ""}` : `Bayar Invoice ${activeBayarInv?.noInvoice || ""}`}</span>}
+        title={<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Banknote size={15} style={{ color: "var(--accent-text)" }} /> {bayarForm.mode === "riwayat" ? `Riwayat Pembayaran ${activeBayarInv?.noInvoice || ""}` : `Bayar Invoice ${activeBayarInv?.noInvoice || ""}`}</span>}
         footer={
           <>
             <button className="btn btn-ghost" type="button" onClick={() => setBayarModalOpen(false)}>{bayarForm.mode === "riwayat" ? "Tutup" : "Batal"}</button>
@@ -835,13 +828,13 @@ export default function InvoicePage() {
               <div style={{ fontWeight: 700, marginBottom: "4px" }}>{activeBayarInv.pelanggan} · {activeBayarInv.noInvoice}</div>
               <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)" }}>
                 <span>Total: {fmtRp(activeBayarInv.total)}</span>
-                <span style={{ fontWeight: 700, color: "var(--accent)", fontFamily: "var(--mono)" }}>Sisa: {fmtRp(sisaTagihan(activeBayarInv, pembayarans, "invoice"))}</span>
+                <span style={{ fontWeight: 700, color: "var(--accent-text)", fontFamily: "var(--mono)" }}>Sisa: {fmtRp(sisaTagihan(activeBayarInv, pembayarans, "invoice"))}</span>
               </div>
             </div>
             {bayarForm.mode === "bayar" && (
               <div>
                 <div className="form-group"><label>Tanggal Pembayaran</label><input type="date" value={bayarForm.tanggal} onChange={(e) => setBayarForm({ ...bayarForm, tanggal: e.target.value })} /></div>
-                <div className="form-group"><label>Jumlah Dibayar (Rp) — boleh sebagian</label><input type="number" min={0} step="any" value={bayarForm.jumlah} onChange={(e) => setBayarForm({ ...bayarForm, jumlah: e.target.value })} /></div>
+                <div className="form-group"><label>Jumlah Dibayar (Rp) · boleh sebagian</label><input type="number" min={0} step="any" value={bayarForm.jumlah} onChange={(e) => setBayarForm({ ...bayarForm, jumlah: e.target.value })} /></div>
                 <div className="form-group"><label>Akun Kas/Bank Penerima</label><button className="form-picker-btn" type="button" onClick={() => setPickerTarget("bayar-kas")}>{labelAkun(bayarForm.akunKas)}</button></div>
                 <div className="form-group"><label>Metode (opsional)</label><input type="text" placeholder="Transfer, Tunai, ..." value={bayarForm.metode} onChange={(e) => setBayarForm({ ...bayarForm, metode: e.target.value })} /></div>
                 <div className="form-group"><label>Catatan (opsional)</label><input type="text" value={bayarForm.catatan} onChange={(e) => setBayarForm({ ...bayarForm, catatan: e.target.value })} /></div>
@@ -878,7 +871,7 @@ export default function InvoicePage() {
         open={alokasiModalOpen}
         onClose={() => setAlokasiModalOpen(false)}
         maxWidth="720px"
-        title={<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><ArrowLeftRight size={15} style={{ color: "var(--accent)" }} /> Alokasi Pembayaran Beberapa Invoice</span>}
+        title={<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><ArrowLeftRight size={15} style={{ color: "var(--accent-text)" }} /> Alokasi Pembayaran Beberapa Invoice</span>}
         footer={
           <>
             <button className="btn btn-ghost" type="button" onClick={() => setAlokasiModalOpen(false)}>Batal</button>
@@ -911,7 +904,7 @@ export default function InvoicePage() {
                   setAlokasiForm({ ...alokasiForm, rows: next });
                 }}
               >
-                <option value="">— Pilih Invoice —</option>
+                <option value="">Pilih Invoice </option>
                 {openInvsForAlokasi.map((inv) => (
                   <option key={inv.id} value={inv.id}>{inv.noInvoice} · {inv.pelanggan} (Sisa {fmtRp(sisaTagihan(inv, pembayarans, "invoice"))})</option>
                 ))}

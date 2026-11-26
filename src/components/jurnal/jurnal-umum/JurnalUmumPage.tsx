@@ -93,26 +93,20 @@ export function JurnalUmumPage() {
 
   return (
     <div className="page" id="page-jurnal-umum" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Jurnal Umum</div>
-          <div className="section-sub">Semua entri jurnal</div>
+      {entries.length === 0 ? (
+        <div className="section-header page-actions-only">
+          <button
+            type="button"
+            id="btn-setting-saldo-awal"
+            className="btn btn-ghost btn-sm"
+            onClick={() => callOasGlobal("openModalSaldoAwal")}
+            data-tooltip="Hanya bisa diatur sebelum ada transaksi apapun"
+            style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
+          >
+            <Settings size={14} /> Setting Saldo Awal
+          </button>
         </div>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          {entries.length === 0 ? (
-            <button
-              type="button"
-              id="btn-setting-saldo-awal"
-              className="btn btn-ghost btn-sm"
-              onClick={() => callOasGlobal("openModalSaldoAwal")}
-              data-tooltip="Hanya bisa diatur sebelum ada transaksi apapun"
-              style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
-            >
-              <Settings size={14} /> Setting Saldo Awal
-            </button>
-          ) : null}
-        </div>
-      </div>
+      ) : null}
 
       <div className="filter-bar">
         <input
@@ -160,8 +154,8 @@ export function JurnalUmumPage() {
                 <th>Keterangan</th>
                 <th>Jenis</th>
                 <th>Akun</th>
-                <th>Debit</th>
-                <th>Kredit</th>
+                <th className="num">Debit</th>
+                <th className="num">Kredit</th>
                 <th style={{ width: "36px" }} />
                 <th style={{ width: "40px" }} />
               </tr>
@@ -190,7 +184,7 @@ export function JurnalUmumPage() {
                             rowSpan={lines.length}
                             style={{ fontFamily: "var(--mono)", fontSize: "12px" }}
                           >
-                            {j.no || "—"}
+                            {j.no || "-"}
                           </td>
                           <td rowSpan={lines.length}>
                             {ketTampil}
@@ -325,12 +319,12 @@ export function JurnalUmumPage() {
                               <span
                                 title={
                                   pembalikAtas
-                                    ? "Jurnal pembalik — tidak bisa dibalik lagi"
+                                    ? "Jurnal pembalik · tidak bisa dibalik lagi"
                                     : `Sudah dibalik oleh ${dibalikOleh}`
                                 }
                                 style={{ fontSize: "10px", color: "var(--muted)" }}
                               >
-                                {pembalikAtas ? "—" : "Dibalik"}
+                                {pembalikAtas ? "-" : "Dibalik"}
                               </span>
                             ) : (
                               <button

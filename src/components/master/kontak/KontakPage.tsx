@@ -41,18 +41,18 @@ const TIPE_STYLE: Record<
   { bg: string; color: string; label: string }
 > = {
   pelanggan: {
-    bg: "rgba(74,222,128,0.12)",
-    color: "var(--accent)",
+    bg: "var(--green-tint)",
+    color: "var(--green)",
     label: "Pelanggan",
   },
   supplier: {
-    bg: "rgba(34,211,238,0.12)",
+    bg: "var(--accent2-tint)",
     color: "var(--accent2)",
     label: "Supplier",
   },
   keduanya: {
-    bg: "rgba(251,191,36,0.12)",
-    color: "var(--accent3)",
+    bg: "var(--warn-tint)",
+    color: "var(--warn)",
     label: "Keduanya",
   },
 };
@@ -118,7 +118,7 @@ export default function KontakPage() {
     if (selJual) {
       const prev = selJual.value;
       selJual.innerHTML =
-        '<option value="">— Tanpa Kontak —</option>' +
+        '<option value="">Tanpa Kontak </option>' +
         list
           .filter((k) => k.tipe === "pelanggan" || k.tipe === "keduanya")
           .map((k) => `<option value="${k.id}">${k.nama}</option>`)
@@ -129,7 +129,7 @@ export default function KontakPage() {
     if (selBeli) {
       const prev = selBeli.value;
       selBeli.innerHTML =
-        '<option value="">— Tanpa Kontak —</option>' +
+        '<option value="">Tanpa Kontak </option>' +
         list
           .filter((k) => k.tipe === "supplier" || k.tipe === "keduanya")
           .map((k) => `<option value="${k.id}">${k.nama}</option>`)
@@ -340,14 +340,8 @@ export default function KontakPage() {
   return (
     <>
       <div className="page" id="page-kontak" data-react-managed="1">
-        <div className="section-header">
-          <div>
-            <div className="section-title">Master Kontak</div>
-            <div className="section-sub">
-              Pelanggan &amp; Supplier · Histori transaksi
-            </div>
-          </div>
-          {!readOnly && (
+        {!readOnly && (
+          <div className="section-header page-actions-only">
             <button
               className="btn btn-primary btn-sm"
               type="button"
@@ -355,8 +349,8 @@ export default function KontakPage() {
             >
               <Plus size={14} style={{ verticalAlign: "-2px" }} /> Tambah Kontak
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         <div
           style={{
@@ -401,51 +395,17 @@ export default function KontakPage() {
           />
         </div>
 
-        <div
-          id="kontak-kpi"
-          style={{
-            display: "flex",
-            gap: "10px",
-            flexWrap: "wrap",
-            marginBottom: "16px",
-          }}
-        >
+        <div id="kontak-kpi" className="oas-kpi-strip" aria-label="Ringkasan kontak">
           {[
-            { label: "Total Kontak", val: kpi.total, color: "var(--text)" },
-            { label: "Pelanggan", val: kpi.pel, color: "var(--accent)" },
+            { label: "Total kontak", val: kpi.total, color: "var(--text)" },
+            { label: "Pelanggan", val: kpi.pel, color: "var(--green)" },
             { label: "Supplier", val: kpi.sup, color: "var(--accent2)" },
           ].map((item) => (
-            <div
-              key={item.label}
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: "10px",
-                padding: "10px 16px",
-                minWidth: "130px",
-                flex: 1,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "11px",
-                  color: "var(--muted)",
-                  fontWeight: 600,
-                }}
-              >
-                {item.label}
-              </div>
-              <div
-                style={{
-                  fontSize: "18px",
-                  fontWeight: 700,
-                  fontFamily: "var(--mono)",
-                  color: item.color,
-                  marginTop: "3px",
-                }}
-              >
+            <div key={item.label} className="oas-kpi-cell">
+              <span className="oas-kpi-label">{item.label}</span>
+              <span className="oas-kpi-val" style={{ color: item.color }}>
                 {item.val}
-              </div>
+              </span>
             </div>
           ))}
         </div>
@@ -519,9 +479,9 @@ export default function KontakPage() {
                         <td
                           style={{ fontFamily: "var(--mono)", fontSize: "12px" }}
                         >
-                          {k.telp || "—"}
+                          {k.telp || "-"}
                         </td>
-                        <td style={{ fontSize: "12px" }}>{k.email || "—"}</td>
+                        <td style={{ fontSize: "12px" }}>{k.email || "-"}</td>
                         <td
                           style={{
                             fontSize: "12px",
@@ -531,7 +491,7 @@ export default function KontakPage() {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {k.alamat || "—"}
+                          {k.alamat || "-"}
                         </td>
                         <td
                           style={{
@@ -540,7 +500,7 @@ export default function KontakPage() {
                             fontSize: "12px",
                           }}
                         >
-                          {k.totalTrx ? fmtRp(k.totalTrx) : "—"}
+                          {k.totalTrx ? fmtRp(k.totalTrx) : "-"}
                         </td>
                         <td
                           onClick={(e) => e.stopPropagation()}
@@ -739,21 +699,21 @@ export default function KontakPage() {
                   Telepon
                 </span>
                 <div style={{ fontFamily: "var(--mono)" }}>
-                  {detailKontak.telp || "—"}
+                  {detailKontak.telp || "-"}
                 </div>
               </div>
               <div>
                 <span style={{ color: "var(--muted)", fontSize: "11px" }}>
                   Email
                 </span>
-                <div>{detailKontak.email || "—"}</div>
+                <div>{detailKontak.email || "-"}</div>
               </div>
               <div>
                 <span style={{ color: "var(--muted)", fontSize: "11px" }}>
                   NPWP
                 </span>
                 <div style={{ fontFamily: "var(--mono)" }}>
-                  {detailKontak.npwp || "—"}
+                  {detailKontak.npwp || "-"}
                 </div>
               </div>
               {detailKontak.pic && (

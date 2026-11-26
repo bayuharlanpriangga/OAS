@@ -87,12 +87,6 @@ export function JurnalPenjualanPage() {
 
   return (
     <div className="page" id="page-jurnal-penjualan" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Jurnal Penjualan</div>
-          <div className="section-sub">Semua transaksi penjualan</div>
-        </div>
-      </div>
 
       <div className="filter-bar">
         <input

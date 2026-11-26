@@ -1,6 +1,6 @@
-import { callOasGlobal } from "../../shared/legacy-store/panggil-global";
-import { setLegacyKartuStockTab } from "../../shared/legacy-store/atur-tab-stok";
-import { readInputVal } from "../shared/baca-input";
+import { callOasGlobal } from "../../shared/legacy-store";
+import { setLegacyKartuStockTab } from "../../shared/legacy-store";
+import { readInputVal } from "../shared";
 
 export function inputPersediaanJurnal(): void {
   const win = window as unknown as { _invMetode?: string };

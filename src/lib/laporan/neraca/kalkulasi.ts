@@ -1,7 +1,7 @@
 import type { Akun, JurnalEntry } from "@/types";
-import { computeSaldoAll } from "../../shared/accounting/saldo-semua";
-import { plNatural } from "../../shared/accounting/saldo-alami";
-import type { NeracaReport, NeracaRow } from "../shared/types";
+import { computeSaldoAll } from "../../shared/accounting";
+import { plNatural } from "../../shared/accounting";
+import type { NeracaReport, NeracaRow } from "../shared";
 
 export function computeNeraca(
   jurnalEntries: readonly JurnalEntry[],

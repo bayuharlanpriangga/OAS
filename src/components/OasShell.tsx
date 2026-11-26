@@ -2,6 +2,10 @@ import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import OasWorkspace from "./OasWorkspace";
 import { DashboardPage, TransaksiPage } from "./utama";
+import PembelianPage from "./pembelian/PembelianPage";
+import PesananPembelianPage from "./pembelian/PesananPembelianPage";
+import PenjualanPage from "./penjualan/PenjualanPage";
+import PengirimanPage from "./perusahaan/PengirimanPage";
 import {
   JurnalKasPage,
   JurnalPembelianPage,
@@ -17,12 +21,7 @@ import {
   NeracaSaldoPage,
   PerubahanEkuitasPage,
 } from "./laporan";
-import {
-  AsetTetapPage,
-  CoaPage,
-  KontakPage,
-  ProdukPage,
-} from "./master";
+import { AsetTetapPage, CoaPage, KontakPage } from "./master";
 import {
   KalkBepPage,
   KalkBungaPage,
@@ -31,41 +30,41 @@ import {
   KalkRasioPage,
 } from "./kalkulator";
 import {
-  BillPage,
+  AnggaranPage,
   InvoicePage,
-  KartuHutangPage,
-  KartuPiutangPage,
-  PenawaranPage,
+  JurnalBerulangPage,
+  OperationalModals,
+  PajakPage,
   PesananJualPage,
-  UmurHutangPage,
-  UmurPiutangPage,
+  RekonsiliasiPage,
 } from "./fitur-baru";
 import {
   AiAssistantPage,
   AuditTrailPage,
   ExportModal,
+  SettingsPage,
   TutorialPage,
 } from "./lainnya";
+import {
+  AuthCompanyModals,
+  ProfilOnboardingModals,
+  StorageModals,
+  TeamModals,
+} from "./cloud";
+import { ShellOverlays } from "./core";
 
-interface OasShellProps {
-  pagesHtml: string;
-  overlaysHtml: string;
-}
-
-export default function OasShell({ pagesHtml, overlaysHtml }: OasShellProps) {
+export default function OasShell() {
   return (
     <>
       <Sidebar />
       <main className="main">
         <Topbar />
         <div className="content" id="oas-content-root">
-          <div
-            id="oas-legacy-pages-root"
-            style={{ display: "contents" }}
-            suppressHydrationWarning
-            dangerouslySetInnerHTML={{ __html: pagesHtml }}
-          />
           <DashboardPage />
+          <PembelianPage />
+          <PesananPembelianPage />
+          <PenjualanPage />
+          <PengirimanPage />
           <AiAssistantPage />
           <AnalitikPage />
           <TransaksiPage />
@@ -80,17 +79,14 @@ export default function OasShell({ pagesHtml, overlaysHtml }: OasShellProps) {
           <ArusKasPage />
           <PerubahanEkuitasPage />
           <CoaPage />
-          <ProdukPage />
           <AsetTetapPage />
           <KontakPage />
           <InvoicePage />
-          <BillPage />
-          <UmurPiutangPage />
-          <UmurHutangPage />
-          <KartuPiutangPage />
-          <KartuHutangPage />
-          <PenawaranPage />
           <PesananJualPage />
+          <JurnalBerulangPage />
+          <RekonsiliasiPage />
+          <AnggaranPage />
+          <PajakPage />
           <KalkPenyusutanPage />
           <KalkPersediaanPage />
           <KalkBungaPage />
@@ -98,15 +94,16 @@ export default function OasShell({ pagesHtml, overlaysHtml }: OasShellProps) {
           <KalkBepPage />
           <AuditTrailPage />
           <TutorialPage />
+          <SettingsPage />
         </div>
       </main>
-      <div
-        id="oas-overlays-root"
-        style={{ display: "contents" }}
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{ __html: overlaysHtml }}
-      />
+      <ShellOverlays />
       <ExportModal />
+      <OperationalModals />
+      <StorageModals />
+      <ProfilOnboardingModals />
+      <TeamModals />
+      <AuthCompanyModals />
       <OasWorkspace />
     </>
   );

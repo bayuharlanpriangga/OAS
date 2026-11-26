@@ -189,7 +189,7 @@ export default function AsetTetapPage() {
         id: "JRN_PENY_" + Date.now(),
         tanggal: tgl,
         jenis: JENIS_JURNAL.PENYUSUTAN,
-        keterangan: `Penyusutan Otomatis ${now.toLocaleDateString("id-ID", { month: "long", year: "numeric" })} — ${aktif.length} aset`,
+        keterangan: `Penyusutan Otomatis ${now.toLocaleDateString("id-ID", { month: "long", year: "numeric" })} · ${aktif.length} aset`,
         lines,
       });
 
@@ -526,18 +526,12 @@ export default function AsetTetapPage() {
   const autoSubText = autoEnabled
     ? lastRun
       ? `Terakhir: ${new Date(lastRun).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}`
-      : "Belum pernah dijalankan — berjalan otomatis tiap bulan"
-    : "Nonaktif — jurnal tidak dibuat otomatis";
+      : "Belum pernah dijalankan · berjalan otomatis tiap bulan"
+    : "Nonaktif · jurnal tidak dibuat otomatis";
 
   return (
     <div className="page" id="page-aset-tetap" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Register Aset Tetap</div>
-          <div className="section-sub">
-            Daftar aset · Foto lampiran · Penyusutan otomatis · Nilai buku
-          </div>
-        </div>
+      <div className="section-header page-actions-only">
         <motion.button
           type="button"
           whileTap={{ scale: 0.96 }}
@@ -549,74 +543,41 @@ export default function AsetTetapPage() {
         </motion.button>
       </div>
 
-      {/* KPI Cards */}
-      <div
-        id="at-kpi"
-        style={{
-          display: "flex",
-          gap: "10px",
-          flexWrap: "wrap",
-          marginBottom: "14px",
-        }}
-      >
+      {/* KPI Strip — Pita Facet Orias */}
+      <div id="at-kpi" className="oas-kpi-strip" aria-label="Ringkasan aset tetap">
         {[
           {
-            label: "Jumlah Aset Aktif",
-            val: `${kpi.aktifCount} aset`,
-            Icon: Factory,
-            clr: "var(--accent2)",
+            label: "Total nilai buku",
+            val: rp(kpi.totalNilaiBuku),
+            Icon: FileText,
+            clr: "var(--text)",
           },
           {
-            label: "Total Harga Perolehan",
+            label: "Total harga perolehan",
             val: rp(kpi.totalPerolehan),
             Icon: DollarSign,
-            clr: "var(--accent)",
+            clr: "var(--text)",
           },
           {
-            label: "Akum. Penyusutan",
+            label: "Akumulasi penyusutan",
             val: `${rp(kpi.totalAkum)} (${kpi.pctSusut}%)`,
             Icon: TrendingDown,
             clr: "var(--red)",
           },
           {
-            label: "Total Nilai Buku",
-            val: rp(kpi.totalNilaiBuku),
-            Icon: FileText,
-            clr: "var(--accent3)",
+            label: "Jumlah aset aktif",
+            val: `${kpi.aktifCount} aset`,
+            Icon: Factory,
+            clr: "var(--accent-text)",
           },
         ].map(({ label, val, Icon, clr }) => (
-          <div
-            key={label}
-            style={{
-              flex: 1,
-              minWidth: "140px",
-              background: "var(--surface)",
-              border: "0.5px solid var(--border)",
-              borderRadius: "12px",
-              padding: "12px 14px",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "11px",
-                color: "var(--muted)",
-                display: "flex",
-                alignItems: "center",
-                gap: "5px",
-              }}
-            >
-              <Icon size={13} /> {label}
-            </div>
-            <div
-              style={{
-                fontSize: "15px",
-                fontWeight: 600,
-                color: clr,
-                marginTop: "4px",
-              }}
-            >
+          <div key={label} className="oas-kpi-cell">
+            <span className="oas-kpi-label">
+              <Icon size={13} aria-hidden="true" /> {label}
+            </span>
+            <span className="oas-kpi-val" style={{ color: clr }}>
               {val}
-            </div>
+            </span>
           </div>
         ))}
       </div>
@@ -1012,7 +973,7 @@ export default function AsetTetapPage() {
                           <span
                             style={{
                               fontWeight: 700,
-                              color: isLow ? "var(--red)" : "var(--accent)",
+                              color: isLow ? "var(--red)" : "var(--accent-text)",
                             }}
                           >
                             {pct}%
@@ -1064,7 +1025,7 @@ export default function AsetTetapPage() {
                             style={{
                               fontSize: "12px",
                               fontWeight: 700,
-                              color: isLow ? "var(--red)" : "var(--accent)",
+                              color: isLow ? "var(--red)" : "var(--text)",
                               fontFamily: "var(--mono)",
                               marginTop: "1px",
                             }}
@@ -1351,7 +1312,7 @@ export default function AsetTetapPage() {
                               <span
                                 style={{
                                   background: "rgba(74,222,128,0.14)",
-                                  color: "var(--accent)",
+                                  color: "var(--accent-text)",
                                   padding: "2px 8px",
                                   borderRadius: "6px",
                                   fontSize: "11px",
@@ -1612,7 +1573,7 @@ export default function AsetTetapPage() {
             style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
           >
             <Camera size={15} />{" "}
-            {activeFotoAset ? `Foto — ${activeFotoAset.nama}` : "Foto Aset"}
+            {activeFotoAset ? `Foto · ${activeFotoAset.nama}` : "Foto Aset"}
           </span>
         }
         footer={

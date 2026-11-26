@@ -1,30 +1,125 @@
+/* ═══════════════════════════════════════════════════════════════
+   ORIAS DESIGN TOKENS — Perak–Kuning Cerah (Single Source of Truth)
+   Palet inti: Tinta (#0D0D0D), Perak (#EEF1F4), Es (#A9C6DC/#4F7A99),
+   Kuning Cerah (#FFD026). Status semantik terpisah.
+   ═══════════════════════════════════════════════════════════════ */
 
-/* LIGHT MODE — Perak (#EEF1F4) + Es (#4F7A99) + Emas (#D4A72C / #7A5C00) */
-body.light-mode {
-  --bg: #EEF1F4;
-  --surface: #FFFFFF;
-  --surface2: #E4E9EF;
-  --border: rgba(79, 122, 153, 0.28);
-  --border-strong: rgba(79, 122, 153, 0.45);
-  --accent: #D4A72C;
-  --accent-text: #7A5C00;
+:root {
+  /* Tier 1 — Palet inti Orias */
+  --tinta: #0D0D0D;
+  --perak: #EEF1F4;
+  --es: #A9C6DC;
+  --es-tua: #4F7A99;
+  --emas: #FFD026;
+  --emas-hover: #EAB80C;
+  --emas-text-light: #7D5B00;
+  --emas-border-light: #B38300;
+
+  /* Tier 2 — Mode Gelap (default: permukaan Tinta) */
+  color-scheme: dark;
+  --bg: #0D0D0D;
+  --surface: #131518;
+  --surface2: #1B1E23;
+  --border: rgba(169, 198, 220, 0.18);
+  --border-strong: rgba(169, 198, 220, 0.34);
+
+  --accent: #FFD026;
+  --accent-hover: #EAB80C;
+  --accent-text: #FFD026;
+  --accent-border: #FFD026;
   --accent-fg: #0D0D0D;
-  --accent-tint: rgba(212, 167, 44, 0.16);
+  --accent-tint: rgba(255, 208, 38, 0.14);
+
+  --accent2: #A9C6DC;
+  --accent2-tint: rgba(169, 198, 220, 0.10);
+
+  /* Status semantik — selalu disertai ikon/label, terpisah dari aksen */
+  --green: #4E9A6B;
+  --green-tint: rgba(78, 154, 107, 0.14);
+  --accent3: #D9772B;
+  --warn: #D9772B;
+  --warn-tint: rgba(217, 119, 43, 0.14);
+  --red: #D4564A;
+  --danger: #D4564A;
+  --red-tint: rgba(212, 86, 74, 0.14);
+
+  --text: #EEF1F4;
+  --muted: rgba(238, 241, 244, 0.72);
+
+  /* Skala tipografi (terbatas 5 tingkat, minimum 12px) */
+  --sans: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --mono: 'IBM Plex Mono', 'Cascadia Mono', ui-monospace, monospace;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: clamp(18px, 2vw, 22px);
+  --text-kpi: clamp(22px, 3vw, 32px);
+
+  /* Skala bentuk berhierarki (Geometri Facet Kristal Orias) */
+  --r-sharp: 2px;
+  --r-control: 4px;
+  --r-panel: 6px;
+  --facet-sm: 8px;
+  --facet-md: 12px;
+
+  /* Skala spasi */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(169, 198, 220, 0.28);
+  --scrollbar-thumb-hover: rgba(169, 198, 220, 0.50);
+  --scrim: rgba(13, 13, 13, 0.64);
+  --shadow-overlay: 0 18px 42px rgba(0, 0, 0, 0.45);
+}
+
+/* LIGHT MODE — Perak (#EEF1F4) + Es Tua (#4F7A99) + Kuning Cerah (#FFD026 fill / #7D5B00 text) */
+:root.light-mode,
+html:has(body.light-mode),
+body.light-mode {
+  color-scheme: light;
+  --bg: #EEF1F4;
+  --surface: #F7F9FB;
+  --surface2: #E4E9EF;
+  --border: rgba(79, 122, 153, 0.26);
+  --border-strong: rgba(79, 122, 153, 0.48);
+
+  --accent: #FFD026;
+  --accent-hover: #EAB80C;
+  --accent-text: #7D5B00;
+  --accent-border: #B38300;
+  --accent-fg: #0D0D0D;
+  --accent-tint: rgba(255, 208, 38, 0.22);
+
   --accent2: #4F7A99;
-  --accent2-tint: rgba(79, 122, 153, 0.12);
-  --green: #2F7048;
-  --green-tint: rgba(47, 112, 72, 0.12);
+  --accent2-tint: rgba(79, 122, 153, 0.11);
+
+  --green: #245B3A;
+  --green-tint: rgba(36, 91, 58, 0.12);
   --accent3: #A8530E;
   --warn: #A8530E;
+  --warn-tint: rgba(168, 83, 14, 0.12);
   --red: #A93226;
   --danger: #A93226;
   --red-tint: rgba(169, 50, 38, 0.12);
+
   --text: #0D0D0D;
   --muted: #4A5663;
+
+  --scrollbar-thumb: rgba(79, 122, 153, 0.34);
+  --scrollbar-thumb-hover: rgba(79, 122, 153, 0.56);
+  --scrim: rgba(13, 13, 13, 0.42);
+  --shadow-overlay: 0 18px 42px rgba(13, 13, 13, 0.16);
 }
+
 body.light-mode .sidebar { border-right-color: var(--border); }
 body.light-mode .topbar { border-bottom-color: var(--border); }
-body.light-mode .modal { box-shadow: 0 20px 48px rgba(13, 13, 13, 0.14); }
+body.light-mode .modal,
+body.light-mode dialog.oas-dialog { box-shadow: var(--shadow-overlay); }
 body.light-mode input, body.light-mode select, body.light-mode textarea { color: var(--text); }
 body.light-mode .debit { color: var(--green); }
 body.light-mode .kredit { color: var(--red); }
@@ -39,30 +134,44 @@ body.light-mode .ai-msg-user .ai-bubble { background: var(--accent2-tint); borde
   cursor: pointer; border: none; background: none; padding: 0;
 }
 .theme-toggle-track {
-  width: 44px; height: 24px; border-radius: 6px;
-  background: var(--surface2); transition: background 0.2s, border-color 0.2s;
+  width: 44px; height: 24px; border-radius: var(--r-control);
+  background: var(--surface2); transition: background 0.18s, border-color 0.18s;
   display: flex; align-items: center; padding: 0 3px;
   border: 1px solid var(--border-strong);
 }
 .theme-toggle-thumb {
-  width: 16px; height: 16px; border-radius: 3px;
-  background: var(--accent2); transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s;
+  width: 16px; height: 16px; border-radius: var(--r-sharp);
+  background: var(--accent2); transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background 0.18s;
   display: flex; align-items: center; justify-content: center;
   color: var(--tinta); flex-shrink: 0;
 }
 body.light-mode .theme-toggle-track { background: var(--surface2); border-color: var(--border-strong); }
 body.light-mode .theme-toggle-thumb { transform: translateX(20px); background: var(--accent); color: var(--accent-fg); }
-* { box-sizing: border-box; margin: 0; padding: 0; }
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 html {
   overflow: hidden;
   height: 100%;
   background: var(--bg);
-  -webkit-tap-highlight-color: transparent;
+  accent-color: var(--accent);
   overscroll-behavior: none;
+  margin: 0;
+  padding: 0;
 }
-*, *::before, *::after { -webkit-tap-highlight-color: transparent; }
 body {
-  background: var(--bg); color: var(--text); font-family: var(--sans); height: 100%; display: flex; overflow: hidden;
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  height: 100%;
+  display: flex;
+  overflow: hidden;
   overscroll-behavior: none;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-user-select: none; -moz-user-select: none; user-select: none;
@@ -70,26 +179,68 @@ body {
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
 }
-/* Elemen yang MEMANG perlu bisa dipilih/disalin/diinteraksi normal */
-input, textarea, select, [contenteditable="true"], .selectable, code, pre {
+
+/* Elemen yang perlu bisa dipilih/disalin/diinteraksi normal */
+input, textarea, select, [contenteditable="true"], .selectable, code, pre, table, td, th {
   -webkit-user-select: text; -moz-user-select: text; user-select: text;
   -webkit-touch-callout: default;
 }
 button, .btn, .nav-card, a, [onclick] {
   touch-action: manipulation;
 }
-button:focus-visible, .btn:focus-visible, a:focus-visible, [onclick]:focus-visible, .nav-card:focus-visible {
-  outline: 2px solid var(--accent-text); outline-offset: 2px;
+
+/* Fokus keyboard jelas dengan kontras tinggi di kedua mode */
+button:focus-visible,
+.btn:focus-visible,
+a:focus-visible,
+[onclick]:focus-visible,
+.nav-card:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 2px;
 }
 
-/* ═══ SCROLLBAR TEMA GLOBAL — fallback untuk semua area overflow-y/overflow-x
-   yang belum punya styling khusus, biar tidak ada scrollbar abu-abu bawaan browser ═══ */
-* {
+/* Scrollbar standar — fallback legacy dibungkus @supports not (scrollbar-color: auto) */
+html, body, .nav, .content, .table-scroll, .modal-body, .ks-table-wrap, .dash-card-scroll, #audit-scroll-area {
   scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
-*::-webkit-scrollbar { width: 6px; height: 6px; }
-*::-webkit-scrollbar-track { background: transparent; }
-*::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-*::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-*::-webkit-scrollbar-corner { background: transparent; }
+@supports not (scrollbar-color: auto) {
+  html, body, .nav, .content, .table-scroll, .modal-body, .ks-table-wrap, .dash-card-scroll, #audit-scroll-area {
+    scrollbar-width: auto;
+  }
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: var(--r-sharp); }
+  *::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+  *::-webkit-scrollbar-corner { background: transparent; }
+}
+
+/* Hormati prefers-reduced-motion secara menyeluruh */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Dukungan Forced Colors Mode (Windows High Contrast) */
+@media (forced-colors: active) {
+  .btn-primary,
+  .nav-card.active,
+  .dash-ledger-hero,
+  .oas-kpi-strip {
+    border: 1px solid Highlight !important;
+    forced-color-adjust: auto;
+  }
+  .nav-card.active::after,
+  .dash-ledger-hero::after,
+  .oas-kpi-strip::after,
+  .btn-primary::after {
+    background: Highlight;
+  }
+}

@@ -16,6 +16,7 @@ import AkunPickerModal from "@/components/ui/AkunPickerModal";
 import { resolveAkunSetting } from "@/lib/shared/accounting";
 import { guessAkunPersediaanDefault } from "@/lib/master/chart-of-accounts";
 import { fmtRp } from "@/lib/shared/format";
+import { initMultiKartuStockStore } from "@/lib/kalkulator/persediaan/kartu-stock";
 import {
   callOasGlobal,
   readAkuns,
@@ -221,6 +222,8 @@ export default function TransaksiPage() {
   const [beliFaktur, setBeliFaktur] = useState("");
   const [beliMetode, setBeliMetode] = useState<"tunai" | "kredit">("tunai");
   const [beliAkun, setBeliAkun] = useState("1301");
+  const [beliGudangId, setBeliGudangId] = useState("");
+  const [gudangTick, setGudangTick] = useState(0);
   const [beliProdukId, setBeliProdukId] = useState("");
   const [beliProdukLabel, setBeliProdukLabel] = useState("");
   const [beliQty, setBeliQty] = useState("1");
@@ -235,6 +238,14 @@ export default function TransaksiPage() {
     infoHtml?: string;
     lines: JurnalLine[];
   } | null>(null);
+
+  const syncGudangList = useCallback(() => {
+    const init = initMultiKartuStockStore();
+    const map = readMultiKartuStock();
+    const firstId = init.cardId || Object.keys(map)[0] || "";
+    setBeliGudangId((prev) => (prev && map[prev] ? prev : firstId));
+    setGudangTick((t) => t + 1);
+  }, []);
 
   // ── Manual state ──
   const manualSeqRef = useRef(1);
@@ -273,7 +284,23 @@ export default function TransaksiPage() {
 
   useEffect(() => {
     syncAkuns();
-  }, [syncAkuns]);
+    syncGudangList();
+  }, [syncAkuns, syncGudangList]);
+
+  const beliGudangOptions = useMemo(() => {
+    void gudangTick;
+    return Object.values(readMultiKartuStock());
+  }, [gudangTick]);
+
+  const beliActiveGudang = useMemo(
+    () => beliGudangOptions.find((g) => g.id === beliGudangId) || beliGudangOptions[0] || null,
+    [beliGudangId, beliGudangOptions]
+  );
+
+  const beliBarangInGudang = useMemo(
+    () => Object.values(beliActiveGudang?.kategori || {}),
+    [beliActiveGudang]
+  );
 
   // ── Derived Penjualan values ──
   const jualIsProduk = isProdukJualAkun(jualAkunPend);
@@ -379,7 +406,7 @@ export default function TransaksiPage() {
     callOasGlobal("openOptPicker", {
       title: "Pilih Kontak",
       options: [
-        { value: "", label: "— Tanpa Kontak —", sub: "Kosongkan kontak" },
+        { value: "", label: "Tanpa Kontak ", sub: "Kosongkan kontak" },
         ...list.map((k) => ({
           value: k.id,
           label: k.nama,
@@ -432,7 +459,7 @@ export default function TransaksiPage() {
       if (!override?.hargaJual || override.hargaJual <= 0) {
         callOasGlobal(
           "showAlert",
-          '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Produk dipilih — harga jual belum diset di Master Produk.'
+          '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Barang dipilih · harga jual belum diset di Persediaan.'
         );
       }
     },
@@ -445,14 +472,14 @@ export default function TransaksiPage() {
     if (!allCards.length) {
       callOasGlobal(
         "showAlert",
-        "Belum ada kartu stock. Tambahkan di menu Persediaan."
+        "Belum ada gudang persediaan. Tambahkan gudang di menu Persediaan."
       );
       return;
     }
     if (!cards.length) {
       callOasGlobal(
         "showAlert",
-        "Tidak ada produk tersedia. Aktifkan kartu stock di menu Persediaan (klik ikon gembok)."
+        "Tidak ada gudang tersedia untuk transaksi penjualan."
       );
       return;
     }
@@ -460,23 +487,25 @@ export default function TransaksiPage() {
     const pickLevel2 = (card: KsCardRecord) => {
       const kats = Object.values(card.kategori || {});
       if (!kats.length) {
-        callOasGlobal("showAlert", "Kartu stock ini belum punya barang.");
+        callOasGlobal("showAlert", `Gudang "${card.nama}" belum punya barang. Tambahkan barang lewat Pembelian.`);
         return;
       }
       if (kats.length === 1) {
         selectProdukJual(kats[0].id);
         return;
       }
+      const rakMap = new Map((card.rakList || []).map((r) => [r.id, r.nama]));
       callOasGlobal("openOptPicker", {
-        title: `Pilih Barang — ${card.nama}`,
+        title: `Pilih Barang · ${card.nama}`,
         options: kats.map((kat) => {
           const saldo = readKsSaldo(kat);
           const ov = readProdukList().find((p) => p.ksId === kat.id);
           const hJual = ov?.hargaJual || 0;
+          const rakNama = kat.rakId && rakMap.get(kat.rakId) ? `Rak: ${rakMap.get(kat.rakId)} · ` : "";
           return {
             value: kat.id,
             label: kat.nama,
-            sub: `${METODE_SHORT[saldo.metode] || "FIFO"} · Stok: ${saldo.totalQty} · HPP: ${fmtRp(saldo.hppNext)} · Jual: ${hJual ? fmtRp(hJual) : "Belum diset"}`,
+            sub: `${rakNama}Stok: ${saldo.totalQty} ${kat.satuan || "unit"} · HPP: ${fmtRp(saldo.hppNext)} · Jual: ${hJual ? fmtRp(hJual) : "Belum diset"}`,
           };
         }),
         currentValue: jualProdukId,
@@ -490,13 +519,13 @@ export default function TransaksiPage() {
     }
 
     callOasGlobal("openOptPicker", {
-      title: "Pilih Kartu Stock",
+      title: "Pilih Gudang",
       options: cards.map((card) => {
         const s = readCardSaldo(card);
         return {
           value: card.id,
           label: card.nama,
-          sub: `${Object.keys(card.kategori || {}).length} barang · Stok: ${s.totalQty.toLocaleString("id-ID")} ${(card.satuan as string) || "unit"}`,
+          sub: `${Object.keys(card.kategori || {}).length} barang · Total stok: ${s.totalQty.toLocaleString("id-ID")}`,
         };
       }),
       currentValue: "",
@@ -552,75 +581,50 @@ export default function TransaksiPage() {
   }, [beliAkun]);
 
   const openBeliProdukPicker = useCallback(() => {
-    const allCards = Object.values(readMultiKartuStock());
-    if (!allCards.length) {
+    const targetGudang = beliActiveGudang;
+    if (!targetGudang) {
       callOasGlobal(
         "showAlert",
-        "Belum ada kartu stock. Tambahkan di menu Persediaan."
+        "Belum ada gudang. Tambahkan gudang di menu Persediaan."
+      );
+      return;
+    }
+    const kats = Object.values(targetGudang.kategori || {});
+    if (!kats.length) {
+      callOasGlobal(
+        "showAlert",
+        `Gudang "${targetGudang.nama}" belum punya kategori barang. Tambahkan dulu di menu Persediaan (⋮ pada kartu rak → Tambah kategori barang).`
       );
       return;
     }
 
-    const applyProduk = (katId: string, label: string) => {
-      setBeliProdukId(katId);
-      setBeliProdukLabel(label);
-      if (!beliKet) setBeliKet(`Pembelian ${label}`);
-    };
-
-    const pickLevel2 = (card: KsCardRecord) => {
-      const kats = Object.values(card.kategori || {});
-      if (!kats.length) {
-        callOasGlobal("showAlert", "Kartu stock ini belum punya barang.");
-        return;
-      }
-      if (kats.length === 1) {
-        applyProduk(kats[0].id, kats[0].nama);
-        return;
-      }
-      callOasGlobal("openOptPicker", {
-        title: `Pilih Barang — ${card.nama}`,
-        options: kats.map((kat) => {
-          const saldo = readKsSaldo(kat);
-          return {
-            value: kat.id,
-            label: kat.nama,
-            sub: `${METODE_SHORT[saldo.metode] || "FIFO"} · Stok: ${saldo.totalQty} ${(card.satuan as string) || "unit"}`,
-          };
-        }),
-        currentValue: beliProdukId,
-        onSelect: (katId: string, label: string) => applyProduk(katId, label),
-      });
-    };
-
-    if (allCards.length === 1) {
-      pickLevel2(allCards[0]);
-      return;
-    }
-
+    const rakMap = new Map((targetGudang.rakList || []).map((r) => [r.id, r.nama]));
     callOasGlobal("openOptPicker", {
-      title: "Pilih Kartu Stock",
-      options: allCards.map((card) => {
-        const s = readCardSaldo(card);
+      title: `Pilih Barang · ${targetGudang.nama}`,
+      options: kats.map((kat) => {
+        const saldo = readKsSaldo(kat);
+        const rakNama = kat.rakId && rakMap.get(kat.rakId) ? `Rak: ${rakMap.get(kat.rakId)} · ` : "";
         return {
-          value: card.id,
-          label: card.nama,
-          sub: `${Object.keys(card.kategori || {}).length} barang · Stok: ${s.totalQty} ${(card.satuan as string) || "unit"}`,
+          value: kat.id,
+          label: kat.nama,
+          sub: `${rakNama}Stok: ${saldo.totalQty} ${kat.satuan || "unit"}`,
         };
       }),
-      currentValue: "",
-      onSelect: (cardId: string) => {
-        const card = readMultiKartuStock()[cardId];
-        if (card) pickLevel2(card);
+      currentValue: beliProdukId,
+      onSelect: (katId: string, label: string) => {
+        setBeliProdukId(katId);
+        setBeliProdukLabel(label);
+        if (!beliKet) setBeliKet(`Pembelian ${label}`);
       },
     });
-  }, [beliKet, beliProdukId]);
+  }, [beliActiveGudang, beliKet, beliProdukId]);
 
   const openBahanBakuPicker = useCallback((rowId: string) => {
     const allCards = Object.values(readMultiKartuStock());
     if (!allCards.length) {
       callOasGlobal(
         "showAlert",
-        "Belum ada kartu stock. Tambahkan di menu Persediaan."
+        "Belum ada gudang persediaan. Tambahkan di menu Persediaan."
       );
       return;
     }
@@ -628,17 +632,17 @@ export default function TransaksiPage() {
     const pickLevel2 = (card: KsCardRecord) => {
       const kats = Object.values(card.kategori || {});
       if (!kats.length) {
-        callOasGlobal("showAlert", "Kartu stock ini belum punya barang.");
+        callOasGlobal("showAlert", `Gudang "${card.nama}" belum punya barang.`);
         return;
       }
       callOasGlobal("openOptPicker", {
-        title: `Pilih Bahan Baku — ${card.nama}`,
+        title: `Pilih Bahan Baku · ${card.nama}`,
         options: kats.map((kat) => {
           const saldo = readKsSaldo(kat);
           return {
             value: kat.id,
             label: kat.nama,
-            sub: `${METODE_SHORT[saldo.metode] || "FIFO"} · Stok: ${saldo.totalQty} ${(card.satuan as string) || "unit"} · HPP: ${fmtRp(saldo.hppNext)}/unit`,
+            sub: `Stok: ${saldo.totalQty} ${kat.satuan || "unit"} · HPP: ${fmtRp(saldo.hppNext)}/unit`,
           };
         }),
         currentValue:
@@ -659,13 +663,13 @@ export default function TransaksiPage() {
     }
 
     callOasGlobal("openOptPicker", {
-      title: "Pilih Kartu Stock",
+      title: "Pilih Gudang Bahan Baku",
       options: allCards.map((card) => {
         const s = readCardSaldo(card);
         return {
           value: card.id,
           label: card.nama,
-          sub: `${Object.keys(card.kategori || {}).length} barang · Stok: ${s.totalQty} ${(card.satuan as string) || "unit"}`,
+          sub: `${Object.keys(card.kategori || {}).length} barang · Total stok: ${s.totalQty}`,
         };
       }),
       currentValue: "",
@@ -808,7 +812,7 @@ export default function TransaksiPage() {
       "auditLog",
       "create",
       "jurnal",
-      `Jurnal Kas ${kasJenis === "masuk" ? "Masuk" : "Keluar"} — ${fmtRp(jumlah)}`
+      `Jurnal Kas ${kasJenis === "masuk" ? "Masuk" : "Keluar"} · ${fmtRp(jumlah)}`
     );
     setKasJumlah("");
     setKasKet("");
@@ -863,7 +867,7 @@ export default function TransaksiPage() {
       callOasGlobal(
         "showAlert",
         jualIsProduk && jualProdukId
-          ? "Harga jual belum diset — atur di Master Produk terlebih dahulu."
+          ? "Harga jual belum diset · atur di Persediaan terlebih dahulu."
           : "Isi jumlah penjualan terlebih dahulu!"
       );
       return;
@@ -985,7 +989,7 @@ export default function TransaksiPage() {
       "auditLog",
       "create",
       "jurnal",
-      `Penjualan${inv ? " " + inv : ""} — ${fmtRp(jumlah)}`,
+      `Penjualan${inv ? " " + inv : ""} · ${fmtRp(jumlah)}`,
       { ref: inv }
     );
 
@@ -1050,7 +1054,7 @@ export default function TransaksiPage() {
       }
       const total = beliBahanBakuSummary.total;
       setBeliPreview({
-        title: "Preview Jurnal — Produksi Barang Jadi",
+        title: "Preview Jurnal · Produksi Barang Jadi",
         lines: [
           { akun: "1304", ket, debit: total, kredit: 0 },
           {
@@ -1065,12 +1069,17 @@ export default function TransaksiPage() {
     }
 
     const hargaPerUnit = parseFloat(beliJumlah) || 0;
+    if (beliIsPersediaan && !beliProdukId) {
+      setBeliPreview(null);
+      callOasGlobal("showAlert", "Pilih barang terlebih dahulu!");
+      return;
+    }
     if (!hargaPerUnit) {
       setBeliPreview(null);
       callOasGlobal("showAlert", "Isi harga per unit terlebih dahulu!");
       return;
     }
-    const totalBeli = beliProdukId ? hargaPerUnit * qty : hargaPerUnit;
+    const totalBeli = beliIsPersediaan ? hargaPerUnit * qty : hargaPerUnit;
     setBeliPreview({
       title: "Preview Jurnal",
       lines: buildBeliLines(beliAkun, totalBeli, beliMetode, ket),
@@ -1079,6 +1088,7 @@ export default function TransaksiPage() {
     beliQty,
     beliKet,
     beliIsBarangJadi,
+    beliIsPersediaan,
     beliBahanBakuRows,
     beliBahanBakuSummary,
     beliProdukId,
@@ -1099,17 +1109,28 @@ export default function TransaksiPage() {
     const faktur =
       beliFaktur.trim() || String(callOasGlobal("autoNo", "PO") || "PO-001");
     const qty = parseFloat(beliQty) || 1;
-    const ket = beliKet.trim() || `Pembelian ${faktur}`;
+    const ket =
+      beliKet.trim() ||
+      (beliProdukLabel ? `Pembelian ${beliProdukLabel}` : `Pembelian ${faktur}`);
+
+    const resolveTargetBarangId = (): string | null => {
+      if (!beliIsPersediaan) return "";
+      if (!beliActiveGudang) {
+        callOasGlobal(
+          "showAlert",
+          "Belum ada gudang tujuan. Tambahkan gudang terlebih dahulu di menu Persediaan."
+        );
+        return null;
+      }
+      if (!beliProdukId) {
+        callOasGlobal("showAlert", "Pilih barang terlebih dahulu!");
+        return null;
+      }
+      return beliProdukId;
+    };
 
     // Mode Produksi Barang Jadi (1304)
     if (beliIsBarangJadi && beliBahanBakuRows.length) {
-      if (!beliProdukId) {
-        callOasGlobal(
-          "showAlert",
-          "Pilih produk Barang Jadi yang diproduksi terlebih dahulu!"
-        );
-        return;
-      }
       const invalidRow = beliBahanBakuRows.find(
         (r) => !r.katId || !(parseFloat(r.qty) > 0)
       );
@@ -1140,6 +1161,9 @@ export default function TransaksiPage() {
         }
       }
 
+      const targetJadiId = resolveTargetBarangId();
+      if (!targetJadiId) return;
+
       let totalHpp = 0;
       beliBahanBakuRows.forEach((row) => {
         const res = callOasGlobal(
@@ -1147,7 +1171,7 @@ export default function TransaksiPage() {
           row.katId,
           parseFloat(row.qty) || 0,
           beliTanggal,
-          `Pemakaian bahan baku — ${ket}`
+          `Pemakaian bahan baku · ${ket}`
         ) as { hppBatch?: number } | undefined;
         totalHpp += res?.hppBatch || 0;
       });
@@ -1170,12 +1194,12 @@ export default function TransaksiPage() {
         ],
       });
 
-      const foundJadi = findKatById(beliProdukId);
+      const foundJadi = findKatById(targetJadiId);
       if (foundJadi) {
-        setLegacyActiveKartuStock(foundJadi.card.id, beliProdukId);
+        setLegacyActiveKartuStock(foundJadi.card.id, targetJadiId);
         callOasGlobal(
           "addKartuStockOnBuy",
-          beliProdukId,
+          targetJadiId,
           qty,
           hargaPerUnitJadi,
           beliTanggal,
@@ -1185,6 +1209,7 @@ export default function TransaksiPage() {
         callOasGlobal("syncKartuStockDataFromKategori");
         callOasGlobal("renderKartuStock");
         callOasGlobal("renderKartuStockSelector");
+        callOasGlobal("renderProduk");
         setLegacyKsJustWroteDirectly(false);
       }
 
@@ -1203,26 +1228,25 @@ export default function TransaksiPage() {
         { rowId: `bb${bbSeqRef.current++}`, katId: "", katLabel: "", qty: "1" },
       ]);
       setBeliPreview(null);
+      syncGudangList();
       callOasGlobal("renderDashboard");
       callOasGlobal(
         "showAlert",
-        '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Produksi Barang Jadi berhasil disimpan & kartu stock diperbarui!'
+        '<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Produksi Barang Jadi berhasil disimpan & stok gudang diperbarui!'
       );
       return;
     }
 
     // Mode Normal
     const hargaPerUnit = parseFloat(beliJumlah) || 0;
-    if (beliIsPersediaan && !beliProdukId) {
-      callOasGlobal("showAlert", "Pilih produk terlebih dahulu!");
-      return;
-    }
     if (!hargaPerUnit) {
       callOasGlobal("showAlert", "Isi harga per unit terlebih dahulu!");
       return;
     }
+    const targetProdukId = resolveTargetBarangId();
+    if (targetProdukId === null) return;
 
-    const totalBeli = beliProdukId ? hargaPerUnit * qty : hargaPerUnit;
+    const totalBeli = targetProdukId ? hargaPerUnit * qty : hargaPerUnit;
     const lines = buildBeliLines(beliAkun, totalBeli, beliMetode, ket);
     const jrnEntry: JurnalEntry = {
       tanggal: beliTanggal,
@@ -1275,8 +1299,8 @@ export default function TransaksiPage() {
       callOasGlobal("simpanBillState");
     }
 
-    if (beliProdukId) {
-      const ppnProd = readProdukList().find((p) => p.ksId === beliProdukId);
+    if (targetProdukId) {
+      const ppnProd = readProdukList().find((p) => p.ksId === targetProdukId);
       if (ppnProd?.ppn != null && ppnProd.ppn > 0) {
         const ppnNom = Math.round((totalBeli * ppnProd.ppn) / 100);
         const currentAkuns = readAkuns();
@@ -1288,12 +1312,12 @@ export default function TransaksiPage() {
         const akunKasHutang = beliMetode === "tunai" ? "1101" : "2101";
         callOasGlobal("addJurnal", {
           tanggal: beliTanggal,
-          ket: `PPN Masukan ${ppnProd.ppn}% — ${ket}`,
+          ket: `PPN Masukan ${ppnProd.ppn}% · ${ket}`,
           jenis: "PPN",
           ref: faktur,
           kontakId: beliKontakId,
           _ppnTarif: ppnProd.ppn,
-          _ksId: beliProdukId,
+          _ksId: targetProdukId,
           lines: [
             {
               akun: akunPpnIn,
@@ -1311,12 +1335,12 @@ export default function TransaksiPage() {
         });
       }
 
-      const found = findKatById(beliProdukId);
+      const found = findKatById(targetProdukId);
       if (found) {
-        setLegacyActiveKartuStock(found.card.id, beliProdukId);
+        setLegacyActiveKartuStock(found.card.id, targetProdukId);
         callOasGlobal(
           "addKartuStockOnBuy",
-          beliProdukId,
+          targetProdukId,
           qty,
           hargaPerUnit,
           beliTanggal,
@@ -1326,6 +1350,7 @@ export default function TransaksiPage() {
         callOasGlobal("syncKartuStockDataFromKategori");
         callOasGlobal("renderKartuStock");
         callOasGlobal("renderKartuStockSelector");
+        callOasGlobal("renderProduk");
         setLegacyKsJustWroteDirectly(false);
       }
     }
@@ -1337,11 +1362,11 @@ export default function TransaksiPage() {
       "auditLog",
       "create",
       "jurnal",
-      `Pembelian${faktur ? " " + faktur : ""} — ${fmtRp(totalBeli)}`,
+      `Pembelian${faktur ? " " + faktur : ""} · ${fmtRp(totalBeli)}`,
       { ref: faktur }
     );
 
-    const hadProduk = Boolean(beliProdukId);
+    const hadProduk = Boolean(targetProdukId);
     setBeliFaktur("");
     setBeliJumlah("");
     setBeliKet("");
@@ -1353,10 +1378,11 @@ export default function TransaksiPage() {
     setBeliAkun("1301");
     setBeliBahanBakuRows([]);
     setBeliPreview(null);
+    syncGudangList();
     callOasGlobal("renderDashboard");
     callOasGlobal(
       "showAlert",
-      `<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Jurnal Pembelian berhasil disimpan${hadProduk ? " & kartu stock diperbarui!" : "!"}`
+      `<i class="ti ti-circle-check" style="color:var(--accent);font-size:13px;vertical-align:-2px;margin-right:4px;"></i> Jurnal Pembelian berhasil disimpan${hadProduk ? " & stok gudang diperbarui!" : "!"}`
     );
   }, [
     beliTanggal,
@@ -1366,12 +1392,15 @@ export default function TransaksiPage() {
     beliIsBarangJadi,
     beliBahanBakuRows,
     beliProdukId,
+    beliProdukLabel,
+    beliActiveGudang,
     beliKontakId,
     beliJumlah,
     beliIsPersediaan,
     beliAkun,
     beliMetode,
     buildBeliLines,
+    syncGudangList,
   ]);
 
   // ── Manual Actions ──
@@ -1423,7 +1452,7 @@ export default function TransaksiPage() {
       jenis: "Manual",
       lines,
     });
-    callOasGlobal("auditLog", "create", "jurnal", `Jurnal Manual — ${ket}`);
+    callOasGlobal("auditLog", "create", "jurnal", `Jurnal Manual · ${ket}`);
     setManKet("");
     setManNo("");
     resetManualLines();
@@ -1434,6 +1463,7 @@ export default function TransaksiPage() {
   useEffect(() => {
     setOasWindowFn("initTransaksiForm", () => {
       syncAkuns();
+      syncGudangList();
       setBeliAkun((prev) =>
         ["1301", "1302", "1303", "1304"].includes(prev) ? prev : "1301"
       );
@@ -1441,6 +1471,24 @@ export default function TransaksiPage() {
     });
     setOasWindowFn("initManualLines", resetManualLines);
     setOasWindowFn("initJualAkunPendapatan", initJualDefault);
+    setOasWindowFn(
+      "openTransaksiTab",
+      ((tab: TrxTab) => {
+        const valid: TrxTab[] = [
+          "simpel",
+          "kas",
+          "penjualan",
+          "pembelian",
+          "umum",
+        ];
+        if (valid.includes(tab)) {
+          setActiveTab(tab);
+          if (tab === "pembelian") syncGudangList();
+          if (tab === "umum") resetManualLines();
+          if (tab === "penjualan") initJualDefault();
+        }
+      }) as (...args: never[]) => unknown
+    );
     setOasWindowFn(
       "switchTab",
       ((group: string, tab: string) => {
@@ -1454,6 +1502,7 @@ export default function TransaksiPage() {
           ];
           if (valid.includes(tab as TrxTab)) {
             setActiveTab(tab as TrxTab);
+            if (tab === "pembelian") syncGudangList();
             if (tab === "umum") resetManualLines();
             if (tab === "penjualan") initJualDefault();
           }
@@ -1467,6 +1516,7 @@ export default function TransaksiPage() {
     setOasWindowFn("simpanManual", handleSimpanManual);
   }, [
     syncAkuns,
+    syncGudangList,
     resetManualLines,
     initJualDefault,
     handleSimpanSimpel,
@@ -1498,14 +1548,6 @@ export default function TransaksiPage() {
 
   return (
     <div className="page" id="page-transaksi" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Input Transaksi</div>
-          <div className="section-sub">
-            Masukkan transaksi — jurnal dibuat otomatis
-          </div>
-        </div>
-      </div>
 
       <div className="tabs">
         {(
@@ -1523,16 +1565,13 @@ export default function TransaksiPage() {
             className={`tab${activeTab === tab.id ? " active" : ""}`}
             onClick={() => {
               setActiveTab(tab.id);
+              if (tab.id === "pembelian") syncGudangList();
               if (tab.id === "umum" && manualLines.length === 0) {
                 resetManualLines();
               }
               if (tab.id === "penjualan") initJualDefault();
             }}
-            style={
-              "highlight" in tab && tab.highlight
-                ? { color: "var(--accent)", fontWeight: 700, background: "transparent", border: "none" }
-                : { background: "transparent", border: "none" }
-            }
+            style={{ background: "transparent", border: "none" }}
           >
             {tab.label}
           </button>
@@ -1549,10 +1588,10 @@ export default function TransaksiPage() {
                   className="table-title"
                   style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
                 >
-                  <Zap size={16} style={{ color: "var(--accent)" }} /> Mode Cepat
+                  <Zap size={16} style={{ color: "var(--accent-text)" }} /> Mode Cepat
                 </div>
                 <div className="table-subtitle">
-                  Input transaksi tanpa perlu tahu jurnal · Otomatis dijurnalkan
+                  Input transaksi tanpa perlu tahu jurnal, otomatis dijurnalkan
                 </div>
               </div>
             </div>
@@ -1654,7 +1693,7 @@ export default function TransaksiPage() {
                         </span>
                         <span
                           style={{
-                            color: "var(--accent)",
+                            color: "var(--accent-text)",
                             minWidth: "80px",
                             textAlign: "right",
                           }}
@@ -1831,7 +1870,7 @@ export default function TransaksiPage() {
                       <span style={l.d ? undefined : { paddingLeft: "24px" }}>
                         {l.akun}
                       </span>
-                      <span style={{ color: "var(--accent)" }}>
+                      <span style={{ color: "var(--accent-text)" }}>
                         {l.d ? fmtRp(l.d) : ""}
                       </span>
                       <span style={{ color: "var(--red)" }}>
@@ -2010,7 +2049,7 @@ export default function TransaksiPage() {
                       >
                         {jualCalc.totalHarga > 0
                           ? fmtRp(jualCalc.totalHarga)
-                          : "—"}
+                          : "-"}
                       </span>
                     </div>
                   ) : (
@@ -2109,7 +2148,7 @@ export default function TransaksiPage() {
                       <span style={l.d ? undefined : { paddingLeft: "24px" }}>
                         {l.akun}
                       </span>
-                      <span style={{ color: "var(--accent)" }}>
+                      <span style={{ color: "var(--accent-text)" }}>
                         {l.d ? fmtRp(l.d) : ""}
                       </span>
                       <span style={{ color: "var(--red)" }}>
@@ -2205,44 +2244,70 @@ export default function TransaksiPage() {
               </div>
 
               {beliIsPersediaan ? (
-                <div className="form-row" id="beli-produk-row">
-                  <div className="form-group">
-                    <label id="beli-produk-label-text">
-                      {beliIsBarangJadi
-                        ? "Produk Barang Jadi (Hasil Produksi)"
-                        : "Produk"}
-                    </label>
-                    <button
-                      className="opt-picker-btn"
-                      type="button"
-                      id="beli-produk-btn"
-                      onClick={openBeliProdukPicker}
-                    >
-                      <span
-                        className="opt-picker-label"
-                        id="beli-produk-label"
-                        style={{
-                          color: beliProdukLabel ? "var(--text)" : "var(--muted)",
+                <>
+                  <div className="form-row full" id="beli-gudang-row">
+                    <div className="form-group">
+                      <label htmlFor="beli-gudang-select">Gudang Tujuan</label>
+                      <select
+                        id="beli-gudang-select"
+                        value={beliActiveGudang?.id || ""}
+                        onChange={(e) => {
+                          setBeliGudangId(e.target.value);
+                          setBeliProdukId("");
+                          setBeliProdukLabel("");
                         }}
                       >
-                        {beliProdukLabel || "Pilih produk..."}
-                      </span>
-                      <span className="opt-picker-arrow">▾</span>
-                    </button>
+                        {beliGudangOptions.map((g) => (
+                          <option key={g.id} value={g.id}>
+                            {g.nama}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label htmlFor="beli-produk-qty">Qty</label>
-                    <input
-                      type="number"
-                      id="beli-produk-qty"
-                      placeholder="1"
-                      min="1"
-                      inputMode="numeric"
-                      value={beliQty}
-                      onChange={(e) => setBeliQty(e.target.value)}
-                    />
+
+                  <div className="form-row" id="beli-produk-row">
+                    <div className="form-group">
+                      <label id="beli-produk-label-text">
+                        {beliIsBarangJadi
+                          ? "Barang Jadi (Hasil Produksi)"
+                          : "Pilih Barang"}
+                      </label>
+                      <button
+                        className="opt-picker-btn"
+                        type="button"
+                        id="beli-produk-btn"
+                        onClick={openBeliProdukPicker}
+                      >
+                        <span
+                          className="opt-picker-label"
+                          id="beli-produk-label"
+                          style={{
+                            color: beliProdukLabel ? "var(--text)" : "var(--muted)",
+                          }}
+                        >
+                          {beliProdukLabel ||
+                            (beliBarangInGudang.length > 0
+                              ? "Pilih barang..."
+                              : "Belum ada kategori barang di gudang ini")}
+                        </span>
+                        <span className="opt-picker-arrow">▾</span>
+                      </button>
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="beli-produk-qty">Qty</label>
+                      <input
+                        type="number"
+                        id="beli-produk-qty"
+                        placeholder="1"
+                        min="1"
+                        inputMode="numeric"
+                        value={beliQty}
+                        onChange={(e) => setBeliQty(e.target.value)}
+                      />
+                    </div>
                   </div>
-                </div>
+                </>
               ) : null}
 
               {beliIsBarangJadi ? (
@@ -2402,7 +2467,7 @@ export default function TransaksiPage() {
                         id="beli-total-hint"
                         style={{
                           fontSize: "11px",
-                          color: "var(--accent)",
+                          color: "var(--accent-text)",
                           marginTop: "3px",
                         }}
                       >
@@ -2492,7 +2557,7 @@ export default function TransaksiPage() {
                         <span style={{ flex: 1 }}>{a?.nama || l.akun}</span>
                         <span
                           style={{
-                            color: "var(--accent)",
+                            color: "var(--accent-text)",
                             minWidth: "80px",
                             textAlign: "right",
                           }}
@@ -2611,7 +2676,7 @@ export default function TransaksiPage() {
                           style={{ display: "block" }}
                         >
                           {akunObj
-                            ? `${akunObj.kode} — ${akunObj.nama}`
+                            ? `${akunObj.kode} · ${akunObj.nama}`
                             : row.akun || "Pilih Akun..."}
                         </button>
                         <input
@@ -2693,7 +2758,7 @@ export default function TransaksiPage() {
                 }}
               >
                 Total Debit:{" "}
-                <span style={{ color: "var(--accent)" }}>
+                <span style={{ color: "var(--accent-text)" }}>
                   {fmtRp(manualTotals.td)}
                 </span>{" "}
                 &nbsp;|&nbsp; Total Kredit:{" "}

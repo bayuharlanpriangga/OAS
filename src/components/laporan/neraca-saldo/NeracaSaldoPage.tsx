@@ -42,12 +42,6 @@ export function NeracaSaldoPage() {
 
   return (
     <div className="page" id="page-neraca-saldo" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Neraca Saldo</div>
-          <div className="section-sub">Saldo semua akun</div>
-        </div>
-      </div>
 
       <PeriodSelect value={period} onChange={setPeriod} />
 
@@ -106,15 +100,16 @@ export function NeracaSaldoPage() {
                   colSpan={5}
                   style={{
                     textAlign: "right",
-                    padding: "8px 20px 4px",
+                    padding: "10px 16px 6px",
                     fontSize: "12px",
                     fontFamily: "var(--mono)",
-                    color: report.balanced ? "var(--accent)" : "var(--red)",
+                    fontWeight: 600,
+                    color: report.balanced ? "var(--green)" : "var(--red)",
                   }}
                 >
                   {report.balanced
-                    ? "✓ Neraca Saldo Balance"
-                    : `✗ Tidak Balance — selisih: ${fmtRp(report.selisih)}`}
+                    ? "✓ Neraca saldo seimbang"
+                    : `✗ Tidak seimbang · selisih: ${fmtRp(report.selisih)}`}
                 </td>
               </tr>
             </tbody>

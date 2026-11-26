@@ -101,12 +101,6 @@ export function BukuBesarPage() {
 
   return (
     <div className="page" id="page-buku-besar" data-react-managed="1">
-      <div className="section-header">
-        <div>
-          <div className="section-title">Buku Besar</div>
-          <div className="section-sub">Mutasi per akun</div>
-        </div>
-      </div>
 
       <div className="filter-bar">
         <input type="hidden" id="bb-akun-filter-val" value={selectedKode} readOnly />
@@ -184,7 +178,7 @@ export function BukuBesarPage() {
                 {selectedAkun?.kode || selectedKode} -{" "}
                 {selectedAkun?.nama || selectedKode}
               </b>{" "}
-              &nbsp;|&nbsp; Tipe: {selectedAkun?.tipe || "—"} &nbsp;|&nbsp;
+              &nbsp;|&nbsp; Tipe: {selectedAkun?.tipe || "-"} &nbsp;|&nbsp;
               Normal: {selectedAkun?.normal === "D" ? "Debit" : "Kredit"}
             </div>
             <div className="table-card">

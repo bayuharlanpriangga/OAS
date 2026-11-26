@@ -1,6 +1,6 @@
 import type { Akun, SaldoMap } from "@/types";
-import { plNatural } from "../../shared/accounting/saldo-alami";
-import type { PerubahanEkuitasReport } from "../shared/types";
+import { plNatural } from "../../shared/accounting";
+import type { PerubahanEkuitasReport } from "../shared";
 
 export function computePerubahanEkuitas(
   akuns: readonly Akun[],

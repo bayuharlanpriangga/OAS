@@ -139,7 +139,7 @@ export default function ExportModal() {
       getWin().auditLog?.(
         "export",
         "laporan",
-        `Export ${fmt.toUpperCase()} — ${fileName}`,
+        `Export ${fmt.toUpperCase()} · ${fileName}`,
         { format: fmt }
       );
       setStatusMsg(`Berhasil diekspor: ${fileName}`);

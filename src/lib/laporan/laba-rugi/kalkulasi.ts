@@ -1,6 +1,6 @@
 import type { Akun, SaldoMap } from "@/types";
-import { plNatural } from "../../shared/accounting/saldo-alami";
-import type { LabaRugiReport } from "../shared/types";
+import { plNatural } from "../../shared/accounting";
+import type { LabaRugiReport } from "../shared";
 
 export function computeLabaRugi(
   akuns: readonly Akun[],

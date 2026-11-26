@@ -1,7 +1,6 @@
 "use client";
 
 import type { ComponentType } from "react";
-import { motion } from "motion/react";
 import {
   AreaChart,
   ArrowLeftRight,
@@ -42,6 +41,7 @@ import {
   ShoppingCart,
   Target,
   TrendingUp,
+  Truck,
   Upload,
   Users,
   X,
@@ -95,6 +95,7 @@ const NAV_ICON_MAP: Record<NavIconKey, ComponentType<IconProps>> = {
   moon: Moon,
   "log-in": LogIn,
   settings: Settings,
+  truck: Truck,
 };
 
 function handleNavCardClick(item: NavCardItem) {
@@ -126,9 +127,11 @@ export default function Sidebar() {
 
       <aside className="sidebar" id="sidebar">
         <div className="logo">
-          <span style={{ color: "var(--accent-text)", letterSpacing: "0.08em" }}>
-            OAS
-          </span>
+          <div className="logo-brand">
+            <span className="logo-facet" aria-hidden="true" />
+            <span>OAS</span>
+            <span className="logo-sub">Akuntansi</span>
+          </div>
           <button
             type="button"
             className="logo-close"
@@ -139,40 +142,25 @@ export default function Sidebar() {
           </button>
         </div>
 
-        <div
-          id="sidebar-account-area"
-          style={{
-            padding: "10px 12px 6px",
-            borderBottom: "1px solid var(--border)",
-            position: "relative",
-          }}
-        >
+        <div id="sidebar-account-area" className="sidebar-account-area">
           <div id="acc-switch-wrap" className="acc-switch-wrap">
             <div
               id="user-company-chip"
               onClick={() => callOasGlobal("toggleAccountSwitcher")}
-              title="Ganti akun / riwayat login"
-              style={{
-                width: "100%",
-                borderRadius: "10px",
-                padding: "8px 12px",
-                justifyContent: "flex-start",
-                gap: "10px",
-                maxWidth: "100%",
-                cursor: "pointer",
+              title="Ganti akun atau riwayat login"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  callOasGlobal("toggleAccountSwitcher");
+                }
               }}
             >
               <div
                 className="chip-avatar"
                 id="chip-avatar"
                 suppressHydrationWarning
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  fontSize: "14px",
-                  overflow: "hidden",
-                  flexShrink: 0,
-                }}
               >
                 ?
               </div>
@@ -181,7 +169,6 @@ export default function Sidebar() {
                   className="chip-name"
                   id="chip-company-name"
                   suppressHydrationWarning
-                  style={{ fontSize: "13px" }}
                 >
                   Memuat...
                 </div>
@@ -189,9 +176,9 @@ export default function Sidebar() {
                   id="chip-sub"
                   suppressHydrationWarning
                   style={{
-                    fontSize: "10px",
+                    fontSize: "12px",
                     color: "var(--muted)",
-                    marginTop: "1px",
+                    lineHeight: 1.25,
                   }}
                 >
                   Info akun
@@ -216,71 +203,39 @@ export default function Sidebar() {
             id="sidebar-accs-btn"
             className="sidebar-accs-btn"
             onClick={() => callOasGlobal("handleChipClick")}
-            style={{
-              width: "100%",
-              marginTop: "6px",
-              padding: "7px 12px",
-              background: "transparent",
-              border: "1px solid var(--border)",
-              borderRadius: "8px",
-              color: "var(--text)",
-              fontSize: "12px",
-              fontFamily: "var(--sans)",
-              cursor: "pointer",
-              textAlign: "left",
-              transition: "all 0.2s",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
           >
-            <span style={{ fontSize: "15px" }} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: "11px",
-                  color: "var(--muted)",
-                  lineHeight: 1.2,
-                }}
-              >
+              <div style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.2 }}>
                 Bisnis aktif
               </div>
               <div
                 id="sidebar-bisnis-aktif"
                 suppressHydrationWarning
                 style={{
-                  fontSize: "12px",
+                  fontSize: "13px",
                   fontWeight: 600,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
+                  color: "var(--text)",
                 }}
               >
-                —
+                -
               </div>
             </div>
             <ChevronDown
-              size={13}
+              size={14}
               strokeWidth={2}
               style={{ color: "var(--accent2)", flexShrink: 0 }}
             />
           </button>
         </div>
 
-        <motion.nav
-          className="nav"
-          initial={{ opacity: 0.92 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.18 }}
-        >
+        <nav className="nav" aria-label="Navigasi utama">
           {NAV_GROUPS.map((group) => (
-            <div key={group.label}>
+            <div key={group.label} className="nav-group">
               <div className="nav-group-label">{group.label}</div>
-              <div
-                className={
-                  group.singleColumn ? "nav-grid single" : "nav-grid"
-                }
-              >
+              <div className={group.singleColumn ? "nav-grid single" : "nav-grid"}>
                 {group.items.map((item) => {
                   const IconComponent = NAV_ICON_MAP[item.icon];
                   const classes = [
@@ -290,10 +245,10 @@ export default function Sidebar() {
                   ]
                     .filter(Boolean)
                     .join(" ");
-                  const isThemeCard = item.id === "theme";
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={item.id}
                       id={item.elementId}
                       className={classes}
@@ -310,59 +265,43 @@ export default function Sidebar() {
                         className="nav-card-icon"
                         id={item.iconId}
                         suppressHydrationWarning={Boolean(item.iconId)}
-                        style={
-                          isThemeCard ||
-                          item.id === "user-mgmt" ||
-                          item.id === "join-code" ||
-                          item.id === "settings"
-                            ? {
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }
-                            : undefined
-                        }
                       >
-                        <IconComponent
-                          size={isThemeCard ? 14 : 18}
-                          strokeWidth={2}
-                        />
+                        <IconComponent size={16} strokeWidth={1.9} />
                       </span>
                       {item.labelId ? (
                         <span id={item.labelId} suppressHydrationWarning>
                           {item.label}
                         </span>
                       ) : (
-                        item.label
+                        <span>{item.label}</span>
                       )}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
             </div>
           ))}
-        </motion.nav>
+        </nav>
 
-        <div className="sidebar-footer" style={{ padding: "10px 14px" }}>
+        <div className="sidebar-footer">
           <div
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              gap: "8px",
               marginBottom: "8px",
             }}
           >
-            <span style={{ fontSize: "10px", opacity: 0.6 }}>
-              Dev — Bayu Harlan Priangga
-            </span>
             <div
               id="save-indicator"
               style={{
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
-                gap: "5px",
-                fontSize: "10px",
+                gap: "6px",
+                fontSize: "12px",
                 color: "var(--green)",
+                fontWeight: 600,
               }}
             >
               <span
@@ -370,7 +309,7 @@ export default function Sidebar() {
                 style={{
                   width: "6px",
                   height: "6px",
-                  borderRadius: "2px",
+                  borderRadius: "1px",
                   transform: "rotate(45deg)",
                   background: "var(--green)",
                   display: "inline-block",
@@ -380,37 +319,23 @@ export default function Sidebar() {
                 Tersimpan
               </span>
             </div>
+            <span style={{ fontSize: "12px", color: "var(--muted)" }}>
+              OAS
+            </span>
           </div>
 
-          <motion.button
+          <button
             type="button"
             id="pwa-install-btn"
-            whileTap={{ scale: 0.97 }}
+            className="btn btn-ghost btn-sm"
             onClick={() => callOasGlobal("handlePwaInstall")}
-            style={{
-              width: "100%",
-              background: "var(--surface2)",
-              border: "1px solid var(--border-strong)",
-              borderRadius: "8px",
-              padding: "8px 6px",
-              fontSize: "12px",
-              color: "var(--text)",
-              cursor: "pointer",
-              fontFamily: "var(--sans)",
-              fontWeight: 600,
-              marginBottom: "6px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "6px",
-              transition: "all 0.2s",
-            }}
+            style={{ width: "100%", marginBottom: "6px" }}
           >
             <Download size={14} strokeWidth={2} style={{ color: "var(--accent2)" }} />
             <span id="pwa-btn-text" suppressHydrationWarning>
-              Install App
+              Pasang aplikasi
             </span>
-          </motion.button>
+          </button>
 
           <div
             style={{
@@ -419,52 +344,24 @@ export default function Sidebar() {
               gap: "6px",
             }}
           >
-            <motion.button
+            <button
               type="button"
-              whileTap={{ scale: 0.96 }}
+              className="btn btn-ghost btn-sm"
               onClick={() => callOasGlobal("manualSave")}
               data-tooltip="Ctrl+S"
-              style={{
-                background: "var(--surface2)",
-                border: "1px solid var(--border)",
-                borderRadius: "6px",
-                padding: "6px 4px",
-                fontSize: "11px",
-                color: "var(--text)",
-                cursor: "pointer",
-                fontFamily: "var(--sans)",
-                fontWeight: 600,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "4px",
-              }}
             >
-              <Save size={13} strokeWidth={2} style={{ color: "var(--accent2)" }} /> Simpan
-            </motion.button>
-            <motion.button
+              <Save size={13} strokeWidth={2} style={{ color: "var(--accent2)" }} />
+              Simpan
+            </button>
+            <button
               type="button"
-              whileTap={{ scale: 0.96 }}
+              className="btn btn-ghost btn-sm"
               onClick={() => callOasGlobal("openStorageModal")}
               data-tooltip="Kelola Data"
-              style={{
-                background: "var(--surface2)",
-                border: "1px solid var(--border)",
-                borderRadius: "6px",
-                padding: "6px 4px",
-                fontSize: "11px",
-                color: "var(--text)",
-                cursor: "pointer",
-                fontFamily: "var(--sans)",
-                fontWeight: 600,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "4px",
-              }}
             >
-              <FolderOpen size={13} strokeWidth={2} style={{ color: "var(--accent2)" }} /> Kelola
-            </motion.button>
+              <FolderOpen size={13} strokeWidth={2} style={{ color: "var(--accent2)" }} />
+              Kelola
+            </button>
           </div>
         </div>
       </aside>

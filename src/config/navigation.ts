@@ -12,12 +12,62 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         defaultActive: true,
         action: { type: "page", pageId: "dashboard" },
       },
+    ],
+  },
+  {
+    label: "Pembelian",
+    items: [
       {
-        id: "transaksi",
-        label: "Transaksi",
-        icon: "circle-plus",
-        dataPage: "transaksi",
-        action: { type: "page", pageId: "transaksi" },
+        id: "pembelian",
+        label: "Pembelian",
+        icon: "shopping-cart",
+        dataPage: "pembelian",
+        action: { type: "page", pageId: "pembelian" },
+      },
+      {
+        id: "pesanan-pembelian",
+        label: "Pesanan Pembelian",
+        icon: "clipboard-list",
+        dataPage: "pesanan-pembelian",
+        action: { type: "page", pageId: "pesanan-pembelian" },
+      },
+    ],
+  },
+  {
+    label: "Penjualan",
+    items: [
+      {
+        id: "penjualan",
+        label: "Penjualan",
+        icon: "receipt",
+        dataPage: "penjualan",
+        action: { type: "page", pageId: "penjualan" },
+      },
+      {
+        id: "pesanan-jual",
+        label: "Pesanan Penjualan",
+        icon: "clipboard-list",
+        dataPage: "pesanan-jual",
+        action: { type: "page", pageId: "pesanan-jual" },
+      },
+      {
+        id: "invoice",
+        label: "Invoice",
+        icon: "file-spreadsheet",
+        dataPage: "invoice",
+        action: { type: "page", pageId: "invoice" },
+      },
+    ],
+  },
+  {
+    label: "Perusahaan",
+    items: [
+      {
+        id: "pengiriman",
+        label: "Pengiriman",
+        icon: "truck",
+        dataPage: "pengiriman",
+        action: { type: "page", pageId: "pengiriman" },
       },
     ],
   },
@@ -113,11 +163,11 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     singleColumn: true,
     items: [
       {
-        id: "produk",
-        label: "Master Produk",
+        id: "kalk-persediaan",
+        label: "Persediaan",
         icon: "package",
-        dataPage: "produk",
-        action: { type: "page", pageId: "produk" },
+        dataPage: "kalk-persediaan",
+        action: { type: "page", pageId: "kalk-persediaan" },
       },
       {
         id: "akun",
@@ -153,13 +203,6 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         action: { type: "page", pageId: "kalk-penyusutan" },
       },
       {
-        id: "kalk-persediaan",
-        label: "Persediaan",
-        icon: "package",
-        dataPage: "kalk-persediaan",
-        action: { type: "page", pageId: "kalk-persediaan" },
-      },
-      {
         id: "kalk-bunga",
         label: "Bunga",
         icon: "candlestick-chart",
@@ -193,81 +236,11 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         action: { type: "page", pageId: "jurnal-berulang" },
       },
       {
-        id: "invoice",
-        label: "Invoice",
-        icon: "file-spreadsheet",
-        dataPage: "invoice",
-        action: { type: "page", pageId: "invoice" },
-      },
-      {
-        id: "bill",
-        label: "Tagihan Beli",
-        icon: "file-spreadsheet",
-        dataPage: "bill",
-        action: { type: "page", pageId: "bill" },
-      },
-      {
-        id: "umur-piutang",
-        label: "Umur Piutang",
-        icon: "clock",
-        dataPage: "umur-piutang",
-        action: { type: "page", pageId: "umur-piutang" },
-      },
-      {
-        id: "umur-hutang",
-        label: "Umur Hutang",
-        icon: "clock",
-        dataPage: "umur-hutang",
-        action: { type: "page", pageId: "umur-hutang" },
-      },
-      {
-        id: "kartu-piutang",
-        label: "Kartu Piutang",
-        icon: "file-spreadsheet",
-        dataPage: "kartu-piutang",
-        action: { type: "page", pageId: "kartu-piutang" },
-      },
-      {
-        id: "kartu-hutang",
-        label: "Kartu Hutang",
-        icon: "file-spreadsheet",
-        dataPage: "kartu-hutang",
-        action: { type: "page", pageId: "kartu-hutang" },
-      },
-      {
-        id: "penawaran",
-        label: "Penawaran",
-        icon: "file-text",
-        dataPage: "penawaran",
-        action: { type: "page", pageId: "penawaran" },
-      },
-      {
-        id: "pesanan-jual",
-        label: "Pesanan Jual",
-        icon: "clipboard-list",
-        dataPage: "pesanan-jual",
-        action: { type: "page", pageId: "pesanan-jual" },
-      },
-      {
         id: "rekonsiliasi",
         label: "Rekonsiliasi",
         icon: "git-compare",
         dataPage: "rekonsiliasi",
         action: { type: "page", pageId: "rekonsiliasi" },
-      },
-      {
-        id: "kurs",
-        label: "Kurs",
-        icon: "circle-dollar-sign",
-        dataPage: "kurs",
-        action: { type: "page", pageId: "kurs" },
-      },
-      {
-        id: "notifikasi",
-        label: "Notifikasi",
-        icon: "bell",
-        dataPage: "notifikasi",
-        action: { type: "page", pageId: "notifikasi" },
       },
       {
         id: "anggaran",
@@ -368,6 +341,22 @@ export const PAGE_META: Record<string, PageMeta> = {
     title: "Dashboard",
     subtitle: "Ringkasan keuangan bisnis Anda",
   },
+  pembelian: {
+    title: "Pembelian",
+    subtitle: "Pesanan pembelian dan pembelian langsung",
+  },
+  "pesanan-pembelian": {
+    title: "Pesanan Pembelian",
+    subtitle: "Daftar pesanan pembelian dan penerimaan barang ke gudang",
+  },
+  penjualan: {
+    title: "Penjualan",
+    subtitle: "Pesanan penjualan dan penjualan langsung",
+  },
+  pengiriman: {
+    title: "Pengiriman",
+    subtitle: "Daftar kategori jasa pengirim dan alamat ekspedisi",
+  },
   transaksi: {
     title: "Input Transaksi",
     subtitle: "Tambah transaksi baru",
@@ -410,115 +399,83 @@ export const PAGE_META: Record<string, PageMeta> = {
   },
   "kalk-penyusutan": {
     title: "Penyusutan Aset",
-    subtitle: "Garis Lurus · Saldo Menurun · SYD · Unit Produksi",
+    subtitle: "Garis lurus, saldo menurun, SYD, dan unit produksi",
   },
   "kalk-persediaan": {
     title: "Persediaan",
-    subtitle: "FIFO · LIFO · Weighted Average · Moving Average",
+    subtitle: "Multi gudang, rak penyimpanan, daftar barang, dan transfer stok",
   },
   "kalk-bunga": {
     title: "Bunga & Anuitas",
-    subtitle: "Bunga Tunggal · Majemuk · Cicilan · PV/FV",
+    subtitle: "Bunga tunggal, majemuk, cicilan, dan PV/FV",
   },
   "kalk-rasio": {
     title: "Rasio Keuangan",
-    subtitle: "Likuiditas · Solvabilitas · Profitabilitas · Aktivitas",
+    subtitle: "Likuiditas, solvabilitas, profitabilitas, dan aktivitas",
   },
   "kalk-bep": {
     title: "BEP & Margin",
-    subtitle: "Break Even · Contribution Margin · Margin of Safety",
+    subtitle: "Titik impas, margin kontribusi, dan batas aman",
   },
   "ai-assistant": {
     title: "Orias Assisten",
-    subtitle: "Asisten keuangan berbasis AI",
+    subtitle: "Asisten akuntansi dan pencatatan jurnal",
   },
   tutorial: {
     title: "Tutorial",
-    subtitle: "Panduan penggunaan software langkah demi langkah",
+    subtitle: "Panduan penggunaan langkah demi langkah",
   },
   analitik: {
     title: "Analitik & Tren Bisnis",
-    subtitle: "Pendapatan · Laba · Arus Kas · Posisi Keuangan · Proyeksi",
+    subtitle: "Pendapatan, laba, arus kas, dan proyeksi",
   },
   "jurnal-berulang": {
     title: "Jurnal Berulang",
-    subtitle: "Otomasi transaksi rutin · Gaji · Sewa · Cicilan",
+    subtitle: "Otomasi transaksi rutin seperti gaji, sewa, dan cicilan",
   },
   invoice: {
     title: "Invoice & Piutang",
-    subtitle: "Buat invoice · Lacak pembayaran · Jurnal otomatis",
-  },
-  bill: {
-    title: "Tagihan Pembelian",
-    subtitle: "Tagihan dari supplier · Utang usaha · Jatuh tempo",
-  },
-  "umur-piutang": {
-    title: "Umur Piutang",
-    subtitle: "Piutang belum lunas per pelanggan · Bucket 0-30, 31-60, 61-90, >90 hari",
-  },
-  "umur-hutang": {
-    title: "Umur Hutang",
-    subtitle: "Utang usaha belum lunas per supplier · Bucket 0-30, 31-60, 61-90, >90 hari",
-  },
-  "kartu-piutang": {
-    title: "Kartu Piutang",
-    subtitle: "Invoice, pembayaran, dan saldo berjalan per pelanggan",
-  },
-  "kartu-hutang": {
-    title: "Kartu Hutang",
-    subtitle: "Tagihan, pembayaran, dan saldo berjalan per supplier",
-  },
-  penawaran: {
-    title: "Penawaran",
-    subtitle: "Penawaran harga ke pelanggan · Dasar pesanan penjualan",
+    subtitle: "Buat invoice, lacak pembayaran, dan jurnal otomatis",
   },
   "pesanan-jual": {
     title: "Pesanan Penjualan",
-    subtitle: "Dibuat dari penawaran disetujui · Dasar faktur penjualan",
+    subtitle: "Daftar pesanan penjualan dari dikemas, menunggu, hingga selesai",
   },
   rekonsiliasi: {
     title: "Rekonsiliasi Bank",
-    subtitle: "Cocokkan mutasi bank dengan jurnal · Upload CSV",
-  },
-  kurs: {
-    title: "Multi Mata Uang",
-    subtitle: "Kurs otomatis · Konversi transaksi · History kurs",
-  },
-  notifikasi: {
-    title: "Notifikasi & Alert",
-    subtitle: "Peringatan otomatis · Batas anggaran · Jatuh tempo",
+    subtitle: "Cocokkan mutasi bank CSV dengan catatan jurnal",
   },
   anggaran: {
     title: "Anggaran vs Aktual",
-    subtitle: "Target per akun · Monitoring realisasi · Variance",
+    subtitle: "Target per akun, realisasi, dan selisih anggaran",
   },
   pajak: {
     title: "Pajak Otomatis",
-    subtitle: "PPN 11%/12% · PPh 21 · PPh 23 · Laporan SPT",
+    subtitle: "Perhitungan PPN, PPh 21, PPh 23, dan rekap SPT",
   },
   "arus-kas": {
     title: "Laporan Arus Kas",
-    subtitle: "Metode Tidak Langsung · PSAK 2",
+    subtitle: "Metode tidak langsung (PSAK 2)",
   },
   "perubahan-ekuitas": {
     title: "Laporan Perubahan Ekuitas",
-    subtitle: "Mutasi modal pemilik · PSAK 1",
+    subtitle: "Mutasi modal pemilik (PSAK 1)",
   },
   produk: {
     title: "Master Produk",
-    subtitle: "Daftar produk & layanan · Stok · Harga",
+    subtitle: "Daftar produk, layanan, stok, dan harga jual",
   },
   "aset-tetap": {
     title: "Register Aset Tetap",
-    subtitle: "Daftar aset · Penyusutan otomatis · Nilai buku",
+    subtitle: "Daftar aset, penyusutan otomatis, dan nilai buku",
   },
   kontak: {
     title: "Master Kontak",
-    subtitle: "Pelanggan & Supplier · Histori transaksi",
+    subtitle: "Pelanggan, supplier, dan histori transaksi",
   },
   "audit-trail": {
     title: "Audit Trail",
-    subtitle: "Riwayat aktivitas · Role pengguna · Siapa · Kapan",
+    subtitle: "Riwayat aktivitas pengguna dan perubahan data",
   },
   settings: {
     title: "Settings",
