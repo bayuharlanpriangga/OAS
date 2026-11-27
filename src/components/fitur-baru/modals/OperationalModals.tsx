@@ -10,7 +10,6 @@ import {
 } from "react";
 import {
   AlertTriangle,
-  BellPlus,
   CheckCircle2,
   Download,
   Eye,
@@ -21,7 +20,6 @@ import {
   Play,
   Plus,
   RotateCcw,
-  Save,
   Search,
   Settings,
   Trash2,
@@ -45,7 +43,6 @@ import {
   downloadAttachmentFile,
   getAttachmentsMap,
   saveAttachmentsMap,
-  saveFiturBaru,
   type AttachmentItem,
   type AutoPenyesuaianItem,
 } from "@/lib/fitur-baru/fitur-tambahan";
@@ -54,11 +51,8 @@ import {
   readAkuns,
   readCurrentCompany,
   readJurnalEntries,
-  readNotifAlerts,
   readPeriodeKunciSampai,
   setOasWindowFn,
-  writeNotifAlerts,
-  type NotifAlertRecord,
 } from "@/lib/shared/legacy-store";
 import type { Akun, JurnalEntry } from "@/types";
 
@@ -94,14 +88,6 @@ export default function OperationalModals() {
   const [previewOpenMap, setPreviewOpenMap] = useState<Record<string, boolean>>(
     {}
   );
-
-  // ── 5. Modal Alert Baru ──
-  const [alertOpen, setAlertOpen] = useState(false);
-  const [alertNama, setAlertNama] = useState("");
-  const [alertTipe, setAlertTipe] = useState("arus-kas-negatif");
-  const [alertBatas, setAlertBatas] = useState("");
-  const [alertAkun, setAlertAkun] = useState("");
-  const [alertAkuns, setAlertAkuns] = useState<Akun[]>([]);
 
   // ═══ Handlers: Balik Jurnal ═══
   const openBalikJurnal = useCallback((idx: number) => {
@@ -439,46 +425,6 @@ export default function OperationalModals() {
     );
   }, [autoPenyItems, postAutoPenyesuaianBatch]);
 
-  // ═══ Handlers: Alert Baru ═══
-  const openAlertBaru = useCallback(() => {
-    setAlertNama("");
-    setAlertTipe("arus-kas-negatif");
-    setAlertBatas("");
-    const currentAkuns = readAkuns();
-    setAlertAkuns([...currentAkuns]);
-    setAlertAkun(currentAkuns[0]?.kode || "");
-    setAlertOpen(true);
-  }, []);
-
-  const handleSimpanAlert = useCallback(() => {
-    const cleanNama = alertNama.trim();
-    if (!cleanNama) {
-      callOasGlobal("showAlert", "Masukkan nama alert");
-      return;
-    }
-    const nextItem: NotifAlertRecord = {
-      id: `alert_${Date.now()}`,
-      nama: cleanNama,
-      tipe: alertTipe,
-      batas: parseFloat(alertBatas) || null,
-      akun: alertTipe === "saldo-akun-bawah" ? alertAkun || null : null,
-      aktif: true,
-      createdAt: new Date().toISOString(),
-    };
-    writeNotifAlerts([...readNotifAlerts(), nextItem]);
-    saveFiturBaru();
-    callOasGlobal(
-      "auditLog",
-      "create",
-      "system",
-      `Tambah notifikasi/alert: ${cleanNama}`,
-      { ref: cleanNama }
-    );
-    setAlertOpen(false);
-    callOasGlobal("showAlert", "Alert berhasil ditambahkan!");
-    cekNotifikasi();
-  }, [alertAkun, alertBatas, alertNama, alertTipe]);
-
   useEffect(() => {
     setOasWindowFn(
       "konfirmasiBalikJurnal",
@@ -508,12 +454,7 @@ export default function OperationalModals() {
       "openModalPenyesuaian",
       openAutoPenyesuaian as (...args: never[]) => unknown
     );
-    setOasWindowFn(
-      "openModalAlertBaru",
-      openAlertBaru as (...args: never[]) => unknown
-    );
   }, [
-    openAlertBaru,
     openAttach,
     openAutoPenyesuaian,
     openBalikJurnal,
@@ -1515,123 +1456,6 @@ export default function OperationalModals() {
             })}
           </div>
         )}
-      </OasModalDialog>
-
-      {/* ═══ 5. MODAL ALERT BARU ═══ */}
-      <OasModalDialog
-        id="modal-alert-baru"
-        open={alertOpen}
-        onClose={() => setAlertOpen(false)}
-        maxWidth="440px"
-        title={
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-            <BellPlus size={15} /> Tambah Alert
-          </span>
-        }
-        footer={
-          <>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => setAlertOpen(false)}
-            >
-              Batal
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={handleSimpanAlert}
-              style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
-            >
-              <Save size={14} /> Simpan Alert
-            </button>
-          </>
-        }
-      >
-        <div className="form-group">
-          <label htmlFor="alert-nama">Nama Alert</label>
-          <input
-            type="text"
-            id="alert-nama"
-            placeholder="Peringatan Arus Kas Negatif"
-            value={alertNama}
-            onChange={(e) => setAlertNama(e.target.value)}
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="alert-tipe">Tipe Alert</label>
-          <select
-            id="alert-tipe"
-            style={{ width: "100%" }}
-            value={alertTipe}
-            onChange={(e) => {
-              setAlertTipe(e.target.value);
-              if (e.target.value === "anggaran-terlampaui") setAlertBatas("90");
-              else if (e.target.value === "invoice-jatuh-tempo")
-                setAlertBatas("3");
-              else setAlertBatas("");
-            }}
-          >
-            <option value="arus-kas-negatif">Arus Kas Negatif</option>
-            <option value="anggaran-terlampaui">Anggaran Terlampaui (%)</option>
-            <option value="invoice-jatuh-tempo">Invoice Jatuh Tempo (H-X)</option>
-            <option value="saldo-akun-bawah">Saldo Akun Di Bawah Batas</option>
-            <option value="laba-negatif">Laba Bersih Negatif</option>
-          </select>
-        </div>
-        {alertTipe === "anggaran-terlampaui" ? (
-          <div className="form-group">
-            <label htmlFor="alert-batas">Batas (%)</label>
-            <input
-              type="number"
-              id="alert-batas"
-              placeholder="90"
-              value={alertBatas}
-              onChange={(e) => setAlertBatas(e.target.value)}
-            />
-          </div>
-        ) : null}
-        {alertTipe === "invoice-jatuh-tempo" ? (
-          <div className="form-group">
-            <label htmlFor="alert-batas">H- (hari sebelum jatuh tempo)</label>
-            <input
-              type="number"
-              id="alert-batas"
-              placeholder="3"
-              value={alertBatas}
-              onChange={(e) => setAlertBatas(e.target.value)}
-            />
-          </div>
-        ) : null}
-        {alertTipe === "saldo-akun-bawah" ? (
-          <>
-            <div className="form-group">
-              <label htmlFor="alert-akun">Akun</label>
-              <select
-                id="alert-akun"
-                style={{ width: "100%" }}
-                value={alertAkun}
-                onChange={(e) => setAlertAkun(e.target.value)}
-              >
-                {alertAkuns.map((a) => (
-                  <option key={a.kode} value={a.kode}>
-                    {a.kode} - {a.nama}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label htmlFor="alert-batas">Batas Saldo Minimum (Rp)</label>
-              <input
-                type="number"
-                id="alert-batas"
-                placeholder="1000000"
-                value={alertBatas}
-                onChange={(e) => setAlertBatas(e.target.value)}
-              />
-            </div>
-          </>
-        ) : null}
       </OasModalDialog>
     </>
   );

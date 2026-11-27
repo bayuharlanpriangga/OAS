@@ -4,7 +4,6 @@ import { escapeHtml } from "../../shared/format";
 import { inputAnuitasJurnal } from "../bunga";
 import { inputBEPJurnal } from "../bep-margin";
 import { inputPenyusutanJurnal } from "../penyusutan";
-import { inputPersediaanJurnal } from "../persediaan/posting-jurnal";
 
 export interface LastKalkInputState {
   kode: string;
@@ -197,7 +196,6 @@ export function registerKalkulatorWindowGlobals(): void {
   setOasWindowFn("inputPenyusutanJurnal", inputPenyusutanJurnal);
   setOasWindowFn("inputBEPJurnal", inputBEPJurnal);
   setOasWindowFn("inputAnuitasJurnal", inputAnuitasJurnal);
-  setOasWindowFn("inputPersediaanJurnal", inputPersediaanJurnal);
   setOasWindowFn("addKalkButtonsIfNeeded", () => {});
   setOasWindowFn("addKalkInputButtons", () => {});
 
@@ -211,15 +209,6 @@ export function registerKalkulatorWindowGlobals(): void {
   setOasWindowFn(
     "switchBungaTab",
     ((tab: string) => dispatchKalkSync({ kind: "bunga-tab", tab })) as (
-      ...args: never[]
-    ) => unknown
-  );
-  setOasWindowFn("hitungPersediaan", () => dispatchKalkSync({ kind: "persediaan-calc" }));
-  setOasWindowFn("resetInv", () => dispatchKalkSync({ kind: "persediaan-reset" }));
-  setOasWindowFn(
-    "addInvRow",
-    ((jenis: string) =>
-      dispatchKalkSync({ kind: "persediaan-add", tab: jenis })) as (
       ...args: never[]
     ) => unknown
   );

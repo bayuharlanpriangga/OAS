@@ -14,7 +14,6 @@ import { setCurrentPage } from "./runtime-store";
 export const THEME_KEY = "oas_theme";
 
 export const PAGE_TITLES: Record<string, [string, string]> = {
-  "rekonsiliasi-bank": ["Rekonsiliasi Bank", "Upload & cocokkan mutasi bank"],
   dashboard: ["Dashboard", "Ringkasan keuangan bisnis Anda"],
   pembelian: ["Pembelian", "Pesanan pembelian dan pembelian langsung"],
   "pesanan-pembelian": [

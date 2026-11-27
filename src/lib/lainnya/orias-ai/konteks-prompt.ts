@@ -42,7 +42,6 @@ export const AI_PAGE_NAMES: Record<string, string> = {
   pajak: "Pajak Auto",
   kurs: "Kurs",
   rekonsiliasi: "Rekonsiliasi",
-  "rekonsiliasi-bank": "Rekonsiliasi Bank",
   "audit-trail": "Audit Trail",
   settings: "Settings",
   tutorial: "Tutorial",
@@ -380,7 +379,7 @@ JENIS AKSI TERSEDIA:
 
 2. NAVIGASI:
 {"type":"navigate","page":"dashboard"}
-Halaman valid: dashboard, transaksi, jurnal-umum, jurnal-kas, jurnal-penjualan, jurnal-pembelian, jurnal-berulang, buku-besar, neraca-saldo, laba-rugi, neraca, arus-kas, perubahan-ekuitas, analitik, akun, produk, aset-tetap, kontak, invoice, bill, umur-piutang, umur-hutang, kartu-piutang, kartu-hutang, penawaran, pesanan-jual, anggaran, notifikasi, pajak, kurs, rekonsiliasi, rekonsiliasi-bank, audit-trail, settings, tutorial, ai-assistant, kalk-penyusutan, kalk-persediaan, kalk-bunga, kalk-rasio, kalk-bep
+Halaman valid: dashboard, transaksi, jurnal-umum, jurnal-kas, jurnal-penjualan, jurnal-pembelian, jurnal-berulang, buku-besar, neraca-saldo, laba-rugi, neraca, arus-kas, perubahan-ekuitas, analitik, akun, produk, aset-tetap, kontak, invoice, bill, umur-piutang, umur-hutang, kartu-piutang, kartu-hutang, penawaran, pesanan-jual, anggaran, notifikasi, pajak, kurs, rekonsiliasi, audit-trail, settings, tutorial, ai-assistant, kalk-penyusutan, kalk-persediaan, kalk-bunga, kalk-rasio, kalk-bep
 
 3. ISI KALKULATOR PENYUSUTAN:
 {"type":"fillKalkPenyusutan","cost":100000000,"sisa":10000000,"umur":5,"metode":"garis-lurus","nama":"Nama Aset"}

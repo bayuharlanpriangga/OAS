@@ -2,8 +2,6 @@ export type { LastKalkInputState } from "./shared";
 export { KODE_COUNTER_KEY } from "./shared";
 export { hitungPenyusutanPure } from "./penyusutan";
 export { inputPenyusutanJurnal } from "./penyusutan";
-export { hitungPersediaanPure } from "./persediaan/hitung";
-export { inputPersediaanJurnal } from "./persediaan/posting-jurnal";
 export * from "./persediaan/kartu-stock";
 export { hitungBungaPure } from "./bunga";
 export { hitungAnuitasPure } from "./bunga";

@@ -98,12 +98,6 @@ export type {
   PenyusutanMetode,
   PenyusutanResult,
   PenyusutanRow,
-  PersediaanKartuRow,
-  PersediaanLayer,
-  PersediaanMetode,
-  PersediaanResult,
-  PersediaanTxInput,
-  PersediaanTxJenis,
   PvInput,
   PvMode,
   PvResult,
@@ -125,6 +119,4 @@ export type {
   NavCardItem,
   NavGroup,
   NavIconKey,
-  PageMeta,
 } from "./navigation";
-

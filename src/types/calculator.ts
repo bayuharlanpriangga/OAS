@@ -34,45 +34,6 @@ export type PenyusutanResult =
     }
   | { ok: false; pesan: string };
 
-export type PersediaanMetode = "fifo" | "lifo" | "wa" | "mwa";
-
-export type PersediaanTxJenis = "masuk" | "keluar";
-
-export interface PersediaanTxInput {
-  tgl: string;
-  jenis: PersediaanTxJenis;
-  qty: number;
-  harga: number;
-  ket?: string;
-}
-
-export interface PersediaanLayer {
-  qty: number;
-  harga: number;
-}
-
-export interface PersediaanKartuRow {
-  tgl: string;
-  ket: string;
-  mQty: number | "";
-  mHarga: number | "";
-  mJml: number | "";
-  kQty: number | "";
-  kHarga: number | "";
-  kJml: number | "";
-  keluarLayers?: PersediaanLayer[];
-  saldoLayers: PersediaanLayer[];
-}
-
-export interface PersediaanResult {
-  metode: PersediaanMetode;
-  hpp: number;
-  akhirQty: number;
-  akhirVal: number;
-  kartu: PersediaanKartuRow[];
-  stock: PersediaanLayer[];
-}
-
 export type BungaSatuan = "tahun" | "bulan" | "hari";
 
 export type BungaJenis =

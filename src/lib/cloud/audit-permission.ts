@@ -457,7 +457,6 @@ export function enforcePermissions(): void {
     'button[onclick*="openModalTambahKS"]',
     'button[onclick*="openModalKelolaSemuaKartuStock"]',
     'button[onclick*="openModalJurnalBerulang"]',
-    'button[onclick*="openModalAlertBaru"]',
     'button[onclick*="openModalAnggaran"]',
     'button[onclick*="openModalSaldoAwal"]',
     "#btn-setting-saldo-awal",

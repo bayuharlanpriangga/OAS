@@ -66,8 +66,3 @@ export interface NavGroup {
   singleColumn?: boolean;
   items: readonly NavCardItem[];
 }
-
-export interface PageMeta {
-  title: string;
-  subtitle: string;
-}

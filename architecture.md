@@ -13,7 +13,7 @@ flowchart TD
     Page --> Shell["src/components/OasShell.tsx"]
 
     Shell --> SidebarTopbar["Sidebar.tsx & Topbar.tsx"]
-    Shell --> Pages["34 Halaman Fitur React\n(utama, pembelian, penjualan, jurnal, laporan,\nmaster, fitur-baru, kalkulator, lainnya)"]
+    Shell --> Pages["35 Komponen Halaman Fitur React\n(utama, pembelian, penjualan, jurnal, laporan,\nmaster, fitur-baru, kalkulator, lainnya)"]
     Shell --> Modals["Modal & Overlay React\n(ShellOverlays, AuthCompanyModals, TeamModals,\nProfilOnboardingModals, StorageModals,\nOperationalModals, ExportModal)"]
     Shell --> Workspace["OasWorkspace.tsx\n(Runtime Boot Sequence)"]
 
@@ -85,7 +85,7 @@ flowchart TD
 | `tsconfig.json`, `next-env.d.ts` | Konfigurasi TypeScript dan path alias `@/* -> src/*`. | Seluruh file `.ts` / `.tsx` |
 | `.env.example`, `.gitignore`, `metadata.json` | Contoh env (`GEMINI_API_KEY`, Supabase), aturan git, metadata proyek. | `src/app/api/ai/route.ts`, `db-adapter.ts` |
 | `AGENTS.md`, `Roadmap.md` | Aturan agent Next.js & catatan roadmap pengembangan. | Dokumentasi pengembang |
-| `docs/README.md`, `docs/FILE_MAP.md`, `docs/SCHEMA.md`, `docs/DESAIN_AKSES_TIM.md` | Dokumentasi desain sistem, skema DB, dan desain kontrol akses tim. | `src/lib/cloud/*`, `docs/migrations/*` |
+| `docs/README.md`, `docs/SCHEMA.md`, `docs/DESAIN_AKSES_TIM.md` | Dokumentasi desain sistem, skema DB, dan desain kontrol akses tim. | `src/lib/cloud/*`, `docs/migrations/*` |
 | `docs/migrations/003_akses_tim_data.sql` & `.test.sql` | Migrasi SQL RLS, `org_members`, `company_join_codes`, RPC `gabung`/`buat_kode_gabung`/`klaim_undangan`, serta skrip uji SQL. | Supabase DB, `audit-permission.ts`, `supabase-data.ts` |
 | `public/manifest.json` | Manifest PWA (ikon, warna tema, shortcuts ke `#transaksi`, `#dashboard`, `#jurnal-umum`). | `src/app/layout.tsx`, `public/icon-*.png` |
 | `public/sw.js` | Service Worker PWA (network-first aset inti, bypass `/_next/` & localhost, fallback offline). | `OasWorkspace.tsx`, `manifest.json` |
@@ -112,7 +112,7 @@ flowchart TD
 | `src/types/accounting.ts` | Tipe inti akuntansi (`Akun`, `AkunTipe`, `AkunTrashItem`, `JurnalEntry`, `JurnalLine`, `SaldoMap`, `TahunBukuRange`, `TransaksiAkunSettings`, dll.). | `src/lib/**`, `src/components/**` |
 | `src/types/billing.ts` | Tipe penagihan (`Invoice`, `Bill`, `Pembayaran`, `DokRecord`, `CounterRecord`, item & status). | `InvoicePage`, `pembayaran/*`, `penomoran-invoice.ts` |
 | `src/types/master.ts` | Tipe data master (`Produk`, `Kontak`, `AsetTetap`). | `CoaPage`, `KontakPage`, `AsetTetapPage`, `store-master.ts` |
-| `src/types/calculator.ts` | Tipe input/hasil kalkulator keuangan & kartu stock persediaan. | `src/lib/kalkulator/**`, `src/components/kalkulator/**` |
+| `src/types/calculator.ts` | Tipe input/hasil kalkulator keuangan (Penyusutan, Bunga/Anuitas/PV/Diskonto, Rasio Keuangan, BEP & Margin). | `src/lib/kalkulator/**`, `src/components/kalkulator/**` |
 | `src/types/company.ts` | Tipe perusahaan/profil & pengaturan bisnis. | `src/lib/cloud/**` |
 | `src/types/navigation.ts` | Tipe struktur menu & aksi sidebar. | `src/config/navigation.ts`, `Sidebar.tsx` |
 
@@ -169,12 +169,11 @@ flowchart TD
 | `src/lib/master/chart-of-accounts/index.ts` | Daftar 103 akun standar PSAK (`getDefaultAkuns`), badge tipe, tebak akun persediaan, format nama akun tampil (+ dukungan trash). | `CoaPage.tsx`, `runtime-store.ts`, `supabase-data.ts`, `bridge/index.ts` |
 | `src/lib/master/aset-tetap/penyusutan-aset.ts`, `kelola-aset.ts`, `index.ts` | Perhitungan depresiasi garis lurus & saldo menurun, jadwal penyusutan otomatis, dan manajemen disposal aset tetap. | `AsetTetapPage.tsx`, `bridge/index.ts` |
 | `src/lib/master/index.ts` | Barrel export `master/*`. | `src/lib/index.ts` |
-| `src/lib/fitur-baru/fitur-tambahan.ts` | Logika Jurnal Berulang, Anggaran, Notifikasi/Alert + pajak jatuh tempo, `buatJurnalPembalikRuntime`, lampiran jurnal (`oas_attachments_v1`), dan PWA install prompt. | `JurnalBerulangPage`, `AnggaranPage`, `PajakPage`, `OperationalModals`, `bridge/index.ts` |
+| `src/lib/fitur-baru/fitur-tambahan.ts` | Logika Jurnal Berulang, Anggaran, parser CSV mutasi bank (`parseCSVBank`), kalkulasi PPh 21/23, pengecekan notifikasi/alert, `buatJurnalPembalikRuntime`, deteksi penyesuaian otomatis, lampiran jurnal (`oas_attachments_v1`), dan PWA install prompt. | `JurnalBerulangPage`, `AnggaranPage`, `RekonsiliasiPage`, `PajakPage`, `OperationalModals`, `bridge/index.ts` |
 | `src/lib/fitur-baru/settings-switcher.ts` | Manajemen Account Switcher multi-akun lokal (`oas_saved_accounts`, ganti akun via refresh token / password cache). | `SettingsPage.tsx`, `supabase-data.ts`, `bridge/index.ts` |
 | `src/lib/fitur-baru/pembayaran/alokasi-pembayaran.ts`, `jurnal-pembayaran.ts`, `index.ts` | Alokasi pembayaran sebagian/penuh ke satu atau banyak invoice/bill, kalkulasi sisa tagihan/status, dan pembuatan jurnal pelunasan. | `InvoicePage.tsx`, `store-tagihan.ts`, `bridge/index.ts` |
 | `src/lib/fitur-baru/index.ts` | Barrel export `fitur-baru/*`. | `src/lib/index.ts` |
 | `src/lib/kalkulator/persediaan/kartu-stock/` (`types.ts`, `storage.ts`, `mutasi-stok.ts`, `transfer-gudang.ts`, `index.ts`) | Engine Multi Kartu Stock: struktur Gudang → Rak → Barang, mutasi masuk/keluar FIFO/LIFO/WA/MWA, perhitungan layer HPP, rebuild stok, dan transfer antar gudang. | `KalkPersediaanPage.tsx`, `GudangPanel.tsx`, `pesanan-pembelian.ts`, `pesanan-penjualan.ts`, `TransaksiPage.tsx` |
-| `src/lib/kalkulator/persediaan/hitung.ts`, `posting-jurnal.ts` | Kalkulasi valuasi persediaan dan posting jurnal penyesuaian/HPP persediaan. | `KalkPersediaanPage.tsx` |
 | `src/lib/kalkulator/penyusutan/index.ts` | Rumus penyusutan Garis Lurus, Saldo Menurun, SYD, dan Unit Produksi. | `KalkPenyusutanPage.tsx` |
 | `src/lib/kalkulator/bunga/index.ts` | Rumus bunga tunggal, majemuk, anuitas/cicilan, diskonto, dan PV/FV. | `KalkBungaPage.tsx` |
 | `src/lib/kalkulator/rasio/hitung.ts` | Perhitungan rasio likuiditas, solvabilitas, profitabilitas, dan aktivitas. | `KalkRasioPage.tsx` |
@@ -191,7 +190,7 @@ flowchart TD
 
 | File | Memproses / Menyimpan | Terhubung Dengan |
 | :--- | :--- | :--- |
-| `src/components/OasShell.tsx` | Kerangka root UI: menyusun `Sidebar`, `Topbar`, seluruh 34 halaman fitur, `ShellOverlays`, semua modal global, dan `OasWorkspace`. | `src/app/page.tsx`, semua modul di `src/components/**` |
+| `src/components/OasShell.tsx` | Kerangka root UI: menyusun `Sidebar`, `Topbar`, seluruh 35 komponen halaman fitur, `ShellOverlays`, semua modal global, dan `OasWorkspace`. | `src/app/page.tsx`, semua modul di `src/components/**` |
 | `src/components/OasWorkspace.tsx` | Client runtime bootstrapper: registrasi bridge, lifecycle UI, pemuatan CDN Supabase/offline stub, inisialisasi DB adapter, auth/storage boot, dan SW. | `LoadingOverlay.tsx`, `lib/core`, `lib/cloud`, `lib/shared/bridge` |
 | `src/components/LoadingOverlay.tsx` | Layar splash/loading saat runtime inisialisasi selesai dan menghapus `#anti-glitch-style`. | `OasWorkspace.tsx` |
 | `src/components/Sidebar.tsx` | Menu navigasi samping, chip user/bisnis (`#user-company-chip`), tombol ganti bisnis, indikator simpan, dan tombol tema. | `src/config/navigation.ts`, `navigation-theme.ts`, `supabase-data.ts` |
@@ -213,7 +212,7 @@ flowchart TD
 | File | Memproses / Menyimpan | Terhubung Dengan |
 | :--- | :--- | :--- |
 | `src/components/utama/dashboard/DashboardPage.tsx` | Ringkasan KPI keuangan, grafik tren, transaksi terbaru, tombol aksi cepat, pengingat penyesuaian & profil perusahaan. | `lib/utama/dashboard`, `lib/cloud/profil`, `lib/shared/legacy-store` |
-| `src/components/utama/transaksi/TransaksiPage.tsx` | Form input transaksi 5 mode (Mode Cepat, Kas, Penjualan, Pembelian, Jurnal Manual), terintegrasi dengan mapping akun, PPN, Kartu Stock, kontak, dan kunci periode. | `AkunPickerModal`, `ui-widgets.ts` (`openOptPicker`), `kartu-stock/*`, `addJurnal` |
+| `src/components/utama/transaksi/TransaksiPage.tsx` | Form input transaksi 5 mode (Mode Cepat, Kas Masuk/Keluar, Penjualan, Pembelian, Jurnal Manual), terintegrasi dengan mapping akun, PPN, Kartu Stock, kontak, dan kunci periode. Diakses via `Ctrl+N` atau aksi cepat Dashboard. | `AkunPickerModal`, `ui-widgets.ts` (`openOptPicker`), `kartu-stock/*`, `addJurnal` |
 | `src/components/pembelian/PembelianPage.tsx` | Form pembuatan Pesanan Pembelian (PO) dan Pembelian Langsung multi-item dengan diskon/pajak & pemilihan gudang/rak. | `lib/pembelian/pesanan-pembelian.ts`, `kartu-stock/*` |
 | `src/components/pembelian/PesananPembelianPage.tsx` | Daftar PO Pembelian, filter status (`menunggu`/`diterima`/`dibatalkan`), dan aksi penerimaan barang ke gudang. | `lib/pembelian/pesanan-pembelian.ts` |
 | `src/components/penjualan/PenjualanPage.tsx` | Form Pesanan Penjualan (SO) dan Penjualan Langsung multi-item, pilihan jasa pengiriman & no resi, cek stok & HPP. | `lib/penjualan/pesanan-penjualan.ts`, `lib/perusahaan/pengiriman.ts` |
@@ -225,12 +224,19 @@ flowchart TD
 | `src/components/fitur-baru/pesanan-jual/PesananJualPage.tsx` | Daftar Pesanan Penjualan (SO) berdasarkan status (`dikemas`, `menunggu`, `selesai`, `dibatalkan`) beserta aksi kirim/selesai. | `lib/penjualan/pesanan-penjualan.ts` |
 | `src/components/fitur-baru/jurnal-berulang/JurnalBerulangPage.tsx` | Manajemen template transaksi rutin otomatis (harian/mingguan/bulanan/triwulan/tahunan) & eksekusi posting jurnal. | `fitur-tambahan.ts`, `addJurnal` |
 | `src/components/fitur-baru/anggaran/AnggaranPage.tsx` | Target anggaran per akun vs realisasi aktual, visualisasi grafik bar SVG, dan indikator selisih. | `fitur-tambahan.ts`, `shared/accounting` |
-| `src/components/fitur-baru/rekonsiliasi/RekonsiliasiPage.tsx` | Impor mutasi bank CSV/Excel (via `xlsx`), pencocokan otomatis dengan jurnal kas, dan pembuatan jurnal koreksi bank. | `fitur-tambahan.ts`, `addJurnal` |
+| `src/components/fitur-baru/rekonsiliasi/RekonsiliasiPage.tsx` | Impor mutasi bank CSV (BCA/Mandiri/BNI/BRI/CIMB/Generic), pencocokan otomatis dengan jurnal, serta impor transaksi belum cocok menjadi jurnal baru. | `fitur-tambahan.ts`, `postJurnalLegacy` |
 | `src/components/fitur-baru/pajak/PajakPage.tsx` | Kalkulasi & rekap PPN Masukan/Keluaran aktual, PPh 21, PPh 23, dan Rekap Pajak Siap Setor. | `fitur-tambahan.ts`, `shared/accounting/ppn-rekap.ts` |
-| `src/components/fitur-baru/modals/OperationalModals.tsx` | 5 modal operasional bersama: Balik Jurnal, Saldo Awal, Lampiran Jurnal, Auto-Penyesuaian, dan Alert Notifikasi Baru. | `fitur-tambahan.ts`, `supabase-data.ts`, `OasModalDialog.tsx` |
-| `src/components/kalkulator/` (`KalkPersediaanPage`, `GudangPanel`, `KalkPenyusutanPage`, `KalkBungaPage`, `KalkRasioPage`, `KalkBepPage`, `shared/*`) | 5 modul kalkulator & manajemen Multi Gudang/Rak/Kartu Stock persediaan + komponen input/hasil kalkulator bersama. | `src/lib/kalkulator/**` |
+| `src/components/fitur-baru/modals/OperationalModals.tsx` | 4 modal operasional bersama: Balik Jurnal, Saldo Awal, Lampiran Jurnal, dan Auto-Penyesuaian. | `fitur-tambahan.ts`, `supabase-data.ts`, `OasModalDialog.tsx` |
+| `src/components/kalkulator/` (`KalkPersediaanPage`, `GudangPanel`, `KalkPenyusutanPage`, `KalkBungaPage`, `KalkRasioPage`, `KalkBepPage`, `shared/*`) | Modul manajemen Persediaan/Multi Gudang (`KalkPersediaanPage` → `GudangPanel`) + 4 kalkulator keuangan (`Penyusutan`, `Bunga`, `Rasio`, `BEP & Margin`) dan komponen bersama. | `src/lib/kalkulator/**` |
 | `src/components/lainnya/orias-ai/AiAssistantPage.tsx` | Antarmuka chat **Orias Assisten** (kirim prompt + konteks keuangan ke `/api/ai`, pratinjau & konfirmasi eksekusi aksi jurnal/navigasi AI). | `src/app/api/ai/route.ts`, `src/lib/lainnya/orias-ai/*` |
 | `src/components/lainnya/audit-trail/AuditTrailPage.tsx` | Halaman riwayat Audit Trail (filter aksi, role, bisnis, pencarian, KPI ringkas, ekspor CSV, bersihkan log >90 hari). | `src/lib/cloud/audit-permission.ts` |
 | `src/components/lainnya/export/ExportModal.tsx` | Modal pratinjau & pengaturan ekspor PDF/Excel/CSV (pilihan laporan, warna tema, logo, tanda tangan). | `src/lib/lainnya/export/*`, `OasModalDialog.tsx` |
 | `src/components/lainnya/settings/SettingsPage.tsx` | Pengaturan bertingkat: Akun User (foto profil via cropper, nama, ubah password, link/unlink provider, Account Switcher) & Transaksi (mapping akun jual/beli/HPP/persediaan, Kunci Periode, Saldo Awal). | `settings-switcher.ts`, `supabase-data.ts`, `ui-widgets.ts` |
 | `src/components/lainnya/tutorial/TutorialPage.tsx` | Panduan interaktif pencarian topik cara menggunakan OAS. | `OasShell.tsx` |
+
+---
+
+## 4. Catatan Kompatibilitas Data & Fitur yang Dipertahankan
+
+- **`TransaksiPage.tsx`**: Tetap dipertahankan meski menu pembelian/penjualan utama sudah memiliki halaman khusus (`PembelianPage`, `PenjualanPage`), karena masih menangani form **Jurnal Manual** dan **Kas Masuk/Keluar** (dapat dibuka melalui pintasan `Ctrl+N` maupun tombol aksi cepat di Dashboard).
+- **Kompatibilitas `company_records` (`bill`, `dok`, `kurs`, `alert`)**: Schema sinkronisasi di `src/lib/cloud/cloud-records.ts`, `runtime-store.ts`, `store-tagihan.ts`, dan opsi reset di `StorageModals.tsx` sengaja dipertahankan untuk menjaga kompatibilitas mundur terhadap data pengguna lama di Supabase (selain itu `readBillList` masih dipakai oleh `DashboardPage.tsx` dan `ekspor-excel.ts`).
